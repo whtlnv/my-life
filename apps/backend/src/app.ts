@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 
-import type { HealthResponse } from '@my-life/contracts';
+import { calendarSnapshot, type HealthResponse } from '@my-life/contracts';
 import {
   buildNowView,
   mergeCalendarSnapshots,
@@ -33,6 +33,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const snapshot = await context.req.json<CalendarSnapshot>();
     if (!isAllowed(snapshot.accountEmail)) {
       return context.body(null, 403);
+    }
+    if (!calendarSnapshot.safeParse(snapshot).success) {
+      return context.body(null, 400);
     }
     snapshots.push(snapshot);
     return context.body(null, 200);

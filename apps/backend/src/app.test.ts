@@ -91,4 +91,28 @@ describe('backend app', () => {
     expect(posted.status).toBe(403);
     expect(await now.json()).toMatchObject({ current: [] });
   });
+
+  it('refuses a calendar snapshot that fails the shared contract with a client error', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => new Date('2026-11-02T15:10:00.000Z') },
+    });
+    const meetingWithoutStart = {
+      id: 'event-3',
+      iCalUID: 'event-3@google.com',
+      title: 'Meeting without start',
+      end: '2026-11-02T15:30:00.000Z',
+      attendees: [],
+    };
+
+    const posted = await app.request('/calendar-snapshot', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ accountEmail: 'ana@example.com', events: [meetingWithoutStart] }),
+    });
+    const now = await app.request('/now');
+
+    expect(posted.status).toBe(400);
+    expect(await now.json()).toMatchObject({ current: [] });
+  });
 });
