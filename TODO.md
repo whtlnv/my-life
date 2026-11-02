@@ -54,6 +54,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] When no database path is configured, the backend stores its file under `~/Library/Application Support/my-life/`
 - [x] When a database path is configured, the backend stores its file there instead of the default
 - [x] GET / serves the dashboard build's index page
+- [ ] GET /assets/<file> serves the dashboard build's bundled script, so the page is not blank
 
 ### Extension
 
@@ -88,6 +89,8 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Wiring and acceptance
 
+- [ ] The backend's startup settings come from its environment: MY_LIFE_ALLOWED_EMAILS (comma-separated), MY_LIFE_PORT, MY_LIFE_DATABASE_PATH and MY_LIFE_DASHBOARD_DIRECTORY, each with its default when unset
+- [ ] Starting the backend creates the database folder when it is missing
 - [ ] Running the backend entry point serves the built dashboard at `/` and answers GET /now from the configured store
 - [ ] The launchd plist in `scripts/` validates with plutil and points at the backend's start command
 - [ ] Manual checklist in `docs/` walked: extension installed in each profile, every account appears on the dashboard, the badge shows the count; screenshot saved (waits on `PENDING_TASKS.md` § 1)
