@@ -8,4 +8,25 @@ describe('startup settings', () => {
 
     expect(settings.allowedEmails).toEqual(['ana@example.com', 'ana@work.example.com']);
   });
+
+  it('has an empty allow-list when MY_LIFE_ALLOWED_EMAILS is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.allowedEmails).toEqual([]);
+  });
+
+  it('has an empty allow-list when MY_LIFE_ALLOWED_EMAILS is blank', () => {
+    const settings = readStartupSettings({ MY_LIFE_ALLOWED_EMAILS: '   ' }, '/Users/ana');
+
+    expect(settings.allowedEmails).toEqual([]);
+  });
+
+  it('trims surrounding spaces around each email in MY_LIFE_ALLOWED_EMAILS', () => {
+    const settings = readStartupSettings(
+      { MY_LIFE_ALLOWED_EMAILS: '  ana@example.com , ana@work.example.com  ' },
+      '/Users/ana',
+    );
+
+    expect(settings.allowedEmails).toEqual(['ana@example.com', 'ana@work.example.com']);
+  });
 });

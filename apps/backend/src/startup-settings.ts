@@ -6,5 +6,6 @@ export function readStartupSettings(
   environment: Record<string, string | undefined>,
   _homeDirectory: string,
 ): StartupSettings {
-  return { allowedEmails: (environment.MY_LIFE_ALLOWED_EMAILS ?? '').split(',') };
+  const allowedEmails = environment.MY_LIFE_ALLOWED_EMAILS;
+  return { allowedEmails: allowedEmails === undefined || allowedEmails.trim() === '' ? [] : allowedEmails.split(',').map((email) => email.trim()) };
 }
