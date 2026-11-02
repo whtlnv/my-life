@@ -17,7 +17,17 @@ export type MergedCalendarEvent = CalendarEvent & { accounts: string[] };
 
 export const mergeCalendarSnapshots = (
   snapshots: CalendarSnapshot[],
-): MergedCalendarEvent[] =>
-  snapshots.flatMap(({ accountEmail, events }) =>
-    events.map((event) => ({ ...event, accounts: [accountEmail] })),
-  );
+): MergedCalendarEvent[] => {
+  const merged: MergedCalendarEvent[] = [];
+  for (const { accountEmail, events } of snapshots) {
+    for (const event of events) {
+      const existing = merged.find((candidate) => candidate.iCalUID === event.iCalUID);
+      if (existing) {
+        existing.accounts.push(accountEmail);
+      } else {
+        merged.push({ ...event, accounts: [accountEmail] });
+      }
+    }
+  }
+  return merged;
+};

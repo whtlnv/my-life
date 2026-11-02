@@ -32,4 +32,21 @@ describe('mergeCalendarSnapshots', () => {
       { ...dentist, accounts: ['francisco@personal.example.com'] },
     ]);
   });
+
+  it('reports the same event seen by two accounts once, naming both accounts', () => {
+    const work = { accountEmail: 'francisco@work.example.com', events: [weeklySync] };
+    const personal = {
+      accountEmail: 'francisco@personal.example.com',
+      events: [{ ...weeklySync, id: 'event-1-as-seen-by-personal' }],
+    };
+
+    const merged = mergeCalendarSnapshots([work, personal]);
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.iCalUID).toBe(weeklySync.iCalUID);
+    expect(merged[0]?.accounts).toEqual([
+      'francisco@work.example.com',
+      'francisco@personal.example.com',
+    ]);
+  });
 });
