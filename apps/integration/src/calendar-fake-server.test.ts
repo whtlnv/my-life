@@ -40,4 +40,41 @@ describe('Calendar fake server', () => {
       await calendar.close();
     }
   });
+
+  it('polling the overlapping scenario yields two events that GET /now reports as both current', async () => {
+    const calendar = await startCalendarFakeServer('overlapping');
+    try {
+      const backend = createApp({ allowedEmails: [accountEmail], clock: { now: () => pollTime } });
+      const postedSnapshots: { accountEmail: string; events: { iCalUID: string }[] }[] = [];
+      const fetchThroughFakes = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+        const url = new URL(input instanceof Request ? input.url : input.toString());
+        if (url.origin === 'https://www.googleapis.com') {
+          return fetch(new URL(url.pathname + url.search, calendar.url), init);
+        }
+        postedSnapshots.push(JSON.parse(String(init?.body)));
+        return backend.request(url.pathname, init);
+      };
+
+      await pollCalendarOnce({
+        fetch: fetchThroughFakes,
+        accessToken: 'fake-token',
+        accountEmail,
+        backendUrl,
+        now: pollTime,
+        timeZone: 'America/Mexico_City',
+      });
+      const nowView = (await (await backend.request('/now')).json()) as {
+        current: { iCalUID: string; start: string; end: string }[];
+      };
+
+      const postedIdentifiers = postedSnapshots.flatMap((snapshot) => snapshot.events.map((event) => event.iCalUID));
+      expect(postedIdentifiers).toHaveLength(2);
+      expect(nowView.current.map((event) => event.iCalUID).sort()).toEqual([...postedIdentifiers].sort());
+      for (const event of nowView.current) {
+        expect(event.start <= pollTime.toISOString() && pollTime.toISOString() < event.end).toBe(true);
+      }
+    } finally {
+      await calendar.close();
+    }
+  });
 });
