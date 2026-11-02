@@ -10,6 +10,7 @@ export interface StartupSettings {
 }
 
 const defaultPort = 7777;
+const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
 
 export function readStartupSettings(
   environment: Record<string, string | undefined>,
@@ -19,7 +20,7 @@ export function readStartupSettings(
     allowedEmails: parseAllowedEmails(environment.MY_LIFE_ALLOWED_EMAILS),
     port: parsePort(environment.MY_LIFE_PORT),
     databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
-    dashboardDirectory: fileURLToPath(new URL('../../dashboard/dist', import.meta.url)),
+    dashboardDirectory: defaultDashboardDirectory,
   };
 }
 
