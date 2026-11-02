@@ -48,6 +48,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] A newer snapshot from the same account replaces that account's events in GET /now, and an event missing from it disappears
 - [x] GET /now reports, for each account, when it last reported and whether it is stale
 - [x] GET /now includes the badge count of events starting within 15 minutes
+- [ ] GET /now's badge count is zero when no event starts within 15 minutes and two when two do
 - [ ] GET /now bounds later today by midnight in the configured time zone (America/Mexico_City), not the machine's
 - [ ] A snapshot reported before a backend restart is still served by GET /now after it
 - [ ] When no database path is configured, the backend stores its file under `~/Library/Application Support/my-life/`
