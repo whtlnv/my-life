@@ -59,4 +59,13 @@ describe('DashboardApp', () => {
     expect(within(nowBlock).getByText(/Ana Ruiz/)).toBeInTheDocument();
     expect(within(nowBlock).getByText(/Luis Pérez/)).toBeInTheDocument();
   });
+
+  it('says there is nothing now in the Now block when nothing is current or next', async () => {
+    answerGetNowWith({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
+
+    render(<DashboardApp />);
+
+    const nowBlock = await screen.findByRole('region', { name: 'Now' });
+    expect(await within(nowBlock).findByText(/nothing now/i)).toBeInTheDocument();
+  });
 });
