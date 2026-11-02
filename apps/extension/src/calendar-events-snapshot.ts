@@ -28,13 +28,17 @@ function isDeclinedByAccount(event: GoogleCalendarEvent) {
   return attendeesOf(event).some((attendee) => attendee.self === true && attendee.responseStatus === 'declined');
 }
 
+function snapshotAttendeesOf(event: GoogleCalendarEvent) {
+  return attendeesOf(event).map((attendee) => ({ email: attendee.email, displayName: attendee.displayName ?? attendee.email }));
+}
+
 function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
   const commonFields = {
     id: event.id,
     iCalUID: event.iCalUID,
     title: event.summary,
     ...(event.hangoutLink === undefined ? {} : { meetLink: event.hangoutLink }),
-    attendees: attendeesOf(event).map((attendee) => ({ email: attendee.email, displayName: attendee.displayName ?? attendee.email })),
+    attendees: snapshotAttendeesOf(event),
   };
   if (isAllDay(event)) {
     return { ...commonFields, allDay: true, start: event.start.date, end: event.end.date };
