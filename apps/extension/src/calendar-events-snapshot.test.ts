@@ -114,4 +114,25 @@ describe('snapshotFromCalendarEvents', () => {
 
     expect(Object.keys(snapshot.events[0] ?? {})).not.toContain('meetLink');
   });
+
+  it('converts a Calendar event with no attendees with an empty attendee list', () => {
+    const eventsResponse = {
+      kind: 'calendar#events',
+      items: [
+        {
+          kind: 'calendar#event',
+          id: 'focus-time',
+          iCalUID: 'focus-time@google.com',
+          status: 'confirmed',
+          summary: 'Focus time',
+          start: { dateTime: '2026-11-02T10:00:00-06:00', timeZone: 'America/Mexico_City' },
+          end: { dateTime: '2026-11-02T12:00:00-06:00', timeZone: 'America/Mexico_City' },
+        },
+      ],
+    };
+
+    const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
+
+    expect(snapshot.events).toEqual([expect.objectContaining({ id: 'focus-time', attendees: [] })]);
+  });
 });
