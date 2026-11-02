@@ -1,0 +1,1 @@
+pnpm --recursive --if-present --stream run test 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g' | grep -E ' test: +Tests:? ' | sed -E 's/.*[( ]([0-9]+)( total|\))$/\1/' | awk '{ sum += $1 } END { print sum + 0 }'

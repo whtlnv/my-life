@@ -1,0 +1,1 @@
+pnpm --recursive --if-present run typecheck && pnpm exec eslint --max-warnings 0 . && pnpm exec prettier --check .
