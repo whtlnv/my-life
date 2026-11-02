@@ -51,11 +51,13 @@ export function DashboardApp() {
       .catch(() => undefined);
   }, []);
 
+  const nothingToShow = current.length === 0 && next.length === 0;
+
   return (
     <main>
       <h1>my-life</h1>
       <section aria-label="Now">
-        {current.length === 0 && next.length === 0 && <p>Nothing now</p>}
+        {nothingToShow && <p>Nothing now</p>}
         {current.map((event) => (
           <CurrentEvent key={event.id} event={event} />
         ))}
