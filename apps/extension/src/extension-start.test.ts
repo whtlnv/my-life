@@ -118,4 +118,43 @@ describe('startExtension', () => {
       { timeMin: '2026-11-03T06:00:00.000Z', timeMax: '2026-11-05T06:00:00.000Z' },
     ]);
   });
+
+  it('refreshes the badge from GET /now after the first snapshot and after every scheduled poll', async () => {
+    const badgeCounts = [1, 3];
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Response.json({ kind: 'calendar#calendarList', items: [] });
+      }
+      if (url.href === 'http://127.0.0.1:7777/now' && init?.method !== 'POST') {
+        return Response.json({ badgeCount: badgeCounts.shift() });
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Response.json({ ok: true });
+      }
+      return new Response('unexpected request', { status: 404 });
+    };
+    const badgeTexts: string[] = [];
+    let scheduledPoll: (() => Promise<void>) | undefined;
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: async () => 'francisco@example.com',
+      accessToken: async () => 'token-for-francisco',
+      backendUrl: 'http://127.0.0.1:7777',
+      now: new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+      every: (_milliseconds: number, poll: () => Promise<void>) => {
+        scheduledPoll = poll;
+      },
+      setBadgeText: async (text: string) => {
+        badgeTexts.push(text);
+      },
+    });
+    const badgeTextsAfterStart = [...badgeTexts];
+    await scheduledPoll?.();
+
+    expect(badgeTextsAfterStart).toEqual(['1']);
+    expect(badgeTexts).toEqual(['1', '3']);
+  });
 });
