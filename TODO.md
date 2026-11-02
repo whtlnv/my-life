@@ -13,7 +13,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Domain — merge and dedupe
 
-- [ ] Merging the snapshots of two accounts yields the events of both
+- [x] Merging the snapshots of two accounts yields the events of both
 - [ ] The same event (same iCalUID) reported by two accounts appears once, naming both accounts
 - [ ] Two events with different iCalUIDs at the same time stay separate
 
