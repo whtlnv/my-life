@@ -3,6 +3,8 @@ export interface StartupSettings {
   port: number;
 }
 
+const defaultPort = 7777;
+
 export function readStartupSettings(
   environment: Record<string, string | undefined>,
   _homeDirectory: string,
@@ -15,7 +17,7 @@ export function readStartupSettings(
 
 function parsePort(portText: string | undefined): number {
   if (portText === undefined) {
-    return 7777;
+    return defaultPort;
   }
   return Number(portText);
 }
