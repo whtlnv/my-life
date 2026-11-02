@@ -67,9 +67,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const dashboardDirectory = options.dashboardDirectory;
   if (dashboardDirectory !== undefined) {
-    app.get('/', (context) => context.html(readFileSync(join(dashboardDirectory, 'index.html'), 'utf8')));
+    const readDashboardFile = (...pathSegments: string[]): string =>
+      readFileSync(join(dashboardDirectory, ...pathSegments), 'utf8');
+    app.get('/', (context) => context.html(readDashboardFile('index.html')));
     app.get('/assets/:file', (context) =>
-      context.body(readFileSync(join(dashboardDirectory, 'assets', context.req.param('file')), 'utf8'), 200, {
+      context.body(readDashboardFile('assets', context.req.param('file')), 200, {
         'content-type': 'text/javascript',
       }),
     );
