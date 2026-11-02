@@ -35,4 +35,10 @@ describe('startup settings', () => {
 
     expect(settings.port).toBe(4321);
   });
+
+  it('uses port 8123 when MY_LIFE_PORT is 8123', () => {
+    const settings = readStartupSettings({ MY_LIFE_PORT: '8123' }, '/Users/ana');
+
+    expect(settings.port).toBe(8123);
+  });
 });
