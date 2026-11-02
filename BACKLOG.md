@@ -15,8 +15,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   only time source once the integration tests stop passing `now`.
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
-- `packages/domain` declares its own `CalendarEvent` shape and `packages/contracts` a zod schema of the same fields; one
-  should derive from the other (contracts depends on domain, so the schema should `satisfies` the domain type).
 
 ## Out of Scope
 
