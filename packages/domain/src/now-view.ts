@@ -12,6 +12,14 @@ const isStartingBetween = (
   horizon: string,
 ): boolean => now < event.start && event.start <= horizon;
 
+const localCalendarDate = (
+  instant: string,
+  timeZone: string | undefined,
+): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(
+    new Date(instant),
+  );
+
 const byStartAscending = (
   left: MergedCalendarEvent,
   right: MergedCalendarEvent,
@@ -31,13 +39,18 @@ export const buildNowView = (
   const horizon = new Date(
     nowDate.getTime() + FIFTEEN_MINUTES_IN_MILLISECONDS,
   ).toISOString();
+  const today = localCalendarDate(now, timeZone);
   return {
     current: events
       .filter((event) => isHappeningAt(event, now))
       .sort(byStartAscending),
     next: events.filter((event) => isStartingBetween(event, now, horizon)),
     laterToday: events
-      .filter((event) => horizon < event.start)
+      .filter(
+        (event) =>
+          horizon < event.start &&
+          localCalendarDate(event.start, timeZone) === today,
+      )
       .sort(byStartAscending),
   };
 };

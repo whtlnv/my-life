@@ -73,4 +73,21 @@ describe('buildNowView', () => {
 
     expect(view.laterToday).toEqual([weeklySync, designReview]);
   });
+
+  it('leaves an event starting after midnight in America/Mexico_City out of later today even when it is still the same UTC day', () => {
+    // 04:00Z on Nov 3 is 22:00 on Nov 2 in Mexico City; the event is 00:30 on Nov 3 there.
+    const clock: Clock = { now: () => new Date('2026-11-03T04:00:00.000Z') };
+    const afterMidnightStandup = {
+      ...weeklySync,
+      id: 'event-3',
+      iCalUID: 'event-3@google.com',
+      title: 'After-midnight standup',
+      start: '2026-11-03T06:30:00.000Z',
+      end: '2026-11-03T07:00:00.000Z',
+    };
+
+    const view = buildNowView([afterMidnightStandup], clock, 'America/Mexico_City');
+
+    expect(view.laterToday).toEqual([]);
+  });
 });
