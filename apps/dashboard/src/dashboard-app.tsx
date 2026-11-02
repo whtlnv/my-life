@@ -64,6 +64,8 @@ function CurrentEvent({ event }: { event: NowEvent }) {
   );
 }
 
+const nowRefreshIntervalMilliseconds = 60_000;
+
 const emptyNowResponse: NowResponse = { current: [], next: [], laterToday: [], accounts: [] };
 
 export function DashboardApp() {
@@ -77,7 +79,7 @@ export function DashboardApp() {
         .then(setNowResponse)
         .catch(() => setBackendUnreachable(true));
     loadNow();
-    const interval = setInterval(loadNow, 60_000);
+    const interval = setInterval(loadNow, nowRefreshIntervalMilliseconds);
     return () => clearInterval(interval);
   }, []);
 
