@@ -23,11 +23,15 @@ function calendarEventsUrl(calendarId: string, timeMin: string, timeMax: string)
   return eventsUrl;
 }
 
+function isRetryable(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
 export async function pollCalendarOnce(options: PollCalendarOptions): Promise<void> {
   const authorization = { headers: { Authorization: `Bearer ${options.accessToken}` } };
   const fetchJson = async (url: string | URL) => {
     let response = await options.fetch(url, authorization);
-    for (let attempt = 0; response.status === 429 || response.status >= 500; attempt++) {
+    for (let attempt = 0; isRetryable(response.status); attempt++) {
       await options.wait?.(1000 * 2 ** attempt);
       response = await options.fetch(url, authorization);
     }
