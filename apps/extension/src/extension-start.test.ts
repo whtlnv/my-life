@@ -72,11 +72,7 @@ describe('startExtension', () => {
     await expect(scheduledPoll?.()).resolves.toBeUndefined();
     await expect(scheduledPoll?.()).resolves.toBeUndefined();
     const snapshot = { path: '/calendar-snapshot', body: { accountEmail: 'francisco@example.com', events: [] } };
-    expect(backendPosts).toEqual([
-      { path: '/register', body: { email: 'francisco@example.com' } },
-      snapshot,
-      snapshot,
-    ]);
+    expect(backendPosts).toEqual([{ path: '/register', body: { email: 'francisco@example.com' } }, snapshot, snapshot]);
   });
 
   it('requests the Calendar window for the moment of each scheduled poll, so a poll the next day asks for the next day', async () => {

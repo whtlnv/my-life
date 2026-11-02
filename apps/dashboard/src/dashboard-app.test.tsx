@@ -209,9 +209,7 @@ describe('DashboardApp', () => {
       vi.fn(() => {
         const body = answers[Math.min(answersGiven, answers.length - 1)];
         answersGiven += 1;
-        return Promise.resolve(
-          new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
-        );
+        return Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
       }),
     );
 
@@ -297,9 +295,7 @@ describe('DashboardApp', () => {
       current: [],
       next: [],
       laterToday: [],
-      accounts: [
-        { email: 'personal@example.com', lastReportedAt: '2026-11-02T14:40:00.000Z', stale: true },
-      ],
+      accounts: [{ email: 'personal@example.com', lastReportedAt: '2026-11-02T14:40:00.000Z', stale: true }],
       badgeCount: 0,
     });
 
@@ -316,9 +312,7 @@ describe('DashboardApp', () => {
       current: [],
       next: [],
       laterToday: [],
-      accounts: [
-        { email: 'personal@example.com', lastReportedAt: '2026-11-02T14:40:00.000Z', stale: false },
-      ],
+      accounts: [{ email: 'personal@example.com', lastReportedAt: '2026-11-02T14:40:00.000Z', stale: false }],
       badgeCount: 0,
     });
 

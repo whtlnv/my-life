@@ -16,9 +16,7 @@ export interface CalendarSnapshot {
 
 export type MergedCalendarEvent = CalendarEvent & { accounts: string[] };
 
-export const mergeCalendarSnapshots = (
-  snapshots: CalendarSnapshot[],
-): MergedCalendarEvent[] => {
+export const mergeCalendarSnapshots = (snapshots: CalendarSnapshot[]): MergedCalendarEvent[] => {
   const merged: MergedCalendarEvent[] = [];
   for (const { accountEmail, events } of snapshots) {
     for (const event of events) {

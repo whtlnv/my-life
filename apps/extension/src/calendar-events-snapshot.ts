@@ -29,7 +29,10 @@ function isDeclinedByAccount(event: GoogleCalendarEvent) {
 }
 
 function snapshotAttendeesOf(event: GoogleCalendarEvent) {
-  return attendeesOf(event).map((attendee) => ({ email: attendee.email, displayName: attendee.displayName ?? attendee.email }));
+  return attendeesOf(event).map((attendee) => ({
+    email: attendee.email,
+    displayName: attendee.displayName ?? attendee.email,
+  }));
 }
 
 function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {

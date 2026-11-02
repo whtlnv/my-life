@@ -12,7 +12,7 @@ describe('calendarTimeWindow', () => {
     expect(new Date(window.timeMax).getTime()).toBe(new Date('2026-11-04T00:00:00-06:00').getTime());
   });
 
-  it('starts at that local day\'s midnight and ends at the end of the next local day on a different date, late at night', () => {
+  it("starts at that local day's midnight and ends at the end of the next local day on a different date, late at night", () => {
     const lateNightInMexicoCity = new Date('2027-03-15T22:45:00-06:00');
 
     const window = calendarTimeWindow(lateNightInMexicoCity, 'America/Mexico_City');

@@ -17,7 +17,7 @@ function calendarEvent(id: string, summary: string, start: string, end: string) 
 }
 
 describe('pollCalendarOnce', () => {
-  it('fetches the calendar list, then each polled calendar\'s events in the time window, and posts one snapshot of all of them to the backend', async () => {
+  it("fetches the calendar list, then each polled calendar's events in the time window, and posts one snapshot of all of them to the backend", async () => {
     const eventsByCalendarId: Record<string, unknown[]> = {
       'francisco@example.com': [
         calendarEvent('standup', 'Standup', '2026-11-02T09:00:00-06:00', '2026-11-02T09:15:00-06:00'),
@@ -36,14 +36,21 @@ describe('pollCalendarOnce', () => {
           items: [
             { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
             { kind: 'calendar#calendarListEntry', id: 'team@group.calendar.google.com', summary: 'Team' },
-            { kind: 'calendar#calendarListEntry', id: 'en.mexican#holiday@group.v.calendar.google.com', summary: 'Holidays' },
+            {
+              kind: 'calendar#calendarListEntry',
+              id: 'en.mexican#holiday@group.v.calendar.google.com',
+              summary: 'Holidays',
+            },
           ],
         });
       }
       const eventsPath = /^\/calendar\/v3\/calendars\/([^/]+)\/events$/.exec(url.pathname);
       if (url.origin === 'https://www.googleapis.com' && eventsPath !== null) {
         eventsRequests.push(url);
-        return Response.json({ kind: 'calendar#events', items: eventsByCalendarId[decodeURIComponent(eventsPath[1] ?? '')] ?? [] });
+        return Response.json({
+          kind: 'calendar#events',
+          items: eventsByCalendarId[decodeURIComponent(eventsPath[1] ?? '')] ?? [],
+        });
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
         backendPosts.push({ url: url.href, body: JSON.parse(String(init.body)) });
@@ -66,8 +73,12 @@ describe('pollCalendarOnce', () => {
       '/calendar/v3/calendars/team@group.calendar.google.com/events',
     ]);
     for (const url of eventsRequests) {
-      expect(new Date(url.searchParams.get('timeMin') ?? '').getTime()).toBe(new Date('2026-11-02T00:00:00-06:00').getTime());
-      expect(new Date(url.searchParams.get('timeMax') ?? '').getTime()).toBe(new Date('2026-11-04T00:00:00-06:00').getTime());
+      expect(new Date(url.searchParams.get('timeMin') ?? '').getTime()).toBe(
+        new Date('2026-11-02T00:00:00-06:00').getTime(),
+      );
+      expect(new Date(url.searchParams.get('timeMax') ?? '').getTime()).toBe(
+        new Date('2026-11-04T00:00:00-06:00').getTime(),
+      );
     }
     expect(backendPosts).toEqual([
       {
@@ -97,13 +108,18 @@ describe('pollCalendarOnce', () => {
     ]);
   });
 
-  it('asks Calendar to expand recurring events into single instances ordered by start time, so a weekly meeting shows on today\'s date', async () => {
+  it("asks Calendar to expand recurring events into single instances ordered by start time, so a weekly meeting shows on today's date", async () => {
     const weeklySyncSeries = {
       ...calendarEvent('weekly-sync', 'Weekly sync', '2026-10-26T12:00:00-06:00', '2026-10-26T12:30:00-06:00'),
       recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO'],
     };
     const todaysWeeklySyncInstance = {
-      ...calendarEvent('weekly-sync_20261102T180000Z', 'Weekly sync', '2026-11-02T12:00:00-06:00', '2026-11-02T12:30:00-06:00'),
+      ...calendarEvent(
+        'weekly-sync_20261102T180000Z',
+        'Weekly sync',
+        '2026-11-02T12:00:00-06:00',
+        '2026-11-02T12:30:00-06:00',
+      ),
       iCalUID: 'weekly-sync@google.com',
       recurringEventId: 'weekly-sync',
     };
@@ -113,7 +129,9 @@ describe('pollCalendarOnce', () => {
       if (url.href === `${calendarApi}/users/me/calendarList`) {
         return Response.json({
           kind: 'calendar#calendarList',
-          items: [{ kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true }],
+          items: [
+            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+          ],
         });
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
@@ -168,7 +186,9 @@ describe('pollCalendarOnce', () => {
       if (url.href === `${calendarApi}/users/me/calendarList`) {
         return Response.json({
           kind: 'calendar#calendarList',
-          items: [{ kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true }],
+          items: [
+            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+          ],
         });
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
@@ -228,7 +248,9 @@ describe('pollCalendarOnce', () => {
       if (url.href === `${calendarApi}/users/me/calendarList`) {
         return Response.json({
           kind: 'calendar#calendarList',
-          items: [{ kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true }],
+          items: [
+            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+          ],
         });
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
@@ -265,7 +287,9 @@ describe('pollCalendarOnce', () => {
       if (url.href === `${calendarApi}/users/me/calendarList`) {
         return Response.json({
           kind: 'calendar#calendarList',
-          items: [{ kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true }],
+          items: [
+            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+          ],
         });
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {

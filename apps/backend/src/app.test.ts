@@ -150,7 +150,7 @@ describe('backend app', () => {
     ]);
   });
 
-  it('replaces an account\'s events with its newer snapshot in GET /now, dropping an event missing from it', async () => {
+  it("replaces an account's events with its newer snapshot in GET /now, dropping an event missing from it", async () => {
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -242,17 +242,13 @@ describe('backend app', () => {
     };
 
     await postCalendarSnapshot(quietApp, 'ana@example.com', [weeklySync]);
-    await postCalendarSnapshot(busyApp, 'ana@example.com', [
-      weeklySync,
-      startingAtQuarterPast,
-      startingAtTwentyPast,
-    ]);
+    await postCalendarSnapshot(busyApp, 'ana@example.com', [weeklySync, startingAtQuarterPast, startingAtTwentyPast]);
 
     expect(await (await quietApp.request('/now')).json()).toMatchObject({ badgeCount: 0 });
     expect(await (await busyApp.request('/now')).json()).toMatchObject({ badgeCount: 2 });
   });
 
-  it('bounds later today in GET /now by midnight in America/Mexico_City, not the machine\'s time zone', async () => {
+  it("bounds later today in GET /now by midnight in America/Mexico_City, not the machine's time zone", async () => {
     const machineTimeZone = process.env.TZ;
     process.env.TZ = 'UTC';
     try {
@@ -319,7 +315,7 @@ describe('backend app', () => {
     expect(existsSync(databasePath)).toBe(true);
   });
 
-  it('serves the dashboard build\'s index page at GET /', async () => {
+  it("serves the dashboard build's index page at GET /", async () => {
     const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
     const indexPage = '<!doctype html><html><body><div id="root"></div></body></html>';
     writeFileSync(join(dashboardDirectory, 'index.html'), indexPage);
@@ -332,7 +328,7 @@ describe('backend app', () => {
     expect(await response.text()).toBe(indexPage);
   });
 
-  it('serves the dashboard build\'s bundled script at GET /assets/<file>', async () => {
+  it("serves the dashboard build's bundled script at GET /assets/<file>", async () => {
     const bundledScript = 'document.getElementById("root").textContent = "Now";';
     const app = appServingDashboardAsset('index-abc123.js', bundledScript);
 

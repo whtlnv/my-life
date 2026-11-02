@@ -44,10 +44,7 @@ describe('mergeCalendarSnapshots', () => {
 
     expect(merged).toHaveLength(1);
     expect(merged[0]?.iCalUID).toBe(weeklySync.iCalUID);
-    expect(merged[0]?.accounts).toEqual([
-      'francisco@work.example.com',
-      'francisco@personal.example.com',
-    ]);
+    expect(merged[0]?.accounts).toEqual(['francisco@work.example.com', 'francisco@personal.example.com']);
   });
 
   it('keeps two events with different iCalUIDs at the same time separate', () => {
