@@ -219,4 +219,41 @@ describe('pollCalendarOnce', () => {
       },
     ]);
   });
+
+  it('does not retry a 4xx answer other than 429 from Calendar and reports it as an error without posting a snapshot', async () => {
+    let eventsRequestCount = 0;
+    const backendPosts: unknown[] = [];
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Response.json({
+          kind: 'calendar#calendarList',
+          items: [{ kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true }],
+        });
+      }
+      if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
+        eventsRequestCount++;
+        return Response.json({ error: { code: 403, message: 'Forbidden' } }, { status: 403 });
+      }
+      if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
+        backendPosts.push(JSON.parse(String(init.body)));
+        return Response.json({ ok: true });
+      }
+      return new Response('unexpected request', { status: 404 });
+    };
+
+    await expect(
+      pollCalendarOnce({
+        fetch: fakeFetch,
+        wait: async () => {},
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+        now: new Date('2026-11-02T10:00:00-06:00'),
+        timeZone: 'America/Mexico_City',
+      }),
+    ).rejects.toThrow(/403/);
+    expect(eventsRequestCount).toBe(1);
+    expect(backendPosts).toEqual([]);
+  });
 });

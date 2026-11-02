@@ -35,6 +35,9 @@ export async function pollCalendarOnce(options: PollCalendarOptions): Promise<vo
       await options.wait?.(1000 * 2 ** attempt);
       response = await options.fetch(url, authorization);
     }
+    if (!response.ok) {
+      throw new Error(`Calendar answered ${response.status}`);
+    }
     return response.json();
   };
   const calendarList = await fetchJson(`${calendarApi}/users/me/calendarList`);
