@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { DashboardApp } from './dashboard-app';
@@ -178,6 +178,52 @@ describe('DashboardApp', () => {
     const nowBlock = screen.getByRole('region', { name: 'Now' });
     expect(within(nowBlock).getByText(/loading/i)).toBeInTheDocument();
     expect(within(nowBlock).queryByText(/nothing now/i)).not.toBeInTheDocument();
+  });
+
+  it('updates the Now block within a minute when the backend answers differently, without a reload', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const nowAnswer = (title: string) => ({
+      current: [
+        {
+          id: title,
+          iCalUID: `${title}@google.com`,
+          title,
+          start: '2026-11-02T15:00:00.000Z',
+          end: '2026-11-02T15:30:00.000Z',
+          attendees: [],
+          accounts: ['work@example.com'],
+        },
+      ],
+      next: [],
+      laterToday: [],
+      accounts: [],
+      badgeCount: 0,
+    });
+    const answers = [nowAnswer('Daily standup'), nowAnswer('Design review')];
+    let answersGiven = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => {
+        const body = answers[Math.min(answersGiven, answers.length - 1)];
+        answersGiven += 1;
+        return Promise.resolve(
+          new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+
+    render(<DashboardApp />);
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    const nowBlock = screen.getByRole('region', { name: 'Now' });
+    expect(within(nowBlock).getByText('Daily standup')).toBeInTheDocument();
+
+    await act(() => vi.advanceTimersByTimeAsync(60_000));
+
+    expect(within(nowBlock).getByText('Design review')).toBeInTheDocument();
+    expect(within(nowBlock).queryByText('Daily standup')).not.toBeInTheDocument();
   });
 
   it('lists the later-today events in time order with their start times in America/Mexico_City', async () => {

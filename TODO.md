@@ -101,7 +101,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] A current event without a Meet link shows no join link
 - [x] When the backend cannot be reached, the dashboard says so instead of showing an empty Now block
 - [x] Before the backend has answered, the Now block shows a loading state, not "nothing now"
-- [ ] The Now block updates without a page reload when the backend's answer changes
+- [x] The Now block updates without a page reload when the backend's answer changes
 
 ### Wiring and acceptance
 

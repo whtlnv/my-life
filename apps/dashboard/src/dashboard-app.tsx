@@ -71,10 +71,14 @@ export function DashboardApp() {
   const [backendUnreachable, setBackendUnreachable] = useState(false);
 
   useEffect(() => {
-    void fetch('/now')
-      .then((response) => response.json() as Promise<NowResponse>)
-      .then(setNowResponse)
-      .catch(() => setBackendUnreachable(true));
+    const loadNow = () =>
+      void fetch('/now')
+        .then((response) => response.json() as Promise<NowResponse>)
+        .then(setNowResponse)
+        .catch(() => setBackendUnreachable(true));
+    loadNow();
+    const interval = setInterval(loadNow, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   const loaded = nowResponse !== null;
