@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -308,6 +308,15 @@ describe('backend app', () => {
     expect(await now.json()).toMatchObject({
       current: [{ ...weeklySync, accounts: ['ana@example.com'] }],
     });
+  });
+
+  it('creates the database folder when it is missing on start', () => {
+    const missingFolder = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'Application Support', 'my-life');
+    const databasePath = join(missingFolder, 'my-life.sqlite');
+
+    createApp({ allowedEmails: [], databasePath });
+
+    expect(existsSync(databasePath)).toBe(true);
   });
 
   it('serves the dashboard build\'s index page at GET /', async () => {

@@ -114,7 +114,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] MY_LIFE_DATABASE_PATH=/tmp/elsewhere.sqlite makes the database path /tmp/elsewhere.sqlite
 - [x] The dashboard directory comes from MY_LIFE_DASHBOARD_DIRECTORY and defaults to the dashboard package's dist folder when unset
 - [x] MY_LIFE_DASHBOARD_DIRECTORY=/tmp/elsewhere-dist makes the dashboard directory /tmp/elsewhere-dist
-- [ ] Starting the backend creates the database folder when it is missing
+- [x] Starting the backend creates the database folder when it is missing
 - [ ] Running the backend entry point serves the built dashboard at `/` and answers GET /now from the configured store
 - [ ] The launchd plist in `scripts/` validates with plutil and points at the backend's start command
 - [ ] Manual checklist in `docs/` walked: extension installed in each profile, every account appears on the dashboard, the badge shows the count; screenshot saved (waits on `PENDING_TASKS.md` § 1)
