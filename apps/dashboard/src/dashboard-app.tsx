@@ -17,6 +17,20 @@ function minutesUntil(isoTime: string): number {
   return Math.round((new Date(isoTime).getTime() - Date.now()) / 60_000);
 }
 
+type LaterTodayEvent = {
+  id: string;
+  title: string;
+  start: string;
+};
+
+function startTimeInBusinessZone(isoTime: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Mexico_City',
+  }).format(new Date(isoTime));
+}
+
 function NextEventSummary({ event }: { event: NextEvent }) {
   const minutesUntilStart = minutesUntil(event.start);
   return (
@@ -40,13 +54,22 @@ function CurrentEvent({ event }: { event: NowEvent }) {
 export function DashboardApp() {
   const [current, setCurrent] = useState<NowEvent[]>([]);
   const [next, setNext] = useState<NextEvent[]>([]);
+  const [laterToday, setLaterToday] = useState<LaterTodayEvent[]>([]);
 
   useEffect(() => {
     void fetch('/now')
-      .then((response) => response.json() as Promise<{ current: NowEvent[]; next: NextEvent[] }>)
+      .then(
+        (response) =>
+          response.json() as Promise<{
+            current: NowEvent[];
+            next: NextEvent[];
+            laterToday: LaterTodayEvent[];
+          }>,
+      )
       .then((body) => {
         setCurrent(body.current);
         setNext(body.next);
+        setLaterToday(body.laterToday);
       })
       .catch(() => undefined);
   }, []);
@@ -64,6 +87,15 @@ export function DashboardApp() {
         {next.map((event) => (
           <NextEventSummary key={event.id} event={event} />
         ))}
+      </section>
+      <section aria-label="Later today">
+        <ul>
+          {laterToday.map((event) => (
+            <li key={event.id}>
+              {startTimeInBusinessZone(event.start)} {event.title}
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );

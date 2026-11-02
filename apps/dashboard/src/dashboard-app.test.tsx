@@ -127,4 +127,43 @@ describe('DashboardApp', () => {
     expect(await within(nowBlock).findByText('Sprint planning')).toBeInTheDocument();
     expect(within(nowBlock).queryByText(/nothing now/i)).not.toBeInTheDocument();
   });
+
+  it('lists the later-today events in time order with their start times in America/Mexico_City', async () => {
+    answerGetNowWith({
+      current: [],
+      next: [],
+      laterToday: [
+        {
+          id: 'event-3',
+          iCalUID: 'review@google.com',
+          title: 'Design review',
+          start: '2026-11-02T17:00:00.000Z',
+          end: '2026-11-02T18:00:00.000Z',
+          attendees: [],
+          accounts: ['work@example.com'],
+        },
+        {
+          id: 'event-4',
+          iCalUID: 'one-on-one@google.com',
+          title: 'One-on-one',
+          start: '2026-11-02T20:30:00.000Z',
+          end: '2026-11-02T21:00:00.000Z',
+          attendees: [],
+          accounts: ['personal@example.com'],
+        },
+      ],
+      accounts: [],
+      badgeCount: 0,
+    });
+
+    render(<DashboardApp />);
+
+    const laterTodayBlock = await screen.findByRole('region', { name: 'Later today' });
+    const items = await within(laterTodayBlock).findAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('Design review');
+    expect(items[0]).toHaveTextContent('11:00');
+    expect(items[1]).toHaveTextContent('One-on-one');
+    expect(items[1]).toHaveTextContent('14:30');
+  });
 });

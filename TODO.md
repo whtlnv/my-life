@@ -94,7 +94,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] When nothing is current or next, the Now block says there is nothing now
 - [x] A next event shows in the Now block with the minutes until it starts
 - [x] When a next event shows and nothing is current, the Now block does not also say there is nothing now
-- [ ] Later today lists the remaining events in time order with their start times
+- [x] Later today lists the remaining events in time order with their start times
 - [ ] Each account shows when it last reported
 - [ ] A stale account is marked stale
 - [ ] A fresh account carries no stale marker
