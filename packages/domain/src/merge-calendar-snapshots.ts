@@ -13,9 +13,11 @@ interface CalendarSnapshot {
   events: CalendarEvent[];
 }
 
+export type MergedCalendarEvent = CalendarEvent & { accounts: string[] };
+
 export const mergeCalendarSnapshots = (
   snapshots: CalendarSnapshot[],
-): (CalendarEvent & { accounts: string[] })[] =>
+): MergedCalendarEvent[] =>
   snapshots.flatMap(({ accountEmail, events }) =>
     events.map((event) => ({ ...event, accounts: [accountEmail] })),
   );
