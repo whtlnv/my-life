@@ -20,6 +20,14 @@ const localCalendarDate = (
     new Date(instant),
   );
 
+const isLaterToday = (
+  event: MergedCalendarEvent,
+  horizon: string,
+  today: string,
+  timeZone: string | undefined,
+): boolean =>
+  horizon < event.start && localCalendarDate(event.start, timeZone) === today;
+
 const byStartAscending = (
   left: MergedCalendarEvent,
   right: MergedCalendarEvent,
@@ -46,11 +54,7 @@ export const buildNowView = (
       .sort(byStartAscending),
     next: events.filter((event) => isStartingBetween(event, now, horizon)),
     laterToday: events
-      .filter(
-        (event) =>
-          horizon < event.start &&
-          localCalendarDate(event.start, timeZone) === today,
-      )
+      .filter((event) => isLaterToday(event, horizon, today, timeZone))
       .sort(byStartAscending),
   };
 };
