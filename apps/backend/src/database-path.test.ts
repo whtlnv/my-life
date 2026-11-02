@@ -10,4 +10,10 @@ describe('database path', () => {
 
     expect(dirname(databasePath)).toBe(join('/Users/ana', 'Library', 'Application Support', 'my-life'));
   });
+
+  it('uses the configured path instead of the default when a database path is configured', () => {
+    const databasePath = resolveDatabasePath('/Volumes/data/life.sqlite', '/Users/ana');
+
+    expect(databasePath).toBe('/Volumes/data/life.sqlite');
+  });
 });
