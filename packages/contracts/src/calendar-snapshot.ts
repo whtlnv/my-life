@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import type { CalendarSnapshot } from '@my-life/domain';
+
 const calendarEvent = z.object({
   id: z.string(),
   iCalUID: z.string(),
@@ -15,5 +17,4 @@ const calendarEvent = z.object({
 export const calendarSnapshot = z.object({
   accountEmail: z.string(),
   events: z.array(calendarEvent),
-});
-export type CalendarSnapshot = z.infer<typeof calendarSnapshot>;
+}) satisfies z.ZodType<CalendarSnapshot>;

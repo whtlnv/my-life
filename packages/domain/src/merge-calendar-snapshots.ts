@@ -2,10 +2,10 @@ interface CalendarEvent {
   id: string;
   iCalUID: string;
   title: string;
-  allDay?: boolean;
+  allDay?: boolean | undefined;
   start: string;
   end: string;
-  meetLink?: string;
+  meetLink?: string | undefined;
   attendees: { email: string; displayName: string }[];
 }
 
