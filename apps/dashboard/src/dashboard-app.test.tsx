@@ -212,4 +212,23 @@ describe('DashboardApp', () => {
     expect(item).toHaveTextContent('personal@example.com');
     expect(item).toHaveTextContent(/stale/i);
   });
+
+  it('shows no stale marker on a fresh account', async () => {
+    answerGetNowWith({
+      current: [],
+      next: [],
+      laterToday: [],
+      accounts: [
+        { email: 'personal@example.com', lastReportedAt: '2026-11-02T14:40:00.000Z', stale: false },
+      ],
+      badgeCount: 0,
+    });
+
+    render(<DashboardApp />);
+
+    const accountsBlock = await screen.findByRole('region', { name: 'Accounts' });
+    const item = await within(accountsBlock).findByRole('listitem');
+    expect(item).toHaveTextContent('personal@example.com');
+    expect(item).not.toHaveTextContent(/stale/i);
+  });
 });
