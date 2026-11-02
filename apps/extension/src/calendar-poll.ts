@@ -27,24 +27,25 @@ function isRetryable(status: number): boolean {
   return status === 429 || status >= 500;
 }
 
-export async function pollCalendarOnce(options: PollCalendarOptions): Promise<void> {
+async function fetchCalendarJson(options: PollCalendarOptions, url: string | URL) {
   const authorization = { headers: { Authorization: `Bearer ${options.accessToken}` } };
-  const fetchJson = async (url: string | URL) => {
-    let response = await options.fetch(url, authorization);
-    for (let attempt = 0; isRetryable(response.status); attempt++) {
-      await options.wait?.(1000 * 2 ** attempt);
-      response = await options.fetch(url, authorization);
-    }
-    if (!response.ok) {
-      throw new Error(`Calendar answered ${response.status}`);
-    }
-    return response.json();
-  };
-  const calendarList = await fetchJson(`${calendarApi}/users/me/calendarList`);
+  let response = await options.fetch(url, authorization);
+  for (let attempt = 0; isRetryable(response.status); attempt++) {
+    await options.wait?.(1000 * 2 ** attempt);
+    response = await options.fetch(url, authorization);
+  }
+  if (!response.ok) {
+    throw new Error(`Calendar answered ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function pollCalendarOnce(options: PollCalendarOptions): Promise<void> {
+  const calendarList = await fetchCalendarJson(options, `${calendarApi}/users/me/calendarList`);
   const { timeMin, timeMax } = calendarTimeWindow(options.now, options.timeZone);
   const items = [];
   for (const calendarId of calendarIdsToPoll(calendarList)) {
-    const eventsResponse = await fetchJson(calendarEventsUrl(calendarId, timeMin, timeMax));
+    const eventsResponse = await fetchCalendarJson(options, calendarEventsUrl(calendarId, timeMin, timeMax));
     items.push(...eventsResponse.items);
   }
   await options.fetch(`${options.backendUrl}/calendar-snapshot`, {
