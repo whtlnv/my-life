@@ -170,7 +170,7 @@ describe('DashboardApp', () => {
   it('shows a loading state instead of nothing now in the Now block before the backend answers', () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => new Promise<Response>(() => {})),
+      vi.fn(() => new Promise<Response>(() => undefined)),
     );
 
     render(<DashboardApp />);

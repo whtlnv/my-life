@@ -267,7 +267,7 @@ describe('pollCalendarOnce', () => {
     await expect(
       pollCalendarOnce({
         fetch: fakeFetch,
-        wait: async () => {},
+        wait: () => Promise.resolve(),
         accessToken: 'token-for-francisco',
         accountEmail: 'francisco@example.com',
         backendUrl: 'http://127.0.0.1:7777',
@@ -309,7 +309,7 @@ describe('pollCalendarOnce', () => {
     await expect(
       pollCalendarOnce({
         fetch: fakeFetch,
-        wait: async () => {},
+        wait: () => Promise.resolve(),
         accessToken: 'token-for-francisco',
         accountEmail: 'francisco@example.com',
         backendUrl: 'http://127.0.0.1:7777',
