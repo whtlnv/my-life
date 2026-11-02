@@ -14,17 +14,20 @@ interface PostedSnapshot {
   events: { iCalUID: string; allDay?: boolean }[];
 }
 
-async function pollScenario(scenario: Parameters<typeof startCalendarFakeServer>[0]) {
+async function pollScenario(
+  scenario: Parameters<typeof startCalendarFakeServer>[0],
+  pollingAccountEmails: string[] = [accountEmail],
+) {
   const calendar = await startCalendarFakeServer(scenario);
   try {
-    return await pollThroughFakes(calendar.url);
+    return await pollThroughFakes(calendar.url, pollingAccountEmails);
   } finally {
     await calendar.close();
   }
 }
 
-async function pollThroughFakes(calendarUrl: string) {
-  const backend = createApp({ allowedEmails: [accountEmail], clock: { now: () => pollTime } });
+async function pollThroughFakes(calendarUrl: string, pollingAccountEmails: string[]) {
+  const backend = createApp({ allowedEmails: pollingAccountEmails, clock: { now: () => pollTime } });
   const postedSnapshots: PostedSnapshot[] = [];
   const fetchThroughFakes = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -35,14 +38,16 @@ async function pollThroughFakes(calendarUrl: string) {
     return backend.request(url.pathname, init);
   };
 
-  await pollCalendarOnce({
-    fetch: fetchThroughFakes,
-    accessToken: 'fake-token',
-    accountEmail,
-    backendUrl,
-    now: pollTime,
-    timeZone: 'America/Mexico_City',
-  });
+  for (const pollingAccountEmail of pollingAccountEmails) {
+    await pollCalendarOnce({
+      fetch: fetchThroughFakes,
+      accessToken: 'fake-token',
+      accountEmail: pollingAccountEmail,
+      backendUrl,
+      now: pollTime,
+      timeZone: 'America/Mexico_City',
+    });
+  }
   return { backend, postedSnapshots };
 }
 
@@ -86,28 +91,7 @@ describe('Calendar fake server', () => {
 
   it('two accounts polling the cross-account-duplicate scenario yield one event in GET /now naming both accounts', async () => {
     const accountEmails = ['ana@example.com', 'bob@example.com'];
-    const backend = createApp({ allowedEmails: accountEmails, clock: { now: () => pollTime } });
-    const calendar = await startCalendarFakeServer('cross-account-duplicate');
-    try {
-      for (const pollingAccountEmail of accountEmails) {
-        await pollCalendarOnce({
-          fetch: async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-            const url = new URL(input instanceof Request ? input.url : input.toString());
-            if (url.origin === 'https://www.googleapis.com') {
-              return fetch(new URL(url.pathname + url.search, calendar.url), init);
-            }
-            return backend.request(url.pathname, init);
-          },
-          accessToken: 'fake-token',
-          accountEmail: pollingAccountEmail,
-          backendUrl,
-          now: pollTime,
-          timeZone: 'America/Mexico_City',
-        });
-      }
-    } finally {
-      await calendar.close();
-    }
+    const { backend } = await pollScenario('cross-account-duplicate', accountEmails);
     const nowView = (await (await backend.request('/now')).json()) as Record<
       'current' | 'next' | 'laterToday',
       { iCalUID: string; accounts: string[] }[]
