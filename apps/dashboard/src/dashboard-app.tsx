@@ -77,10 +77,14 @@ export function DashboardApp() {
       void fetch('/now')
         .then((response) => response.json() as Promise<NowResponse>)
         .then(setNowResponse)
-        .catch(() => setBackendUnreachable(true));
+        .catch(() => {
+          setBackendUnreachable(true);
+        });
     loadNow();
     const interval = setInterval(loadNow, nowRefreshIntervalMilliseconds);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const loaded = nowResponse !== null;
