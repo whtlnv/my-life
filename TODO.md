@@ -26,7 +26,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] When two events overlap at the current time, both are reported as current, earliest start first
 - [x] Events starting after the next window and before midnight in America/Mexico_City are listed as later today in time order
 - [x] An event starting after midnight in America/Mexico_City is left out of later today even when it is still the same UTC day
-- [ ] An event that has already ended is left out of later today
+- [x] An event that has already ended is left out of later today
 - [ ] An all-day event for today is not reported as current
 - [ ] An all-day event for today is listed in later today ahead of the timed events
 

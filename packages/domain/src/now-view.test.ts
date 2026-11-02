@@ -90,4 +90,12 @@ describe('buildNowView', () => {
 
     expect(view.laterToday).toEqual([]);
   });
+
+  it('leaves an event that has already ended out of later today', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T15:45:00.000Z') };
+
+    const view = buildNowView([weeklySync], clock, 'America/Mexico_City');
+
+    expect(view.laterToday).toEqual([]);
+  });
 });
