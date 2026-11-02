@@ -14,6 +14,17 @@ const weeklySync = {
   accounts: ['francisco@work.example.com'],
 };
 
+const designReview = {
+  id: 'event-2',
+  iCalUID: 'event-2@google.com',
+  title: 'Design review',
+  start: '2026-11-02T15:05:00.000Z',
+  end: '2026-11-02T15:45:00.000Z',
+  meetLink: 'https://meet.google.com/klm-nopq-rst',
+  attendees: [{ email: 'luis@example.com', displayName: 'Luis' }],
+  accounts: ['francisco@personal.example.com'],
+};
+
 describe('buildNowView', () => {
   it('reports an event that has started and not ended as current', () => {
     const clock: Clock = { now: () => new Date('2026-11-02T15:10:00.000Z') };
@@ -45,5 +56,13 @@ describe('buildNowView', () => {
     const view = buildNowView([weeklySync], clock);
 
     expect(view.next).toEqual([]);
+  });
+
+  it('reports two overlapping events as current, earliest start first', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T15:10:00.000Z') };
+
+    const view = buildNowView([designReview, weeklySync], clock);
+
+    expect(view.current).toEqual([weeklySync, designReview]);
   });
 });

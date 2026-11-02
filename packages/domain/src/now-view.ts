@@ -22,7 +22,9 @@ export const buildNowView = (
     nowDate.getTime() + FIFTEEN_MINUTES_IN_MILLISECONDS,
   ).toISOString();
   return {
-    current: events.filter((event) => isHappeningAt(event, now)),
+    current: events
+      .filter((event) => isHappeningAt(event, now))
+      .sort((left, right) => left.start.localeCompare(right.start)),
     next: events.filter((event) => isStartingBetween(event, now, horizon)),
   };
 };
