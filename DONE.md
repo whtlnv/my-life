@@ -1,0 +1,87 @@
+- [x] 2026-11-02 · A calendar snapshot carrying the account email and events with id, iCalUID, title, start, end, optional Meet link and attendees passes the shared contract
+- [x] 2026-11-02 · A calendar snapshot whose event has no start fails the shared contract
+- [x] 2026-11-02 · An all-day event given as a date without a time passes the shared contract
+- [x] 2026-11-02 · A calendar snapshot whose event has no Meet link passes the shared contract
+- [x] 2026-11-02 · Merging the snapshots of two accounts yields the events of both
+- [x] 2026-11-02 · The same event (same iCalUID) reported by two accounts appears once, naming both accounts
+- [x] 2026-11-02 · Two events with different iCalUIDs at the same time stay separate
+- [x] 2026-11-02 · An event that has started and not ended is reported as current
+- [x] 2026-11-02 · An event that has already ended is not reported as current
+- [x] 2026-11-02 · An event starting within 15 minutes is reported as next
+- [x] 2026-11-02 · An event starting in more than 15 minutes is not reported as next
+- [x] 2026-11-02 · When two events overlap at the current time, both are reported as current, earliest start first
+- [x] 2026-11-02 · Events starting after the next window and before midnight in America/Mexico_City are listed as later today in time order
+- [x] 2026-11-02 · An event starting after midnight in America/Mexico_City is left out of later today even when it is still the same UTC day
+- [x] 2026-11-02 · An event that has already ended is left out of later today
+- [x] 2026-11-02 · An all-day event for today is not reported as current
+- [x] 2026-11-02 · An all-day event for today is listed in later today ahead of the timed events
+- [x] 2026-11-02 · An account whose last report is within twice its polling interval is fresh
+- [x] 2026-11-02 · An account whose last report is older than twice its polling interval is stale
+- [x] 2026-11-02 · The badge count equals the number of events starting within 15 minutes
+- [x] 2026-11-02 · An event already in progress does not add to the badge count
+- [x] 2026-11-02 · A registration from an email in the allow-list is accepted
+- [x] 2026-11-02 · A registration from an email not in the allow-list is refused
+- [x] 2026-11-02 · A calendar snapshot posted by an allow-listed account answers success and its events appear in GET /now
+- [x] 2026-11-02 · A calendar snapshot posted by an account outside the allow-list is refused and none of its events appear in GET /now
+- [x] 2026-11-02 · A calendar snapshot that fails the shared contract is refused with a client error
+- [x] 2026-11-02 · GET /now merges the snapshots of two accounts, showing a cross-account duplicate once
+- [x] 2026-11-02 · A newer snapshot from the same account replaces that account's events in GET /now, and an event missing from it disappears
+- [x] 2026-11-02 · GET /now reports, for each account, when it last reported and whether it is stale
+- [x] 2026-11-02 · GET /now includes the badge count of events starting within 15 minutes
+- [x] 2026-11-02 · GET /now's badge count is zero when no event starts within 15 minutes and two when two do
+- [x] 2026-11-02 · GET /now bounds later today by midnight in the configured time zone (America/Mexico_City), not the machine's
+- [x] 2026-11-02 · A snapshot reported before a backend restart is still served by GET /now after it
+- [x] 2026-11-02 · When no database path is configured, the backend stores its file under `~/Library/Application Support/my-life/`
+- [x] 2026-11-02 · When a database path is configured, the backend stores its file there instead of the default
+- [x] 2026-11-02 · GET / serves the dashboard build's index page
+- [x] 2026-11-02 · GET /assets/<file> serves the dashboard build's bundled script, so the page is not blank
+- [x] 2026-11-02 · GET /assets/<file>.css is served as a stylesheet, not as a script
+- [x] 2026-11-02 · A Google Calendar events response is converted into a snapshot with title, start, end, Meet link, attendees and iCalUID
+- [x] 2026-11-02 · An event the account has declined is left out of the snapshot
+- [x] 2026-11-02 · An all-day Calendar event becomes an all-day event in the snapshot
+- [x] 2026-11-02 · A Calendar event without a Meet link is converted with no meetLink field at all, never null
+- [x] 2026-11-02 · A Calendar event with no attendees is converted with an empty attendee list
+- [x] 2026-11-02 · An attendee without a display name is converted with the email as the display name
+- [x] 2026-11-02 · Every calendar the account can see is polled
+- [x] 2026-11-02 · Calendars named Holidays or Birthdays are not polled
+- [x] 2026-11-02 · Google's holiday and birthday calendars are not polled whatever their localized name (ids ending in `#holiday@group.v.calendar.google.com` and `#contacts@group.v.calendar.google.com`, e.g. summary "Días festivos en México")
+- [x] 2026-11-02 · The time window requested from Calendar covers today and tomorrow in America/Mexico_City
+- [x] 2026-11-02 · The time window requested from Calendar on a different date, and late at night when UTC is already tomorrow, still starts at that local day's midnight and ends at the end of the next local day
+- [x] 2026-11-02 · Polling once, with Calendar answering 200, fetches the calendar list, then each polled calendar's events in the time window, and posts one snapshot of all of them to the backend
+- [x] 2026-11-02 · The events request asks Calendar to expand recurring events into single instances (singleEvents=true, ordered by start time), so a weekly meeting shows on today's date
+- [x] 2026-11-02 · A 429 or 5xx answer from Calendar is retried with backoff and the snapshot is posted once it succeeds
+- [x] 2026-11-02 · A 4xx answer other than 429 is not retried and is reported as an error
+- [x] 2026-11-02 · After five retryable answers in a row the poll gives up and reports an error instead of retrying forever
+- [x] 2026-11-02 · On start the extension registers with the backend using the profile's account email, then posts the first snapshot
+- [x] 2026-11-02 · After the first snapshot the extension polls again every 5 minutes and posts each result, and a failed poll does not stop the next one
+- [x] 2026-11-02 · Each scheduled poll requests the Calendar window for the moment of that poll, so a poll the next day asks for the next day, not the day the extension started
+- [x] 2026-11-02 · The badge shows the count returned by the backend and is empty when the count is zero
+- [x] 2026-11-02 · Starting the extension refreshes the badge after the first snapshot and after every scheduled poll
+- [x] 2026-11-02 · Polling the fake Calendar server's `empty` scenario yields a snapshot with no events and GET /now shows nothing current or next
+- [x] 2026-11-02 · Polling the `overlapping` scenario yields two events that GET /now reports as both current
+- [x] 2026-11-02 · Polling the `all-day` scenario yields an event GET /now lists in later today and not as current
+- [x] 2026-11-02 · Two accounts polling the `cross-account-duplicate` scenario yield one event in GET /now naming both accounts
+- [x] 2026-11-02 · The Now block shows the current event's title, join link and attendees
+- [x] 2026-11-02 · When nothing is current or next, the Now block says there is nothing now
+- [x] 2026-11-02 · A next event shows in the Now block with the minutes until it starts
+- [x] 2026-11-02 · When a next event shows and nothing is current, the Now block does not also say there is nothing now
+- [x] 2026-11-02 · Later today lists the remaining events in time order with their start times
+- [x] 2026-11-02 · Each account shows when it last reported
+- [x] 2026-11-02 · A stale account is marked stale
+- [x] 2026-11-02 · A fresh account carries no stale marker
+- [x] 2026-11-02 · A current event without a Meet link shows no join link
+- [x] 2026-11-02 · When the backend cannot be reached, the dashboard says so instead of showing an empty Now block
+- [x] 2026-11-02 · Before the backend has answered, the Now block shows a loading state, not "nothing now"
+- [x] 2026-11-02 · The Now block updates without a page reload when the backend's answer changes
+- [x] 2026-11-02 · The backend's startup settings come from its environment: MY_LIFE_ALLOWED_EMAILS (comma-separated), MY_LIFE_PORT, MY_LIFE_DATABASE_PATH and MY_LIFE_DASHBOARD_DIRECTORY, each with its default when unset
+- [x] 2026-11-02 · When MY_LIFE_ALLOWED_EMAILS is unset or blank the allow-list is empty, not a list holding one empty string, and surrounding spaces around each email are trimmed
+- [x] 2026-11-02 · The port comes from MY_LIFE_PORT and is 7777 when unset
+- [x] 2026-11-02 · MY_LIFE_PORT=8123 makes the port 8123
+- [x] 2026-11-02 · When MY_LIFE_PORT is unset the port is 7777, never NaN
+- [x] 2026-11-02 · The database path comes from MY_LIFE_DATABASE_PATH and falls back to the Application Support default when unset
+- [x] 2026-11-02 · MY_LIFE_DATABASE_PATH=/tmp/elsewhere.sqlite makes the database path /tmp/elsewhere.sqlite
+- [x] 2026-11-02 · The dashboard directory comes from MY_LIFE_DASHBOARD_DIRECTORY and defaults to the dashboard package's dist folder when unset
+- [x] 2026-11-02 · MY_LIFE_DASHBOARD_DIRECTORY=/tmp/elsewhere-dist makes the dashboard directory /tmp/elsewhere-dist
+- [x] 2026-11-02 · Starting the backend creates the database folder when it is missing
+- [x] 2026-11-02 · Running the backend entry point serves the built dashboard at `/` and answers GET /now from the configured store
+- [x] 2026-11-02 · The launchd plist in `scripts/` validates with plutil and points at the backend's start command
