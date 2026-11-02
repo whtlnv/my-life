@@ -17,6 +17,8 @@ function calendarEventsUrl(calendarId: string, timeMin: string, timeMax: string)
   const eventsUrl = new URL(`${calendarApi}/calendars/${encodeURIComponent(calendarId)}/events`);
   eventsUrl.searchParams.set('timeMin', timeMin);
   eventsUrl.searchParams.set('timeMax', timeMax);
+  eventsUrl.searchParams.set('singleEvents', 'true');
+  eventsUrl.searchParams.set('orderBy', 'startTime');
   return eventsUrl;
 }
 

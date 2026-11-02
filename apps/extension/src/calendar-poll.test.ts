@@ -96,4 +96,64 @@ describe('pollCalendarOnce', () => {
       },
     ]);
   });
+
+  it('asks Calendar to expand recurring events into single instances ordered by start time, so a weekly meeting shows on today\'s date', async () => {
+    const weeklySyncSeries = {
+      ...calendarEvent('weekly-sync', 'Weekly sync', '2026-10-26T12:00:00-06:00', '2026-10-26T12:30:00-06:00'),
+      recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=MO'],
+    };
+    const todaysWeeklySyncInstance = {
+      ...calendarEvent('weekly-sync_20261102T180000Z', 'Weekly sync', '2026-11-02T12:00:00-06:00', '2026-11-02T12:30:00-06:00'),
+      iCalUID: 'weekly-sync@google.com',
+      recurringEventId: 'weekly-sync',
+    };
+    const backendPosts: unknown[] = [];
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Response.json({
+          kind: 'calendar#calendarList',
+          items: [{ kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true }],
+        });
+      }
+      if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
+        const expandsRecurringEvents =
+          url.searchParams.get('singleEvents') === 'true' && url.searchParams.get('orderBy') === 'startTime';
+        return Response.json({
+          kind: 'calendar#events',
+          items: [expandsRecurringEvents ? todaysWeeklySyncInstance : weeklySyncSeries],
+        });
+      }
+      if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
+        backendPosts.push(JSON.parse(String(init.body)));
+        return Response.json({ ok: true });
+      }
+      return new Response('unexpected request', { status: 404 });
+    };
+
+    await pollCalendarOnce({
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      now: new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+    });
+
+    expect(backendPosts).toEqual([
+      {
+        accountEmail: 'francisco@example.com',
+        events: [
+          {
+            id: 'weekly-sync_20261102T180000Z',
+            iCalUID: 'weekly-sync@google.com',
+            title: 'Weekly sync',
+            start: '2026-11-02T18:00:00.000Z',
+            end: '2026-11-02T18:30:00.000Z',
+            attendees: [],
+          },
+        ],
+      },
+    ]);
+  });
 });
