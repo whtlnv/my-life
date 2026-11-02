@@ -41,4 +41,10 @@ describe('badgeCount', () => {
 
     expect(badgeCount([weeklySync, designReview, retrospective], clock)).toBe(2);
   });
+
+  it('does not count an event already in progress', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T15:10:00.000Z') };
+
+    expect(badgeCount([weeklySync], clock)).toBe(0);
+  });
 });
