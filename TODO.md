@@ -59,7 +59,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Extension
 
-- [ ] A Google Calendar events response is converted into a snapshot with title, start, end, Meet link, attendees and iCalUID
+- [x] A Google Calendar events response is converted into a snapshot with title, start, end, Meet link, attendees and iCalUID
 - [ ] An event the account has declined is left out of the snapshot
 - [ ] An all-day Calendar event becomes an all-day event in the snapshot
 - [ ] Every calendar the account can see is polled
