@@ -20,7 +20,7 @@ export function readStartupSettings(
     allowedEmails: parseAllowedEmails(environment.MY_LIFE_ALLOWED_EMAILS),
     port: parsePort(environment.MY_LIFE_PORT),
     databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
-    dashboardDirectory: defaultDashboardDirectory,
+    dashboardDirectory: environment.MY_LIFE_DASHBOARD_DIRECTORY ?? defaultDashboardDirectory,
   };
 }
 

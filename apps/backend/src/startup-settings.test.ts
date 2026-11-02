@@ -68,4 +68,10 @@ describe('startup settings', () => {
 
     expect(settings.dashboardDirectory).toBe(fileURLToPath(new URL('../../dashboard/dist', import.meta.url)));
   });
+
+  it('uses /tmp/elsewhere-dist as the dashboard directory when MY_LIFE_DASHBOARD_DIRECTORY is /tmp/elsewhere-dist', () => {
+    const settings = readStartupSettings({ MY_LIFE_DASHBOARD_DIRECTORY: '/tmp/elsewhere-dist' }, '/Users/ana');
+
+    expect(settings.dashboardDirectory).toBe('/tmp/elsewhere-dist');
+  });
 });
