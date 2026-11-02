@@ -135,4 +135,26 @@ describe('snapshotFromCalendarEvents', () => {
 
     expect(snapshot.events).toEqual([expect.objectContaining({ id: 'focus-time', attendees: [] })]);
   });
+
+  it('converts an attendee without a display name with the email as the display name', () => {
+    const eventsResponse = {
+      kind: 'calendar#events',
+      items: [
+        {
+          kind: 'calendar#event',
+          id: 'vendor-call',
+          iCalUID: 'vendor-call@google.com',
+          status: 'confirmed',
+          summary: 'Vendor call',
+          start: { dateTime: '2026-11-02T16:00:00-06:00', timeZone: 'America/Mexico_City' },
+          end: { dateTime: '2026-11-02T16:30:00-06:00', timeZone: 'America/Mexico_City' },
+          attendees: [{ email: 'vendor@example.com', responseStatus: 'needsAction' }],
+        },
+      ],
+    };
+
+    const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
+
+    expect(snapshot.events[0]?.attendees).toEqual([{ email: 'vendor@example.com', displayName: 'vendor@example.com' }]);
+  });
 });

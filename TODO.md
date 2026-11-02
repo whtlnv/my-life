@@ -64,7 +64,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] An all-day Calendar event becomes an all-day event in the snapshot
 - [x] A Calendar event without a Meet link is converted with no meetLink field at all, never null
 - [x] A Calendar event with no attendees is converted with an empty attendee list
-- [ ] An attendee without a display name is converted with the email as the display name
+- [x] An attendee without a display name is converted with the email as the display name
 - [ ] Every calendar the account can see is polled
 - [ ] Calendars named Holidays or Birthdays are not polled
 - [ ] The time window requested from Calendar covers today and tomorrow in America/Mexico_City
