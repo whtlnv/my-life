@@ -2,6 +2,7 @@ interface CalendarEvent {
   id: string;
   iCalUID: string;
   title: string;
+  allDay?: boolean;
   start: string;
   end: string;
   meetLink?: string;

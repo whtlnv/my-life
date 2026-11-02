@@ -4,7 +4,7 @@ import type { MergedCalendarEvent } from './merge-calendar-snapshots';
 const FIFTEEN_MINUTES_IN_MILLISECONDS = 15 * 60 * 1000;
 
 const isHappeningAt = (event: MergedCalendarEvent, now: string): boolean =>
-  event.start <= now && now < event.end;
+  !event.allDay && event.start <= now && now < event.end;
 
 const isStartingBetween = (
   event: MergedCalendarEvent,

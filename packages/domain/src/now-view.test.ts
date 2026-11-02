@@ -98,4 +98,22 @@ describe('buildNowView', () => {
 
     expect(view.laterToday).toEqual([]);
   });
+
+  it('does not report an all-day event for today as current', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T15:10:00.000Z') };
+    const teamOffsite = {
+      id: 'event-4',
+      iCalUID: 'event-4@google.com',
+      title: 'Team offsite',
+      allDay: true,
+      start: '2026-11-02',
+      end: '2026-11-03',
+      attendees: [],
+      accounts: ['francisco@work.example.com'],
+    };
+
+    const view = buildNowView([teamOffsite], clock, 'America/Mexico_City');
+
+    expect(view.current).toEqual([]);
+  });
 });
