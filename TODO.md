@@ -75,7 +75,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] A 429 or 5xx answer from Calendar is retried with backoff and the snapshot is posted once it succeeds
 - [x] A 4xx answer other than 429 is not retried and is reported as an error
 - [x] After five retryable answers in a row the poll gives up and reports an error instead of retrying forever
-- [ ] On start the extension registers with the backend using the profile's account email, then posts the first snapshot
+- [x] On start the extension registers with the backend using the profile's account email, then posts the first snapshot
 - [ ] The badge shows the count returned by the backend and is empty when the count is zero
 
 ### Calendar fake server (integration suite)
