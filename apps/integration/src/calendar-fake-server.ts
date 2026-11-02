@@ -29,10 +29,9 @@ const scenarios: Record<CalendarScenario, { calendarList: unknown; events: unkno
 };
 
 export async function startCalendarFakeServer(scenario: CalendarScenario) {
+  const { calendarList, events } = scenarios[scenario];
   const server = createServer((request, response) => {
-    const body = request.url?.startsWith('/calendar/v3/users/me/calendarList')
-      ? scenarios[scenario].calendarList
-      : scenarios[scenario].events;
+    const body = request.url?.startsWith('/calendar/v3/users/me/calendarList') ? calendarList : events;
     response.writeHead(200, { 'Content-Type': 'application/json' });
     response.end(JSON.stringify(body));
   });
