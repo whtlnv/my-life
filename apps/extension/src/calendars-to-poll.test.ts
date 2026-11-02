@@ -19,4 +19,17 @@ describe('calendarIdsToPoll', () => {
       'ana@example.com',
     ]);
   });
+
+  it('does not poll calendars named Holidays or Birthdays', () => {
+    const calendarListResponse = {
+      kind: 'calendar#calendarList',
+      items: [
+        { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true, accessRole: 'owner' },
+        { kind: 'calendar#calendarListEntry', id: 'en.mexican#holiday@group.v.calendar.google.com', summary: 'Holidays', accessRole: 'reader' },
+        { kind: 'calendar#calendarListEntry', id: 'addressbook#contacts@group.v.calendar.google.com', summary: 'Birthdays', accessRole: 'reader' },
+      ],
+    };
+
+    expect(calendarIdsToPoll(calendarListResponse)).toEqual(['francisco@example.com']);
+  });
 });

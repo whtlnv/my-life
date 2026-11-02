@@ -66,7 +66,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] A Calendar event with no attendees is converted with an empty attendee list
 - [x] An attendee without a display name is converted with the email as the display name
 - [x] Every calendar the account can see is polled
-- [ ] Calendars named Holidays or Birthdays are not polled
+- [x] Calendars named Holidays or Birthdays are not polled
 - [ ] The time window requested from Calendar covers today and tomorrow in America/Mexico_City
 - [ ] A 429 or 5xx answer from Calendar is retried with backoff and the snapshot is posted once it succeeds
 - [ ] A 4xx answer other than 429 is not retried and is reported as an error
