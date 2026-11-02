@@ -40,8 +40,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     snapshotsByAccount.set(snapshot.accountEmail, snapshot);
     return context.body(null, 200);
   });
-  app.get('/now', (context) =>
-    context.json(buildNowView(mergeCalendarSnapshots([...snapshotsByAccount.values()]), clock)),
-  );
+  app.get('/now', (context) => {
+    const latestSnapshots = [...snapshotsByAccount.values()];
+    return context.json(buildNowView(mergeCalendarSnapshots(latestSnapshots), clock));
+  });
   return app;
 }
