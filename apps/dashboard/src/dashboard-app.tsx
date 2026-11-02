@@ -35,7 +35,7 @@ type NowResponse = {
   accounts: AccountReport[];
 };
 
-function startTimeInBusinessZone(isoTime: string): string {
+function timeInBusinessZone(isoTime: string): string {
   return new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
@@ -99,7 +99,7 @@ export function DashboardApp() {
         <ul>
           {laterToday.map((event) => (
             <li key={event.id}>
-              {startTimeInBusinessZone(event.start)} {event.title}
+              {timeInBusinessZone(event.start)} {event.title}
             </li>
           ))}
         </ul>
@@ -108,7 +108,7 @@ export function DashboardApp() {
         <ul>
           {accounts.map((account) => (
             <li key={account.email}>
-              {account.email} {startTimeInBusinessZone(account.lastReportedAt)}
+              {account.email} {timeInBusinessZone(account.lastReportedAt)}
             </li>
           ))}
         </ul>
