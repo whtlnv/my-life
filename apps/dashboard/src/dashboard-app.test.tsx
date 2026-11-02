@@ -166,4 +166,31 @@ describe('DashboardApp', () => {
     expect(items[1]).toHaveTextContent('One-on-one');
     expect(items[1]).toHaveTextContent('14:30');
   });
+
+  it('shows each account with the time it last reported in America/Mexico_City', async () => {
+    answerGetNowWith({
+      current: [],
+      next: [],
+      laterToday: [],
+      accounts: [
+        { email: 'work@example.com', lastReportedAt: '2026-11-02T15:05:00.000Z', stale: false },
+        {
+          email: 'personal@example.com',
+          lastReportedAt: '2026-11-02T14:40:00.000Z',
+          stale: false,
+        },
+      ],
+      badgeCount: 0,
+    });
+
+    render(<DashboardApp />);
+
+    const accountsBlock = await screen.findByRole('region', { name: 'Accounts' });
+    const items = await within(accountsBlock).findAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('work@example.com');
+    expect(items[0]).toHaveTextContent('09:05');
+    expect(items[1]).toHaveTextContent('personal@example.com');
+    expect(items[1]).toHaveTextContent('08:40');
+  });
 });

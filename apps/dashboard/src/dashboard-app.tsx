@@ -23,10 +23,16 @@ type LaterTodayEvent = {
   start: string;
 };
 
+type AccountReport = {
+  email: string;
+  lastReportedAt: string;
+};
+
 type NowResponse = {
   current: NowEvent[];
   next: NextEvent[];
   laterToday: LaterTodayEvent[];
+  accounts: AccountReport[];
 };
 
 function startTimeInBusinessZone(isoTime: string): string {
@@ -61,6 +67,7 @@ export function DashboardApp() {
   const [current, setCurrent] = useState<NowEvent[]>([]);
   const [next, setNext] = useState<NextEvent[]>([]);
   const [laterToday, setLaterToday] = useState<LaterTodayEvent[]>([]);
+  const [accounts, setAccounts] = useState<AccountReport[]>([]);
 
   useEffect(() => {
     void fetch('/now')
@@ -69,6 +76,7 @@ export function DashboardApp() {
         setCurrent(body.current);
         setNext(body.next);
         setLaterToday(body.laterToday);
+        setAccounts(body.accounts);
       })
       .catch(() => undefined);
   }, []);
@@ -92,6 +100,15 @@ export function DashboardApp() {
           {laterToday.map((event) => (
             <li key={event.id}>
               {startTimeInBusinessZone(event.start)} {event.title}
+            </li>
+          ))}
+        </ul>
+      </section>
+      <section aria-label="Accounts">
+        <ul>
+          {accounts.map((account) => (
+            <li key={account.email}>
+              {account.email} {startTimeInBusinessZone(account.lastReportedAt)}
             </li>
           ))}
         </ul>
