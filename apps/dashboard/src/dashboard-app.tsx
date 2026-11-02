@@ -23,6 +23,12 @@ type LaterTodayEvent = {
   start: string;
 };
 
+type NowResponse = {
+  current: NowEvent[];
+  next: NextEvent[];
+  laterToday: LaterTodayEvent[];
+};
+
 function startTimeInBusinessZone(isoTime: string): string {
   return new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
@@ -58,14 +64,7 @@ export function DashboardApp() {
 
   useEffect(() => {
     void fetch('/now')
-      .then(
-        (response) =>
-          response.json() as Promise<{
-            current: NowEvent[];
-            next: NextEvent[];
-            laterToday: LaterTodayEvent[];
-          }>,
-      )
+      .then((response) => response.json() as Promise<NowResponse>)
       .then((body) => {
         setCurrent(body.current);
         setNext(body.next);
