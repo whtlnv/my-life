@@ -25,3 +25,6 @@ profile/*
 
 # Throwaway spikes; findings live in docs/decisions/
 /spikes/
+
+# The settings template is tracked; real .env files are not
+!.env.example
