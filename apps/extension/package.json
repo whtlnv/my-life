@@ -2,6 +2,9 @@
   "name": "@my-life/extension",
   "private": true,
   "type": "module",
+  "exports": {
+    "./calendar-poll": "./src/calendar-poll.ts"
+  },
   "version": "0.0.1",
   "scripts": {
     "dev": "wxt",

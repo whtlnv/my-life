@@ -83,7 +83,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Calendar fake server (integration suite)
 
-- [ ] Polling the fake Calendar server's `empty` scenario yields a snapshot with no events and GET /now shows nothing current or next
+- [x] Polling the fake Calendar server's `empty` scenario yields a snapshot with no events and GET /now shows nothing current or next
 - [ ] Polling the `overlapping` scenario yields two events that GET /now reports as both current
 - [ ] Polling the `all-day` scenario yields an event GET /now lists in later today and not as current
 - [ ] Two accounts polling the `cross-account-duplicate` scenario yield one event in GET /now naming both accounts
