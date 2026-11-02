@@ -12,6 +12,11 @@ const isStartingBetween = (
   horizon: string,
 ): boolean => now < event.start && event.start <= horizon;
 
+const byStartAscending = (
+  left: MergedCalendarEvent,
+  right: MergedCalendarEvent,
+): number => left.start.localeCompare(right.start);
+
 export const buildNowView = (
   events: MergedCalendarEvent[],
   clock: Clock,
@@ -24,7 +29,7 @@ export const buildNowView = (
   return {
     current: events
       .filter((event) => isHappeningAt(event, now))
-      .sort((left, right) => left.start.localeCompare(right.start)),
+      .sort(byStartAscending),
     next: events.filter((event) => isStartingBetween(event, now, horizon)),
   };
 };
