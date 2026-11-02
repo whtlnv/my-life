@@ -19,6 +19,8 @@ const systemClock: Clock = { now: () => new Date() };
 // Calendar is polled every 5 minutes; a source silent for twice that is stale.
 const calendarStaleAfterMilliseconds = 10 * 60 * 1000;
 
+const businessTimeZone = 'America/Mexico_City';
+
 function describeAccountFreshness(lastReportedAtByAccount: Map<string, Date>, now: Date) {
   return [...lastReportedAtByAccount].map(([email, lastReportedAt]) => ({
     email,
@@ -58,7 +60,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const latestSnapshots = [...snapshotsByAccount.values()];
     const events = mergeCalendarSnapshots(latestSnapshots);
     return context.json({
-      ...buildNowView(events, clock, 'America/Mexico_City'),
+      ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(lastReportedAtByAccount, clock.now()),
       badgeCount: badgeCount(events, clock),
     });
