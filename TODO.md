@@ -32,7 +32,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Domain — freshness and badge
 
-- [ ] An account whose last report is within twice its polling interval is fresh
+- [x] An account whose last report is within twice its polling interval is fresh
 - [ ] An account whose last report is older than twice its polling interval is stale
 - [ ] The badge count equals the number of events starting within 15 minutes
 - [ ] An event already in progress does not add to the badge count
