@@ -4,7 +4,7 @@ Guidance for Claude Code in this repository.
 
 ## Project status
 
-**my-life** is the user's personal operator: it reads every input in the user's working life (4+ Google Calendars and Gmail inboxes, 2 Slack workspaces, WhatsApp, Telegram, Google Meet notes, a todo list), triages email with Claude, turns what matters into tasks, prioritizes them and shows one dashboard with _now_ and _later today_. Single user, Chrome only, macOS only, running locally to start. Planned 2026-10-29 via `/grill-me`. Nothing is built yet; `PLAN.md` § Phase 0 is next.
+**my-life** is the user's personal operator: it reads every input in the user's working life (4+ Google Calendars and Gmail inboxes, 2 Slack workspaces, WhatsApp, Telegram, Google Meet notes, a todo list), triages email with Claude, turns what matters into tasks, prioritizes them and shows one dashboard with _now_ and _later today_. Single user, Chrome only, macOS only, running locally to start. Planned 2026-10-29 via `/grill-me`. Phase 0 code is delivered; its manual walk-through (`docs/phase-0-walkthrough.md`), including the auth spike, waits on `PENDING_TASKS.md` § 1.
 
 Repository map:
 

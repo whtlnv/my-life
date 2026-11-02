@@ -4,7 +4,7 @@
 
 Phases (locked decision 17):
 
-- **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton.
+- **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton — code delivered 2026-11-02 (`DONE.md`); the manual walk-through and the auth spike (`docs/phase-0-walkthrough.md`) wait on `PENDING_TASKS.md` § 1.
 - **Phase 1:** Gmail triage on one account, _advise_ mode.
 - **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters.
 - **Phase 3:** tasks and the prioritizer: import, _now_ / _later today_, waiting-on.
@@ -17,20 +17,19 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
-## Phase 0 — Tooling, auth spike, calendar skeleton
+## Start here (handoff 2026-11-02, after Phase 0)
 
-Outcome: every Chrome profile runs the extension, each reports its calendars to the local backend, and one dashboard page shows the merged _now / next_ event across all accounts, with the Meet link. No LLM.
+Read `CLAUDE.md` first. **Phase 0's code is delivered** (`DONE.md`, 85 items): contract, domain (merge, now/next/later today, freshness, badge), backend (allow-list, SQLite store, GET /now, dashboard serving, settings from `MY_LIFE_*`), extension (Calendar poll with retries, 5-minute alarm, badge, background glue), fake Calendar server integration suite, dashboard (Now, later today, accounts, loading and error states, live refresh), launchd agent. Nothing has run in a real Chrome profile yet: the walk-through in `docs/phase-0-walkthrough.md`, including the three-day `chrome.identity` spike (locked decision 2), waits on `PENDING_TASKS.md` § 1. When the OAuth client exists: fill `apps/extension/.env` and `.env`, build, `scripts/install-launchd.sh`, walk the checklist, write the spike's `docs/decisions/` record, then `/tdd-supervise` on Phase 1.
 
-Spike first (`docs/decisions/2026-xx-xx-chrome-identity-tokens.md`): an unpacked WXT extension with a fixed `key`, the OAuth client of type _Chrome Extension_, `chrome.identity.getAuthToken` on a Workspace profile and a gmail.com profile, one `calendar.readonly` call each. Re-run three days later without re-consent. Record the result and the fallback decision if it fails (locked decision 2).
+What the supervision showed — check these every cycle:
 
-- Monorepo: `pnpm`, Node 24 pinned, `packages/domain`, `packages/contracts`, `apps/extension` (WXT), `apps/backend` (Hono + better-sqlite3), `apps/dashboard` (Vite + React). Lint wall, `/tdd-init` files, dependency-direction test, CI on push (lint + unit).
-- Backend boots on `localhost:<port>`, serves the dashboard build at `/`, exposes `POST /sources/calendar` and `GET /now`. SQLite file under `~/Library/Application Support/my-life/`. A launchd plist in `scripts/` installs it.
-- Extension: registers with the backend using the profile's account email (allow-list in config, locked decision 19); polls the account's calendars every 5 min; posts events for today and tomorrow.
-- Domain: merge events across accounts, dedupe the same event invited to several accounts (same iCalUID), compute _current_ (started, not ended), _next_ (starts within 15 min), and _later today_; `Clock` injected, `America/Mexico_City`.
-- Dashboard: _Now_ block with the event, join link and attendees; _Later today_ list; per-account freshness and stale marker (twice the polling interval).
-- Badge: count of events starting within 15 min.
-- Calendar fake HTTP server with named scenarios (`empty`, `overlapping`, `all-day`, `cross-account-duplicate`) for the integration suite.
-- Manual checklist in `docs/`: install in each profile, see each account appear, see the badge.
+- **Minimal greens ship the first clause and fake the rest.** Twelve keystone or triangulation items were inserted by hand after a green landed a constant (badge count 1, port 4321, fixed Calendar window, settings that ignored their variable, a badge refresh nothing called). Write the discriminating sibling into the plan before the first clause runs, not after.
+- **Items that bundle settings or steps get delivered one clause at a time and ticked whole.** Split per setting, per branch.
+- **Glue is wired by hand, verified by running it.** `apps/backend/src/main.ts` and `apps/extension/src/entrypoints/background.ts` were composed by the supervisor and smoke-checked (real server, real build), not by a cycle.
+- One sizing bail (retry before the pipeline existed) was resolved by inserting the prerequisite item rather than `/plan refine`.
+- Quality loops: refactor converged in 2 passes (13 applied), test-quality in 2 (1 applied), complexity in 1; the lint wall was clean after them.
+
+---
 
 ## Phase 1 — Gmail triage, one account, advise
 
