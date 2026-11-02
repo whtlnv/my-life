@@ -13,8 +13,12 @@ type NextEvent = {
   start: string;
 };
 
+function minutesUntil(isoTime: string): number {
+  return Math.round((new Date(isoTime).getTime() - Date.now()) / 60_000);
+}
+
 function NextEventSummary({ event }: { event: NextEvent }) {
-  const minutesUntilStart = Math.round((new Date(event.start).getTime() - Date.now()) / 60_000);
+  const minutesUntilStart = minutesUntil(event.start);
   return (
     <article>
       <h2>{event.title}</h2>
