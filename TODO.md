@@ -78,7 +78,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] On start the extension registers with the backend using the profile's account email, then posts the first snapshot
 - [x] After the first snapshot the extension polls again every 5 minutes and posts each result, and a failed poll does not stop the next one
 - [x] Each scheduled poll requests the Calendar window for the moment of that poll, so a poll the next day asks for the next day, not the day the extension started
-- [ ] The badge shows the count returned by the backend and is empty when the count is zero
+- [x] The badge shows the count returned by the backend and is empty when the count is zero
 
 ### Calendar fake server (integration suite)
 
