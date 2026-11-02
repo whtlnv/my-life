@@ -19,7 +19,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Domain — now, next, later today
 
-- [ ] An event that has started and not ended is reported as current
+- [x] An event that has started and not ended is reported as current
 - [ ] An event that has already ended is not reported as current
 - [ ] An event starting within 15 minutes is reported as next
 - [ ] An event starting in more than 15 minutes is not reported as next
