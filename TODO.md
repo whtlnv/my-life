@@ -68,7 +68,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] Every calendar the account can see is polled
 - [x] Calendars named Holidays or Birthdays are not polled
 - [x] Google's holiday and birthday calendars are not polled whatever their localized name (ids ending in `#holiday@group.v.calendar.google.com` and `#contacts@group.v.calendar.google.com`, e.g. summary "Días festivos en México")
-- [ ] The time window requested from Calendar covers today and tomorrow in America/Mexico_City
+- [x] The time window requested from Calendar covers today and tomorrow in America/Mexico_City
 - [ ] A 429 or 5xx answer from Calendar is retried with backoff and the snapshot is posted once it succeeds
 - [ ] A 4xx answer other than 429 is not retried and is reported as an error
 - [ ] On start the extension registers with the backend using the profile's account email, then posts the first snapshot
