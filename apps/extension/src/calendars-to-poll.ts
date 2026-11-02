@@ -1,6 +1,6 @@
-type GoogleCalendarListResponse = {
+interface GoogleCalendarListResponse {
   items: { id: string; summary: string }[];
-};
+}
 
 const holidayCalendarIdSuffix = '#holiday@group.v.calendar.google.com';
 const birthdayCalendarId = 'addressbook#contacts@group.v.calendar.google.com';

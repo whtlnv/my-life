@@ -1,40 +1,40 @@
 import { useEffect, useState } from 'react';
 
-type NowEvent = {
+interface NowEvent {
   id: string;
   title: string;
   meetLink?: string;
   attendees: { email: string; displayName: string }[];
-};
+}
 
-type NextEvent = {
+interface NextEvent {
   id: string;
   title: string;
   start: string;
-};
+}
 
 function minutesUntil(isoTime: string): number {
   return Math.round((new Date(isoTime).getTime() - Date.now()) / 60_000);
 }
 
-type LaterTodayEvent = {
+interface LaterTodayEvent {
   id: string;
   title: string;
   start: string;
-};
+}
 
-type AccountReport = {
+interface AccountReport {
   email: string;
   lastReportedAt: string;
   stale: boolean;
-};
+}
 
-type NowResponse = {
+interface NowResponse {
   current: NowEvent[];
   next: NextEvent[];
   laterToday: LaterTodayEvent[];
   accounts: AccountReport[];
-};
+}
 
 function timeInBusinessZone(isoTime: string): string {
   return new Intl.DateTimeFormat('en-GB', {

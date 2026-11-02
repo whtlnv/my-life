@@ -1,10 +1,10 @@
-type GoogleCalendarEventFields = {
+interface GoogleCalendarEventFields {
   id: string;
   iCalUID: string;
   summary: string;
   hangoutLink?: string;
   attendees?: { email: string; displayName?: string; self?: boolean; responseStatus?: string }[];
-};
+}
 
 type AllDayGoogleCalendarEvent = GoogleCalendarEventFields & { start: { date: string }; end: { date: string } };
 
@@ -16,9 +16,9 @@ function isAllDay(event: GoogleCalendarEvent): event is AllDayGoogleCalendarEven
   return 'date' in event.start;
 }
 
-type GoogleCalendarEventsResponse = {
+interface GoogleCalendarEventsResponse {
   items: GoogleCalendarEvent[];
-};
+}
 
 function attendeesOf(event: GoogleCalendarEvent) {
   return event.attendees ?? [];

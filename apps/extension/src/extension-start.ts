@@ -4,7 +4,7 @@ import type { FetchFunction } from './fetch-function';
 
 const calendarPollIntervalMilliseconds = 5 * 60 * 1000;
 
-type StartExtensionOptions = {
+interface StartExtensionOptions {
   fetch: FetchFunction;
   profileAccountEmail: () => Promise<string>;
   accessToken: () => Promise<string>;
@@ -14,7 +14,7 @@ type StartExtensionOptions = {
   timeZone: string;
   every?: (milliseconds: number, poll: () => Promise<void>) => void;
   setBadgeText?: (text: string) => Promise<void>;
-};
+}
 
 export async function startExtension(options: StartExtensionOptions): Promise<void> {
   const accountEmail = await options.profileAccountEmail();

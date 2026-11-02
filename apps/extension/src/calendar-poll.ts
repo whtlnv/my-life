@@ -6,7 +6,7 @@ import type { FetchFunction } from './fetch-function';
 const calendarApi = 'https://www.googleapis.com/calendar/v3';
 const maximumRetries = 4;
 
-type PollCalendarOptions = {
+interface PollCalendarOptions {
   fetch: FetchFunction;
   wait?: (milliseconds: number) => Promise<void>;
   accessToken: string;
@@ -14,7 +14,7 @@ type PollCalendarOptions = {
   backendUrl: string;
   now: Date;
   timeZone: string;
-};
+}
 
 function calendarEventsUrl(calendarId: string, timeMin: string, timeMax: string): URL {
   const eventsUrl = new URL(`${calendarApi}/calendars/${encodeURIComponent(calendarId)}/events`);

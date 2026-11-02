@@ -1,10 +1,10 @@
 import type { FetchFunction } from './fetch-function';
 
-type RefreshBadgeOptions = {
+interface RefreshBadgeOptions {
   fetch: FetchFunction;
   backendUrl: string;
   setBadgeText: (text: string) => Promise<void>;
-};
+}
 
 export async function refreshBadge(options: RefreshBadgeOptions): Promise<void> {
   const response = await options.fetch(`${options.backendUrl}/now`);
