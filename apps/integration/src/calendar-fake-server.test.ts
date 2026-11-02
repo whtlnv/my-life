@@ -83,4 +83,38 @@ describe('Calendar fake server', () => {
     expect(nowView.laterToday.map((event) => event.iCalUID)).toEqual(postedAllDayIdentifiers);
     expect(nowView.current).toEqual([]);
   });
+
+  it('two accounts polling the cross-account-duplicate scenario yield one event in GET /now naming both accounts', async () => {
+    const accountEmails = ['ana@example.com', 'bob@example.com'];
+    const backend = createApp({ allowedEmails: accountEmails, clock: { now: () => pollTime } });
+    const calendar = await startCalendarFakeServer('cross-account-duplicate');
+    try {
+      for (const pollingAccountEmail of accountEmails) {
+        await pollCalendarOnce({
+          fetch: async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+            const url = new URL(input instanceof Request ? input.url : input.toString());
+            if (url.origin === 'https://www.googleapis.com') {
+              return fetch(new URL(url.pathname + url.search, calendar.url), init);
+            }
+            return backend.request(url.pathname, init);
+          },
+          accessToken: 'fake-token',
+          accountEmail: pollingAccountEmail,
+          backendUrl,
+          now: pollTime,
+          timeZone: 'America/Mexico_City',
+        });
+      }
+    } finally {
+      await calendar.close();
+    }
+    const nowView = (await (await backend.request('/now')).json()) as Record<
+      'current' | 'next' | 'laterToday',
+      { iCalUID: string; accounts: string[] }[]
+    >;
+
+    const listedEvents = [...nowView.current, ...nowView.next, ...nowView.laterToday];
+    expect(listedEvents).toHaveLength(1);
+    expect(listedEvents[0]?.accounts).toEqual(accountEmails);
+  });
 });

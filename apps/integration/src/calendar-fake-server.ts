@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type CalendarScenario = 'empty' | 'overlapping' | 'all-day';
+type CalendarScenario = 'empty' | 'overlapping' | 'all-day' | 'cross-account-duplicate';
 
 const scenarios: Record<CalendarScenario, { calendarList: unknown; events: unknown }> = {
   empty: { calendarList: { items: [] }, events: { items: [] } },
@@ -36,6 +36,20 @@ const scenarios: Record<CalendarScenario, { calendarList: unknown; events: unkno
           summary: 'Holiday',
           start: { date: '2026-11-02' },
           end: { date: '2026-11-03' },
+        },
+      ],
+    },
+  },
+  'cross-account-duplicate': {
+    calendarList: { items: [{ id: 'primary', summary: 'Primary' }] },
+    events: {
+      items: [
+        {
+          id: 'shared-review',
+          iCalUID: 'shared-review@example.com',
+          summary: 'Shared review',
+          start: { dateTime: '2026-11-02T15:00:00.000Z' },
+          end: { dateTime: '2026-11-02T15:30:00.000Z' },
         },
       ],
     },
