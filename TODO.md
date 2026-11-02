@@ -7,7 +7,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 ### Shared contract
 
 - [x] A calendar snapshot carrying the account email and events with id, iCalUID, title, start, end, optional Meet link and attendees passes the shared contract
-- [ ] A calendar snapshot whose event has no start fails the shared contract
+- [x] A calendar snapshot whose event has no start fails the shared contract
 - [ ] An all-day event given as a date without a time passes the shared contract
 
 ### Domain — merge and dedupe

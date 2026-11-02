@@ -21,4 +21,22 @@ describe('calendarSnapshot', () => {
 
     expect(calendarSnapshot.parse(snapshot)).toEqual(snapshot);
   });
+
+  it('rejects a snapshot whose event has no start', () => {
+    const snapshot = {
+      accountEmail: 'francisco@example.com',
+      events: [
+        {
+          id: 'event-1',
+          iCalUID: 'event-1@google.com',
+          title: 'Weekly sync',
+          end: '2026-11-02T15:30:00.000Z',
+          meetLink: 'https://meet.google.com/abc-defg-hij',
+          attendees: [{ email: 'ana@example.com', displayName: 'Ana' }],
+        },
+      ],
+    };
+
+    expect(calendarSnapshot.safeParse(snapshot).success).toBe(false);
+  });
 });
