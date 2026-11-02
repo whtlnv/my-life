@@ -41,4 +41,11 @@ describe('calendarSnapshot', () => {
 
     expect(calendarSnapshot.parse(snapshot)).toEqual(snapshot);
   });
+
+  it('accepts a snapshot whose event has no Meet link', () => {
+    const { meetLink: _meetLink, ...weeklySyncWithoutMeetLink } = weeklySync;
+    const snapshot = snapshotOf(weeklySyncWithoutMeetLink);
+
+    expect(calendarSnapshot.parse(snapshot)).toEqual(snapshot);
+  });
 });

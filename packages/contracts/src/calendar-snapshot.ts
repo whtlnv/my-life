@@ -7,7 +7,7 @@ const calendarEvent = z.object({
   allDay: z.boolean().optional(),
   start: z.string(),
   end: z.string(),
-  meetLink: z.string(),
+  meetLink: z.string().optional(),
   attendees: z.array(z.object({ email: z.string(), displayName: z.string() })),
 });
 
