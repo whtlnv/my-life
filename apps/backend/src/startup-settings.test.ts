@@ -29,4 +29,10 @@ describe('startup settings', () => {
 
     expect(settings.allowedEmails).toEqual(['ana@example.com', 'ana@work.example.com']);
   });
+
+  it('reads the port as a number from MY_LIFE_PORT', () => {
+    const settings = readStartupSettings({ MY_LIFE_PORT: '4321' }, '/Users/ana');
+
+    expect(settings.port).toBe(4321);
+  });
 });

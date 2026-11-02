@@ -107,7 +107,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 - [x] The backend's startup settings come from its environment: MY_LIFE_ALLOWED_EMAILS (comma-separated), MY_LIFE_PORT, MY_LIFE_DATABASE_PATH and MY_LIFE_DASHBOARD_DIRECTORY, each with its default when unset
 - [x] When MY_LIFE_ALLOWED_EMAILS is unset or blank the allow-list is empty, not a list holding one empty string, and surrounding spaces around each email are trimmed
-- [ ] The port comes from MY_LIFE_PORT and is 7777 when unset
+- [x] The port comes from MY_LIFE_PORT and is 7777 when unset
 - [ ] The database path comes from MY_LIFE_DATABASE_PATH and falls back to the Application Support default when unset
 - [ ] The dashboard directory comes from MY_LIFE_DASHBOARD_DIRECTORY and defaults to the dashboard package's dist folder when unset
 - [ ] Starting the backend creates the database folder when it is missing
