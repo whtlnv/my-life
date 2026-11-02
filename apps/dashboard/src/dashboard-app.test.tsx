@@ -154,6 +154,19 @@ describe('DashboardApp', () => {
     expect(within(nowBlock).queryByText(/nothing now/i)).not.toBeInTheDocument();
   });
 
+  it('says the backend cannot be reached instead of nothing now when the request fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))),
+    );
+
+    render(<DashboardApp />);
+
+    const nowBlock = await screen.findByRole('region', { name: 'Now' });
+    expect(await within(nowBlock).findByText(/backend/i)).toBeInTheDocument();
+    expect(within(nowBlock).queryByText(/nothing now/i)).not.toBeInTheDocument();
+  });
+
   it('lists the later-today events in time order with their start times in America/Mexico_City', async () => {
     answerGetNowWith({
       current: [],
