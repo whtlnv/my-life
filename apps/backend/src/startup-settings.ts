@@ -14,6 +14,9 @@ export function readStartupSettings(
 }
 
 function parsePort(portText: string | undefined): number {
+  if (portText === undefined) {
+    return 7777;
+  }
   return Number(portText);
 }
 

@@ -41,4 +41,10 @@ describe('startup settings', () => {
 
     expect(settings.port).toBe(8123);
   });
+
+  it('uses port 7777 when MY_LIFE_PORT is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.port).toBe(7777);
+  });
 });
