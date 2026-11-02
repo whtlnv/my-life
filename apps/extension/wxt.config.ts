@@ -12,7 +12,8 @@ export default defineConfig({
     name: 'my-life',
     description: "Reports this profile's calendars and mail to the local my-life backend.",
     key,
-    permissions: ['identity', 'alarms', 'storage'],
+    permissions: ['identity', 'identity.email', 'alarms', 'storage'],
+    action: { default_title: 'my-life' },
     host_permissions: ['http://127.0.0.1/*', 'http://localhost/*', 'https://www.googleapis.com/*'],
     oauth2: {
       client_id: process.env.WXT_GOOGLE_OAUTH_CLIENT_ID ?? '',
