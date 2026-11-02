@@ -21,7 +21,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 - [x] An event that has started and not ended is reported as current
 - [x] An event that has already ended is not reported as current
-- [ ] An event starting within 15 minutes is reported as next
+- [x] An event starting within 15 minutes is reported as next
 - [ ] An event starting in more than 15 minutes is not reported as next
 - [ ] When two events overlap at the current time, both are reported as current, earliest start first
 - [ ] Events starting after the next window and before midnight in America/Mexico_City are listed as later today in time order
