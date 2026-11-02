@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import { resolveDatabasePath } from './database-path';
@@ -59,5 +61,11 @@ describe('startup settings', () => {
     const settings = readStartupSettings({ MY_LIFE_DATABASE_PATH: '/tmp/elsewhere.sqlite' }, '/Users/ana');
 
     expect(settings.databasePath).toBe('/tmp/elsewhere.sqlite');
+  });
+
+  it("uses the dashboard package's dist folder as the dashboard directory when MY_LIFE_DASHBOARD_DIRECTORY is unset", () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.dashboardDirectory).toBe(fileURLToPath(new URL('../../dashboard/dist', import.meta.url)));
   });
 });

@@ -1,8 +1,11 @@
+import { fileURLToPath } from 'node:url';
+
 import { resolveDatabasePath } from './database-path';
 
 export interface StartupSettings {
   allowedEmails: string[];
   databasePath: string;
+  dashboardDirectory: string;
   port: number;
 }
 
@@ -16,6 +19,7 @@ export function readStartupSettings(
     allowedEmails: parseAllowedEmails(environment.MY_LIFE_ALLOWED_EMAILS),
     port: parsePort(environment.MY_LIFE_PORT),
     databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
+    dashboardDirectory: fileURLToPath(new URL('../../dashboard/dist', import.meta.url)),
   };
 }
 

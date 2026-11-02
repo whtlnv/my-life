@@ -112,7 +112,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] When MY_LIFE_PORT is unset the port is 7777, never NaN
 - [x] The database path comes from MY_LIFE_DATABASE_PATH and falls back to the Application Support default when unset
 - [x] MY_LIFE_DATABASE_PATH=/tmp/elsewhere.sqlite makes the database path /tmp/elsewhere.sqlite
-- [ ] The dashboard directory comes from MY_LIFE_DASHBOARD_DIRECTORY and defaults to the dashboard package's dist folder when unset
+- [x] The dashboard directory comes from MY_LIFE_DASHBOARD_DIRECTORY and defaults to the dashboard package's dist folder when unset
 - [ ] MY_LIFE_DASHBOARD_DIRECTORY=/tmp/elsewhere-dist makes the dashboard directory /tmp/elsewhere-dist
 - [ ] Starting the backend creates the database folder when it is missing
 - [ ] Running the backend entry point serves the built dashboard at `/` and answers GET /now from the configured store
