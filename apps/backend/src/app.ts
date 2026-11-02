@@ -12,6 +12,9 @@ export function createApp(options?: AppOptions): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
     const { email } = await context.req.json<{ email: string }>();
+    if (!options?.allowedEmails.includes(email)) {
+      return context.body(null, 403);
+    }
     return context.json({ email });
   });
   return app;

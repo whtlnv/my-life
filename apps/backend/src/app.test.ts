@@ -24,4 +24,16 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ email: 'ana@example.com' });
   });
+
+  it('refuses a registration from an email not in the allow-list', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+
+    const response = await app.request('/register', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'stranger@example.com' }),
+    });
+
+    expect(response.status).toBe(403);
+  });
 });
