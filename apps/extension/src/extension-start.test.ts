@@ -13,7 +13,7 @@ describe('startExtension', () => {
         return Response.json({ kind: 'calendar#calendarList', items: [] });
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        backendPosts.push({ path: url.pathname, body: JSON.parse(String(init.body)) });
+        backendPosts.push({ path: url.pathname, body: JSON.parse(init.body as string) });
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });
@@ -47,7 +47,7 @@ describe('startExtension', () => {
         return Response.json({ kind: 'calendar#calendarList', items: [] });
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        backendPosts.push({ path: url.pathname, body: JSON.parse(String(init.body)) });
+        backendPosts.push({ path: url.pathname, body: JSON.parse(init.body as string) });
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });

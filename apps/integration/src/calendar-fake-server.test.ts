@@ -34,7 +34,7 @@ async function pollThroughFakes(calendarUrl: string, pollingAccountEmails: strin
     if (url.origin === 'https://www.googleapis.com') {
       return fetch(new URL(url.pathname + url.search, calendarUrl), init);
     }
-    postedSnapshots.push(JSON.parse(String(init?.body)) as PostedSnapshot);
+    postedSnapshots.push(JSON.parse(init?.body as string) as PostedSnapshot);
     return backend.request(url.pathname, init);
   };
 

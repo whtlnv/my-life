@@ -53,7 +53,7 @@ describe('pollCalendarOnce', () => {
         });
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        backendPosts.push({ url: url.href, body: JSON.parse(String(init.body)) });
+        backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });
@@ -143,7 +143,7 @@ describe('pollCalendarOnce', () => {
         });
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
-        backendPosts.push(JSON.parse(String(init.body)));
+        backendPosts.push(JSON.parse(init.body as string));
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });
@@ -201,7 +201,7 @@ describe('pollCalendarOnce', () => {
         );
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
-        backendPosts.push(JSON.parse(String(init.body)));
+        backendPosts.push(JSON.parse(init.body as string));
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });
@@ -258,7 +258,7 @@ describe('pollCalendarOnce', () => {
         return Response.json({ error: { code: 403, message: 'Forbidden' } }, { status: 403 });
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
-        backendPosts.push(JSON.parse(String(init.body)));
+        backendPosts.push(JSON.parse(init.body as string));
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });
@@ -300,7 +300,7 @@ describe('pollCalendarOnce', () => {
         return Response.json({ kind: 'calendar#events', items: [] });
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
-        backendPosts.push(JSON.parse(String(init.body)));
+        backendPosts.push(JSON.parse(init.body as string));
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });
