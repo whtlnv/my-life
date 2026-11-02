@@ -9,7 +9,7 @@ interface CalendarEvent {
   attendees: { email: string; displayName: string }[];
 }
 
-interface CalendarSnapshot {
+export interface CalendarSnapshot {
   accountEmail: string;
   events: CalendarEvent[];
 }

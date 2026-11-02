@@ -36,4 +36,33 @@ describe('backend app', () => {
 
     expect(response.status).toBe(403);
   });
+
+  it('answers success to a calendar snapshot from an allow-listed account and shows its events in GET /now', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => new Date('2026-11-02T15:10:00.000Z') },
+    });
+    const weeklySync = {
+      id: 'event-1',
+      iCalUID: 'event-1@google.com',
+      title: 'Weekly sync',
+      start: '2026-11-02T15:00:00.000Z',
+      end: '2026-11-02T15:30:00.000Z',
+      meetLink: 'https://meet.google.com/abc-defg-hij',
+      attendees: [{ email: 'luis@example.com', displayName: 'Luis' }],
+    };
+
+    const posted = await app.request('/calendar-snapshot', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ accountEmail: 'ana@example.com', events: [weeklySync] }),
+    });
+    const now = await app.request('/now');
+
+    expect(posted.status).toBe(200);
+    expect(now.status).toBe(200);
+    expect(await now.json()).toMatchObject({
+      current: [{ ...weeklySync, accounts: ['ana@example.com'] }],
+    });
+  });
 });
