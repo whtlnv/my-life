@@ -1,12 +1,13 @@
 import { snapshotFromCalendarEvents } from './calendar-events-snapshot';
 import { calendarTimeWindow } from './calendar-time-window';
 import { calendarIdsToPoll } from './calendars-to-poll';
+import type { FetchFunction } from './fetch-function';
 
 const calendarApi = 'https://www.googleapis.com/calendar/v3';
 const maximumRetries = 4;
 
 type PollCalendarOptions = {
-  fetch: (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+  fetch: FetchFunction;
   wait?: (milliseconds: number) => Promise<void>;
   accessToken: string;
   accountEmail: string;

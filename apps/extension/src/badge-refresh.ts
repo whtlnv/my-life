@@ -1,5 +1,7 @@
+import type { FetchFunction } from './fetch-function';
+
 type RefreshBadgeOptions = {
-  fetch: (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+  fetch: FetchFunction;
   backendUrl: string;
   setBadgeText: (text: string) => Promise<void>;
 };

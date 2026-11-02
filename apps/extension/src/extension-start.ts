@@ -1,10 +1,11 @@
 import { refreshBadge } from './badge-refresh';
 import { pollCalendarOnce } from './calendar-poll';
+import type { FetchFunction } from './fetch-function';
 
 const calendarPollIntervalMilliseconds = 5 * 60 * 1000;
 
 type StartExtensionOptions = {
-  fetch: (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
+  fetch: FetchFunction;
   profileAccountEmail: () => Promise<string>;
   accessToken: () => Promise<string>;
   backendUrl: string;
