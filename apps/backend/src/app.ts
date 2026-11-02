@@ -18,7 +18,7 @@ const systemClock: Clock = { now: () => new Date() };
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
-  const snapshots: CalendarSnapshot[] = [];
+  const snapshotsByAccount = new Map<string, CalendarSnapshot>();
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
@@ -37,11 +37,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (!calendarSnapshot.safeParse(snapshot).success) {
       return context.body(null, 400);
     }
-    snapshots.push(snapshot);
+    snapshotsByAccount.set(snapshot.accountEmail, snapshot);
     return context.body(null, 200);
   });
   app.get('/now', (context) =>
-    context.json(buildNowView(mergeCalendarSnapshots(snapshots), clock)),
+    context.json(buildNowView(mergeCalendarSnapshots([...snapshotsByAccount.values()]), clock)),
   );
   return app;
 }

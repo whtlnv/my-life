@@ -138,4 +138,26 @@ describe('backend app', () => {
       { iCalUID: dentist.iCalUID, accounts: ['bob@example.com'] },
     ]);
   });
+
+  it('replaces an account\'s events with its newer snapshot in GET /now, dropping an event missing from it', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+    });
+    const standUp = {
+      id: 'event-4',
+      iCalUID: 'event-4@google.com',
+      title: 'Stand-up',
+      start: '2026-11-02T15:05:00.000Z',
+      end: '2026-11-02T15:45:00.000Z',
+      attendees: [],
+    };
+
+    await postCalendarSnapshot(app, 'ana@example.com', [weeklySync]);
+    await postCalendarSnapshot(app, 'ana@example.com', [standUp]);
+    const now = await app.request('/now');
+
+    const { current } = (await now.json()) as { current: { iCalUID: string }[] };
+    expect(current.map(({ iCalUID }) => iCalUID)).toEqual([standUp.iCalUID]);
+  });
 });
