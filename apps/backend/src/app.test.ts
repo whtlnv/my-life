@@ -160,4 +160,25 @@ describe('backend app', () => {
     const { current } = (await now.json()) as { current: { iCalUID: string }[] };
     expect(current.map(({ iCalUID }) => iCalUID)).toEqual([standUp.iCalUID]);
   });
+
+  it('reports in GET /now when each account last reported and whether it is stale', async () => {
+    let currentTime = new Date('2026-11-02T15:00:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com', 'bob@example.com'],
+      clock: { now: () => currentTime },
+    });
+
+    await postCalendarSnapshot(app, 'ana@example.com', [weeklySync]);
+    currentTime = new Date('2026-11-02T15:10:00.000Z');
+    await postCalendarSnapshot(app, 'bob@example.com', [weeklySync]);
+    currentTime = new Date('2026-11-02T15:12:00.000Z');
+    const now = await app.request('/now');
+
+    expect(await now.json()).toMatchObject({
+      accounts: [
+        { email: 'ana@example.com', lastReportedAt: '2026-11-02T15:00:00.000Z', stale: true },
+        { email: 'bob@example.com', lastReportedAt: '2026-11-02T15:10:00.000Z', stale: false },
+      ],
+    });
+  });
 });

@@ -46,7 +46,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] A calendar snapshot that fails the shared contract is refused with a client error
 - [x] GET /now merges the snapshots of two accounts, showing a cross-account duplicate once
 - [x] A newer snapshot from the same account replaces that account's events in GET /now, and an event missing from it disappears
-- [ ] GET /now reports, for each account, when it last reported and whether it is stale
+- [x] GET /now reports, for each account, when it last reported and whether it is stale
 - [ ] GET /now includes the badge count of events starting within 15 minutes
 - [ ] GET /now bounds later today by midnight in the configured time zone (America/Mexico_City), not the machine's
 - [ ] A snapshot reported before a backend restart is still served by GET /now after it

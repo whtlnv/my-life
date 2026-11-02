@@ -15,10 +15,14 @@ export interface AppOptions {
 
 const systemClock: Clock = { now: () => new Date() };
 
+// Calendar is polled every 5 minutes; a source silent for twice that is stale.
+const calendarStaleAfterMilliseconds = 10 * 60 * 1000;
+
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
   const snapshotsByAccount = new Map<string, CalendarSnapshot>();
+  const lastReportedAtByAccount = new Map<string, Date>();
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
@@ -38,11 +42,20 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, 400);
     }
     snapshotsByAccount.set(snapshot.accountEmail, snapshot);
+    lastReportedAtByAccount.set(snapshot.accountEmail, clock.now());
     return context.body(null, 200);
   });
   app.get('/now', (context) => {
     const latestSnapshots = [...snapshotsByAccount.values()];
-    return context.json(buildNowView(mergeCalendarSnapshots(latestSnapshots), clock));
+    const accounts = [...lastReportedAtByAccount].map(([email, lastReportedAt]) => ({
+      email,
+      lastReportedAt: lastReportedAt.toISOString(),
+      stale: clock.now().getTime() - lastReportedAt.getTime() > calendarStaleAfterMilliseconds,
+    }));
+    return context.json({
+      ...buildNowView(mergeCalendarSnapshots(latestSnapshots), clock),
+      accounts,
+    });
   });
   return app;
 }
