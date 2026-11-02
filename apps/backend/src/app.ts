@@ -29,7 +29,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ email });
   });
   app.post('/calendar-snapshot', async (context) => {
-    snapshots.push(await context.req.json<CalendarSnapshot>());
+    const snapshot = await context.req.json<CalendarSnapshot>();
+    if (!options.allowedEmails.includes(snapshot.accountEmail)) {
+      return context.body(null, 403);
+    }
+    snapshots.push(snapshot);
     return context.body(null, 200);
   });
   app.get('/now', (context) =>
