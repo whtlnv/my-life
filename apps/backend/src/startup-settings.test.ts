@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { resolveDatabasePath } from './database-path';
 import { readStartupSettings } from './startup-settings';
 
 describe('startup settings', () => {
@@ -46,5 +47,11 @@ describe('startup settings', () => {
     const settings = readStartupSettings({}, '/Users/ana');
 
     expect(settings.port).toBe(7777);
+  });
+
+  it('uses the Application Support database path when MY_LIFE_DATABASE_PATH is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.databasePath).toBe(resolveDatabasePath(undefined, '/Users/ana'));
   });
 });
