@@ -64,27 +64,21 @@ function CurrentEvent({ event }: { event: NowEvent }) {
   );
 }
 
+const emptyNowResponse: NowResponse = { current: [], next: [], laterToday: [], accounts: [] };
+
 export function DashboardApp() {
-  const [current, setCurrent] = useState<NowEvent[]>([]);
-  const [next, setNext] = useState<NextEvent[]>([]);
-  const [laterToday, setLaterToday] = useState<LaterTodayEvent[]>([]);
-  const [accounts, setAccounts] = useState<AccountReport[]>([]);
+  const [nowResponse, setNowResponse] = useState<NowResponse | null>(null);
   const [backendUnreachable, setBackendUnreachable] = useState(false);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     void fetch('/now')
       .then((response) => response.json() as Promise<NowResponse>)
-      .then((body) => {
-        setCurrent(body.current);
-        setNext(body.next);
-        setLaterToday(body.laterToday);
-        setAccounts(body.accounts);
-        setLoaded(true);
-      })
+      .then(setNowResponse)
       .catch(() => setBackendUnreachable(true));
   }, []);
 
+  const loaded = nowResponse !== null;
+  const { current, next, laterToday, accounts } = nowResponse ?? emptyNowResponse;
   const loading = !loaded && !backendUnreachable;
   const nothingToShow = loaded && current.length === 0 && next.length === 0;
 
