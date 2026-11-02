@@ -65,4 +65,12 @@ describe('buildNowView', () => {
 
     expect(view.current).toEqual([weeklySync, designReview]);
   });
+
+  it('lists events starting after the next window and before midnight in America/Mexico_City as later today in time order', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T14:00:00.000Z') };
+
+    const view = buildNowView([designReview, weeklySync], clock, 'America/Mexico_City');
+
+    expect(view.laterToday).toEqual([weeklySync, designReview]);
+  });
 });

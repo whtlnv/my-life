@@ -20,7 +20,12 @@ const byStartAscending = (
 export const buildNowView = (
   events: MergedCalendarEvent[],
   clock: Clock,
-): { current: MergedCalendarEvent[]; next: MergedCalendarEvent[] } => {
+  timeZone?: string,
+): {
+  current: MergedCalendarEvent[];
+  next: MergedCalendarEvent[];
+  laterToday: MergedCalendarEvent[];
+} => {
   const nowDate = clock.now();
   const now = nowDate.toISOString();
   const horizon = new Date(
@@ -31,5 +36,8 @@ export const buildNowView = (
       .filter((event) => isHappeningAt(event, now))
       .sort(byStartAscending),
     next: events.filter((event) => isStartingBetween(event, now, horizon)),
+    laterToday: events
+      .filter((event) => horizon < event.start)
+      .sort(byStartAscending),
   };
 };
