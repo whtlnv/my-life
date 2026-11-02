@@ -1,3 +1,7 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { healthResponse } from '@my-life/contracts';
@@ -279,5 +283,23 @@ describe('backend app', () => {
         process.env.TZ = machineTimeZone;
       }
     }
+  });
+
+  it('still serves in GET /now a snapshot reported before a backend restart', async () => {
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+    };
+    const beforeRestart = createApp(options);
+    await postCalendarSnapshot(beforeRestart, 'ana@example.com', [weeklySync]);
+
+    const afterRestart = createApp(options);
+    const now = await afterRestart.request('/now');
+
+    expect(await now.json()).toMatchObject({
+      current: [{ ...weeklySync, accounts: ['ana@example.com'] }],
+    });
   });
 });
