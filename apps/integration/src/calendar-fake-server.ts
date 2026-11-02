@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type CalendarScenario = 'empty' | 'overlapping';
+type CalendarScenario = 'empty' | 'overlapping' | 'all-day';
 
 const scenarios: Record<CalendarScenario, { calendarList: unknown; events: unknown }> = {
   empty: { calendarList: { items: [] }, events: { items: [] } },
@@ -22,6 +22,20 @@ const scenarios: Record<CalendarScenario, { calendarList: unknown; events: unkno
           summary: 'Client call',
           start: { dateTime: '2026-11-02T15:05:00.000Z' },
           end: { dateTime: '2026-11-02T16:00:00.000Z' },
+        },
+      ],
+    },
+  },
+  'all-day': {
+    calendarList: { items: [{ id: 'primary', summary: 'Primary' }] },
+    events: {
+      items: [
+        {
+          id: 'holiday',
+          iCalUID: 'holiday@example.com',
+          summary: 'Holiday',
+          start: { date: '2026-11-02' },
+          end: { date: '2026-11-03' },
         },
       ],
     },

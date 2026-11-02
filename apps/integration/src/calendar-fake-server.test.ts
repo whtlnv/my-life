@@ -77,4 +77,42 @@ describe('Calendar fake server', () => {
       await calendar.close();
     }
   });
+
+  it('polling the all-day scenario yields an event GET /now lists in later today and not as current', async () => {
+    const calendar = await startCalendarFakeServer('all-day');
+    try {
+      const backend = createApp({ allowedEmails: [accountEmail], clock: { now: () => pollTime } });
+      const postedSnapshots: { accountEmail: string; events: { iCalUID: string; allDay?: boolean }[] }[] = [];
+      const fetchThroughFakes = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+        const url = new URL(input instanceof Request ? input.url : input.toString());
+        if (url.origin === 'https://www.googleapis.com') {
+          return fetch(new URL(url.pathname + url.search, calendar.url), init);
+        }
+        postedSnapshots.push(JSON.parse(String(init?.body)));
+        return backend.request(url.pathname, init);
+      };
+
+      await pollCalendarOnce({
+        fetch: fetchThroughFakes,
+        accessToken: 'fake-token',
+        accountEmail,
+        backendUrl,
+        now: pollTime,
+        timeZone: 'America/Mexico_City',
+      });
+      const nowView = (await (await backend.request('/now')).json()) as {
+        current: { iCalUID: string }[];
+        laterToday: { iCalUID: string }[];
+      };
+
+      const postedAllDayIdentifiers = postedSnapshots.flatMap((snapshot) =>
+        snapshot.events.filter((event) => event.allDay === true).map((event) => event.iCalUID),
+      );
+      expect(postedAllDayIdentifiers).toHaveLength(1);
+      expect(nowView.laterToday.map((event) => event.iCalUID)).toEqual(postedAllDayIdentifiers);
+      expect(nowView.current).toEqual([]);
+    } finally {
+      await calendar.close();
+    }
+  });
 });
