@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-02 10:05 · `packages/domain/src/now-view.test.ts::does not report an event that has already ended as current`
+- Behavior: an event whose end is before the clock is not in `current`
+- Predicted: passes on first run — the previous green's filter already requires `now < event.end`
+- Actual: passes on first run (1 passed)
+- Type: passed unexpectedly
+- Resolution: the prior green over-implemented by adding the end bound before its test existed; kept the test as the pin for this TODO item, nothing to make green.
+
 ## 2026-11-02 09:51 · `packages/domain/src/merge-calendar-snapshots.test.ts::keeps two events with different iCalUIDs at the same time separate`
 - Behavior: two events sharing start and end but with different iCalUIDs survive the merge as two entries
 - Predicted: passes on first run, because the merge keys on iCalUID alone and never reads start or end

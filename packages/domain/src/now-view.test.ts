@@ -22,4 +22,12 @@ describe('buildNowView', () => {
 
     expect(view.current).toEqual([weeklySync]);
   });
+
+  it('does not report an event that has already ended as current', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T15:45:00.000Z') };
+
+    const view = buildNowView([weeklySync], clock);
+
+    expect(view.current).toEqual([]);
+  });
 });
