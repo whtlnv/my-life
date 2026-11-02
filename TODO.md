@@ -51,7 +51,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] GET /now's badge count is zero when no event starts within 15 minutes and two when two do
 - [x] GET /now bounds later today by midnight in the configured time zone (America/Mexico_City), not the machine's
 - [x] A snapshot reported before a backend restart is still served by GET /now after it
-- [ ] When no database path is configured, the backend stores its file under `~/Library/Application Support/my-life/`
+- [x] When no database path is configured, the backend stores its file under `~/Library/Application Support/my-life/`
 - [ ] GET / serves the dashboard build's index page
 
 ### Extension
