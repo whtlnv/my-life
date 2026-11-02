@@ -1,0 +1,45 @@
+# PENDING_TASKS.md
+
+What the user owes the project: accounts, approvals, credentials and decisions only the user can provide. Written 2026-10-29. Delete an entry when it's done; Claude acts on each one once it's handed over. Engineering work lives in `PLAN.md`; deferred gaps in `BACKLOG.md`. **This file is not a work queue** (see `CLAUDE.md`).
+
+## 1. Start today — Google Cloud project and OAuth client (Phase 0's spike waits on it)
+
+- [ ] **One Google Cloud project** (any of your accounts can own it; a Workspace one you administer is simplest). Enable the **Gmail API**, **Google Calendar API** and **Google Drive API**.
+- [ ] **OAuth consent screen**: user type _External_, publishing status _Testing_. Add **every Google account you want aggregated** as a test user (the Workspace ones and the gmail.com ones). Scopes to list: `calendar.readonly`, `gmail.modify`, `gmail.settings.basic`, `drive.readonly`, `userinfo.email`.
+- [ ] **OAuth client of type _Chrome Extension_**. It needs the extension's ID, which comes from a fixed `key` in the manifest; Claude generates the key and gives you the ID when Phase 0 starts, then you paste the client ID into `apps/extension/.env`.
+- [ ] **List the accounts**: for each, the email, whether it is Workspace or gmail.com, and what it is for (one line each). Goes in `profile/accounts.md` and the backend allow-list.
+
+## 2. Anthropic API key (Phase 1)
+
+- [ ] Your own key → local `.env` as `ANTHROPIC_API_KEY`. Never in git.
+
+## 3. Profile (Phase 1)
+
+- [ ] Fill `profile/` from the template Claude writes in Phase 0: each account's purpose, the people whose messages always matter, the people whose messages never do, what you are working on this month, and anything that should always become a task (invoices, contracts, approvals...).
+
+## 4. Todo list (Phase 3)
+
+- [ ] The path to your markdown/text todo list. Default format: one task per line or checkbox; headings become tags. If it looks different, say so.
+
+## 5. Slack app (Phase 4)
+
+- [ ] Create a Slack app with **user token scopes** `channels:history`, `groups:history`, `im:history`, `mpim:history`, `channels:read`, `groups:read`, `im:read`, `mpim:read`, `users:read`, `search:read`, `chat:write`. Redirect URL: the localhost one Claude gives you.
+- [ ] **Install it in both workspaces.** If an admin must approve, ask now; it takes longest. Say which workspace is which in `profile/accounts.md`.
+
+## 6. Telegram (Phase 5)
+
+- [ ] `api_id` and `api_hash` from https://my.telegram.org under your account → `.env`.
+- [ ] One interactive phone login when Phase 5 starts (Claude runs the script, you type the code).
+
+## 7. Decisions and confirmations (each has a default so nothing waits)
+
+- [ ] **Daily LLM spend ceiling.** Default: USD 2 per day; triage pauses and the dashboard says so when reached.
+- [ ] **Which calendars per account.** Default: every calendar the account can see, except declined events and calendars named _Holidays_ / _Birthdays_.
+- [ ] **Triage categories to start with.** Default: `newsletter`, `receipt`, `notification`, `calendar-invite`, `personal`, `work-thread`, `unknown`. All start in `advise`.
+- [ ] **How many confirmed archives from the same sender before a filter is proposed.** Default: 3.
+- [ ] **Which profile keeps `web.whatsapp.com` open.** Default: the first one you install the extension in.
+- [ ] **Business time zone.** Default: `America/Mexico_City`.
+
+## 8. The Mac
+
+- [ ] Confirm the Mac stays on and Chrome stays open (locked decision 1). Claude provides the launchd plist for the backend in Phase 0; you install it once.

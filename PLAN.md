@@ -1,0 +1,107 @@
+# PLAN.md — live plan
+
+`/tdd-deliver` (or `/tdd-supervise`) takes the top undecomposed section, `/plan` decomposes it into TODO items, and each item runs Red→Green→Refactor. Delivered sections are purged from this file once archived. Decisions come from `CLAUDE.md` § Locked decisions. Gaps go to `BACKLOG.md`; anything only the user can do goes to `PENDING_TASKS.md`.
+
+Phases (locked decision 17):
+
+- **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton.
+- **Phase 1:** Gmail triage on one account, _advise_ mode.
+- **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters.
+- **Phase 3:** tasks and the prioritizer: import, _now_ / _later today_, waiting-on.
+- **Phase 4:** Slack.
+- **Phase 5:** WhatsApp and Telegram, read and reply.
+- **Phase 6:** Gemini meeting notes from Drive.
+- **Phase 7:** cloud.
+
+Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Before Phase 1: § 2 (Anthropic key) and § 3 (profile). Before Phase 4: § 5 (Slack app). Before Phase 5: § 6 (Telegram credentials).
+
+---
+
+## Phase 0 — Tooling, auth spike, calendar skeleton
+
+Outcome: every Chrome profile runs the extension, each reports its calendars to the local backend, and one dashboard page shows the merged _now / next_ event across all accounts, with the Meet link. No LLM.
+
+Spike first (`docs/decisions/2026-xx-xx-chrome-identity-tokens.md`): an unpacked WXT extension with a fixed `key`, the OAuth client of type _Chrome Extension_, `chrome.identity.getAuthToken` on a Workspace profile and a gmail.com profile, one `calendar.readonly` call each. Re-run three days later without re-consent. Record the result and the fallback decision if it fails (locked decision 2).
+
+- Monorepo: `pnpm`, Node 24 pinned, `packages/domain`, `packages/contracts`, `apps/extension` (WXT), `apps/backend` (Hono + better-sqlite3), `apps/dashboard` (Vite + React). Lint wall, `/tdd-init` files, dependency-direction test, CI on push (lint + unit).
+- Backend boots on `localhost:<port>`, serves the dashboard build at `/`, exposes `POST /sources/calendar` and `GET /now`. SQLite file under `~/Library/Application Support/my-life/`. A launchd plist in `scripts/` installs it.
+- Extension: registers with the backend using the profile's account email (allow-list in config, locked decision 19); polls the account's calendars every 5 min; posts events for today and tomorrow.
+- Domain: merge events across accounts, dedupe the same event invited to several accounts (same iCalUID), compute _current_ (started, not ended), _next_ (starts within 15 min), and _later today_; `Clock` injected, `America/Mexico_City`.
+- Dashboard: _Now_ block with the event, join link and attendees; _Later today_ list; per-account freshness and stale marker (twice the polling interval).
+- Badge: count of events starting within 15 min.
+- Calendar fake HTTP server with named scenarios (`empty`, `overlapping`, `all-day`, `cross-account-duplicate`) for the integration suite.
+- Manual checklist in `docs/`: install in each profile, see each account appear, see the badge.
+
+## Phase 1 — Gmail triage, one account, advise
+
+Outcome: the oldest-pain inbox is triaged by Claude into `archive` / `keep` / `act` proposals that the user confirms with one key; `act` creates a task.
+
+- Extension polls Gmail through `history.list` from the stored history id (full resync on 404), batches `messages.get` with `format=metadata` plus snippet, posts to `POST /sources/mail`.
+- Domain: a `Triage` port; the `TriageProposal` (`archive` / `keep` / `act`, category, reason, optional task draft) validated by zod; a `Verdict` (confirm / reject, with the user's correction) stored append-only; the rule that an `advise` category never archives on its own.
+- Claude adapter: versioned prompt files; the `profile/` context plus the N most recent verdicts for the same sender or category as examples; one small-model call per message; spend logged per call against the daily ceiling; a scripted fake in the unit and integration suites.
+- Dashboard triage queue: one proposal at a time, keys `a` archive, `k` keep, `t` make task, `r` reject with a correction; shows the reason and the source link.
+- Confirmed archive → Gmail `messages.modify` removes `INBOX` and adds label `my-life/archived`; confirmed `act` → a task in the store (title, source link, account).
+- Gmail fake HTTP server with scenarios (`newsletter`, `receipt`, `thread-needs-reply`, `history-404`).
+
+## Phase 2 — Every account, categories, Gmail filters
+
+Outcome: all inboxes are triaged, trusted categories run automatically, and recurring trivial mail never reaches the inbox again.
+
+- Every profile's extension polls Gmail; the queue is merged and shows the account.
+- Category settings page: each category's `advise` / `automatic` switch, with its recent proposals and the agreement rate (confirmed ÷ proposed) shown before the switch. Automatic actions are labeled `my-life/auto`.
+- Filter proposals: after K confirmed archives from the same sender or list-id, Claude proposes a Gmail filter (criteria + label + skip inbox); the user approves; the extension creates it through `users.settings.filters.create` (`gmail.settings.basic`). Approvals are stored before creation. A filter page lists what was created and lets the user delete one.
+- Kill switch: one toggle returns every category to `advise`.
+
+## Phase 3 — Tasks and the prioritizer
+
+Outcome: the _now_ view shows the 3 tasks that matter right now and who is waiting on the user; the todo list lives here.
+
+- One-time import of the markdown/text list (`PENDING_TASKS.md` § 4): one task per line or checkbox, headings become tags.
+- Task state in the domain: `open` / `done` / `snoozed until`; priority; optional due; waiting-on person; every transition append-only.
+- Prioritization pass (stronger model, structured output): ranks open tasks given the profile, the calendar for the day and due times; runs on a schedule and on demand; the dashboard shows the rank and the reason; the user can pin a task to the top.
+- Waiting-on block: email threads where the last message is not the user's, ordered by wait time (Slack and chats join in Phases 4 and 5).
+- _Later today_ interleaves events and due tasks.
+- Badge becomes: events within 15 min + proposals waiting + tasks due now.
+
+## Phase 4 — Slack
+
+Outcome: DMs, mentions and threads the user is in from both workspaces feed the triage queue and the waiting-on block; replies are sent from the dashboard.
+
+- Slack app with user scopes; OAuth install flow served by the backend on localhost; tokens in the local store.
+- Backend polls `conversations.history` for DMs and `search.messages` for mentions every 60 s per workspace.
+- Domain: a Slack message becomes a triage item (`ignore` / `act` / `reply`) and, when unanswered, a waiting-on entry.
+- Reply composer in the dashboard → `chat.postMessage` as the user, only on an explicit send.
+- Slack fake HTTP server with scenarios.
+
+## Phase 5 — WhatsApp and Telegram
+
+Outcome: unread chats appear in waiting-on and the triage queue; the user replies from the dashboard.
+
+- Telegram: gramjs user session in the backend (`PENDING_TASKS.md` § 6), updates → messages; send through the same session.
+- WhatsApp: content script on `web.whatsapp.com` parses the chat list and the open chat into a payload (parsers are pure functions over saved HTML fixtures); posts on DOM mutation with a 10 s debounce; a `send` command from the backend selects the chat and drives the composer.
+- Domain: chat messages join triage and waiting-on with the same model as Slack.
+- Fixture set for the WhatsApp parser plus a fixture-drift check that fails loudly when a selector matches nothing.
+
+## Phase 6 — Gemini meeting notes
+
+Outcome: action items from Meet calls become task proposals.
+
+- Extension polls Drive for new "Notes by Gemini" docs per account every 15 min, posts the text.
+- Domain: a notes parser extracts action items assigned to the user; each becomes a triage proposal of kind `act` linked to the doc and the calendar event.
+
+## Phase 7 — Cloud
+
+Outcome: the backend runs in AWS and keeps working when the Mac sleeps; the extension and dashboard point at it.
+
+- `infra` CDK app in the marketing-expert shape (Lambda, DynamoDB single table, EventBridge, CloudFront + Google sign-in restricted to the user's emails), Floci locally and in CI.
+- `TaskStore` and the other SQLite adapters get DynamoDB twins passing the same contract suites.
+- The extension's backend URL becomes a setting; Slack and Telegram pollers move to scheduled Lambdas.
+- Decide then whether Gmail and Calendar polling also moves server-side (needs the OAuth path revisited) or stays in the extension.
+
+## Later
+
+- Chrome notifications or a Telegram bot for nudges (locked decision 14 holds until the dashboard proves what deserves an interruption).
+- Side panel for the _now_ block.
+- In-call detection on `meet.google.com`.
+- Recurring tasks.
+- Two-way sync with another task tool.
