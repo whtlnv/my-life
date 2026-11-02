@@ -256,4 +256,44 @@ describe('pollCalendarOnce', () => {
     expect(eventsRequestCount).toBe(1);
     expect(backendPosts).toEqual([]);
   });
+  it('gives up after five retryable answers in a row from Calendar and reports an error instead of retrying forever', async () => {
+    const retryableAnswersBeforeCalendarRecovers = 50;
+    let eventsRequestCount = 0;
+    const backendPosts: unknown[] = [];
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Response.json({
+          kind: 'calendar#calendarList',
+          items: [{ kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true }],
+        });
+      }
+      if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
+        eventsRequestCount++;
+        if (eventsRequestCount <= retryableAnswersBeforeCalendarRecovers) {
+          return Response.json({ error: { code: 503, message: 'Backend Error' } }, { status: 503 });
+        }
+        return Response.json({ kind: 'calendar#events', items: [] });
+      }
+      if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
+        backendPosts.push(JSON.parse(String(init.body)));
+        return Response.json({ ok: true });
+      }
+      return new Response('unexpected request', { status: 404 });
+    };
+
+    await expect(
+      pollCalendarOnce({
+        fetch: fakeFetch,
+        wait: async () => {},
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+        now: new Date('2026-11-02T10:00:00-06:00'),
+        timeZone: 'America/Mexico_City',
+      }),
+    ).rejects.toThrow(/503/);
+    expect(eventsRequestCount).toBe(5);
+    expect(backendPosts).toEqual([]);
+  });
 });
