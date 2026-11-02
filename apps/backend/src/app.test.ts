@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -314,5 +314,19 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/html');
     expect(await response.text()).toBe(indexPage);
+  });
+
+  it('serves the dashboard build\'s bundled script at GET /assets/<file>', async () => {
+    const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
+    mkdirSync(join(dashboardDirectory, 'assets'));
+    const bundledScript = 'document.getElementById("root").textContent = "Now";';
+    writeFileSync(join(dashboardDirectory, 'assets', 'index-abc123.js'), bundledScript);
+    const app = createApp({ allowedEmails: [], dashboardDirectory });
+
+    const response = await app.request('/assets/index-abc123.js');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('javascript');
+    expect(await response.text()).toBe(bundledScript);
   });
 });
