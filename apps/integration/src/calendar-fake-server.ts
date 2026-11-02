@@ -66,7 +66,7 @@ export async function startCalendarFakeServer(scenario: CalendarScenario) {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
   return {
-    url: `http://127.0.0.1:${port}`,
+    url: `http://127.0.0.1:${String(port)}`,
     close: () =>
       new Promise<void>((resolve) =>
         server.close(() => {
