@@ -28,35 +28,39 @@ describe('pollCalendarOnce', () => {
     };
     const eventsRequests: URL[] = [];
     const backendPosts: { url: string; body: unknown }[] = [];
-    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Response.json({
-          kind: 'calendar#calendarList',
-          items: [
-            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
-            { kind: 'calendar#calendarListEntry', id: 'team@group.calendar.google.com', summary: 'Team' },
-            {
-              kind: 'calendar#calendarListEntry',
-              id: 'en.mexican#holiday@group.v.calendar.google.com',
-              summary: 'Holidays',
-            },
-          ],
-        });
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#calendarList',
+            items: [
+              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+              { kind: 'calendar#calendarListEntry', id: 'team@group.calendar.google.com', summary: 'Team' },
+              {
+                kind: 'calendar#calendarListEntry',
+                id: 'en.mexican#holiday@group.v.calendar.google.com',
+                summary: 'Holidays',
+              },
+            ],
+          }),
+        );
       }
       const eventsPath = /^\/calendar\/v3\/calendars\/([^/]+)\/events$/.exec(url.pathname);
       if (url.origin === 'https://www.googleapis.com' && eventsPath !== null) {
         eventsRequests.push(url);
-        return Response.json({
-          kind: 'calendar#events',
-          items: eventsByCalendarId[decodeURIComponent(eventsPath[1] ?? '')] ?? [],
-        });
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#events',
+            items: eventsByCalendarId[decodeURIComponent(eventsPath[1] ?? '')] ?? [],
+          }),
+        );
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
         backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
-        return Response.json({ ok: true });
+        return Promise.resolve(Response.json({ ok: true }));
       }
-      return new Response('unexpected request', { status: 404 });
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
     };
 
     await pollCalendarOnce({
@@ -124,29 +128,33 @@ describe('pollCalendarOnce', () => {
       recurringEventId: 'weekly-sync',
     };
     const backendPosts: unknown[] = [];
-    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Response.json({
-          kind: 'calendar#calendarList',
-          items: [
-            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
-          ],
-        });
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#calendarList',
+            items: [
+              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+            ],
+          }),
+        );
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
         const expandsRecurringEvents =
           url.searchParams.get('singleEvents') === 'true' && url.searchParams.get('orderBy') === 'startTime';
-        return Response.json({
-          kind: 'calendar#events',
-          items: [expandsRecurringEvents ? todaysWeeklySyncInstance : weeklySyncSeries],
-        });
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#events',
+            items: [expandsRecurringEvents ? todaysWeeklySyncInstance : weeklySyncSeries],
+          }),
+        );
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
         backendPosts.push(JSON.parse(init.body as string));
-        return Response.json({ ok: true });
+        return Promise.resolve(Response.json({ ok: true }));
       }
-      return new Response('unexpected request', { status: 404 });
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
     };
 
     await pollCalendarOnce({
@@ -181,37 +189,40 @@ describe('pollCalendarOnce', () => {
       Response.json({ error: { code: 503, message: 'Backend Error' } }, { status: 503 }),
     ];
     const backendPosts: unknown[] = [];
-    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Response.json({
-          kind: 'calendar#calendarList',
-          items: [
-            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
-          ],
-        });
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#calendarList',
+            items: [
+              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+            ],
+          }),
+        );
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
-        return (
+        return Promise.resolve(
           failuresBeforeSuccess.shift() ??
-          Response.json({
-            kind: 'calendar#events',
-            items: [calendarEvent('standup', 'Standup', '2026-11-02T09:00:00-06:00', '2026-11-02T09:15:00-06:00')],
-          })
+            Response.json({
+              kind: 'calendar#events',
+              items: [calendarEvent('standup', 'Standup', '2026-11-02T09:00:00-06:00', '2026-11-02T09:15:00-06:00')],
+            }),
         );
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
         backendPosts.push(JSON.parse(init.body as string));
-        return Response.json({ ok: true });
+        return Promise.resolve(Response.json({ ok: true }));
       }
-      return new Response('unexpected request', { status: 404 });
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
     };
     const waitsInMilliseconds: number[] = [];
 
     await pollCalendarOnce({
       fetch: fakeFetch,
-      wait: async (milliseconds: number) => {
+      wait: (milliseconds: number) => {
         waitsInMilliseconds.push(milliseconds);
+        return Promise.resolve();
       },
       accessToken: 'token-for-francisco',
       accountEmail: 'francisco@example.com',
@@ -243,25 +254,27 @@ describe('pollCalendarOnce', () => {
   it('does not retry a 4xx answer other than 429 from Calendar and reports it as an error without posting a snapshot', async () => {
     let eventsRequestCount = 0;
     const backendPosts: unknown[] = [];
-    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Response.json({
-          kind: 'calendar#calendarList',
-          items: [
-            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
-          ],
-        });
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#calendarList',
+            items: [
+              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+            ],
+          }),
+        );
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
         eventsRequestCount++;
-        return Response.json({ error: { code: 403, message: 'Forbidden' } }, { status: 403 });
+        return Promise.resolve(Response.json({ error: { code: 403, message: 'Forbidden' } }, { status: 403 }));
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
         backendPosts.push(JSON.parse(init.body as string));
-        return Response.json({ ok: true });
+        return Promise.resolve(Response.json({ ok: true }));
       }
-      return new Response('unexpected request', { status: 404 });
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
     };
 
     await expect(
@@ -282,28 +295,30 @@ describe('pollCalendarOnce', () => {
     const retryableAnswersBeforeCalendarRecovers = 50;
     let eventsRequestCount = 0;
     const backendPosts: unknown[] = [];
-    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Response.json({
-          kind: 'calendar#calendarList',
-          items: [
-            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
-          ],
-        });
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#calendarList',
+            items: [
+              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+            ],
+          }),
+        );
       }
       if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
         eventsRequestCount++;
         if (eventsRequestCount <= retryableAnswersBeforeCalendarRecovers) {
-          return Response.json({ error: { code: 503, message: 'Backend Error' } }, { status: 503 });
+          return Promise.resolve(Response.json({ error: { code: 503, message: 'Backend Error' } }, { status: 503 }));
         }
-        return Response.json({ kind: 'calendar#events', items: [] });
+        return Promise.resolve(Response.json({ kind: 'calendar#events', items: [] }));
       }
       if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
         backendPosts.push(JSON.parse(init.body as string));
-        return Response.json({ ok: true });
+        return Promise.resolve(Response.json({ ok: true }));
       }
-      return new Response('unexpected request', { status: 404 });
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
     };
 
     await expect(
