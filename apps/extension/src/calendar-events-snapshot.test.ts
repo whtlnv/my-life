@@ -112,7 +112,7 @@ describe('snapshotFromCalendarEvents', () => {
 
     const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
 
-    expect(Object.keys(snapshot.events[0] ?? {})).not.toContain('meetLink');
+    expect(snapshot.events.map((event) => Object.keys(event))).toEqual([expect.not.arrayContaining(['meetLink'])]);
   });
 
   it('converts a Calendar event with no attendees with an empty attendee list', () => {
