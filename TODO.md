@@ -90,7 +90,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Dashboard
 
-- [ ] The Now block shows the current event's title, join link and attendees
+- [x] The Now block shows the current event's title, join link and attendees
 - [ ] When nothing is current or next, the Now block says there is nothing now
 - [ ] A next event shows in the Now block with the minutes until it starts
 - [ ] Later today lists the remaining events in time order with their start times
