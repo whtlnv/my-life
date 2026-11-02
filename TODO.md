@@ -39,7 +39,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Backend
 
-- [ ] A registration from an email in the allow-list is accepted
+- [x] A registration from an email in the allow-list is accepted
 - [ ] A registration from an email not in the allow-list is refused
 - [ ] A calendar snapshot posted by an allow-listed account answers success and its events appear in GET /now
 - [ ] A calendar snapshot posted by an account outside the allow-list is refused and none of its events appear in GET /now

@@ -11,4 +11,17 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(healthResponse.parse(await response.json())).toEqual({ ok: true });
   });
+
+  it('accepts a registration from an email in the allow-list', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+
+    const response = await app.request('/register', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'ana@example.com' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ email: 'ana@example.com' });
+  });
 });
