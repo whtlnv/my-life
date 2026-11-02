@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 import { calendarSnapshot, type HealthResponse } from '@my-life/contracts';
 import {
+  badgeCount,
   buildNowView,
   mergeCalendarSnapshots,
   type CalendarSnapshot,
@@ -55,10 +56,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/now', (context) => {
     const latestSnapshots = [...snapshotsByAccount.values()];
+    const events = mergeCalendarSnapshots(latestSnapshots);
     return context.json({
-      ...buildNowView(mergeCalendarSnapshots(latestSnapshots), clock),
+      ...buildNowView(events, clock),
       accounts: describeAccountFreshness(lastReportedAtByAccount, clock.now()),
-      badgeCount: 1,
+      badgeCount: badgeCount(events, clock),
     });
   });
   return app;

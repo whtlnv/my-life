@@ -209,4 +209,35 @@ describe('backend app', () => {
 
     expect(await now.json()).toMatchObject({ badgeCount: 1 });
   });
+
+  it('makes the GET /now badge count zero when no event starts within 15 minutes and two when two do', async () => {
+    const quietApp = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const busyApp = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const startingAtQuarterPast = {
+      id: 'event-7',
+      iCalUID: 'event-7@google.com',
+      title: 'Starting at quarter past',
+      start: '2026-11-02T15:15:00.000Z',
+      end: '2026-11-02T15:45:00.000Z',
+      attendees: [],
+    };
+    const startingAtTwentyPast = {
+      id: 'event-8',
+      iCalUID: 'event-8@google.com',
+      title: 'Starting at twenty past',
+      start: '2026-11-02T15:20:00.000Z',
+      end: '2026-11-02T15:50:00.000Z',
+      attendees: [],
+    };
+
+    await postCalendarSnapshot(quietApp, 'ana@example.com', [weeklySync]);
+    await postCalendarSnapshot(busyApp, 'ana@example.com', [
+      weeklySync,
+      startingAtQuarterPast,
+      startingAtTwentyPast,
+    ]);
+
+    expect(await (await quietApp.request('/now')).json()).toMatchObject({ badgeCount: 0 });
+    expect(await (await busyApp.request('/now')).json()).toMatchObject({ badgeCount: 2 });
+  });
 });
