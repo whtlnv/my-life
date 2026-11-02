@@ -4,7 +4,14 @@ import { join } from 'node:path';
 import { Hono } from 'hono';
 
 import { calendarSnapshot, type HealthResponse } from '@my-life/contracts';
-import { badgeCount, buildNowView, mergeCalendarSnapshots, type CalendarSnapshot, type Clock } from '@my-life/domain';
+import {
+  badgeCount,
+  buildNowView,
+  isAccountFresh,
+  mergeCalendarSnapshots,
+  type CalendarSnapshot,
+  type Clock,
+} from '@my-life/domain';
 
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 
@@ -17,17 +24,19 @@ export interface AppOptions {
 
 const systemClock: Clock = { now: () => new Date() };
 
-// Calendar is polled every 5 minutes; a source silent for twice that is stale.
-const calendarStaleAfterMilliseconds = 10 * 60 * 1000;
+const calendarPollingIntervalInMilliseconds = 5 * 60 * 1000;
 
 const businessTimeZone = 'America/Mexico_City';
 
-function describeAccountFreshness(stored: StoredCalendarSnapshot[], now: Date) {
-  return stored.map(({ accountEmail, reportedAt }) => ({
-    email: accountEmail,
-    lastReportedAt: reportedAt.toISOString(),
-    stale: now.getTime() - reportedAt.getTime() > calendarStaleAfterMilliseconds,
-  }));
+function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock) {
+  return stored.map(({ accountEmail, reportedAt }) => {
+    const report = {
+      email: accountEmail,
+      lastReportedAt: reportedAt.toISOString(),
+      pollingIntervalInMilliseconds: calendarPollingIntervalInMilliseconds,
+    };
+    return { email: report.email, lastReportedAt: report.lastReportedAt, stale: !isAccountFresh(report, clock) };
+  });
 }
 
 // The HTTP app, built without a port so tests call it directly through `app.request`.
@@ -61,7 +70,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const events = mergeCalendarSnapshots(latestSnapshots);
     return context.json({
       ...buildNowView(events, clock, businessTimeZone),
-      accounts: describeAccountFreshness(stored, clock.now()),
+      accounts: describeAccountFreshness(stored, clock),
       badgeCount: badgeCount(events, clock),
     });
   });
