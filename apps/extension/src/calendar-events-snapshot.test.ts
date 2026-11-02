@@ -42,4 +42,29 @@ describe('snapshotFromCalendarEvents', () => {
       ],
     });
   });
+
+  it('leaves out an event the account has declined', () => {
+    const calendarEvent = (id: string, ownResponseStatus: string) => ({
+      kind: 'calendar#event',
+      id,
+      iCalUID: `${id}@google.com`,
+      status: 'confirmed',
+      summary: `Meeting ${id}`,
+      start: { dateTime: '2026-11-02T09:00:00-06:00', timeZone: 'America/Mexico_City' },
+      end: { dateTime: '2026-11-02T09:30:00-06:00', timeZone: 'America/Mexico_City' },
+      hangoutLink: 'https://meet.google.com/abc-defg-hij',
+      attendees: [
+        { email: 'ana@example.com', displayName: 'Ana', responseStatus: 'accepted' },
+        { email: 'francisco@example.com', displayName: 'Francisco', self: true, responseStatus: ownResponseStatus },
+      ],
+    });
+    const eventsResponse = {
+      kind: 'calendar#events',
+      items: [calendarEvent('accepted-event', 'accepted'), calendarEvent('declined-event', 'declined')],
+    };
+
+    const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
+
+    expect(snapshot.events.map((event) => event.id)).toEqual(['accepted-event']);
+  });
 });

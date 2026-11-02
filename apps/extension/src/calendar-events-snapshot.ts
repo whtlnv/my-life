@@ -5,12 +5,16 @@ type GoogleCalendarEvent = {
   start: { dateTime: string };
   end: { dateTime: string };
   hangoutLink: string;
-  attendees: { email: string; displayName: string }[];
+  attendees: { email: string; displayName: string; self?: boolean; responseStatus?: string }[];
 };
 
 type GoogleCalendarEventsResponse = {
   items: GoogleCalendarEvent[];
 };
+
+function isDeclinedByAccount(event: GoogleCalendarEvent) {
+  return event.attendees.some((attendee) => attendee.self === true && attendee.responseStatus === 'declined');
+}
 
 function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
   return {
@@ -27,6 +31,6 @@ function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
 export function snapshotFromCalendarEvents(accountEmail: string, eventsResponse: GoogleCalendarEventsResponse) {
   return {
     accountEmail,
-    events: eventsResponse.items.map(snapshotEventFromCalendarEvent),
+    events: eventsResponse.items.filter((event) => !isDeclinedByAccount(event)).map(snapshotEventFromCalendarEvent),
   };
 }
