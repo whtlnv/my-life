@@ -55,6 +55,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] When a database path is configured, the backend stores its file there instead of the default
 - [x] GET / serves the dashboard build's index page
 - [x] GET /assets/<file> serves the dashboard build's bundled script, so the page is not blank
+- [ ] GET /assets/<file>.css is served as a stylesheet, not as a script
 
 ### Extension
 
