@@ -15,7 +15,7 @@ export function readStartupSettings(
   return {
     allowedEmails: parseAllowedEmails(environment.MY_LIFE_ALLOWED_EMAILS),
     port: parsePort(environment.MY_LIFE_PORT),
-    databasePath: resolveDatabasePath(undefined, homeDirectory),
+    databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
   };
 }
 

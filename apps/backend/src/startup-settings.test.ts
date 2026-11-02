@@ -54,4 +54,10 @@ describe('startup settings', () => {
 
     expect(settings.databasePath).toBe(resolveDatabasePath(undefined, '/Users/ana'));
   });
+
+  it('uses /tmp/elsewhere.sqlite as the database path when MY_LIFE_DATABASE_PATH is /tmp/elsewhere.sqlite', () => {
+    const settings = readStartupSettings({ MY_LIFE_DATABASE_PATH: '/tmp/elsewhere.sqlite' }, '/Users/ana');
+
+    expect(settings.databasePath).toBe('/tmp/elsewhere.sqlite');
+  });
 });
