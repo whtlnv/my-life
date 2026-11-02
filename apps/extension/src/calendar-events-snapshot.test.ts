@@ -67,4 +67,29 @@ describe('snapshotFromCalendarEvents', () => {
 
     expect(snapshot.events.map((event) => event.id)).toEqual(['accepted-event']);
   });
+
+  it('turns an all-day Calendar event into an all-day event in the snapshot', () => {
+    const eventsResponse = {
+      kind: 'calendar#events',
+      items: [
+        {
+          kind: 'calendar#event',
+          id: 'offsite',
+          iCalUID: 'offsite@google.com',
+          status: 'confirmed',
+          summary: 'Team offsite',
+          start: { date: '2026-11-03' },
+          end: { date: '2026-11-04' },
+          hangoutLink: 'https://meet.google.com/off-site-xyz',
+          attendees: [],
+        },
+      ],
+    };
+
+    const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
+
+    expect(snapshot.events).toEqual([
+      expect.objectContaining({ id: 'offsite', allDay: true, start: '2026-11-03', end: '2026-11-04' }),
+    ]);
+  });
 });

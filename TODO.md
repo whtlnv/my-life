@@ -61,7 +61,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 - [x] A Google Calendar events response is converted into a snapshot with title, start, end, Meet link, attendees and iCalUID
 - [x] An event the account has declined is left out of the snapshot
-- [ ] An all-day Calendar event becomes an all-day event in the snapshot
+- [x] An all-day Calendar event becomes an all-day event in the snapshot
 - [ ] A Calendar event without a Meet link is converted with no meetLink field at all, never null
 - [ ] A Calendar event with no attendees is converted with an empty attendee list
 - [ ] An attendee without a display name is converted with the email as the display name
