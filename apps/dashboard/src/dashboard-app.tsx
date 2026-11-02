@@ -70,6 +70,7 @@ export function DashboardApp() {
   const [laterToday, setLaterToday] = useState<LaterTodayEvent[]>([]);
   const [accounts, setAccounts] = useState<AccountReport[]>([]);
   const [backendUnreachable, setBackendUnreachable] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     void fetch('/now')
@@ -79,16 +80,19 @@ export function DashboardApp() {
         setNext(body.next);
         setLaterToday(body.laterToday);
         setAccounts(body.accounts);
+        setLoaded(true);
       })
       .catch(() => setBackendUnreachable(true));
   }, []);
 
-  const nothingToShow = !backendUnreachable && current.length === 0 && next.length === 0;
+  const loading = !loaded && !backendUnreachable;
+  const nothingToShow = loaded && current.length === 0 && next.length === 0;
 
   return (
     <main>
       <h1>my-life</h1>
       <section aria-label="Now">
+        {loading && <p>Loading</p>}
         {backendUnreachable && <p>The backend cannot be reached</p>}
         {nothingToShow && <p>Nothing now</p>}
         {current.map((event) => (

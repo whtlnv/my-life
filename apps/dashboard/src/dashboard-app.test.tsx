@@ -167,6 +167,19 @@ describe('DashboardApp', () => {
     expect(within(nowBlock).queryByText(/nothing now/i)).not.toBeInTheDocument();
   });
 
+  it('shows a loading state instead of nothing now in the Now block before the backend answers', () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+
+    render(<DashboardApp />);
+
+    const nowBlock = screen.getByRole('region', { name: 'Now' });
+    expect(within(nowBlock).getByText(/loading/i)).toBeInTheDocument();
+    expect(within(nowBlock).queryByText(/nothing now/i)).not.toBeInTheDocument();
+  });
+
   it('lists the later-today events in time order with their start times in America/Mexico_City', async () => {
     answerGetNowWith({
       current: [],
