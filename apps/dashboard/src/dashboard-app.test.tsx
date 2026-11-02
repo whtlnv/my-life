@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { DashboardApp } from './dashboard-app';
 
@@ -58,6 +58,38 @@ describe('DashboardApp', () => {
     );
     expect(within(nowBlock).getByText(/Ana Ruiz/)).toBeInTheDocument();
     expect(within(nowBlock).getByText(/Luis Pérez/)).toBeInTheDocument();
+  });
+
+  it('shows a next event in the Now block with the minutes until it starts', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    vi.setSystemTime(new Date('2026-11-02T14:50:00.000Z'));
+    answerGetNowWith({
+      current: [],
+      next: [
+        {
+          id: 'event-2',
+          iCalUID: 'planning@google.com',
+          title: 'Sprint planning',
+          start: '2026-11-02T15:00:00.000Z',
+          end: '2026-11-02T16:00:00.000Z',
+          meetLink: 'https://meet.google.com/xyz-abcd-efg',
+          attendees: [],
+          accounts: ['work@example.com'],
+        },
+      ],
+      laterToday: [],
+      accounts: [],
+      badgeCount: 1,
+    });
+
+    render(<DashboardApp />);
+
+    const nowBlock = await screen.findByRole('region', { name: 'Now' });
+    expect(await within(nowBlock).findByText('Sprint planning')).toBeInTheDocument();
+    expect(within(nowBlock).getByText(/\b10 min/)).toBeInTheDocument();
   });
 
   it('says there is nothing now in the Now block when nothing is current or next', async () => {

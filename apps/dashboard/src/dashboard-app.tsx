@@ -7,6 +7,22 @@ type NowEvent = {
   attendees: { email: string; displayName: string }[];
 };
 
+type NextEvent = {
+  id: string;
+  title: string;
+  start: string;
+};
+
+function NextEventSummary({ event }: { event: NextEvent }) {
+  const minutesUntilStart = Math.round((new Date(event.start).getTime() - Date.now()) / 60_000);
+  return (
+    <article>
+      <h2>{event.title}</h2>
+      <p>In {minutesUntilStart} min</p>
+    </article>
+  );
+}
+
 function CurrentEvent({ event }: { event: NowEvent }) {
   return (
     <article>
@@ -19,12 +35,14 @@ function CurrentEvent({ event }: { event: NowEvent }) {
 
 export function DashboardApp() {
   const [current, setCurrent] = useState<NowEvent[]>([]);
+  const [next, setNext] = useState<NextEvent[]>([]);
 
   useEffect(() => {
     void fetch('/now')
-      .then((response) => response.json() as Promise<{ current: NowEvent[] }>)
+      .then((response) => response.json() as Promise<{ current: NowEvent[]; next: NextEvent[] }>)
       .then((body) => {
         setCurrent(body.current);
+        setNext(body.next);
       })
       .catch(() => undefined);
   }, []);
@@ -36,6 +54,9 @@ export function DashboardApp() {
         {current.length === 0 && <p>Nothing now</p>}
         {current.map((event) => (
           <CurrentEvent key={event.id} event={event} />
+        ))}
+        {next.map((event) => (
+          <NextEventSummary key={event.id} event={event} />
         ))}
       </section>
     </main>
