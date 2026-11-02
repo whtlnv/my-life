@@ -2,7 +2,7 @@ type GoogleCalendarEventFields = {
   id: string;
   iCalUID: string;
   summary: string;
-  hangoutLink: string;
+  hangoutLink?: string;
   attendees: { email: string; displayName: string; self?: boolean; responseStatus?: string }[];
 };
 
@@ -29,7 +29,7 @@ function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
     id: event.id,
     iCalUID: event.iCalUID,
     title: event.summary,
-    meetLink: event.hangoutLink,
+    ...(event.hangoutLink === undefined ? {} : { meetLink: event.hangoutLink }),
     attendees: event.attendees.map((attendee) => ({ email: attendee.email, displayName: attendee.displayName })),
   };
   if (isAllDay(event)) {

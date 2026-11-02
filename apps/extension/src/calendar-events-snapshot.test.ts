@@ -92,4 +92,26 @@ describe('snapshotFromCalendarEvents', () => {
       expect.objectContaining({ id: 'offsite', allDay: true, start: '2026-11-03', end: '2026-11-04' }),
     ]);
   });
+
+  it('converts a Calendar event without a Meet link with no meetLink field at all, never null', () => {
+    const eventsResponse = {
+      kind: 'calendar#events',
+      items: [
+        {
+          kind: 'calendar#event',
+          id: 'lunch',
+          iCalUID: 'lunch@google.com',
+          status: 'confirmed',
+          summary: 'Lunch',
+          start: { dateTime: '2026-11-02T14:00:00-06:00', timeZone: 'America/Mexico_City' },
+          end: { dateTime: '2026-11-02T15:00:00-06:00', timeZone: 'America/Mexico_City' },
+          attendees: [],
+        },
+      ],
+    };
+
+    const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
+
+    expect(Object.keys(snapshot.events[0] ?? {})).not.toContain('meetLink');
+  });
 });
