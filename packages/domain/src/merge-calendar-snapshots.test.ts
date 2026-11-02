@@ -49,4 +49,24 @@ describe('mergeCalendarSnapshots', () => {
       'francisco@personal.example.com',
     ]);
   });
+
+  it('keeps two events with different iCalUIDs at the same time separate', () => {
+    const standUp = {
+      ...dentist,
+      id: 'event-3',
+      iCalUID: 'event-3@google.com',
+      title: 'Stand-up',
+      start: weeklySync.start,
+      end: weeklySync.end,
+    };
+    const work = { accountEmail: 'francisco@work.example.com', events: [weeklySync] };
+    const personal = { accountEmail: 'francisco@personal.example.com', events: [standUp] };
+
+    const merged = mergeCalendarSnapshots([work, personal]);
+
+    expect(merged).toEqual([
+      { ...weeklySync, accounts: ['francisco@work.example.com'] },
+      { ...standUp, accounts: ['francisco@personal.example.com'] },
+    ]);
+  });
 });
