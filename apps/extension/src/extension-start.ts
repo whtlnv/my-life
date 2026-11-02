@@ -19,13 +19,14 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     method: 'POST',
     body: JSON.stringify({ email: accountEmail }),
   });
+  const currentTime = options.clock ?? (() => options.now);
   const poll = async () =>
     pollCalendarOnce({
       fetch: options.fetch,
       accessToken: await options.accessToken(),
       accountEmail,
       backendUrl: options.backendUrl,
-      now: options.clock ? options.clock() : options.now,
+      now: currentTime(),
       timeZone: options.timeZone,
     });
   await poll();
