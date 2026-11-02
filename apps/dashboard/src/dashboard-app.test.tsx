@@ -100,4 +100,31 @@ describe('DashboardApp', () => {
     const nowBlock = await screen.findByRole('region', { name: 'Now' });
     expect(await within(nowBlock).findByText(/nothing now/i)).toBeInTheDocument();
   });
+
+  it('does not say there is nothing now when a next event shows and nothing is current', async () => {
+    answerGetNowWith({
+      current: [],
+      next: [
+        {
+          id: 'event-2',
+          iCalUID: 'planning@google.com',
+          title: 'Sprint planning',
+          start: '2026-11-02T15:00:00.000Z',
+          end: '2026-11-02T16:00:00.000Z',
+          meetLink: 'https://meet.google.com/xyz-abcd-efg',
+          attendees: [],
+          accounts: ['work@example.com'],
+        },
+      ],
+      laterToday: [],
+      accounts: [],
+      badgeCount: 1,
+    });
+
+    render(<DashboardApp />);
+
+    const nowBlock = await screen.findByRole('region', { name: 'Now' });
+    expect(await within(nowBlock).findByText('Sprint planning')).toBeInTheDocument();
+    expect(within(nowBlock).queryByText(/nothing now/i)).not.toBeInTheDocument();
+  });
 });
