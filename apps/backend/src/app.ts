@@ -19,18 +19,19 @@ const systemClock: Clock = { now: () => new Date() };
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
   const snapshots: CalendarSnapshot[] = [];
+  const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
     const { email } = await context.req.json<{ email: string }>();
-    if (!options.allowedEmails.includes(email)) {
+    if (!isAllowed(email)) {
       return context.body(null, 403);
     }
     return context.json({ email });
   });
   app.post('/calendar-snapshot', async (context) => {
     const snapshot = await context.req.json<CalendarSnapshot>();
-    if (!options.allowedEmails.includes(snapshot.accountEmail)) {
+    if (!isAllowed(snapshot.accountEmail)) {
       return context.body(null, 403);
     }
     snapshots.push(snapshot);
