@@ -44,7 +44,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] A calendar snapshot posted by an allow-listed account answers success and its events appear in GET /now
 - [x] A calendar snapshot posted by an account outside the allow-list is refused and none of its events appear in GET /now
 - [x] A calendar snapshot that fails the shared contract is refused with a client error
-- [ ] GET /now merges the snapshots of two accounts, showing a cross-account duplicate once
+- [x] GET /now merges the snapshots of two accounts, showing a cross-account duplicate once
 - [ ] A newer snapshot from the same account replaces that account's events in GET /now, and an event missing from it disappears
 - [ ] GET /now reports, for each account, when it last reported and whether it is stale
 - [ ] GET /now includes the badge count of events starting within 15 minutes

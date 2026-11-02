@@ -115,4 +115,45 @@ describe('backend app', () => {
     expect(posted.status).toBe(400);
     expect(await now.json()).toMatchObject({ current: [] });
   });
+
+  it('merges the snapshots of two accounts in GET /now, showing a cross-account duplicate once', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com', 'bob@example.com'],
+      clock: { now: () => new Date('2026-11-02T15:10:00.000Z') },
+    });
+    const weeklySync = {
+      id: 'event-1',
+      iCalUID: 'event-1@google.com',
+      title: 'Weekly sync',
+      start: '2026-11-02T15:00:00.000Z',
+      end: '2026-11-02T15:30:00.000Z',
+      meetLink: 'https://meet.google.com/abc-defg-hij',
+      attendees: [{ email: 'luis@example.com', displayName: 'Luis' }],
+    };
+    const dentist = {
+      id: 'event-2',
+      iCalUID: 'event-2@google.com',
+      title: 'Dentist',
+      start: '2026-11-02T15:05:00.000Z',
+      end: '2026-11-02T16:00:00.000Z',
+      attendees: [],
+    };
+    const post = (accountEmail: string, events: unknown[]) =>
+      app.request('/calendar-snapshot', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ accountEmail, events }),
+      });
+
+    await post('ana@example.com', [weeklySync]);
+    await post('bob@example.com', [{ ...weeklySync, id: 'event-1-as-seen-by-bob' }, dentist]);
+    const now = await app.request('/now');
+
+    const { current } = (await now.json()) as { current: { iCalUID: string; accounts: string[] }[] };
+    expect(current).toHaveLength(2);
+    expect(current.map(({ iCalUID, accounts }) => ({ iCalUID, accounts }))).toEqual([
+      { iCalUID: weeklySync.iCalUID, accounts: ['ana@example.com', 'bob@example.com'] },
+      { iCalUID: dentist.iCalUID, accounts: ['bob@example.com'] },
+    ]);
+  });
 });
