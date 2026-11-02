@@ -1,1 +1,27 @@
 .tdd-progress.log
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.output/
+.wxt/
+.test-output.log
+
+# macOS
+.DS_Store
+
+# Local env and secrets
+.env
+.env.*
+!.env.*.example
+
+# The user's own LLM context; only the template is tracked
+profile/*
+!profile/README.md
+!profile/*.example.md
+
+# Claude Code harness (worktrees, local settings)
+.claude/
+
+# Throwaway spikes; findings live in docs/decisions/
+/spikes/

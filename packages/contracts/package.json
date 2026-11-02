@@ -1,0 +1,21 @@
+{
+  "name": "@my-life/contracts",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.5",
+    "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "@my-life/domain": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

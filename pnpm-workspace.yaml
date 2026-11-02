@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Dependency build scripts are denied unless listed here with a reason.
+allowBuilds:
+  # Downloads its prebuilt SQLite binding for this Node ABI; no compiler involved.
+  better-sqlite3: true
+  esbuild: false
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - '@hono/node-server@2.1.6'
+  - '@vitejs/plugin-react@6.2.1'

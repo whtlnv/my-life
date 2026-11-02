@@ -1,0 +1,15 @@
+pnpm-lock.yaml
+docs/
+profile/
+# Ledgers written by the TDD skills own their format
+TODO.md
+DONE.md
+NOT_DONE.md
+MISMATCHES.md
+TEST_DELETIONS.md
+# Build outputs and generated types
+**/dist/
+**/.output/
+**/.wxt/
+# Local metrics written by the TDD tooling
+.tdd-metrics/

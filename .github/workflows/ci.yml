@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test:
+    name: lint wall + unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      # Node comes from .nvmrc and pnpm from package.json's packageManager field.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: enable the pinned pnpm
+        run: corepack enable pnpm
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: lint wall (.tdd-lint-cmd)
+        run: bash -c "$(cat .tdd-lint-cmd)"
+      - name: unit tests with coverage
+        run: scripts/test-coverage.sh
