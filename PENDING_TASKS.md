@@ -6,7 +6,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 
 - [ ] **One Google Cloud project** (any of your accounts can own it; a Workspace one you administer is simplest). Enable the **Gmail API**, **Google Calendar API** and **Google Drive API**.
 - [ ] **OAuth consent screen**: user type _External_, publishing status _Testing_. Add **every Google account you want aggregated** as a test user (the Workspace ones and the gmail.com ones). Scopes to list: `calendar.readonly`, `gmail.modify`, `gmail.settings.basic`, `drive.readonly`, `userinfo.email`.
-- [ ] **OAuth client of type _Chrome Extension_**. It needs the extension's ID, which comes from a fixed `key` in the manifest; Claude generates the key and gives you the ID when Phase 0 starts, then you paste the client ID into `apps/extension/.env`.
+- [ ] **OAuth client of type _Chrome Extension_** with the extension ID `goknkpgifknnopfpldahflhndahempki` (fixed by the `key` in `apps/extension/wxt.config.ts`; the private key is at `~/Library/Application Support/my-life/extension-key.pem`, never in git). Paste the client ID into `apps/extension/.env` as `WXT_GOOGLE_OAUTH_CLIENT_ID=…` (see `.env.example`).
 - [ ] **List the accounts**: for each, the email, whether it is Workspace or gmail.com, and what it is for (one line each). Goes in `profile/accounts.md` and the backend allow-list.
 
 ## 2. Anthropic API key (Phase 1)
