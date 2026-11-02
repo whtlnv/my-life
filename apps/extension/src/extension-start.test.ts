@@ -33,4 +33,49 @@ describe('startExtension', () => {
       { path: '/calendar-snapshot', body: { accountEmail: 'francisco@example.com', events: [] } },
     ]);
   });
+
+  it('polls again every 5 minutes after the first snapshot and posts each result, and a failed poll does not stop the next one', async () => {
+    const backendPosts: { path: string; body: unknown }[] = [];
+    let calendarListRequests = 0;
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        calendarListRequests++;
+        if (calendarListRequests === 2) {
+          return new Response('forbidden', { status: 403 });
+        }
+        return Response.json({ kind: 'calendar#calendarList', items: [] });
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        backendPosts.push({ path: url.pathname, body: JSON.parse(String(init.body)) });
+        return Response.json({ ok: true });
+      }
+      return new Response('unexpected request', { status: 404 });
+    };
+    let scheduledMilliseconds: number | undefined;
+    let scheduledPoll: (() => Promise<void>) | undefined;
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: async () => 'francisco@example.com',
+      accessToken: async () => 'token-for-francisco',
+      backendUrl: 'http://127.0.0.1:7777',
+      now: new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+      every: (milliseconds: number, poll: () => Promise<void>) => {
+        scheduledMilliseconds = milliseconds;
+        scheduledPoll = poll;
+      },
+    });
+
+    expect(scheduledMilliseconds).toBe(5 * 60 * 1000);
+    await expect(scheduledPoll?.()).resolves.toBeUndefined();
+    await expect(scheduledPoll?.()).resolves.toBeUndefined();
+    const snapshot = { path: '/calendar-snapshot', body: { accountEmail: 'francisco@example.com', events: [] } };
+    expect(backendPosts).toEqual([
+      { path: '/register', body: { email: 'francisco@example.com' } },
+      snapshot,
+      snapshot,
+    ]);
+  });
 });

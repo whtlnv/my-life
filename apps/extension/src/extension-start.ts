@@ -7,6 +7,7 @@ type StartExtensionOptions = {
   backendUrl: string;
   now: Date;
   timeZone: string;
+  every?: (milliseconds: number, poll: () => Promise<void>) => void;
 };
 
 export async function startExtension(options: StartExtensionOptions): Promise<void> {
@@ -15,12 +16,15 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     method: 'POST',
     body: JSON.stringify({ email: accountEmail }),
   });
-  await pollCalendarOnce({
-    fetch: options.fetch,
-    accessToken: await options.accessToken(),
-    accountEmail,
-    backendUrl: options.backendUrl,
-    now: options.now,
-    timeZone: options.timeZone,
-  });
+  const poll = async () =>
+    pollCalendarOnce({
+      fetch: options.fetch,
+      accessToken: await options.accessToken(),
+      accountEmail,
+      backendUrl: options.backendUrl,
+      now: options.now,
+      timeZone: options.timeZone,
+    });
+  await poll();
+  options.every?.(5 * 60 * 1000, () => poll().catch(() => undefined));
 }
