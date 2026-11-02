@@ -1,5 +1,7 @@
 import { pollCalendarOnce } from './calendar-poll';
 
+const calendarPollIntervalMilliseconds = 5 * 60 * 1000;
+
 type StartExtensionOptions = {
   fetch: (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
   profileAccountEmail: () => Promise<string>;
@@ -26,5 +28,5 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       timeZone: options.timeZone,
     });
   await poll();
-  options.every?.(5 * 60 * 1000, () => poll().catch(() => undefined));
+  options.every?.(calendarPollIntervalMilliseconds, () => poll().catch(() => undefined));
 }
