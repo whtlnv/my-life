@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { Hono } from 'hono';
 
 import { calendarSnapshot, type HealthResponse } from '@my-life/contracts';
@@ -9,6 +12,7 @@ export interface AppOptions {
   allowedEmails: string[];
   clock?: Clock;
   databasePath?: string;
+  dashboardDirectory?: string;
 }
 
 const systemClock: Clock = { now: () => new Date() };
@@ -61,5 +65,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       badgeCount: badgeCount(events, clock),
     });
   });
+  const dashboardDirectory = options.dashboardDirectory;
+  if (dashboardDirectory !== undefined) {
+    app.get('/', (context) => context.html(readFileSync(join(dashboardDirectory, 'index.html'), 'utf8')));
+  }
   return app;
 }

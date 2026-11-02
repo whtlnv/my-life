@@ -53,7 +53,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] A snapshot reported before a backend restart is still served by GET /now after it
 - [x] When no database path is configured, the backend stores its file under `~/Library/Application Support/my-life/`
 - [x] When a database path is configured, the backend stores its file there instead of the default
-- [ ] GET / serves the dashboard build's index page
+- [x] GET / serves the dashboard build's index page
 
 ### Extension
 

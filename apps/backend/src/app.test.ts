@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -301,5 +301,18 @@ describe('backend app', () => {
     expect(await now.json()).toMatchObject({
       current: [{ ...weeklySync, accounts: ['ana@example.com'] }],
     });
+  });
+
+  it('serves the dashboard build\'s index page at GET /', async () => {
+    const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
+    const indexPage = '<!doctype html><html><body><div id="root"></div></body></html>';
+    writeFileSync(join(dashboardDirectory, 'index.html'), indexPage);
+    const app = createApp({ allowedEmails: [], dashboardDirectory });
+
+    const response = await app.request('/');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(await response.text()).toBe(indexPage);
   });
 });
