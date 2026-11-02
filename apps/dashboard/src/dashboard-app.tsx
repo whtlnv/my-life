@@ -26,6 +26,7 @@ type LaterTodayEvent = {
 type AccountReport = {
   email: string;
   lastReportedAt: string;
+  stale: boolean;
 };
 
 type NowResponse = {
@@ -109,6 +110,7 @@ export function DashboardApp() {
           {accounts.map((account) => (
             <li key={account.email}>
               {account.email} {timeInBusinessZone(account.lastReportedAt)}
+              {account.stale && ' stale'}
             </li>
           ))}
         </ul>

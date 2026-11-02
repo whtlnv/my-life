@@ -193,4 +193,23 @@ describe('DashboardApp', () => {
     expect(items[1]).toHaveTextContent('personal@example.com');
     expect(items[1]).toHaveTextContent('08:40');
   });
+
+  it('marks a stale account as stale', async () => {
+    answerGetNowWith({
+      current: [],
+      next: [],
+      laterToday: [],
+      accounts: [
+        { email: 'personal@example.com', lastReportedAt: '2026-11-02T14:40:00.000Z', stale: true },
+      ],
+      badgeCount: 0,
+    });
+
+    render(<DashboardApp />);
+
+    const accountsBlock = await screen.findByRole('region', { name: 'Accounts' });
+    const item = await within(accountsBlock).findByRole('listitem');
+    expect(item).toHaveTextContent('personal@example.com');
+    expect(item).toHaveTextContent(/stale/i);
+  });
 });
