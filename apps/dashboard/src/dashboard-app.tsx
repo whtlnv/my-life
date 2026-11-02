@@ -7,6 +7,16 @@ type NowEvent = {
   attendees: { email: string; displayName: string }[];
 };
 
+function CurrentEvent({ event }: { event: NowEvent }) {
+  return (
+    <article>
+      <h2>{event.title}</h2>
+      <a href={event.meetLink}>Join</a>
+      <p>{event.attendees.map((attendee) => attendee.displayName).join(', ')}</p>
+    </article>
+  );
+}
+
 export function DashboardApp() {
   const [current, setCurrent] = useState<NowEvent[]>([]);
 
@@ -24,11 +34,7 @@ export function DashboardApp() {
       <h1>my-life</h1>
       <section aria-label="Now">
         {current.map((event) => (
-          <article key={event.id}>
-            <h2>{event.title}</h2>
-            <a href={event.meetLink}>Join</a>
-            <p>{event.attendees.map((attendee) => attendee.displayName).join(', ')}</p>
-          </article>
+          <CurrentEvent key={event.id} event={event} />
         ))}
       </section>
     </main>
