@@ -34,6 +34,13 @@ const weeklySync = {
   attendees: [{ email: 'luis@example.com', displayName: 'Luis' }],
 };
 
+const appServingDashboardAsset = (fileName: string, content: string) => {
+  const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
+  mkdirSync(join(dashboardDirectory, 'assets'));
+  writeFileSync(join(dashboardDirectory, 'assets', fileName), content);
+  return createApp({ allowedEmails: [], dashboardDirectory });
+};
+
 describe('backend app', () => {
   it('answers GET /health with the healthy answer', async () => {
     const response = await createApp().request('/health');
@@ -317,11 +324,8 @@ describe('backend app', () => {
   });
 
   it('serves the dashboard build\'s bundled script at GET /assets/<file>', async () => {
-    const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
-    mkdirSync(join(dashboardDirectory, 'assets'));
     const bundledScript = 'document.getElementById("root").textContent = "Now";';
-    writeFileSync(join(dashboardDirectory, 'assets', 'index-abc123.js'), bundledScript);
-    const app = createApp({ allowedEmails: [], dashboardDirectory });
+    const app = appServingDashboardAsset('index-abc123.js', bundledScript);
 
     const response = await app.request('/assets/index-abc123.js');
 
@@ -331,11 +335,8 @@ describe('backend app', () => {
   });
 
   it('serves a dashboard stylesheet at GET /assets/<file>.css as a stylesheet, not as a script', async () => {
-    const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
-    mkdirSync(join(dashboardDirectory, 'assets'));
     const stylesheet = '#root { font-family: sans-serif; }';
-    writeFileSync(join(dashboardDirectory, 'assets', 'index-def456.css'), stylesheet);
-    const app = createApp({ allowedEmails: [], dashboardDirectory });
+    const app = appServingDashboardAsset('index-def456.css', stylesheet);
 
     const response = await app.request('/assets/index-def456.css');
 
