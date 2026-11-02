@@ -8,6 +8,7 @@ type StartExtensionOptions = {
   accessToken: () => Promise<string>;
   backendUrl: string;
   now: Date;
+  clock?: () => Date;
   timeZone: string;
   every?: (milliseconds: number, poll: () => Promise<void>) => void;
 };
@@ -24,7 +25,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       accessToken: await options.accessToken(),
       accountEmail,
       backendUrl: options.backendUrl,
-      now: options.now,
+      now: options.clock ? options.clock() : options.now,
       timeZone: options.timeZone,
     });
   await poll();

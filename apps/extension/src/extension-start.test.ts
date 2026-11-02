@@ -78,4 +78,44 @@ describe('startExtension', () => {
       snapshot,
     ]);
   });
+
+  it('requests the Calendar window for the moment of each scheduled poll, so a poll the next day asks for the next day', async () => {
+    const requestedWindows: { timeMin: string | null; timeMax: string | null }[] = [];
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Response.json({ kind: 'calendar#calendarList', items: [{ id: 'primary', summary: 'Francisco' }] });
+      }
+      if (url.pathname === '/calendar/v3/calendars/primary/events') {
+        requestedWindows.push({ timeMin: url.searchParams.get('timeMin'), timeMax: url.searchParams.get('timeMax') });
+        return Response.json({ kind: 'calendar#events', items: [] });
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Response.json({ ok: true });
+      }
+      return new Response('unexpected request', { status: 404 });
+    };
+    let currentTime = new Date('2026-11-02T10:00:00-06:00');
+    let scheduledPoll: (() => Promise<void>) | undefined;
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: async () => 'francisco@example.com',
+      accessToken: async () => 'token-for-francisco',
+      backendUrl: 'http://127.0.0.1:7777',
+      now: currentTime,
+      clock: () => currentTime,
+      timeZone: 'America/Mexico_City',
+      every: (_milliseconds: number, poll: () => Promise<void>) => {
+        scheduledPoll = poll;
+      },
+    });
+    currentTime = new Date('2026-11-03T09:00:00-06:00');
+    await scheduledPoll?.();
+
+    expect(requestedWindows).toEqual([
+      { timeMin: '2026-11-02T06:00:00.000Z', timeMax: '2026-11-04T06:00:00.000Z' },
+      { timeMin: '2026-11-03T06:00:00.000Z', timeMax: '2026-11-05T06:00:00.000Z' },
+    ]);
+  });
 });
