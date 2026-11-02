@@ -32,4 +32,17 @@ describe('calendarIdsToPoll', () => {
 
     expect(calendarIdsToPoll(calendarListResponse)).toEqual(['francisco@example.com']);
   });
+
+  it('does not poll Google holiday and birthday calendars whatever their localized name', () => {
+    const calendarListResponse = {
+      kind: 'calendar#calendarList',
+      items: [
+        { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true, accessRole: 'owner' },
+        { kind: 'calendar#calendarListEntry', id: 'es.mexican#holiday@group.v.calendar.google.com', summary: 'Días festivos en México', accessRole: 'reader' },
+        { kind: 'calendar#calendarListEntry', id: 'addressbook#contacts@group.v.calendar.google.com', summary: 'Cumpleaños', accessRole: 'reader' },
+      ],
+    };
+
+    expect(calendarIdsToPoll(calendarListResponse)).toEqual(['francisco@example.com']);
+  });
 });
