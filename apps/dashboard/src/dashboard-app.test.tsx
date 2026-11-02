@@ -60,6 +60,32 @@ describe('DashboardApp', () => {
     expect(within(nowBlock).getByText(/Luis Pérez/)).toBeInTheDocument();
   });
 
+  it('shows no join link for a current event without a Meet link', async () => {
+    answerGetNowWith({
+      current: [
+        {
+          id: 'event-5',
+          iCalUID: 'lunch@google.com',
+          title: 'Lunch with Ana',
+          start: '2026-11-02T19:00:00.000Z',
+          end: '2026-11-02T20:00:00.000Z',
+          attendees: [],
+          accounts: ['personal@example.com'],
+        },
+      ],
+      next: [],
+      laterToday: [],
+      accounts: [],
+      badgeCount: 0,
+    });
+
+    render(<DashboardApp />);
+
+    const nowBlock = await screen.findByRole('region', { name: 'Now' });
+    expect(await within(nowBlock).findByText('Lunch with Ana')).toBeInTheDocument();
+    expect(within(nowBlock).queryByText(/join/i)).not.toBeInTheDocument();
+  });
+
   it('shows a next event in the Now block with the minutes until it starts', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     onTestFinished(() => {

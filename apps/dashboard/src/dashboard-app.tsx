@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 type NowEvent = {
   id: string;
   title: string;
-  meetLink: string;
+  meetLink?: string;
   attendees: { email: string; displayName: string }[];
 };
 
@@ -58,7 +58,7 @@ function CurrentEvent({ event }: { event: NowEvent }) {
   return (
     <article>
       <h2>{event.title}</h2>
-      <a href={event.meetLink}>Join</a>
+      {event.meetLink && <a href={event.meetLink}>Join</a>}
       <p>{event.attendees.map((attendee) => attendee.displayName).join(', ')}</p>
     </article>
   );
