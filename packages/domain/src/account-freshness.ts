@@ -9,5 +9,6 @@ export interface AccountReport {
 export function isAccountFresh(account: AccountReport, clock: Clock): boolean {
   const millisecondsSinceLastReport =
     clock.now().getTime() - new Date(account.lastReportedAt).getTime();
-  return millisecondsSinceLastReport <= 2 * account.pollingIntervalInMilliseconds;
+  const staleAfterMilliseconds = 2 * account.pollingIntervalInMilliseconds;
+  return millisecondsSinceLastReport <= staleAfterMilliseconds;
 }
