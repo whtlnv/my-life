@@ -1,4 +1,4 @@
-interface GoogleCalendarListResponse {
+export interface GoogleCalendarListResponse {
   items: { id: string; summary: string }[];
 }
 

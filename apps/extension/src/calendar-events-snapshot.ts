@@ -16,7 +16,7 @@ function isAllDay(event: GoogleCalendarEvent): event is AllDayGoogleCalendarEven
   return 'date' in event.start;
 }
 
-interface GoogleCalendarEventsResponse {
+export interface GoogleCalendarEventsResponse {
   items: GoogleCalendarEvent[];
 }
 
