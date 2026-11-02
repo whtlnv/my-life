@@ -38,4 +38,12 @@ describe('buildNowView', () => {
 
     expect(view.next).toEqual([weeklySync]);
   });
+
+  it('does not report an event starting in more than 15 minutes as next', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T14:30:00.000Z') };
+
+    const view = buildNowView([weeklySync], clock);
+
+    expect(view.next).toEqual([]);
+  });
 });
