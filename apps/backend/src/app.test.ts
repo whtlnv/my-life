@@ -240,4 +240,44 @@ describe('backend app', () => {
     expect(await (await quietApp.request('/now')).json()).toMatchObject({ badgeCount: 0 });
     expect(await (await busyApp.request('/now')).json()).toMatchObject({ badgeCount: 2 });
   });
+
+  it('bounds later today in GET /now by midnight in America/Mexico_City, not the machine\'s time zone', async () => {
+    const machineTimeZone = process.env.TZ;
+    process.env.TZ = 'UTC';
+    try {
+      // 04:00Z on Nov 3 is 22:00 on Nov 2 in Mexico City, but already Nov 3 on a UTC machine.
+      const app = createApp({
+        allowedEmails: ['ana@example.com'],
+        clock: { now: () => new Date('2026-11-03T04:00:00.000Z') },
+      });
+      const lateCall = {
+        id: 'event-10',
+        iCalUID: 'event-10@google.com',
+        title: 'Late call',
+        start: '2026-11-03T05:00:00.000Z',
+        end: '2026-11-03T05:30:00.000Z',
+        attendees: [],
+      };
+      const afterMidnightStandup = {
+        id: 'event-11',
+        iCalUID: 'event-11@google.com',
+        title: 'After-midnight standup',
+        start: '2026-11-03T06:30:00.000Z',
+        end: '2026-11-03T07:00:00.000Z',
+        attendees: [],
+      };
+
+      await postCalendarSnapshot(app, 'ana@example.com', [lateCall, afterMidnightStandup]);
+      const now = await app.request('/now');
+
+      const { laterToday } = (await now.json()) as { laterToday: { iCalUID: string }[] };
+      expect(laterToday.map(({ iCalUID }) => iCalUID)).toEqual([lateCall.iCalUID]);
+    } finally {
+      if (machineTimeZone === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = machineTimeZone;
+      }
+    }
+  });
 });
