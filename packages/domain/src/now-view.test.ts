@@ -116,4 +116,22 @@ describe('buildNowView', () => {
 
     expect(view.current).toEqual([]);
   });
+
+  it('lists an all-day event for today in later today ahead of the timed events', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T14:00:00.000Z') };
+    const teamOffsite = {
+      id: 'event-4',
+      iCalUID: 'event-4@google.com',
+      title: 'Team offsite',
+      allDay: true,
+      start: '2026-11-02',
+      end: '2026-11-03',
+      attendees: [],
+      accounts: ['francisco@work.example.com'],
+    };
+
+    const view = buildNowView([weeklySync, teamOffsite], clock, 'America/Mexico_City');
+
+    expect(view.laterToday).toEqual([teamOffsite, weeklySync]);
+  });
 });

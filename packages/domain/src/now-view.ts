@@ -26,7 +26,10 @@ const isLaterToday = (
   today: string,
   timeZone: string | undefined,
 ): boolean =>
-  horizon < event.start && localCalendarDate(event.start, timeZone) === today;
+  event.allDay
+    ? event.start === today
+    : horizon < event.start &&
+      localCalendarDate(event.start, timeZone) === today;
 
 const byStartAscending = (
   left: MergedCalendarEvent,

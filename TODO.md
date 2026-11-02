@@ -28,7 +28,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 - [x] An event starting after midnight in America/Mexico_City is left out of later today even when it is still the same UTC day
 - [x] An event that has already ended is left out of later today
 - [x] An all-day event for today is not reported as current
-- [ ] An all-day event for today is listed in later today ahead of the timed events
+- [x] An all-day event for today is listed in later today ahead of the timed events
 
 ### Domain — freshness and badge
 
