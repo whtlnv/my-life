@@ -329,4 +329,18 @@ describe('backend app', () => {
     expect(response.headers.get('content-type')).toContain('javascript');
     expect(await response.text()).toBe(bundledScript);
   });
+
+  it('serves a dashboard stylesheet at GET /assets/<file>.css as a stylesheet, not as a script', async () => {
+    const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
+    mkdirSync(join(dashboardDirectory, 'assets'));
+    const stylesheet = '#root { font-family: sans-serif; }';
+    writeFileSync(join(dashboardDirectory, 'assets', 'index-def456.css'), stylesheet);
+    const app = createApp({ allowedEmails: [], dashboardDirectory });
+
+    const response = await app.request('/assets/index-def456.css');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/css');
+    expect(await response.text()).toBe(stylesheet);
+  });
 });

@@ -70,11 +70,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const readDashboardFile = (...pathSegments: string[]): string =>
       readFileSync(join(dashboardDirectory, ...pathSegments), 'utf8');
     app.get('/', (context) => context.html(readDashboardFile('index.html')));
-    app.get('/assets/:file', (context) =>
-      context.body(readDashboardFile('assets', context.req.param('file')), 200, {
-        'content-type': 'text/javascript',
-      }),
-    );
+    app.get('/assets/:file', (context) => {
+      const file = context.req.param('file');
+      return context.body(readDashboardFile('assets', file), 200, {
+        'content-type': file.endsWith('.css') ? 'text/css' : 'text/javascript',
+      });
+    });
   }
   return app;
 }
