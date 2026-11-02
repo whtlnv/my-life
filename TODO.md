@@ -105,7 +105,7 @@ Monorepo, lint wall, `/tdd-init` files, dependency-direction test and CI are alr
 
 ### Wiring and acceptance
 
-- [ ] The backend's startup settings come from its environment: MY_LIFE_ALLOWED_EMAILS (comma-separated), MY_LIFE_PORT, MY_LIFE_DATABASE_PATH and MY_LIFE_DASHBOARD_DIRECTORY, each with its default when unset
+- [x] The backend's startup settings come from its environment: MY_LIFE_ALLOWED_EMAILS (comma-separated), MY_LIFE_PORT, MY_LIFE_DATABASE_PATH and MY_LIFE_DASHBOARD_DIRECTORY, each with its default when unset
 - [ ] Starting the backend creates the database folder when it is missing
 - [ ] Running the backend entry point serves the built dashboard at `/` and answers GET /now from the configured store
 - [ ] The launchd plist in `scripts/` validates with plutil and points at the backend's start command
