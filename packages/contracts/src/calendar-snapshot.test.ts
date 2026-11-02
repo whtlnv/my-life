@@ -11,16 +11,17 @@ const weeklySyncWithoutStart = {
   attendees: [{ email: 'ana@example.com', displayName: 'Ana' }],
 };
 const weeklySync = { ...weeklySyncWithoutStart, start: '2026-11-02T15:00:00.000Z' };
+const snapshotOf = (event: object) => ({ accountEmail: 'francisco@example.com', events: [event] });
 
 describe('calendarSnapshot', () => {
   it('accepts a snapshot with the account email and a full event', () => {
-    const snapshot = { accountEmail: 'francisco@example.com', events: [weeklySync] };
+    const snapshot = snapshotOf(weeklySync);
 
     expect(calendarSnapshot.parse(snapshot)).toEqual(snapshot);
   });
 
   it('rejects a snapshot whose event has no start', () => {
-    const snapshot = { accountEmail: 'francisco@example.com', events: [weeklySyncWithoutStart] };
+    const snapshot = snapshotOf(weeklySyncWithoutStart);
 
     expect(calendarSnapshot.safeParse(snapshot).success).toBe(false);
   });
@@ -36,7 +37,7 @@ describe('calendarSnapshot', () => {
       meetLink: 'https://meet.google.com/off-site-xyz',
       attendees: [],
     };
-    const snapshot = { accountEmail: 'francisco@example.com', events: [offsite] };
+    const snapshot = snapshotOf(offsite);
 
     expect(calendarSnapshot.parse(snapshot)).toEqual(snapshot);
   });
