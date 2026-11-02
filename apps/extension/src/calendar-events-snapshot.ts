@@ -20,8 +20,12 @@ type GoogleCalendarEventsResponse = {
   items: GoogleCalendarEvent[];
 };
 
+function attendeesOf(event: GoogleCalendarEvent) {
+  return event.attendees ?? [];
+}
+
 function isDeclinedByAccount(event: GoogleCalendarEvent) {
-  return (event.attendees ?? []).some((attendee) => attendee.self === true && attendee.responseStatus === 'declined');
+  return attendeesOf(event).some((attendee) => attendee.self === true && attendee.responseStatus === 'declined');
 }
 
 function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
@@ -30,7 +34,7 @@ function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
     iCalUID: event.iCalUID,
     title: event.summary,
     ...(event.hangoutLink === undefined ? {} : { meetLink: event.hangoutLink }),
-    attendees: (event.attendees ?? []).map((attendee) => ({ email: attendee.email, displayName: attendee.displayName })),
+    attendees: attendeesOf(event).map((attendee) => ({ email: attendee.email, displayName: attendee.displayName })),
   };
   if (isAllDay(event)) {
     return { ...commonFields, allDay: true, start: event.start.date, end: event.end.date };
