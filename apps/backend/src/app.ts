@@ -58,6 +58,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...buildNowView(mergeCalendarSnapshots(latestSnapshots), clock),
       accounts: describeAccountFreshness(lastReportedAtByAccount, clock.now()),
+      badgeCount: 1,
     });
   });
   return app;

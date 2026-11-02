@@ -181,4 +181,32 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('includes in GET /now the badge count of events starting within 15 minutes', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+    });
+    const startingSoon = {
+      id: 'event-5',
+      iCalUID: 'event-5@google.com',
+      title: 'Starting soon',
+      start: '2026-11-02T15:20:00.000Z',
+      end: '2026-11-02T15:50:00.000Z',
+      attendees: [],
+    };
+    const startingLater = {
+      id: 'event-6',
+      iCalUID: 'event-6@google.com',
+      title: 'Starting later',
+      start: '2026-11-02T15:40:00.000Z',
+      end: '2026-11-02T16:00:00.000Z',
+      attendees: [],
+    };
+
+    await postCalendarSnapshot(app, 'ana@example.com', [weeklySync, startingSoon, startingLater]);
+    const now = await app.request('/now');
+
+    expect(await now.json()).toMatchObject({ badgeCount: 1 });
+  });
 });
