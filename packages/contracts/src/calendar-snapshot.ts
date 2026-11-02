@@ -4,6 +4,7 @@ const calendarEvent = z.object({
   id: z.string(),
   iCalUID: z.string(),
   title: z.string(),
+  allDay: z.boolean().optional(),
   start: z.string(),
   end: z.string(),
   meetLink: z.string(),

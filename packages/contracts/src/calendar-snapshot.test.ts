@@ -24,4 +24,20 @@ describe('calendarSnapshot', () => {
 
     expect(calendarSnapshot.safeParse(snapshot).success).toBe(false);
   });
+
+  it('accepts an all-day event given as a date without a time', () => {
+    const offsite = {
+      id: 'event-2',
+      iCalUID: 'event-2@google.com',
+      title: 'Team offsite',
+      allDay: true,
+      start: '2026-11-03',
+      end: '2026-11-04',
+      meetLink: 'https://meet.google.com/off-site-xyz',
+      attendees: [],
+    };
+    const snapshot = { accountEmail: 'francisco@example.com', events: [offsite] };
+
+    expect(calendarSnapshot.parse(snapshot)).toEqual(snapshot);
+  });
 });
