@@ -9,5 +9,7 @@ if [ -f .env ]; then
   . ./.env
   set +a
 fi
-eval "$(/bin/zsh -lc 'echo "export PATH=$PATH"')"
+# Quoted: a login PATH can hold a directory with a space ("VMware Fusion.app/..."), which an unquoted eval splits.
+PATH="$(/bin/zsh -lc 'printf %s "$PATH"')"
+export PATH
 exec pnpm --filter @my-life/backend start
