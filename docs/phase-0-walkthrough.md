@@ -7,7 +7,7 @@ for extension id `goknkpgifknnopfpldahflhndahempki`) is done. Tick each line; sa
 ## Backend
 
 - [x] `cp .env.example .env`, fill `MY_LIFE_ALLOWED_EMAILS` with every account's email. (2026-11-06, 4 accounts)
-- [ ] `pnpm --filter @my-life/dashboard build`, then `scripts/install-launchd.sh`. `tail -f ~/Library/Logs/my-life/backend.log`
+- [x] (2026-11-06; the repo had to move out of `~/Desktop`, which macOS privacy protection hides from launchd) `pnpm --filter @my-life/dashboard build`, then `scripts/install-launchd.sh`. `tail -f ~/Library/Logs/my-life/backend.log`
       shows `my-life backend listening on http://127.0.0.1:7777 · N allowed account(s)`.
 - [ ] `http://127.0.0.1:7777/` in any profile shows the dashboard with _Loading_, then _Nothing now_ and an empty account list.
 
