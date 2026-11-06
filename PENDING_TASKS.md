@@ -33,7 +33,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 
 ## 7. Decisions and confirmations (each has a default so nothing waits)
 
-- [ ] **Daily LLM spend ceiling.** Default: USD 2 per day; triage pauses and the dashboard says so when reached.
+- [x] **Daily LLM spend ceiling and model.** Decided 2026-11-06: Opus 5.5 for classification and prioritization, ceiling USD 20 per day (raise it in config for the first-day backfill if needed); triage pauses and the dashboard says so when reached.
 - [ ] **Which calendars per account.** Default: every calendar the account can see, except declined events and calendars named _Holidays_ / _Birthdays_.
 - [ ] **Triage categories to start with.** Default: `newsletter`, `receipt`, `notification`, `calendar-invite`, `personal`, `work-thread`, `unknown`. All start in `advise`.
 - [ ] **How many confirmed archives from the same sender before a filter is proposed.** Default: 3.

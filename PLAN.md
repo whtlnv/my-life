@@ -37,7 +37,7 @@ Outcome: the oldest-pain inbox is triaged by Claude into `archive` / `keep` / `a
 
 - Extension polls Gmail through `history.list` from the stored history id (full resync on 404), batches `messages.get` with `format=metadata` plus snippet, posts to `POST /sources/mail`.
 - Domain: a `Triage` port; the `TriageProposal` (`archive` / `keep` / `act`, category, reason, optional task draft) validated by zod; a `Verdict` (confirm / reject, with the user's correction) stored append-only; the rule that an `advise` category never archives on its own.
-- Claude adapter: versioned prompt files; the `profile/` context plus the N most recent verdicts for the same sender or category as examples; one small-model call per message; spend logged per call against the daily ceiling; a scripted fake in the unit and integration suites.
+- Claude adapter: versioned prompt files; the `profile/` context plus the N most recent verdicts for the same sender or category as examples; one Opus 5.5 call per message (model id from config); spend logged per call against the daily ceiling (default USD 20, config); a scripted fake in the unit and integration suites.
 - Dashboard triage queue: one proposal at a time, keys `a` archive, `k` keep, `t` make task, `r` reject with a correction; shows the reason and the source link.
 - Confirmed archive → Gmail `messages.modify` removes `INBOX` and adds label `my-life/archived`; confirmed `act` → a task in the store (title, source link, account).
 - Gmail fake HTTP server with scenarios (`newsletter`, `receipt`, `thread-needs-reply`, `history-404`).
@@ -57,7 +57,7 @@ Outcome: the _now_ view shows the 3 tasks that matter right now and who is waiti
 
 - One-time import of the markdown/text list (`PENDING_TASKS.md` § 4): one task per line or checkbox, headings become tags.
 - Task state in the domain: `open` / `done` / `snoozed until`; priority; optional due; waiting-on person; every transition append-only.
-- Prioritization pass (stronger model, structured output): ranks open tasks given the profile, the calendar for the day and due times; runs on a schedule and on demand; the dashboard shows the rank and the reason; the user can pin a task to the top.
+- Prioritization pass (Opus 5.5 from config, structured output): ranks open tasks given the profile, the calendar for the day and due times; runs on a schedule and on demand; the dashboard shows the rank and the reason; the user can pin a task to the top.
 - Waiting-on block: email threads where the last message is not the user's, ordered by wait time (Slack and chats join in Phases 4 and 5).
 - _Later today_ interleaves events and due tasks.
 - Badge becomes: events within 15 min + proposals waiting + tasks due now.
