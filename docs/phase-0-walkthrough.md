@@ -6,14 +6,14 @@ for extension id `goknkpgifknnopfpldahflhndahempki`) is done. Tick each line; sa
 
 ## Backend
 
-- [ ] `cp .env.example .env`, fill `MY_LIFE_ALLOWED_EMAILS` with every account's email.
+- [x] `cp .env.example .env`, fill `MY_LIFE_ALLOWED_EMAILS` with every account's email. (2026-11-06, 4 accounts)
 - [ ] `pnpm --filter @my-life/dashboard build`, then `scripts/install-launchd.sh`. `tail -f ~/Library/Logs/my-life/backend.log`
       shows `my-life backend listening on http://127.0.0.1:7777 · N allowed account(s)`.
 - [ ] `http://127.0.0.1:7777/` in any profile shows the dashboard with _Loading_, then _Nothing now_ and an empty account list.
 
 ## The chrome.identity spike (locked decision 2)
 
-- [ ] `apps/extension/.env` holds `WXT_GOOGLE_OAUTH_CLIENT_ID`; `pnpm --filter @my-life/extension build`.
+- [x] `apps/extension/.env` holds `WXT_GOOGLE_OAUTH_CLIENT_ID`; `pnpm --filter @my-life/extension build`. (2026-11-06; the built manifest carries the client id)
 - [ ] In **each** Chrome profile: `chrome://extensions` → Developer mode → Load unpacked → `apps/extension/.output/chrome-mv3`.
       The id shown is `goknkpgifknnopfpldahflhndahempki` (if not, the manifest `key` did not apply).
 - [ ] The first load asks for consent once per profile (Workspace and gmail.com alike). The service-worker console shows no
