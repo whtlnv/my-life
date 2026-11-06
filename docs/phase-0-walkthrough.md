@@ -14,12 +14,12 @@ for extension id `goknkpgifknnopfpldahflhndahempki`) is done. Tick each line; sa
 ## The chrome.identity spike (locked decision 2)
 
 - [x] `apps/extension/.env` holds `WXT_GOOGLE_OAUTH_CLIENT_ID`; `pnpm --filter @my-life/extension build`. (2026-11-06; the built manifest carries the client id)
-- [ ] In **each** Chrome profile: `chrome://extensions` → Developer mode → Load unpacked → `apps/extension/.output/chrome-mv3`.
+- [x] (2026-11-06, four profiles) In **each** Chrome profile: `chrome://extensions` → Developer mode → Load unpacked → `apps/extension/.output/chrome-mv3`.
       The id shown is `goknkpgifknnopfpldahflhndahempki` (if not, the manifest `key` did not apply).
-- [ ] The first load asks for consent once per profile (Workspace and gmail.com alike). The service-worker console shows no
+- [x] (2026-11-06) The first load asks for consent once per profile (Workspace and gmail.com alike). The service-worker console shows no
       `my-life extension failed to start` line.
-- [ ] Every account appears on the dashboard's account list with a fresh _last reported_ time.
-- [ ] **Three days later**, without re-consent: every account still reports (no stale marker, no console error).
+- [x] (2026-11-06 17:47 Mexico City, all four accounts fresh, each polling on its own 5-minute alarm) Every account appears on the dashboard's account list with a fresh _last reported_ time.
+- [ ] **Three days later** (check on 2026-11-09), without re-consent: every account still reports (no stale marker, no console error).
       Record the outcome in `docs/decisions/<date>-chrome-identity-tokens.md`; on failure, switch to the IMAP + iCal fallback.
 
 ## Badge and now view
@@ -27,4 +27,4 @@ for extension id `goknkpgifknnopfpldahflhndahempki`) is done. Tick each line; sa
 - [ ] Create a test event starting in 10 minutes on one calendar: within 5 minutes the badge shows `1` on that profile and the
       event appears under _Now_ with its minutes until start; when it starts, it moves to the current block with its join link.
 - [ ] Clicking the extension icon opens the dashboard.
-- [ ] Screenshot of the dashboard with all accounts listed → `docs/screenshots/<date>-phase-0-dashboard.png`.
+- [x] Screenshot of the dashboard with all accounts listed → `docs/screenshots/2026-11-06-phase-0-dashboard.jpg`.

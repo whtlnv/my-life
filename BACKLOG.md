@@ -30,3 +30,5 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 - **[apps/dashboard/src/dashboard-app.tsx:43] Dashboard hard-codes the business time zone** (added: 2026-11-02)
   This is a fifth copy of `America/Mexico_City`, alongside the four in § Config gaps. Deferred to the same change: when the time
   zone becomes a setting, the dashboard should get it from `GET /now`, which changes behavior.
+
+- **All-day events show a clock time under _Later today_** (seen 2026-11-06: an all-day `Home` event rendered as `18:00 Home`, which is the UTC midnight of its date converted to Mexico City). `apps/dashboard/src/dashboard-app.tsx` formats every event's start with a time; an event with `allDay: true` should read _all day_. Behavioral; a Phase 0 follow-up fix.
