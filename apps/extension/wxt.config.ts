@@ -8,7 +8,9 @@ const key =
 
 export default defineConfig({
   srcDir: 'src',
-  manifest: {
+  // A function, not an object: WXT loads `.env` after this file is evaluated, so a top-level `process.env` read
+  // would see an empty client id. WXT calls the function after the env files are loaded.
+  manifest: () => ({
     name: 'my-life',
     description: "Reports this profile's calendars and mail to the local my-life backend.",
     key,
@@ -19,5 +21,5 @@ export default defineConfig({
       client_id: process.env.WXT_GOOGLE_OAUTH_CLIENT_ID ?? '',
       scopes: ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/userinfo.email'],
     },
-  },
+  }),
 });
