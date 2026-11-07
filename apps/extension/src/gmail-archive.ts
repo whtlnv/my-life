@@ -33,7 +33,7 @@ async function archiveMessage(
   fetch: FetchFunction,
   authorization: { Authorization: string },
   messageId: string,
-  archivedLabelId: string | undefined,
+  archivedLabelId: string,
 ) {
   await fetch(`${gmailApi}/messages/${messageId}/modify`, {
     method: 'POST',
@@ -52,5 +52,16 @@ async function findArchivedLabelId(fetch: FetchFunction, authorization: { Author
   const { labels } = (await (await fetch(`${gmailApi}/labels`, { headers: authorization })).json()) as {
     labels: GmailLabel[];
   };
-  return labels.find((label) => label.name === 'my-life/archived')?.id;
+  const existingLabel = labels.find((label) => label.name === 'my-life/archived');
+  if (existingLabel !== undefined) {
+    return existingLabel.id;
+  }
+  const createdLabel = (await (
+    await fetch(`${gmailApi}/labels`, {
+      method: 'POST',
+      headers: authorization,
+      body: JSON.stringify({ name: 'my-life/archived' }),
+    })
+  ).json()) as GmailLabel;
+  return createdLabel.id;
 }
