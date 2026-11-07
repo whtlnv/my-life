@@ -9,23 +9,22 @@ const archiveProposal = {
 };
 
 describe('triageEffects', () => {
-  it('produces no archive for an archive proposal with no verdict', () => {
-    expect(triageEffects(archiveProposal, undefined).archives).toEqual([]);
+  it.each([
+    { rule: 'an archive proposal with no verdict', proposal: archiveProposal, verdict: undefined },
+    { rule: 'an archive proposal the user rejected', proposal: archiveProposal, verdict: { decision: 'rejected' } },
+    {
+      rule: 'a keep proposal the user confirmed',
+      proposal: { ...archiveProposal, action: 'keep' },
+      verdict: { decision: 'confirmed' },
+    },
+  ])('produces no archive for $rule', ({ proposal, verdict }) => {
+    expect(triageEffects(proposal, verdict).archives).toEqual([]);
   });
 
   it('produces an archive of the message on its account for an archive proposal the user confirmed', () => {
     expect(triageEffects(archiveProposal, { decision: 'confirmed' }).archives).toEqual([
       { messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' },
     ]);
-  });
-
-  it('produces no archive for an archive proposal the user rejected', () => {
-    expect(triageEffects(archiveProposal, { decision: 'rejected' }).archives).toEqual([]);
-  });
-
-  it('produces no archive for a keep proposal the user confirmed', () => {
-    const keepProposal = { ...archiveProposal, action: 'keep' };
-    expect(triageEffects(keepProposal, { decision: 'confirmed' }).archives).toEqual([]);
   });
 
   it('produces a task from the correction for a proposal the user rejected and corrected to act', () => {
