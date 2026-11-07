@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const ccThreadExtract = z.strictObject({ sinceLastMessage: z.string() });
-const actionExtract = z.object({ asker: z.string(), ask: z.string() });
+const actionExtract = z.object({ asker: z.string(), ask: z.string(), due: z.string().optional() });
 const expenseExtract = z.object({ vendor: z.string(), amount: z.number(), currency: z.string(), date: z.string() });
 const systemUpdateExtract = z.object({ system: z.string(), severity: z.string(), significant: z.boolean() });
 

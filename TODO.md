@@ -162,7 +162,7 @@
 ### Dashboard — triage page
 
 - [x] The triage page shows the `action` block first, one card per item with who asks, what is asked and by when
-- [ ] An `action` proposal whose extract carries an optional `due` time (ISO 8601) passes the shared contract, and one without it still passes, so the card's "by when" has a real field
+- [x] An `action` proposal whose extract carries an optional `due` time (ISO 8601) passes the shared contract, and one without it still passes, so the card's "by when" has a real field
 - [ ] An `unknown` item is shown in the `action` block
 - [ ] An `action` card with no due time says it has none
 - [ ] Every item shows its reason, its account and a link to the message

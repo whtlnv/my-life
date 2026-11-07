@@ -50,6 +50,19 @@ describe('triageProposal', () => {
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
 
+  it('accepts an action proposal whose extract carries an ISO 8601 due time and keeps it', () => {
+    const proposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Ana asks for the Q3 budget review by Friday noon',
+      extract: { asker: 'Ana Ruiz', ask: 'Review the Q3 budget spreadsheet and send comments', due: '2026-11-13T12:00:00-06:00' },
+      reason: 'Sent to the user and asks them to review a document by a deadline.',
+      taskDraft: { title: 'Review the Q3 budget for Ana' },
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
+
   it('rejects an action proposal whose extract does not say what is asked', () => {
     const proposal = {
       action: 'act',
