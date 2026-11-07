@@ -109,7 +109,7 @@
 
 ### Backend — mail, triage, verdicts
 
-- [ ] A mail report from an allow-listed account is accepted and its messages become reported
+- [ ] A mail report posted to `POST /mail-report` (the path the extension already calls) from an allow-listed account is accepted and its messages become reported
 - [ ] A mail report from an account outside the allow-list is refused and none of its messages are reported
 - [ ] A mail report that fails the shared contract is refused with a client error
 - [ ] A message reported twice is stored once
@@ -125,9 +125,9 @@
 - [ ] A verdict posted for an unknown message is refused as not found
 - [ ] A rejection carrying a correction stores the correction with the verdict
 - [ ] Confirming a whole group stores one confirm verdict for every item in that group and none outside it
-- [ ] A confirmed archive queues an archive command for the message's account
+- [ ] A confirmed archive queues an archive command for the message's account, listed by `GET /commands?accountEmail=…` (the path the extension already calls) with an `id` and `messageId` per command
 - [ ] The commands for one account do not include another account's commands
-- [ ] An acknowledged command is no longer pending
+- [ ] A command acknowledged through `POST /commands/:id/acknowledgement` (the path the extension already calls) is no longer pending
 - [ ] A confirmed `act` stores a task, and the task list shows its title, source link and account
 - [ ] A confirmed `keep` on a `sales` proposal appears on the check-later list
 - [ ] GET /now's badge count includes the `action` proposals waiting
