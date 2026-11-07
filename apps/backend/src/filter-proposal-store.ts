@@ -8,6 +8,10 @@ interface StoredFilterProposal {
   proposal: unknown;
 }
 
+interface LoadedFilterProposal extends StoredFilterProposal {
+  id: string;
+}
+
 export function openFilterProposalStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec(
@@ -44,7 +48,7 @@ export function openFilterProposalStore(databasePath: string) {
     loadCandidateKeys(): string[] {
       return loadCandidateKeys.all().map((row) => row.candidate_key);
     },
-    loadAll(): (StoredFilterProposal & { id: string })[] {
+    loadAll(): LoadedFilterProposal[] {
       return loadProposals.all().map((row) => ({
         id: String(row.id),
         accountEmail: row.account_email,
