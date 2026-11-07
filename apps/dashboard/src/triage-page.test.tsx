@@ -76,4 +76,36 @@ describe('TriagePage', () => {
     expect(within(martaCard).getByText(/Send the signed contract/)).toBeInTheDocument();
     expect(within(martaCard).getByText(/Tomorrow noon/)).toBeInTheDocument();
   });
+
+  it('shows an unknown item in the action block', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'unknown',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-4',
+              accountEmail: 'ana@example.com',
+              action: 'keep',
+              category: 'unknown',
+              summary: 'A note from an unfamiliar sender about a pallet',
+              extract: {},
+              reason: 'Nothing in the message fits a known category',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const cards = within(actionBlock).getAllByRole('article');
+    expect(cards).toHaveLength(1);
+    expect(within(actionBlock).getByText(/A note from an unfamiliar sender about a pallet/)).toBeInTheDocument();
+  });
 });

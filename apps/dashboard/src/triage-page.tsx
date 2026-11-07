@@ -2,11 +2,18 @@ import { useEffect, useState } from 'react';
 
 interface ActionItem {
   messageId: string;
-  extract: { asker: string; ask: string; due?: string };
+  summary: string;
+  extract: { asker?: string; ask?: string; due?: string };
+}
+
+interface TriageGroup {
+  category: string;
+  items: ActionItem[];
 }
 
 interface TriageQueueResponse {
   action: ActionItem[];
+  groups: TriageGroup[];
 }
 
 export function TriagePage() {
@@ -20,10 +27,13 @@ export function TriagePage() {
 
   if (queue === null) return null;
 
+  const unknownItems = queue.groups.find((group) => group.category === 'unknown')?.items ?? [];
+
   return (
     <section aria-label="Action">
-      {queue.action.map((item) => (
+      {[...queue.action, ...unknownItems].map((item) => (
         <article key={item.messageId}>
+          <p>{item.summary}</p>
           <p>{item.extract.asker}</p>
           <p>{item.extract.ask}</p>
           <p>{item.extract.due}</p>
