@@ -170,4 +170,25 @@ describe('Claude triage', () => {
 
     expect(result).toMatchObject({ proposal: answeredProposal });
   });
+
+  it('turns a tool-use answer that fails the shared contract into no proposal and records the failure', async () => {
+    const answeredInput = {
+      action: 'delete',
+      category: 'action',
+      summary: 'Bruno asks Ana to approve the November quote.',
+      extract: { asker: 'Bruno', ask: 'Approve the November quote' },
+      reason: 'A supplier asks Ana directly for an approval.',
+    };
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      createMessage: async () => ({
+        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredInput }],
+        usage: { input_tokens: 0, output_tokens: 0 },
+      }),
+    });
+
+    const result = await triage.propose({ id: 'message-5', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+
+    expect(result).toEqual({ failure: expect.objectContaining({ input: answeredInput }) });
+  });
 });

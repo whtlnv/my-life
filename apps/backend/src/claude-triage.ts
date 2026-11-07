@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
+import { triageProposal } from '@my-life/contracts';
 import { isAddressedToUser } from '@my-life/domain';
 
 interface ClaudeResponse {
@@ -60,11 +61,15 @@ export function createClaudeTriage({ model, promptPath, profileDirectory, create
     propose: async (
       message: TriageMessage,
       examples?: unknown[],
-    ): Promise<{ promptVersion?: string; proposal?: unknown } | undefined> => {
+    ): Promise<{ promptVersion?: string; proposal?: unknown; failure?: { input: unknown } } | undefined> => {
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       if (promptPath === undefined) {
         const response = await createMessage({ model, messages });
-        return { proposal: readToolUseInput(response) };
+        const input = readToolUseInput(response);
+        if (!triageProposal.safeParse(input).success) {
+          return { failure: { input } };
+        }
+        return { proposal: input };
       }
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
