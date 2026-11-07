@@ -18,6 +18,7 @@ interface SentRequest {
   model: string;
   system?: string;
   tools?: { name: string; strict?: boolean; input_schema: unknown }[];
+  messages?: { role: string; content: string }[];
 }
 
 describe('Claude filter', () => {
@@ -62,5 +63,46 @@ describe('Claude filter', () => {
       },
     ]);
     expect(result).toMatchObject({ proposal: answeredProposal, promptVersion: 'filter-v3' });
+  });
+  it("puts the candidate's account, criteria and each archived message's sender and subject in the user message", async () => {
+    const sentRequests: SentRequest[] = [];
+    const filter = createClaudeFilter({
+      model: 'claude-model',
+      promptPath: promptFile('Propose a Gmail filter.', 'filter-v1.md'),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: (request: SentRequest) => {
+        sentRequests.push(request);
+        return Promise.resolve({
+          content: [
+            {
+              type: 'tool_use',
+              id: 'tool-use-1',
+              name: 'propose_filter',
+              input: { criteria: { from: 'news@supplier.com' }, labelName: 'Supplier', skipInbox: true },
+            },
+          ],
+          usage: { input_tokens: 0, output_tokens: 0 },
+        });
+      },
+    });
+
+    await filter.propose({
+      accountEmail: 'ana@acme.com',
+      criteria: { from: 'news@supplier.com' },
+      messageIds: ['message-1', 'message-2'],
+      messages: [
+        { from: 'Supplier News <news@supplier.com>', subject: 'November catalogue' },
+        { from: 'Supplier News <news@supplier.com>', subject: 'Weekend discounts' },
+      ],
+    });
+
+    const userMessages = sentRequests[0]?.messages?.filter((message) => message.role === 'user') ?? [];
+    expect(userMessages).toHaveLength(1);
+    const content = userMessages[0]?.content ?? '';
+    expect(content).toContain('ana@acme.com');
+    expect(content).toContain('news@supplier.com');
+    expect(content).toContain('Supplier News <news@supplier.com>');
+    expect(content).toContain('November catalogue');
+    expect(content).toContain('Weekend discounts');
   });
 });
