@@ -100,6 +100,8 @@ function ActionCard({ item }: { item: TriageItem }) {
           }
         } else if (event.key === 'r') {
           setCorrecting(true);
+        } else if (event.key === 'ArrowDown') {
+          (event.currentTarget.nextElementSibling as HTMLElement).focus();
         } else {
           handleVerdictKey(item, event.key);
         }

@@ -723,4 +723,52 @@ describe('TriagePage', () => {
     expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/verdicts', expect.anything());
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('acts on the next card when ArrowDown moves focus there before a key is pressed', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-31',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for the slides',
+          extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
+          reason: 'Luis asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-31',
+        },
+        {
+          messageId: 'message-32',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Marta asks for the signed contract',
+          extract: { asker: 'Marta Gil', ask: 'Send the signed contract' },
+          reason: 'Marta asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-32',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [firstCard] = within(actionBlock).getAllByRole('article') as [HTMLElement, HTMLElement];
+    await user.click(firstCard);
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('t');
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({ body: JSON.stringify({ messageId: 'message-32', decision: 'confirmed' }) }),
+    );
+    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({ body: JSON.stringify({ messageId: 'message-31', decision: 'confirmed' }) }),
+    );
+  });
 });
