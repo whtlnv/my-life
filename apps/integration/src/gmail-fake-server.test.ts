@@ -228,11 +228,23 @@ describe('Gmail fake server', () => {
   it('polling the history-404 scenario from an expired stored history id reports the whole inbox and returns a fresh history id', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
     const expiredHistoryId = 'expired-history-id';
-    const returnedHistoryId = await pollScenarioIntoBackend('history-404', backend, expiredHistoryId);
+    const gmail = await startGmailFakeServer('history-404', accountEmail);
+    let currentHistoryId: string;
+    let returnedHistoryId: string | undefined;
+    try {
+      ({ historyId: currentHistoryId } = (await (await fetch(`${gmail.url}/gmail/v1/users/me/profile`)).json()) as {
+        historyId: string;
+      });
+      returnedHistoryId = await pollGmailOnce({
+        ...extensionOptionsFor(gmail.url, backend),
+        storedHistoryId: expiredHistoryId,
+      });
+    } finally {
+      await gmail.close();
+    }
     const queue = await runTriageAndReadQueue<{ action: { messageId: string }[] }>(backend);
 
-    expect(returnedHistoryId).toBeDefined();
-    expect(returnedHistoryId).not.toBe(expiredHistoryId);
+    expect(returnedHistoryId).toBe(currentHistoryId);
     expect(messagesSeenByTriage).toHaveLength(1);
     expect(queue.action).toEqual([expect.objectContaining({ messageId: messagesSeenByTriage[0]?.id })]);
   });
