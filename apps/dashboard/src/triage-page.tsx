@@ -21,6 +21,20 @@ interface TriageQueueResponse {
 
 export const noDueTimeText = 'No due time';
 
+function ActionCard({ item }: { item: TriageItem }) {
+  return (
+    <article>
+      <p>{item.summary}</p>
+      <p>{item.extract.asker}</p>
+      <p>{item.extract.ask}</p>
+      <p>{item.extract.due ?? noDueTimeText}</p>
+      <p>{item.reason}</p>
+      <p>{item.accountEmail}</p>
+      <a href={item.link}>Open in Gmail</a>
+    </article>
+  );
+}
+
 export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
 
@@ -37,15 +51,7 @@ export function TriagePage() {
   return (
     <section aria-label="Action">
       {[...queue.action, ...unknownItems].map((item) => (
-        <article key={item.messageId}>
-          <p>{item.summary}</p>
-          <p>{item.extract.asker}</p>
-          <p>{item.extract.ask}</p>
-          <p>{item.extract.due ?? noDueTimeText}</p>
-          <p>{item.reason}</p>
-          <p>{item.accountEmail}</p>
-          <a href={item.link}>Open in Gmail</a>
-        </article>
+        <ActionCard key={item.messageId} item={item} />
       ))}
     </section>
   );
