@@ -1,9 +1,13 @@
+type MessageSource = { messageId: string; accountEmail: string };
+type TaskDraft = { title: string };
+type Verdict = { decision: string; correction?: { action: string; taskDraft: TaskDraft } };
+
 export const triageEffects = (
-  proposal: { messageId: string; accountEmail: string; action: string; taskDraft?: { title: string } },
-  verdict: { decision: string; correction?: { action: string; taskDraft: { title: string } } } | undefined,
+  proposal: MessageSource & { action: string; taskDraft?: TaskDraft },
+  verdict: Verdict | undefined,
 ): {
-  archives: { messageId: string; accountEmail: string }[];
-  tasks: { title: string; messageId: string; accountEmail: string }[];
+  archives: MessageSource[];
+  tasks: (TaskDraft & MessageSource)[];
 } => {
   const source = { messageId: proposal.messageId, accountEmail: proposal.accountEmail };
   const confirmed = verdict?.decision === 'confirmed';
