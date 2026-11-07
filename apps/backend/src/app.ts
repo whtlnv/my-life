@@ -160,6 +160,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return matchesContract() ? undefined : 400;
   };
+  const verdictExamplesFor = (message: ReportedMessage) =>
+    verdictStore
+      .loadAll()
+      .map((verdict) => ({
+        ...verdict,
+        from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from,
+        category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category,
+      }))
+      .filter((verdict) => verdict.from === message.from);
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
@@ -196,17 +205,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         break;
       }
       const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
-      const examples = verdictStore
-        .loadAll()
-        .map((verdict) => ({
-          ...verdict,
-          from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from,
-          category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category,
-        }))
-        .filter((verdict) => verdict.from === message.from);
+      const examples = verdictExamplesFor(message);
       const result = (await options.triage?.propose({ ...message, accountEmail }, examples)) as
-        | TriageResult
-        | undefined;
+        TriageResult | undefined;
       const costInUsd = result?.costInUsd ?? 0;
       const answeredAt = clock.now().toISOString();
       spentInUsd += costInUsd;
