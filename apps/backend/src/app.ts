@@ -65,6 +65,16 @@ function spentOnBusinessDateInUsd(spends: { spentAt: string; costInUsd: number }
     .reduce((total, { costInUsd }) => total + costInUsd, 0);
 }
 
+function splitActionFromGroups(proposals: Proposal[]) {
+  const { groups } = triageQueue(proposals, []);
+  return {
+    action: groups.filter(({ category }) => category === 'action').flatMap((group) => group.proposals),
+    groups: groups
+      .filter(({ category }) => category !== 'action')
+      .map(({ category, proposals: grouped }) => ({ category, count: grouped.length })),
+  };
+}
+
 function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock) {
   return stored.map(({ accountEmail, reportedAt }) => {
     const lastReportedAt = reportedAt.toISOString();
@@ -153,12 +163,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.get('/triage-queue', (context) => {
-    const { groups } = triageQueue(proposals, []);
     return context.json({
-      action: groups.filter(({ category }) => category === 'action').flatMap((group) => group.proposals),
-      groups: groups
-        .filter(({ category }) => category !== 'action')
-        .map(({ category, proposals: grouped }) => ({ category, count: grouped.length })),
+      ...splitActionFromGroups(proposals),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
     });
