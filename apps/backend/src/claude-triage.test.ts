@@ -36,7 +36,7 @@ describe('Claude triage', () => {
     expect(sentRequests.map((request) => request.model)).toEqual(['claude-model-from-settings']);
   });
 
-  it('sends the prompt read from the versioned prompt file and reports that file\'s version', async () => {
+  it("sends the prompt read from the versioned prompt file and reports that file's version", async () => {
     const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v7.md');
     writeFileSync(promptPath, 'Classify this email for Ana.');
     const { sentRequests, createMessage } = recordRequests();
