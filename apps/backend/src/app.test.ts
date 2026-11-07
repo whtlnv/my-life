@@ -744,4 +744,36 @@ describe('backend app', () => {
       paused: true,
     });
   });
+
+  it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'act',
+            category: 'action',
+            summary: 'Luis asks for a budget review',
+            extract: { asker: 'Luis', ask: 'Review the budget' },
+            reason: 'Luis asks the user directly',
+          },
+          costInUsd: 1,
+          promptVersion: 'triage-v1',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+
+    const queue = await app.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({
+      action: [
+        {
+          messageId: 'message-1',
+          accountEmail: 'ana@example.com',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+        },
+      ],
+    });
+  });
 });

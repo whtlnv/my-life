@@ -68,7 +68,13 @@ function spentOnBusinessDateInUsd(spends: { spentAt: string; costInUsd: number }
 function splitActionFromGroups(proposals: Proposal[]) {
   const { groups } = triageQueue(proposals, []);
   return {
-    action: groups.filter(({ category }) => category === 'action').flatMap((group) => group.proposals),
+    action: groups
+      .filter(({ category }) => category === 'action')
+      .flatMap((group) => group.proposals)
+      .map((proposal) => ({
+        ...proposal,
+        link: `https://mail.google.com/mail/?authuser=${encodeURIComponent(proposal.accountEmail)}#all/${proposal.messageId}`,
+      })),
     groups: groups
       .filter(({ category }) => category !== 'action')
       .map(({ category, proposals: grouped }) => ({ category, count: grouped.length })),
@@ -98,6 +104,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const proposalStore = openProposalStore(databasePath);
   const spendStore = openSpendStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
+  const accountEmailByMessageId = new Map<string, string>();
   const proposals: Proposal[] = proposalStore
     .loadAll()
     .map(({ messageId }) => ({ messageId, accountEmail: '', action: '' }));
@@ -138,6 +145,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     report.messages.forEach((message) => reportedMessageStore.save(message.id));
     reportedMessages.push(...report.messages);
+    report.messages.forEach((message) => accountEmailByMessageId.set(message.id, report.accountEmail));
     mailSourceStore.save(report.accountEmail, clock.now());
     return context.body(null, 200);
   });
@@ -158,7 +166,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         proposal: result?.proposal,
       });
       const proposal = result?.proposal as { category: string } | undefined;
-      proposals.push({ messageId: message.id, accountEmail: '', action: '', category: proposal?.category ?? '' });
+      proposals.push({
+        messageId: message.id,
+        accountEmail: accountEmailByMessageId.get(message.id) ?? '',
+        action: '',
+        category: proposal?.category ?? '',
+      });
     }
     return context.body(null, 200);
   });
