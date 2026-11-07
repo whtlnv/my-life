@@ -29,7 +29,7 @@
 
 ### Domain
 
-- [ ] A message whose To lists the account's address is addressed to the user
+- [x] A message whose To lists the account's address is addressed to the user
 - [ ] A message that lists the account's address only in Cc is not addressed to the user
 - [ ] A To entry with a display name and different letter case (`Francisco <FranciscoC@psmutuus.com>`) still counts as addressed to the user
 - [ ] An `action` proposal on a message addressed to the user stays `action`
