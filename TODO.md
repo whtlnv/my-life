@@ -57,7 +57,7 @@
 - [x] Two waiting `cc-thread` proposals from different threads show as two lines
 - [x] When the newer `cc-thread` proposal of a thread is listed before the older one, the newer one is still the line shown
 - [x] `action` and `unknown` proposals come before every group
-- [ ] A larger group comes before a smaller one
+- [x] A larger group comes before a smaller one
 - [ ] Messages reported but not yet proposed on are counted as remaining, newest first in the order they will be triaged
 - [ ] Spend logged today in America/Mexico_City at or above the daily ceiling pauses triage
 - [ ] Spend logged today below the daily ceiling does not pause triage

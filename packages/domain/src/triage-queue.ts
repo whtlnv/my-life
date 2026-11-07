@@ -45,7 +45,7 @@ const groupBy = <Key>(
 const groupByCategory = (proposals: Proposal[]): ProposalGroup[] =>
   groupBy(proposals, (proposal) => proposal.category)
     .map(({ key, proposals }) => categoryGroup(key, proposals))
-    .sort((first, second) => rankOf(first) - rankOf(second));
+    .sort((first, second) => rankOf(first) - rankOf(second) || second.proposals.length - first.proposals.length);
 
 const leadingCategories = ['action', 'unknown'];
 

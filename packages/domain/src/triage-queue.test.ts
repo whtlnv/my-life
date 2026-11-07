@@ -192,4 +192,27 @@ describe('triageQueue', () => {
     expect(leadingCategories).toContain('action');
     expect(leadingCategories).toContain('unknown');
   });
+
+  it('puts a larger group before a smaller one', () => {
+    const expenseProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'expense',
+    };
+    const firstSalesProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'sales',
+    };
+    const secondSalesProposal = {
+      messageId: 'message-3',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'sales',
+    };
+    const { groups } = triageQueue([expenseProposal, firstSalesProposal, secondSalesProposal], []);
+    expect(groups.map((group) => group.category)).toEqual(['sales', 'expense']);
+  });
 });
