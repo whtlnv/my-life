@@ -1069,4 +1069,27 @@ describe('backend app', () => {
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
     expect(await response.json()).toEqual({ commands: [] });
   });
+
+  it('lists at GET /commands no command acknowledged before a backend restart', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage: ccThreadTriage('archive'),
+    };
+    const beforeRestart = createApp(options);
+    await confirmBudgetReviewProposal(beforeRestart);
+    const pendingResponse = await beforeRestart.request(
+      `/commands?accountEmail=${encodeURIComponent('ana@example.com')}`,
+    );
+    const {
+      commands: [command],
+    } = (await pendingResponse.json()) as { commands: { id: string; messageId: string }[] };
+    await beforeRestart.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
+
+    const afterRestart = createApp(options);
+    const response = await afterRestart.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+
+    expect(await response.json()).toEqual({ commands: [] });
+  });
 });

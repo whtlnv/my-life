@@ -15,6 +15,7 @@ import {
   type Clock,
 } from '@my-life/domain';
 
+import { openAcknowledgementStore } from './acknowledgement-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
@@ -209,20 +210,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       paused: hasReachedDailySpendCeiling(),
     });
   });
-  const acknowledgedCommandIds = new Set<string>();
+  const acknowledgementStore = openAcknowledgementStore(databasePath);
   app.post('/commands/:id/acknowledgement', (context) => {
-    acknowledgedCommandIds.add(context.req.param('id'));
+    acknowledgementStore.save(context.req.param('id'));
     return context.body(null, 200);
   });
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
+    const acknowledgedCommandIds = acknowledgementStore.loadAll();
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
       .filter((proposal) => verdicts.some((verdict) => verdict.messageId === proposal.messageId))
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
-      .filter((command) => !acknowledgedCommandIds.has(command.id));
+      .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });
   });
   app.get('/now', (context) => {
