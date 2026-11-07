@@ -27,10 +27,14 @@ interface GmailMessage {
   payload: { headers: { name: string; value: string }[] };
 }
 
+function isRetryable(response: Response) {
+  return response.status === 429 || response.status >= 500;
+}
+
 async function fetchGmail(options: PollGmailOptions, url: string) {
   const authorization = { headers: { Authorization: `Bearer ${options.accessToken}` } };
   let response = await options.fetch(url, authorization);
-  for (let attempt = 0; response.status === 429 || response.status >= 500; attempt++) {
+  for (let attempt = 0; isRetryable(response); attempt++) {
     await options.wait?.(1000 * 2 ** attempt);
     response = await options.fetch(url, authorization);
   }
