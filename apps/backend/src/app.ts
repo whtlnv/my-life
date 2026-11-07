@@ -235,11 +235,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const proposeNewFilterCandidates = async (): Promise<void> => {
     const filter = options.filter;
     if (filter === undefined) return;
+    if (hasReachedDailySpendCeiling()) return;
     for (const candidate of filterCandidates(loadDecidedMessages())) {
       const key = JSON.stringify([candidate.accountEmail, candidate.criteria]);
       if (proposedCandidateKeys.has(key)) continue;
       proposedCandidateKeys.add(key);
       const result = await filter.propose(candidate);
+      spendStore.save({ spentAt: clock.now().toISOString(), model: '', costInUsd: result.costInUsd });
       filterProposalStore.save(
         {
           accountEmail: candidate.accountEmail,

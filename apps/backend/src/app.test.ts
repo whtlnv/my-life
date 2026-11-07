@@ -2244,4 +2244,166 @@ describe('backend app', () => {
       },
     ]);
   });
+
+  it('logs each filter-port call as spend, so a filter proposal that brings the day to the ceiling pauses triage at GET /triage-queue', async () => {
+    const filter = {
+      propose: () =>
+        Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop', skipInbox: true },
+          costInUsd: 17,
+          promptVersion: 'filter-v1',
+        }),
+    };
+    const archiveProposal = {
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    };
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      databasePath,
+      triage: triageAnsweringInOrder([archiveProposal, archiveProposal, archiveProposal], 1),
+      filter,
+    });
+    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3']) {
+      await postJson(app, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Shop <news@shop.example.com>',
+            to: 'ana@example.com',
+            subject: 'This week at the shop',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'New arrivals',
+          },
+        ],
+      });
+      await postTriageRun(app);
+      await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
+    }
+
+    const queue = await app.request('/triage-queue');
+
+    expect({
+      loggedCosts: openSpendStore(databasePath)
+        .loadAll()
+        .map(({ costInUsd }) => costInUsd),
+      queue: await queue.json(),
+    }).toMatchObject({ loggedCosts: [1, 1, 1, 17], queue: { paused: true } });
+  });
+  it('carries in each GET /triage-queue group its items, and in a system-update group its sending-system sub-groups with their items', async () => {
+    const expenseProposal = {
+      action: 'archive',
+      category: 'expense',
+      summary: 'Receipt from Acme',
+      extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+      reason: 'A receipt to file',
+    };
+    const systemUpdateProposal = {
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'info', significant: false },
+      reason: 'A routine notification',
+    };
+    const proposalsInOrder = [expenseProposal, systemUpdateProposal];
+    const triage = {
+      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-expense', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-system', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    });
+    await app.request('/triage-run', { method: 'POST' });
+
+    const queue = await app.request('/triage-queue');
+
+    const { groups } = (await queue.json()) as { groups: { category: string }[] };
+    const expenseItem = {
+      messageId: 'message-expense',
+      category: 'expense',
+      summary: expenseProposal.summary,
+      extract: expenseProposal.extract,
+      reason: expenseProposal.reason,
+      accountEmail: 'ana@example.com',
+      link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-expense',
+    };
+    const systemItem = {
+      messageId: 'message-system',
+      category: 'system-update',
+      summary: systemUpdateProposal.summary,
+      extract: systemUpdateProposal.extract,
+      reason: systemUpdateProposal.reason,
+      accountEmail: 'ana@example.com',
+      link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-system',
+    };
+    expect(groups.find(({ category }) => category === 'expense')).toMatchObject({ items: [expenseItem] });
+    expect(groups.find(({ category }) => category === 'system-update')).toMatchObject({
+      items: [systemItem],
+      systems: [{ system: 'GitHub', items: [systemItem] }],
+    });
+  });
+
+
+  it('does not ask the filter port for a proposal when a filter candidate appears while triage is paused by the daily spend ceiling', async () => {
+    const askedCandidates: unknown[] = [];
+    const filter = {
+      propose: (candidate: unknown) => {
+        askedCandidates.push(candidate);
+        return Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop', skipInbox: true },
+          costInUsd: 1,
+          promptVersion: 'filter-v1',
+        });
+      },
+    };
+    const archiveProposal = {
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      triage: triageAnsweringInOrder([archiveProposal, archiveProposal, archiveProposal], 7),
+      filter,
+    });
+    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3']) {
+      await postJson(app, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Shop <news@shop.example.com>',
+            to: 'ana@example.com',
+            subject: 'This week at the shop',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'New arrivals',
+          },
+        ],
+      });
+      await postTriageRun(app);
+      await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
+    }
+
+    expect(askedCandidates).toEqual([]);
+  });
 });
