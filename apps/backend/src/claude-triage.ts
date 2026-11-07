@@ -11,7 +11,7 @@ interface ClaudeTriageDependencies {
     model: string;
     system?: string;
     messages: { role: string; content: string }[];
-  }) => Promise<unknown>;
+  }) => Promise<{ content: { type: string; input?: unknown }[] }>;
 }
 
 function readProfile(profileDirectory: string): string {
@@ -49,11 +49,14 @@ function describeMessage(message: TriageMessage, examples: unknown[] | undefined
 
 export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
   return {
-    propose: async (message: TriageMessage, examples?: unknown[]): Promise<{ promptVersion: string } | undefined> => {
+    propose: async (
+      message: TriageMessage,
+      examples?: unknown[],
+    ): Promise<{ promptVersion?: string; proposal?: unknown } | undefined> => {
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       if (promptPath === undefined) {
-        await createMessage({ model, messages });
-        return undefined;
+        const response = await createMessage({ model, messages });
+        return { proposal: response.content.find((block) => block.type === 'tool_use')?.input };
       }
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;

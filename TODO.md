@@ -151,7 +151,7 @@
 - [x] A triage request carries the message's headers, snippet and whether it is addressed to the user
 - [x] A triage request for a message where the account is only in Cc says it is not addressed to the user, using the domain's address check
 - [x] A triage request carries the chosen verdict examples
-- [ ] A valid tool-use answer becomes a proposal
+- [x] A valid tool-use answer becomes a proposal
 - [ ] A tool-use answer that fails the shared contract becomes no proposal and the failure is recorded
 - [ ] The cost of a call is computed from the tokens the answer reports
 - [ ] A scripted fake triage answers the proposals it was scripted with, in order, and costs what it was scripted to cost

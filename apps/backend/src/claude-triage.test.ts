@@ -148,4 +148,26 @@ describe('Claude triage', () => {
 
     expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toMatchObject({ examples });
   });
+
+  it('turns a valid tool-use answer into a proposal', async () => {
+    const answeredProposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Bruno asks Ana to approve the November quote.',
+      extract: { asker: 'Bruno', ask: 'Approve the November quote' },
+      reason: 'A supplier asks Ana directly for an approval.',
+      taskDraft: { title: 'Approve the November quote from Bruno' },
+    };
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      createMessage: async () => ({
+        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
+        usage: { input_tokens: 0, output_tokens: 0 },
+      }),
+    });
+
+    const result = await triage.propose({ id: 'message-4', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+
+    expect(result).toMatchObject({ proposal: answeredProposal });
+  });
 });
