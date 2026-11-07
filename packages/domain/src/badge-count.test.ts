@@ -65,4 +65,29 @@ describe('badgeCount', () => {
 
     expect(badgeCount([weeklySync], clock, [firstActionProposal, secondActionProposal], [])).toBe(3);
   });
+
+  it('does not count an action proposal that has a verdict', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T14:50:00.000Z') };
+    const decidedActionProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'act',
+      category: 'action',
+    };
+    const waitingActionProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'action',
+    };
+    const verdict = {
+      messageId: 'message-1',
+      decision: 'confirmed',
+      decidedAt: '2026-11-02T14:40:00.000Z',
+    };
+
+    expect(
+      badgeCount([weeklySync], clock, [decidedActionProposal, waitingActionProposal], [verdict]),
+    ).toBe(2);
+  });
 });

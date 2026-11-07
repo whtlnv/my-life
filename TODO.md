@@ -67,7 +67,7 @@
 - [x] Verdicts from another sender in another category are never examples
 - [x] At most N examples are chosen
 - [x] The badge count adds the `action` proposals waiting
-- [ ] An `action` proposal that has a verdict does not add to the badge count
+- [x] An `action` proposal that has a verdict does not add to the badge count
 - [ ] A waiting proposal of another category does not add to the badge count
 
 ### Settings (backlog: § Config gaps — Gmail needs its own interval)

@@ -14,5 +14,8 @@ export const badgeCount = (
   events: MergedCalendarEvent[],
   clock: Clock,
   proposals: Proposal[] = [],
-  _verdicts: Verdict[] = [],
-): number => buildNowView(events, clock).next.length + proposals.length;
+  verdicts: Verdict[] = [],
+): number =>
+  buildNowView(events, clock).next.length +
+  proposals.filter((proposal) => !verdicts.some((verdict) => verdict.messageId === proposal.messageId))
+    .length;
