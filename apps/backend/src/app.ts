@@ -160,6 +160,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return matchesContract() ? undefined : 400;
   };
+  const verdictExampleLimit = 8;
   const verdictExamplesFor = (message: ReportedMessage) =>
     verdictStore
       .loadAll()
@@ -170,7 +171,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }))
       .filter((verdict) => verdict.from === message.from)
       .sort((first, second) => Date.parse(second.decidedAt) - Date.parse(first.decidedAt))
-      .slice(0, 8);
+      .slice(0, verdictExampleLimit);
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
