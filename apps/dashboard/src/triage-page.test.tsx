@@ -820,4 +820,49 @@ describe('TriagePage', () => {
       expect.objectContaining({ body: JSON.stringify({ messageId: 'message-34', decision: 'confirmed' }) }),
     );
   });
+
+  it('keeps focus on the last card when ArrowDown is pressed there, so a key still acts on it', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-35',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for the slides',
+          extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
+          reason: 'Luis asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-35',
+        },
+        {
+          messageId: 'message-36',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Marta asks for the signed contract',
+          extract: { asker: 'Marta Gil', ask: 'Send the signed contract' },
+          reason: 'Marta asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-36',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [, lastCard] = within(actionBlock).getAllByRole('article') as [HTMLElement, HTMLElement];
+    await user.click(lastCard);
+    await user.keyboard('{ArrowDown}');
+    await user.keyboard('t');
+
+    expect(lastCard).toHaveFocus();
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({ body: JSON.stringify({ messageId: 'message-36', decision: 'confirmed' }) }),
+    );
+  });
 });

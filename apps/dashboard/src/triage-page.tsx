@@ -101,7 +101,7 @@ function ActionCard({ item }: { item: TriageItem }) {
         } else if (event.key === 'r') {
           setCorrecting(true);
         } else if (event.key === 'ArrowDown') {
-          (event.currentTarget.nextElementSibling as HTMLElement).focus();
+          (event.currentTarget.nextElementSibling as HTMLElement | null)?.focus();
         } else if (event.key === 'ArrowUp') {
           (event.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
         } else {
