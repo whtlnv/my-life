@@ -467,8 +467,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   app.get('/filters', (context) => {
     const approvals = filterProposalApprovalStore.loadAll();
+    const acknowledgedCommandIds = acknowledgementStore.loadAll();
     return context.json({
-      filters: loadCreatedFilters().map(({ stored, gmailFilterId, acknowledgedAt }) => ({
+      filters: loadCreatedFilters()
+        .filter(({ gmailFilterId }) => !acknowledgedCommandIds.includes(`delete-filter-${gmailFilterId}`))
+        .map(({ stored, gmailFilterId, acknowledgedAt }) => ({
         ...(stored.proposal as object),
         accountEmail: stored.accountEmail,
         gmailFilterId,

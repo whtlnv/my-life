@@ -2687,6 +2687,31 @@ describe('backend app', () => {
     });
   });
 
+  it('drops the filter from GET /filters and its delete-filter command from GET /commands once that command is acknowledged', async () => {
+    const app = appProposingShopNewslettersFilter();
+    await reportTriageAndConfirmShopNewsletters(app);
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const proposalId = listed.proposals[0]?.id ?? '';
+    await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
+    await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
+      method: 'POST',
+      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
+    });
+    await app.request('/filters/gmail-filter-1', { method: 'DELETE' });
+    const deleteFilterCommand = (
+      (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { id: string; type?: string }[] }
+    ).commands.find(({ type }) => type === 'delete-filter');
+
+    await app.request(`/commands/${deleteFilterCommand?.id ?? ''}/acknowledgement`, { method: 'POST' });
+
+    expect({
+      filters: ((await (await app.request('/filters')).json()) as { filters: unknown[] }).filters,
+      deleteFilterCommands: (
+        (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type?: string }[] }
+      ).commands.filter(({ type }) => type === 'delete-filter'),
+    }).toEqual({ filters: [], deleteFilterCommands: [] });
+  });
+
   it('no longer lists at GET /filter-proposals a filter proposal rejected through POST /filter-proposals/:id/rejection', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
