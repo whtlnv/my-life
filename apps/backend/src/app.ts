@@ -45,6 +45,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const snapshotStore = openCalendarSnapshotStore(options.databasePath ?? ':memory:');
   let remainingMessages = 0;
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
+  // An account outside the allow-list is refused before its payload is checked against the contract.
+  const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
+    if (!isAllowed(accountEmail)) {
+      return 403;
+    }
+    return matchesContract() ? undefined : 400;
+  };
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
@@ -56,22 +63,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/calendar-snapshot', async (context) => {
     const snapshot = await context.req.json<CalendarSnapshot>();
-    if (!isAllowed(snapshot.accountEmail)) {
-      return context.body(null, 403);
-    }
-    if (!calendarSnapshot.safeParse(snapshot).success) {
-      return context.body(null, 400);
+    const refusal = refusalStatus(snapshot.accountEmail, () => calendarSnapshot.safeParse(snapshot).success);
+    if (refusal !== undefined) {
+      return context.body(null, refusal);
     }
     snapshotStore.save(snapshot, clock.now());
     return context.body(null, 200);
   });
   app.post('/mail-report', async (context) => {
     const report = await context.req.json<{ accountEmail: string; messages: unknown[] }>();
-    if (!isAllowed(report.accountEmail)) {
-      return context.body(null, 403);
-    }
-    if (!mailReport.safeParse(report).success) {
-      return context.body(null, 400);
+    const refusal = refusalStatus(report.accountEmail, () => mailReport.safeParse(report).success);
+    if (refusal !== undefined) {
+      return context.body(null, refusal);
     }
     remainingMessages += report.messages.length;
     return context.body(null, 200);
