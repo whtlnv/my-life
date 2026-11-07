@@ -48,12 +48,14 @@ function confirmVerdict(messageId: TriageItem['messageId']) {
   });
 }
 
+const verdictKeys = new Set(['t', 'k', 'a']);
+
 function ActionCard({ item }: { item: TriageItem }) {
   return (
     <article
       tabIndex={0}
       onKeyDown={(event) => {
-        if (event.key === 't' || event.key === 'k' || event.key === 'a') {
+        if (verdictKeys.has(event.key)) {
           confirmVerdict(item.messageId);
         }
       }}
