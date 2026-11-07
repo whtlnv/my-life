@@ -20,4 +20,10 @@ describe('filterProposal', () => {
     expect(filterProposal.safeParse(onlyFrom)).toEqual({ success: true, data: onlyFrom });
     expect(filterProposal.safeParse(onlyListId)).toEqual({ success: true, data: onlyListId });
   });
+
+  it('rejects a proposal with no criteria', () => {
+    const noCriteria = { criteria: {}, labelName: 'Newsletters/Vendor', skipInbox: true };
+
+    expect(filterProposal.safeParse(noCriteria).success).toBe(false);
+  });
 });
