@@ -1051,4 +1051,22 @@ describe('backend app', () => {
     expect(commands.map(({ messageId }) => messageId).sort()).toEqual(['message-1', 'message-2']);
     expect(new Set(commands.map(({ id }) => id)).size).toBe(2);
   });
+
+  it('lists at GET /commands no command once the extension acknowledged it through POST /commands/:id/acknowledgement', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await confirmBudgetReviewProposal(app);
+    const pendingResponse = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const {
+      commands: [command],
+    } = (await pendingResponse.json()) as { commands: { id: string; messageId: string }[] };
+
+    await app.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
+
+    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    expect(await response.json()).toEqual({ commands: [] });
+  });
 });

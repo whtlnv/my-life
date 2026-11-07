@@ -209,6 +209,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       paused: hasReachedDailySpendCeiling(),
     });
   });
+  const acknowledgedCommandIds = new Set<string>();
+  app.post('/commands/:id/acknowledgement', (context) => {
+    acknowledgedCommandIds.add(context.req.param('id'));
+    return context.body(null, 200);
+  });
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
@@ -216,7 +221,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
       .filter((proposal) => verdicts.some((verdict) => verdict.messageId === proposal.messageId))
-      .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }));
+      .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
+      .filter((command) => !acknowledgedCommandIds.has(command.id));
     return context.json({ commands });
   });
   app.get('/now', (context) => {
