@@ -32,3 +32,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   zone becomes a setting, the dashboard should get it from `GET /now`, which changes behavior.
 
 - **All-day events show a clock time under _Later today_** (seen 2026-11-06: an all-day `Home` event rendered as `18:00 Home`, which is the UTC midnight of its date converted to Mexico City). `apps/dashboard/src/dashboard-app.tsx` formats every event's start with a time; an event with `allDay: true` should read _all day_. Behavioral; a Phase 0 follow-up fix.
+
+- **Triage sends every `profile/*.md` file to Claude, not the account's own.** `apps/backend/src/claude-triage.ts` concatenates the folder (2026-11-07). Fine while Phase 1 triages one account; Phase 2 (every account) needs a per-account selection rule (for example `accounts.md` plus the file named after the account's domain) and a test with two accounts proving only the matching file is sent.
+
