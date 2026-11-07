@@ -65,6 +65,10 @@ const triageAnswering = (proposal: unknown) => ({
   propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }),
 });
 
+const triageAnsweringInOrder = (proposalsInOrder: unknown[], costInUsd: number) => ({
+  propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd, promptVersion: 'triage-v1' }),
+});
+
 const triageRecordingAskedMessageIds = (askedMessageIds: string[], costInUsd = 0) => ({
   propose: (message: { id: string }) => {
     askedMessageIds.push(message.id);
@@ -864,9 +868,7 @@ describe('backend app', () => {
         reason: 'A receipt to file',
       },
     ];
-    const triage = {
-      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 12, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringInOrder(proposalsInOrder, 12);
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -912,9 +914,7 @@ describe('backend app', () => {
         reason: 'Nothing in it matches a known category',
       },
     ];
-    const triage = {
-      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringInOrder(proposalsInOrder, 1);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
@@ -952,9 +952,7 @@ describe('backend app', () => {
       reason: 'A routine notification',
     };
     const proposalsInOrder = [expenseProposal, systemUpdateProposal];
-    const triage = {
-      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringInOrder(proposalsInOrder, 1);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
@@ -1171,9 +1169,7 @@ describe('backend app', () => {
       reason: 'A sales pitch',
     };
     const proposalsInOrder = [expense, sales, expense];
-    const triage = {
-      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringInOrder(proposalsInOrder, 1);
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     const [budgetReview] = budgetReviewReport.messages;
