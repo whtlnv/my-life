@@ -413,13 +413,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const filterProposalRejectionStore = openFilterProposalRejectionStore(databasePath);
   const filterProposalApprovalStore = openFilterProposalApprovalStore(databasePath);
   app.get('/filter-proposals', (context) => {
-    const rejectedFilterProposalIds = filterProposalRejectionStore.loadAll();
-    const approvedFilterProposalIds = filterProposalApprovalStore.loadAll();
+    const decidedFilterProposalIds = new Set([
+      ...filterProposalRejectionStore.loadAll(),
+      ...filterProposalApprovalStore.loadAll(),
+    ]);
     return context.json({
       proposals: filterProposalStore
         .loadAll()
-        .filter((stored) => !rejectedFilterProposalIds.includes(stored.id))
-        .filter((stored) => !approvedFilterProposalIds.includes(stored.id))
+        .filter((stored) => !decidedFilterProposalIds.has(stored.id))
         .map((stored) => ({
           ...(stored.proposal as object),
           id: stored.id,
