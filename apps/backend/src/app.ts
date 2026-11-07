@@ -168,7 +168,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from,
         category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category,
       }))
-      .filter((verdict) => verdict.from === message.from);
+      .filter((verdict) => verdict.from === message.from)
+      .sort((first, second) => Date.parse(second.decidedAt) - Date.parse(first.decidedAt));
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {

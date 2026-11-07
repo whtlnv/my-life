@@ -598,6 +598,43 @@ describe('backend app', () => {
     ]);
   });
 
+  it('hands triage at POST /triage-run the same-sender verdicts as examples newest first, as the domain chooses them', async () => {
+    const examplesByMessageId = new Map<string, unknown[] | undefined>();
+    const proposal = {
+      action: 'archive',
+      category: 'cc-thread',
+      summary: 'Luis shared the budget with the team',
+      extract: { sinceLastMessage: 'Luis shared the budget' },
+      reason: 'The user is only copied',
+    };
+    const triage = {
+      propose: (message: { id: string }, examples?: unknown[]) => {
+        examplesByMessageId.set(message.id, examples);
+        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
+      },
+    };
+    let now = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => now }, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    const fromLuis = (id: string, subject: string) => ({ ...budgetReview, id, threadId: `thread-${id}`, subject });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [fromLuis('message-1', 'Budget review'), fromLuis('message-2', 'Budget draft')],
+    });
+    await app.request('/triage-run', { method: 'POST' });
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    now = new Date('2026-11-02T15:20:00.000Z');
+    await postJson(app, '/verdicts', { messageId: 'message-2', decision: 'confirmed' });
+    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [fromLuis('message-3', 'Budget final')] });
+
+    await app.request('/triage-run', { method: 'POST' });
+
+    expect(examplesByMessageId.get('message-3')).toEqual([
+      expect.objectContaining({ messageId: 'message-2' }),
+      expect.objectContaining({ messageId: 'message-1' }),
+    ]);
+  });
+
   it('does not ask triage again at POST /triage-run for a message that already has a proposal', async () => {
     const askedMessageIds: string[] = [];
     const triage = {
