@@ -38,6 +38,7 @@
 - [x] An `archive` proposal with no verdict produces no archive
 - [x] An `archive` proposal confirmed by the user produces an archive of that message on its account
 - [ ] An `archive` proposal rejected by the user produces no archive
+- [ ] A `keep` proposal confirmed by the user produces no archive
 - [ ] A rejected proposal corrected to `act` produces a task from the correction instead
 - [ ] A confirmed `act` proposal produces a task with the draft's title, a link to the message and the account it came from
 - [ ] A confirmed `keep` on a `sales` proposal puts the company on the check-later list
