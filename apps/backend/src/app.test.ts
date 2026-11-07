@@ -696,4 +696,52 @@ describe('backend app', () => {
 
     expect(askedMessageIds).toEqual(['message-newest']);
   });
+
+  it('answers GET /triage-queue with the action block, the groups with their counts, the number of messages remaining and whether the ceiling paused triage', async () => {
+    const proposalsInOrder = [
+      {
+        action: 'act',
+        category: 'action',
+        summary: 'Luis asks for a budget review',
+        extract: { asker: 'Luis', ask: 'Review the budget' },
+        reason: 'Luis asks the user directly',
+      },
+      {
+        action: 'archive',
+        category: 'expense',
+        summary: 'Receipt from Acme',
+        extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+        reason: 'A receipt to file',
+      },
+    ];
+    const triage = {
+      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 12, promptVersion: 'triage-v1' }),
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      triage,
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-older', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
+        { ...budgetReview, id: 'message-newest', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-middle', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    });
+    await app.request('/triage-run', { method: 'POST' });
+
+    const queue = await app.request('/triage-queue');
+
+    expect(queue.status).toBe(200);
+    expect(await queue.json()).toMatchObject({
+      action: [{ messageId: 'message-newest' }],
+      groups: [{ category: 'expense', count: 1 }],
+      remaining: 1,
+      paused: true,
+    });
+  });
 });

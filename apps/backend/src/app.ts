@@ -147,11 +147,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         promptVersion: result?.promptVersion ?? '',
         proposal: result?.proposal,
       });
-      proposals.push({ messageId: message.id, accountEmail: '', action: '' });
+      const proposal = result?.proposal as { category: string } | undefined;
+      proposals.push({ messageId: message.id, accountEmail: '', action: '', category: proposal?.category ?? '' });
     }
     return context.body(null, 200);
   });
-  app.get('/triage-queue', (context) => context.json({ remaining: reportedMessageStore.count() }));
+  app.get('/triage-queue', (context) => {
+    const { groups } = triageQueue(proposals, []);
+    return context.json({
+      action: groups.filter(({ category }) => category === 'action').flatMap((group) => group.proposals),
+      groups: groups
+        .filter(({ category }) => category !== 'action')
+        .map(({ category, proposals: grouped }) => ({ category, count: grouped.length })),
+      remaining: reportedMessageStore.count() - proposals.length,
+      paused: hasReachedDailySpendCeiling(),
+    });
+  });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
     const latestSnapshots = stored.map((entry) => entry.snapshot);
