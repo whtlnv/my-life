@@ -334,8 +334,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/categories', (context) => {
     const categoryModes = categoryModeStore.loadAll();
+    const verdicts = verdictStore.loadAll();
     return context.json({
-      categories: triageCategories.map((category) => ({ category, mode: categoryModes[category] ?? 'advise' })),
+      categories: triageCategories.map((category) => {
+        const categoryProposals = proposals.filter((proposal) => proposal.category === category);
+        const confirmedCount = categoryProposals.filter(({ messageId }) => isStillConfirmed(messageId, verdicts)).length;
+        const agreementRate = categoryProposals.length > 0 ? confirmedCount / categoryProposals.length : undefined;
+        return { category, mode: categoryModes[category] ?? 'advise', agreementRate };
+      }),
     });
   });
   app.get('/check-later', (context) => {

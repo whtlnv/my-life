@@ -1779,4 +1779,45 @@ describe('backend app', () => {
       })),
     });
   });
+
+  it('shows at GET /categories the agreement rate of a category as its confirmed verdicts divided by its proposals, a rejection or a correction counting as not confirmed', async () => {
+    const sales = {
+      action: 'keep',
+      category: 'sales',
+      summary: 'Globex pitches a CRM',
+      extract: { company: 'Globex', solution: 'A CRM', problem: 'Scattered customer notes' },
+      reason: 'A sales pitch',
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: triageAnswering(sales),
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: ['pitch-confirmed', 'pitch-rejected', 'pitch-corrected', 'pitch-undecided'].map((id) => ({
+        ...budgetReview,
+        id,
+        threadId: id,
+      })),
+    });
+    await postTriageRun(app);
+    await postJson(app, '/verdicts', { messageId: 'pitch-confirmed', decision: 'confirmed' });
+    await postJson(app, '/verdicts', { messageId: 'pitch-rejected', decision: 'rejected' });
+    await postJson(app, '/verdicts', {
+      messageId: 'pitch-corrected',
+      decision: 'rejected',
+      correction: { action: 'archive' },
+    });
+
+    const response = await app.request('/categories');
+
+    const { categories } = (await response.json()) as { categories: { category: string }[] };
+    expect(categories.find(({ category }) => category === 'sales')).toEqual({
+      category: 'sales',
+      mode: 'advise',
+      agreementRate: 0.25,
+    });
+  });
 });

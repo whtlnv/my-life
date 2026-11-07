@@ -28,7 +28,7 @@
 - [x] After `PUT /categories/:category/mode` with `advise`, a category previously `automatic` shows `advise` again
 - [x] `PUT /categories/:category/mode` with an unknown category or mode answers 400 and changes nothing
 - [x] A category's mode survives a backend restart on the same database
-- [ ] `GET /categories` shows each category's agreement rate as confirmed verdicts ÷ proposals in that category (a rejection or a correction counts as not confirmed)
+- [x] `GET /categories` shows each category's agreement rate as confirmed verdicts ÷ proposals in that category (a rejection or a correction counts as not confirmed)
 - [ ] `GET /categories` shows no agreement rate for a category with no proposals
 - [ ] `GET /categories` lists each category's five most recent proposals, newest first, each with its summary, action, account and link
 - [ ] In an `automatic` category, a new `archive` proposal yields an archive command in `GET /commands?accountEmail=…` with no verdict
