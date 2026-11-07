@@ -2476,4 +2476,41 @@ describe('backend app', () => {
       },
     });
   });
+
+  it('lists at GET /commands for the account a create-filter command with the criteria and label once its filter proposal is approved through POST /filter-proposals/:id/approval', async () => {
+    const filter = {
+      propose: () =>
+        Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+          costInUsd: 0.05,
+          promptVersion: 'filter-v1',
+        }),
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
+    await reportTriageAndConfirmShopNewsletters(app);
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+
+    const approval = await app.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/approval`, {
+      method: 'POST',
+    });
+    const commands = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+
+    expect({ status: approval.status, commands: commands.commands }).toMatchObject({
+      status: 200,
+      commands: expect.arrayContaining([
+        expect.objectContaining({
+          type: 'create-filter',
+          criteria: { from: 'news@shop.example.com' },
+          labelName: 'Shop newsletters',
+        }),
+      ]) as unknown,
+    });
+  });
 });

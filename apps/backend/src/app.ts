@@ -412,10 +412,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       proposals: filterProposalStore.loadAll().map((stored) => ({
         ...(stored.proposal as object),
+        id: stored.id,
         accountEmail: stored.accountEmail,
         archiveCount: stored.messageIds.length,
       })),
     });
+  });
+  const approvedFilterProposalIds = new Set<string>();
+  app.post('/filter-proposals/:id/approval', (context) => {
+    approvedFilterProposalIds.add(context.req.param('id'));
+    return context.body(null, 200);
   });
   const acknowledgementStore = openAcknowledgementStore(databasePath);
   app.post('/commands/:id/acknowledgement', (context) => {
@@ -436,7 +442,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         label: madeAutomatic ? 'my-life/auto' : 'my-life/archived',
       }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
-    return context.json({ commands });
+    const filterCommands = filterProposalStore
+      .loadAll()
+      .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.has(stored.id))
+      .map((stored) => ({ type: 'create-filter', ...(stored.proposal as object) }));
+    return context.json({ commands: [...commands, ...filterCommands] });
   });
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });

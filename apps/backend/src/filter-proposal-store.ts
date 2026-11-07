@@ -18,8 +18,15 @@ export function openFilterProposalStore(databasePath: string) {
   );
   const loadProposals = database.prepare<
     [],
-    { account_email: string; message_ids: string; prompt_version: string; proposed_at: string; proposal: string }
-  >('SELECT account_email, message_ids, prompt_version, proposed_at, proposal FROM filter_proposals ORDER BY rowid');
+    {
+      id: number;
+      account_email: string;
+      message_ids: string;
+      prompt_version: string;
+      proposed_at: string;
+      proposal: string;
+    }
+  >('SELECT rowid AS id, account_email, message_ids, prompt_version, proposed_at, proposal FROM filter_proposals ORDER BY rowid');
   const loadCandidateKeys = database.prepare<[], { candidate_key: string }>(
     'SELECT candidate_key FROM filter_proposals',
   );
@@ -37,8 +44,9 @@ export function openFilterProposalStore(databasePath: string) {
     loadCandidateKeys(): string[] {
       return loadCandidateKeys.all().map((row) => row.candidate_key);
     },
-    loadAll(): StoredFilterProposal[] {
+    loadAll(): (StoredFilterProposal & { id: string })[] {
       return loadProposals.all().map((row) => ({
+        id: String(row.id),
         accountEmail: row.account_email,
         messageIds: JSON.parse(row.message_ids) as string[],
         promptVersion: row.prompt_version,

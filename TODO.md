@@ -72,7 +72,7 @@
 - [x] When the backend asks the filter port about a candidate, the candidate carries, for each of its messages, the sender and the subject as reported, also after a backend restart on the same database (the subject is persisted with the reported message) (supervisor: the previous item delivered the adapter clause only; the backend still passes message ids alone)
 - [x] The Claude filter adapter reports each call's cost in USD from the response usage and the configured pricing, the way the triage adapter does, so the backend's spend log for filter calls is real (supervisor keystone: the adapter returns no cost)
 - [x] `GET /filter-proposals` lists pending proposals with criteria, label, account and the count of archives behind each
-- [ ] `POST /filter-proposals/:id/approval` stores the approval with its time, and `GET /commands?accountEmail=…` then lists a `create-filter` command for that account with the criteria and label
+- [x] `POST /filter-proposals/:id/approval` stores the approval with its time, and `GET /commands?accountEmail=…` then lists a `create-filter` command for that account with the criteria and label
 - [ ] A filter proposal with no stored approval never yields a `create-filter` command
 - [ ] `POST /filter-proposals/:id/rejection` removes the proposal from `GET /filter-proposals`, and the same sender or List-Id is not proposed again
 - [ ] Filter proposals, approvals and rejections survive a backend restart on the same database
