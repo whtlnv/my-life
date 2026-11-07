@@ -22,4 +22,9 @@ describe('triageEffects', () => {
   it('produces no archive for an archive proposal the user rejected', () => {
     expect(triageEffects(archiveProposal, { decision: 'rejected' }).archives).toEqual([]);
   });
+
+  it('produces no archive for a keep proposal the user confirmed', () => {
+    const keepProposal = { ...archiveProposal, action: 'keep' };
+    expect(triageEffects(keepProposal, { decision: 'confirmed' }).archives).toEqual([]);
+  });
 });
