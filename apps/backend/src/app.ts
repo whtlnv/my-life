@@ -10,6 +10,7 @@ import {
   describeSourceFreshness,
   isAccountFresh,
   mergeCalendarSnapshots,
+  triageQueue,
   type CalendarSnapshot,
   type Clock,
 } from '@my-life/domain';
@@ -24,6 +25,7 @@ export interface AppOptions {
   databasePath?: string;
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
+  triage?: { propose: (message: { id: string; date: string }) => Promise<unknown> };
 }
 
 const systemClock: Clock = { now: () => new Date() };
@@ -55,6 +57,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const snapshotStore = openCalendarSnapshotStore(databasePath);
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
+  const reportedMessages: { id: string; date: string }[] = [];
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -82,13 +85,20 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.post('/mail-report', async (context) => {
-    const report = await context.req.json<{ accountEmail: string; messages: { id: string }[] }>();
+    const report = await context.req.json<{ accountEmail: string; messages: { id: string; date: string }[] }>();
     const refusal = refusalStatus(report.accountEmail, () => mailReport.safeParse(report).success);
     if (refusal !== undefined) {
       return context.body(null, refusal);
     }
     report.messages.forEach((message) => reportedMessageStore.save(message.id));
+    reportedMessages.push(...report.messages);
     mailSourceStore.save(report.accountEmail, clock.now());
+    return context.body(null, 200);
+  });
+  app.post('/triage-run', async (context) => {
+    for (const message of triageQueue([], [], reportedMessages).remaining) {
+      await options.triage?.propose(message);
+    }
     return context.body(null, 200);
   });
   app.get('/triage-queue', (context) => context.json({ remaining: reportedMessageStore.count() }));
