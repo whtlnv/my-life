@@ -47,6 +47,10 @@ function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
+  const configuredPollingIntervalsInMilliseconds = {
+    ...pollingIntervalsInMilliseconds,
+    mail: options.gmailPollingIntervalInMilliseconds ?? pollingIntervalsInMilliseconds.mail,
+  };
   const databasePath = options.databasePath ?? ':memory:';
   const snapshotStore = openCalendarSnapshotStore(databasePath);
   const reportedMessageStore = openReportedMessageStore(databasePath);
@@ -100,11 +104,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
       badgeCount: badgeCount(events, clock),
-      sources: describeSourceFreshness(
-        [...mailSources.values()],
-        { ...pollingIntervalsInMilliseconds, mail: options.gmailPollingIntervalInMilliseconds ?? pollingIntervalsInMilliseconds.mail },
-        clock,
-      ),
+      sources: describeSourceFreshness([...mailSources.values()], configuredPollingIntervalsInMilliseconds, clock),
     });
   });
   const dashboardDirectory = options.dashboardDirectory;
