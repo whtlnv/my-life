@@ -5,7 +5,7 @@
 ### Every account
 
 - [x] When a message from account A is triaged and `profile/` holds a file named after A's domain (`psmutuus.md` for `franciscoc@psmutuus.com`), that file's text is in the prompt sent through the Claude adapter (backlog: apps/backend/src/claude-triage.ts Triage sends every `profile/*.md` file to Claude, not the account's own)
-- [ ] When a message from account A is triaged, the profile file named after another account's domain is not in the prompt (backlog: apps/backend/src/claude-triage.ts Triage sends every `profile/*.md` file to Claude, not the account's own)
+- [x] When a message from account A is triaged, the profile file named after another account's domain is not in the prompt (backlog: apps/backend/src/claude-triage.ts Triage sends every `profile/*.md` file to Claude, not the account's own)
 - [ ] When any account's message is triaged, `profile/accounts.md` is in the prompt
 - [ ] When a message is triaged, `profile/README.md` and any `*.example.md` file are not in the prompt (backlog: apps/backend/src/claude-triage.ts The triage prompt includes `profile/README.md`)
 - [ ] When a message from an account whose domain has no `profile/<domain>.md` file (the gmail.com account today) is triaged, the call still goes through with `profile/accounts.md` alone in the prompt, instead of failing on the missing file (supervisor keystone: the first green reads `<domain>.md` unconditionally)
