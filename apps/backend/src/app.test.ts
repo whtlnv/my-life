@@ -2185,6 +2185,70 @@ describe('backend app', () => {
     expect(askedCandidates).toMatchObject([]);
   });
 
+  it('asks the filter port, also after a backend restart on the same database file, with each candidate message carrying its sender and subject as reported', async () => {
+    const askedCandidates: unknown[] = [];
+    const filter = {
+      propose: (candidate: unknown) => {
+        askedCandidates.push(candidate);
+        return Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+          costInUsd: 0.05,
+          promptVersion: 'filter-v1',
+        });
+      },
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage,
+      filter,
+    };
+    const subjects = { 'newsletter-1': 'New arrivals', 'newsletter-2': 'Winter sale', 'newsletter-3': 'Last chance' };
+    const beforeRestart = createApp(options);
+    for (const [messageId, subject] of Object.entries(subjects)) {
+      await postJson(beforeRestart, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Shop <news@shop.example.com>',
+            to: 'ana@example.com',
+            subject,
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'Shop news',
+          },
+        ],
+      });
+      await postTriageRun(beforeRestart);
+      if (messageId !== 'newsletter-3') {
+        await postJson(beforeRestart, '/verdicts', { messageId, decision: 'confirmed' });
+      }
+    }
+    const afterRestart = createApp(options);
+
+    await postJson(afterRestart, '/verdicts', { messageId: 'newsletter-3', decision: 'confirmed' });
+
+    expect(askedCandidates).toMatchObject([
+      {
+        messages: [
+          { from: 'Shop <news@shop.example.com>', subject: 'New arrivals' },
+          { from: 'Shop <news@shop.example.com>', subject: 'Winter sale' },
+          { from: 'Shop <news@shop.example.com>', subject: 'Last chance' },
+        ],
+      },
+    ]);
+  });
+
   it('counts toward a filter candidate only archives: a confirmed keep proposal does not count, while a rejected proposal corrected to archive does', async () => {
     const askedCandidates: unknown[] = [];
     const filter = {

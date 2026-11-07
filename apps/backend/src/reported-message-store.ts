@@ -10,6 +10,10 @@ export interface MessageSender {
   listId?: string;
 }
 
+export interface MessageSubject {
+  subject: string;
+}
+
 function createTables(database: ReturnType<typeof openDatabase>): void {
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL)',
@@ -19,6 +23,9 @@ function createTables(database: ReturnType<typeof openDatabase>): void {
   );
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_message_senders (message_id TEXT PRIMARY KEY, from_header TEXT NOT NULL, list_id TEXT)',
+  );
+  database.exec(
+    'CREATE TABLE IF NOT EXISTS reported_message_subjects (message_id TEXT PRIMARY KEY, subject TEXT NOT NULL)',
   );
 }
 
@@ -37,6 +44,12 @@ export function openReportedMessageStore(databasePath: string) {
   const saveSender = database.prepare(
     'INSERT OR IGNORE INTO reported_message_senders (message_id, from_header, list_id) VALUES (?, ?, ?)',
   );
+  const saveSubject = database.prepare(
+    'INSERT OR IGNORE INTO reported_message_subjects (message_id, subject) VALUES (?, ?)',
+  );
+  const loadSubject = database.prepare<[string], { subject: string }>(
+    'SELECT subject FROM reported_message_subjects WHERE message_id = ?',
+  );
   const loadAllMessages = database.prepare<
     [],
     { messageId: string; accountEmail: string; from: string; listId: string | null }
@@ -48,10 +61,11 @@ export function openReportedMessageStore(databasePath: string) {
     'SELECT account_email FROM reported_messages WHERE message_id = ?',
   );
   return {
-    save(messageId: string, accountEmail: string, message: MessageRecipients & MessageSender): void {
+    save(messageId: string, accountEmail: string, message: MessageRecipients & MessageSender & MessageSubject): void {
       saveMessage.run(messageId, accountEmail);
       saveRecipients.run(messageId, message.to ?? null, message.cc ?? null);
       saveSender.run(messageId, message.from, message.listId ?? null);
+      saveSubject.run(messageId, message.subject);
     },
     loadAll() {
       return loadAllMessages.all();
@@ -59,6 +73,9 @@ export function openReportedMessageStore(databasePath: string) {
     recipientsOf(messageId: string): MessageRecipients {
       const row = loadRecipients.get(messageId);
       return { to: row?.to_header ?? '', cc: row?.cc_header ?? '' };
+    },
+    subjectOf(messageId: string): string {
+      return loadSubject.get(messageId)?.subject ?? '';
     },
     accountEmailOf(messageId: string): string {
       return loadAccountEmail.get(messageId)?.account_email ?? '';

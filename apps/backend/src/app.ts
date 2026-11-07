@@ -76,7 +76,9 @@ export interface AppOptions {
     propose: (message: ReportedMessage & { accountEmail: string }, examples?: unknown[]) => Promise<TriageResult>;
   };
   filter?: {
-    propose: (candidate: FilterCandidate) => Promise<{ proposal: unknown; costInUsd: number; promptVersion: string }>;
+    propose: (
+      candidate: FilterCandidate & { messages: { from: string; subject: string }[] },
+    ) => Promise<{ proposal: unknown; costInUsd: number; promptVersion: string }>;
   };
 }
 
@@ -236,11 +238,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const filter = options.filter;
     if (filter === undefined) return;
     if (hasReachedDailySpendCeiling()) return;
-    for (const candidate of filterCandidates(loadDecidedMessages())) {
+    const decidedMessages = loadDecidedMessages();
+    for (const candidate of filterCandidates(decidedMessages)) {
       const key = JSON.stringify([candidate.accountEmail, candidate.criteria]);
       if (proposedCandidateKeys.has(key)) continue;
       proposedCandidateKeys.add(key);
-      const result = await filter.propose(candidate);
+      const messages = candidate.messageIds.map((messageId) => ({
+        from: decidedMessages.find((message) => message.messageId === messageId)?.from ?? '',
+        subject: reportedMessageStore.subjectOf(messageId),
+      }));
+      const result = await filter.propose({ ...candidate, messages });
       spendStore.save({ spentAt: clock.now().toISOString(), model: '', costInUsd: result.costInUsd });
       filterProposalStore.save(
         {
