@@ -1,6 +1,7 @@
 import type { FetchFunction } from './fetch-function';
 
 const gmailApi = 'https://gmail.googleapis.com/gmail/v1/users/me';
+const archivedLabelName = 'my-life/archived';
 
 interface CarryOutArchiveCommandsOptions {
   fetch: FetchFunction;
@@ -52,7 +53,7 @@ async function findArchivedLabelId(fetch: FetchFunction, authorization: { Author
   const { labels } = (await (await fetch(`${gmailApi}/labels`, { headers: authorization })).json()) as {
     labels: GmailLabel[];
   };
-  const existingLabel = labels.find((label) => label.name === 'my-life/archived');
+  const existingLabel = labels.find((label) => label.name === archivedLabelName);
   if (existingLabel !== undefined) {
     return existingLabel.id;
   }
@@ -60,7 +61,7 @@ async function findArchivedLabelId(fetch: FetchFunction, authorization: { Author
     await fetch(`${gmailApi}/labels`, {
       method: 'POST',
       headers: authorization,
-      body: JSON.stringify({ name: 'my-life/archived' }),
+      body: JSON.stringify({ name: archivedLabelName }),
     })
   ).json()) as GmailLabel;
   return createdLabel.id;
