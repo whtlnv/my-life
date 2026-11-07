@@ -211,9 +211,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
+    const verdicts = verdictStore.loadAll();
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
-      .filter((proposal) => verdictStore.loadAll().some((verdict) => verdict.messageId === proposal.messageId))
+      .filter((proposal) => verdicts.some((verdict) => verdict.messageId === proposal.messageId))
       .map(({ messageId }) => ({ id: 'command-1', messageId }));
     return context.json({ commands });
   });
