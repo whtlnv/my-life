@@ -145,7 +145,7 @@
 
 ### Claude adapter
 
-- [ ] A triage request uses the model id from settings
+- [x] A triage request uses the model id from settings
 - [ ] A triage request carries the prompt read from the versioned prompt file and reports that file's version
 - [ ] A triage request carries the account's profile text from `profile/`
 - [ ] A triage request carries the message's headers, snippet and whether it is addressed to the user
