@@ -64,8 +64,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     snapshotStore.save(snapshot, clock.now());
     return context.body(null, 200);
   });
-  app.post('/mail-report', (context) => context.body(null, 200));
-  app.get('/triage-queue', (context) => context.json({ remaining: 1 }));
+  let remainingMessages = 0;
+  app.post('/mail-report', async (context) => {
+    const report = await context.req.json<{ accountEmail: string; messages: unknown[] }>();
+    if (!isAllowed(report.accountEmail)) {
+      return context.body(null, 403);
+    }
+    remainingMessages += report.messages.length;
+    return context.body(null, 200);
+  });
+  app.get('/triage-queue', (context) => context.json({ remaining: remainingMessages }));
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
     const latestSnapshots = stored.map((entry) => entry.snapshot);

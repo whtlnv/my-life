@@ -374,4 +374,28 @@ describe('backend app', () => {
     expect(queue.status).toBe(200);
     expect(await queue.json()).toMatchObject({ remaining: 1 });
   });
+
+  it('refuses a mail report from an account outside the allow-list and counts none of its messages as remaining in GET /triage-queue', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+
+    const posted = await postJson(app, '/mail-report', {
+      accountEmail: 'stranger@example.com',
+      historyId: '1001',
+      messages: [
+        {
+          id: 'message-9',
+          threadId: 'thread-9',
+          from: 'Luis <luis@example.com>',
+          to: 'stranger@example.com',
+          subject: 'Intruder mail',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+          snippet: 'This should never reach the queue.',
+        },
+      ],
+    });
+    const queue = await app.request('/triage-queue');
+
+    expect(posted.status).toBe(403);
+    expect(await queue.json()).toMatchObject({ remaining: 0 });
+  });
 });
