@@ -462,7 +462,7 @@ describe('backend app', () => {
     });
   });
 
-  it("marks the mail source stale in GET /now by the Gmail polling interval the app was created with: with 30 seconds, a report received 70 seconds ago is stale", async () => {
+  it('marks the mail source stale in GET /now by the Gmail polling interval the app was created with: with 30 seconds, a report received 70 seconds ago is stale', async () => {
     let currentTime = new Date('2026-11-02T15:10:00.000Z');
     const app = createApp({
       allowedEmails: ['ana@example.com'],
@@ -547,5 +547,44 @@ describe('backend app', () => {
 
     expect(secondRun.status).toBe(200);
     expect(askedMessageIds).toEqual(['message-once']);
+  });
+
+  it("stops asking triage at POST /triage-run once today's spend reaches the daily ceiling", async () => {
+    const askedMessageIds: string[] = [];
+    const triage = {
+      propose: (message: { id: string }) => {
+        askedMessageIds.push(message.id);
+        return Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A message',
+            extract: {},
+            reason: 'Not sure what it is',
+          },
+          costInUsd: 12,
+        });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      triage,
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-older', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
+        { ...budgetReview, id: 'message-newest', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-middle', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    });
+
+    const run = await app.request('/triage-run', { method: 'POST' });
+
+    expect(run.status).toBe(200);
+    expect(askedMessageIds).toEqual(['message-newest', 'message-middle']);
   });
 });

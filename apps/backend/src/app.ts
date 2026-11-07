@@ -29,6 +29,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number];
 export interface AppOptions {
   allowedEmails: string[];
   clock?: Clock;
+  dailySpendCeilingInUsd?: number;
   databasePath?: string;
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
@@ -66,6 +67,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const mailSourceStore = openMailSourceStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const proposals: Proposal[] = [];
+  let spentInUsd = 0;
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -105,7 +107,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/triage-run', async (context) => {
     for (const message of triageQueue(proposals, [], reportedMessages).remaining) {
-      await options.triage?.propose(message);
+      if (options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd) {
+        break;
+      }
+      const result = (await options.triage?.propose(message)) as { costInUsd?: number } | undefined;
+      spentInUsd += result?.costInUsd ?? 0;
       proposals.push({ messageId: message.id, accountEmail: '', action: '' });
     }
     return context.body(null, 200);

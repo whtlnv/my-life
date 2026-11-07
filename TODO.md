@@ -119,7 +119,7 @@
 - [x] An account's last mail-report time survives a backend restart (same database file)
 - [x] A triage run asks for a proposal on each reported message that has none, newest first
 - [x] A message that already has a proposal is not sent to triage again
-- [ ] A triage run stops asking once today's spend reaches the ceiling
+- [x] A triage run stops asking once today's spend reaches the ceiling
 - [ ] Every proposal is stored append-only with the time it was made and the prompt version that made it
 - [ ] Every triage call's spend is logged with its time, model and cost
 - [ ] Proposals made and spend logged before the backend restarts (same database file) still exist after it: the message is not triaged again and the spend still counts toward today's ceiling
