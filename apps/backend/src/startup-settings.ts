@@ -9,12 +9,14 @@ export interface StartupSettings {
   port: number;
   gmailPollingIntervalInMilliseconds: number;
   triageModel: string;
+  dailySpendCeilingInUsd: number;
 }
 
 const defaultPort = 7777;
 const millisecondsPerSecond = 1000;
 const defaultGmailPollingIntervalInMilliseconds = 60_000;
 const defaultTriageModel = 'claude-opus-5-5';
+const defaultDailySpendCeilingInUsd = 20;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
 
 export function readStartupSettings(
@@ -30,6 +32,7 @@ export function readStartupSettings(
       environment.MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS,
     ),
     triageModel: environment.MY_LIFE_TRIAGE_MODEL ?? defaultTriageModel,
+    dailySpendCeilingInUsd: defaultDailySpendCeilingInUsd,
   };
 }
 

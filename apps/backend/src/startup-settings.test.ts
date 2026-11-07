@@ -101,4 +101,10 @@ describe('startup settings', () => {
 
     expect(settings.triageModel).toBe('claude-sonnet-5-5');
   });
+
+  it('caps daily triage spend at USD 20 when MY_LIFE_DAILY_SPEND_CEILING_USD is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.dailySpendCeilingInUsd).toBe(20);
+  });
 });

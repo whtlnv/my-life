@@ -77,7 +77,7 @@
 - [x] A Gmail polling interval set in the environment replaces the 60-second default (backlog: apps/backend/src/app.ts Config gaps)
 - [x] The triage model defaults to `claude-opus-5-5`
 - [x] A triage model set in the environment replaces the default
-- [ ] The daily spend ceiling defaults to USD 20
+- [x] The daily spend ceiling defaults to USD 20
 - [ ] A daily spend ceiling set in the environment replaces the default
 - [ ] The backend refuses to start triage and says why when the Anthropic key is missing
 
