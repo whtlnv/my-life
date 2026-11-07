@@ -195,12 +195,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const verdictExamplesFor = (message: ReportedMessage) =>
     chooseVerdictExamples(
       message,
-      verdictStore.loadAll().map((verdict) => ({
-        ...verdict,
-        from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from ?? '',
-        listId: reportedMessages.find((reported) => reported.id === verdict.messageId)?.listId,
-        category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ?? '',
-      })),
+      verdictStore.loadAll().map((verdict) => {
+        const verdictMessage = reportedMessages.find((reported) => reported.id === verdict.messageId);
+        return {
+          ...verdict,
+          from: verdictMessage?.from ?? '',
+          listId: verdictMessage?.listId,
+          category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ?? '',
+        };
+      }),
       verdictExampleLimit,
     );
   const app = new Hono();
