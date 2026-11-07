@@ -19,6 +19,7 @@ import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calend
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore } from './reported-message-store';
+import { openSpendStore } from './spend-store';
 
 interface ReportedMessage {
   id: string;
@@ -29,6 +30,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number];
 
 interface TriageResult {
   costInUsd?: number;
+  model?: string;
   proposal?: unknown;
   promptVersion?: string;
 }
@@ -73,6 +75,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
   const proposalStore = openProposalStore(databasePath);
+  const spendStore = openSpendStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const proposals: Proposal[] = [];
   let spentInUsd = 0;
@@ -122,6 +125,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }
       const result = (await options.triage?.propose(message)) as TriageResult | undefined;
       spentInUsd += result?.costInUsd ?? 0;
+      spendStore.save({
+        spentAt: clock.now().toISOString(),
+        model: result?.model ?? '',
+        costInUsd: result?.costInUsd ?? 0,
+      });
       proposalStore.save({
         messageId: message.id,
         madeAt: clock.now().toISOString(),

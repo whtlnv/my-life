@@ -8,6 +8,7 @@ import { healthResponse } from '@my-life/contracts';
 
 import { createApp } from './app';
 import { openProposalStore } from './proposal-store';
+import { openSpendStore } from './spend-store';
 
 type App = ReturnType<typeof createApp>;
 
@@ -608,6 +609,22 @@ describe('backend app', () => {
 
     expect(openProposalStore(databasePath).loadAll()).toEqual([
       { messageId: 'message-1', madeAt: '2026-11-02T15:10:00.000Z', promptVersion: 'triage-v1', proposal },
+    ]);
+  });
+
+  it('logs the spend of each triage call made at POST /triage-run with its time, model and cost', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({ proposal: {}, costInUsd: 0.05, model: 'claude-opus-5-5', promptVersion: 'triage-v1' }),
+    };
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    await app.request('/triage-run', { method: 'POST' });
+
+    expect(openSpendStore(databasePath).loadAll()).toEqual([
+      { spentAt: '2026-11-02T15:10:00.000Z', model: 'claude-opus-5-5', costInUsd: 0.05 },
     ]);
   });
 });
