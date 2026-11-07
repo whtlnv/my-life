@@ -89,4 +89,10 @@ describe('startup settings', () => {
 
     expect(settings.gmailPollingIntervalInMilliseconds).toBe(90_000);
   });
+
+  it('triages with claude-opus-5-5 when MY_LIFE_TRIAGE_MODEL is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.triageModel).toBe('claude-opus-5-5');
+  });
 });
