@@ -118,7 +118,7 @@
 - [x] The mail source's staleness in `GET /now` uses the Gmail polling interval the app was created with: with a 30-second interval, a report received 70 seconds ago is stale
 - [x] An account's last mail-report time survives a backend restart (same database file)
 - [x] A triage run asks for a proposal on each reported message that has none, newest first
-- [ ] A message that already has a proposal is not sent to triage again
+- [x] A message that already has a proposal is not sent to triage again
 - [ ] A triage run stops asking once today's spend reaches the ceiling
 - [ ] Every proposal is stored append-only with the time it was made and the prompt version that made it
 - [ ] Every triage call's spend is logged with its time, model and cost

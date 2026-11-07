@@ -523,4 +523,29 @@ describe('backend app', () => {
     expect(run.status).toBe(200);
     expect(askedMessageIds).toEqual(['message-newest', 'message-middle', 'message-older']);
   });
+
+  it('does not ask triage again at POST /triage-run for a message that already has a proposal', async () => {
+    const askedMessageIds: string[] = [];
+    const triage = {
+      propose: (message: { id: string }) => {
+        askedMessageIds.push(message.id);
+        return Promise.resolve({
+          action: 'keep',
+          category: 'unknown',
+          summary: 'A message',
+          extract: {},
+          reason: 'Not sure what it is',
+        });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [{ ...budgetReview, id: 'message-once' }] });
+    await app.request('/triage-run', { method: 'POST' });
+
+    const secondRun = await app.request('/triage-run', { method: 'POST' });
+
+    expect(secondRun.status).toBe(200);
+    expect(askedMessageIds).toEqual(['message-once']);
+  });
 });

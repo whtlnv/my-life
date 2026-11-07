@@ -63,6 +63,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
+  const proposals: Parameters<typeof triageQueue>[0] = [];
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -101,8 +102,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.post('/triage-run', async (context) => {
-    for (const message of triageQueue([], [], reportedMessages).remaining) {
+    for (const message of triageQueue(proposals, [], reportedMessages).remaining) {
       await options.triage?.propose(message);
+      proposals.push({ messageId: message.id, accountEmail: '', action: '' });
     }
     return context.body(null, 200);
   });
