@@ -29,14 +29,18 @@ async function fetchGmailJson<ResponseBody>(options: PollGmailOptions, url: stri
   return (await response.json()) as ResponseBody;
 }
 
+function toReportedMessage(message: GmailMessage) {
+  const subject = message.payload.headers.find((header) => header.name === 'Subject')?.value;
+  return { id: message.id, threadId: message.threadId, subject };
+}
+
 export async function pollGmailOnce(options: PollGmailOptions): Promise<void> {
   const profile = await fetchGmailJson<GmailProfile>(options, `${gmailApi}/profile`);
   const list = await fetchGmailJson<GmailMessageList>(options, `${gmailApi}/messages?labelIds=INBOX`);
   const messages = [];
   for (const { id } of list.messages) {
     const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${id}`);
-    const subject = message.payload.headers.find((header) => header.name === 'Subject')?.value;
-    messages.push({ id: message.id, threadId: message.threadId, subject });
+    messages.push(toReportedMessage(message));
   }
   await options.fetch(`${options.backendUrl}/mail-report`, {
     method: 'POST',
