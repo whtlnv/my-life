@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 14:22 · `apps/backend/src/app.test.ts::shows at GET /categories no agreement rate for a category with no proposals while another category has some`
+- Behavior: `GET /categories` shows no agreement rate for a category with no proposals
+- Predicted: passes on first run — `agreementRate` already returns `undefined` for an empty category (`app.ts:127`, added by the previous green), and JSON drops the key
+- Actual: passed (1 passed, 77 skipped)
+- Type: passed unexpectedly
+- Resolution: the behavior shipped with the previous item and is already pinned by `lists at GET /categories every triage category with mode advise when none has been switched` (its `toEqual` fails if an `agreementRate` key appears); no failing test is possible, so the test was removed and the TODO item can be checked off with no code change.
+
 ## 2026-11-07 14:10 · `apps/backend/src/app.test.ts::shows at GET /categories a category switched back to advise through PUT /categories/:category/mode after being automatic`
 - Behavior: After `PUT /categories/:category/mode` with `advise`, a category previously `automatic` shows `advise` again
 - Predicted: passes on first run (read ahead: the previous green stores any posted mode verbatim in `categoryModes`)
