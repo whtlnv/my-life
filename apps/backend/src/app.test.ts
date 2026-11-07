@@ -398,4 +398,26 @@ describe('backend app', () => {
     expect(posted.status).toBe(403);
     expect(await queue.json()).toMatchObject({ remaining: 0 });
   });
+
+  it('refuses a mail report that fails the shared contract with a client error and counts none of its messages as remaining in GET /triage-queue', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const messageWithoutSubject = {
+      id: 'message-3',
+      threadId: 'thread-3',
+      from: 'Luis <luis@example.com>',
+      to: 'ana@example.com',
+      date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+      snippet: 'This message has no subject.',
+    };
+
+    const posted = await postJson(app, '/mail-report', {
+      accountEmail: 'ana@example.com',
+      historyId: '1001',
+      messages: [messageWithoutSubject],
+    });
+    const queue = await app.request('/triage-queue');
+
+    expect(posted.status).toBe(400);
+    expect(await queue.json()).toMatchObject({ remaining: 0 });
+  });
 });

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { Hono } from 'hono';
 
-import { calendarSnapshot, type HealthResponse } from '@my-life/contracts';
+import { calendarSnapshot, mailReport, type HealthResponse } from '@my-life/contracts';
 import {
   badgeCount,
   buildNowView,
@@ -69,6 +69,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const report = await context.req.json<{ accountEmail: string; messages: unknown[] }>();
     if (!isAllowed(report.accountEmail)) {
       return context.body(null, 403);
+    }
+    if (!mailReport.safeParse(report).success) {
+      return context.body(null, 400);
     }
     remainingMessages += report.messages.length;
     return context.body(null, 200);
