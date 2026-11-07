@@ -61,6 +61,10 @@ const weeklySync = {
   attendees: [{ email: 'luis@example.com', displayName: 'Luis' }],
 };
 
+const triageAnswering = (proposal: unknown) => ({
+  propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }),
+});
+
 const ccThreadTriage = (action: 'archive' | 'keep') => {
   const proposal = {
     action,
@@ -69,7 +73,7 @@ const ccThreadTriage = (action: 'archive' | 'keep') => {
     extract: { sinceLastMessage: 'Luis shared the budget' },
     reason: 'The user is only copied',
   };
-  return { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+  return triageAnswering(proposal);
 };
 
 const confirmBudgetReviewProposal = async (app: App) => {
@@ -1024,20 +1028,13 @@ describe('backend app', () => {
   });
 
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'act',
-            category: 'action',
-            summary: 'Luis asks for a budget review',
-            extract: { asker: 'Luis', ask: 'Review the budget' },
-            reason: 'Luis asks the user directly',
-          },
-          costInUsd: 1,
-          promptVersion: 'triage-v1',
-        }),
-    };
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -1063,7 +1060,7 @@ describe('backend app', () => {
       extract: { asker: 'Luis', ask: 'Review the budget' },
       reason: 'Luis asks the user directly',
     };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const triage = triageAnswering(proposal);
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
@@ -1095,7 +1092,7 @@ describe('backend app', () => {
       extract: { asker: 'Luis', ask: 'Review the budget' },
       reason: 'Luis asks the user directly',
     };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const triage = triageAnswering(proposal);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -1122,7 +1119,7 @@ describe('backend app', () => {
       extract: { asker: 'Luis', ask: 'Review the budget' },
       reason: 'Luis asks the user directly',
     };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const triage = triageAnswering(proposal);
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
@@ -1156,7 +1153,7 @@ describe('backend app', () => {
       extract: { asker: 'Luis', ask: 'Review the budget' },
       reason: 'Luis asks the user directly',
     };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const triage = triageAnswering(proposal);
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
@@ -1178,7 +1175,7 @@ describe('backend app', () => {
       extract: { asker: 'Luis', ask: 'Review the budget' },
       reason: 'Luis asks the user directly',
     };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const triage = triageAnswering(proposal);
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
@@ -1352,21 +1349,14 @@ describe('backend app', () => {
   });
 
   it('lists at GET /tasks the title, Gmail link and account of a task stored when an act proposal is confirmed', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'act',
-            category: 'action',
-            summary: 'Luis asks for a budget review',
-            extract: { asker: 'Luis', ask: 'Review the budget' },
-            reason: 'Luis asks the user directly',
-            taskDraft: { title: 'Review the budget by Friday' },
-          },
-          costInUsd: 1,
-          promptVersion: 'triage-v1',
-        }),
-    };
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+      taskDraft: { title: 'Review the budget by Friday' },
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await confirmBudgetReviewProposal(app);
 
@@ -1385,20 +1375,13 @@ describe('backend app', () => {
   });
 
   it('lists at GET /check-later the company, Gmail link and account of a sales proposal the user confirmed to keep', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'sales',
-            summary: 'Acme pitches invoice automation',
-            extract: { company: 'Acme', solution: 'Invoice automation', problem: 'Manual invoice entry' },
-            reason: 'An unsolicited pitch that may be worth a look',
-          },
-          costInUsd: 1,
-          promptVersion: 'triage-v1',
-        }),
-    };
+    const triage = triageAnswering({
+      action: 'keep',
+      category: 'sales',
+      summary: 'Acme pitches invoice automation',
+      extract: { company: 'Acme', solution: 'Invoice automation', problem: 'Manual invoice entry' },
+      reason: 'An unsolicited pitch that may be worth a look',
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await confirmBudgetReviewProposal(app);
 
@@ -1417,21 +1400,14 @@ describe('backend app', () => {
   });
 
   it('includes in the GET /now badge count an action proposal waiting for a verdict', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'act',
-            category: 'action',
-            summary: 'Luis asks for a budget review',
-            extract: { asker: 'Luis', ask: 'Review the budget' },
-            reason: 'Luis asks the user directly',
-            taskDraft: { title: 'Review the budget by Friday' },
-          },
-          costInUsd: 1,
-          promptVersion: 'triage-v1',
-        }),
-    };
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+      taskDraft: { title: 'Review the budget by Friday' },
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
