@@ -75,4 +75,13 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('rejects a cc-thread proposal whose extract is an action extract', () => {
+    const proposal = {
+      ...archiveCcThreadProposal,
+      extract: { asker: 'Luis Ortega', ask: 'Confirm the vendor contract was filed' },
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });
