@@ -1718,4 +1718,22 @@ describe('backend app', () => {
       })),
     });
   });
+
+  it('shows at GET /categories a category switched back to advise through PUT /categories/:category/mode after being automatic', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const switchSales = (mode: string) =>
+      app.request('/categories/sales/mode', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+
+    await switchSales('automatic');
+    await switchSales('advise');
+    const response = await app.request('/categories');
+
+    expect(await response.json()).toEqual({
+      categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
+    });
+  });
 });

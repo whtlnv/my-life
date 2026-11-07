@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 14:10 · `apps/backend/src/app.test.ts::shows at GET /categories a category switched back to advise through PUT /categories/:category/mode after being automatic`
+- Behavior: After `PUT /categories/:category/mode` with `advise`, a category previously `automatic` shows `advise` again
+- Predicted: passes on first run (read ahead: the previous green stores any posted mode verbatim in `categoryModes`)
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: The previous green (76cadbd) already covers this behavior, so no rewrite can make the test fail for this behavior alone. The test stays as a regression pin for switching back; the item needs no green step and can be committed as `test:`.
+
 ## 2026-11-07 13:56 · `apps/backend/src/app.test.ts::keeps triage paused at POST /triage-run and GET /triage-queue later the same business day after reaching the ceiling, even once the UTC date has changed`
 - Behavior: When the daily spend ceiling was reached earlier the same business day, `POST /triage-run` still proposes nothing and `GET /triage-queue` reports `paused: true`
 - Predicted: pass. 9969717 already sends `hasReachedDailySpendCeiling` through `isTriagePaused` with business-zone dates, so no right-reason failure was available
