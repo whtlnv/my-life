@@ -48,18 +48,31 @@ function confirmVerdict(messageId: TriageItem['messageId']) {
   });
 }
 
+function rejectVerdict(messageId: TriageItem['messageId']) {
+  void fetch('/verdicts', {
+    method: 'POST',
+    body: JSON.stringify({ messageId, decision: 'rejected', correction: { action: 'keep' } }),
+  });
+}
+
 const verdictKeys = new Set(['t', 'k', 'a']);
 
 function ActionCard({ item }: { item: TriageItem }) {
+  const [correcting, setCorrecting] = useState(false);
   return (
     <article
       tabIndex={0}
       onKeyDown={(event) => {
-        if (verdictKeys.has(event.key)) {
+        if (correcting) {
+          rejectVerdict(item.messageId);
+        } else if (event.key === 'r') {
+          setCorrecting(true);
+        } else if (verdictKeys.has(event.key)) {
           confirmVerdict(item.messageId);
         }
       }}
     >
+      {correcting && <div role="dialog" />}
       <p>{item.summary}</p>
       <p>{item.extract.asker}</p>
       <p>{item.extract.ask}</p>

@@ -496,4 +496,41 @@ describe('TriagePage', () => {
       }),
     );
   });
+  it('asks for a correction when `r` is pressed on a focused card and rejects it with the chosen correction', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-25',
+          accountEmail: 'ana@example.com',
+          action: 'archive',
+          category: 'action',
+          summary: 'Marta sends the signed lease',
+          extract: { asker: 'Marta Ruiz', ask: 'File the signed lease' },
+          reason: 'Looks like a document to file',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-25',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(card);
+    await user.keyboard('r');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    await user.keyboard('k');
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ messageId: 'message-25', decision: 'rejected', correction: { action: 'keep' } }),
+      }),
+    );
+  });
 });
