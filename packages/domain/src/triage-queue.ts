@@ -80,9 +80,12 @@ const groupBySystem = (proposals: Proposal[]): SystemGroup[] =>
 const hasVerdict = (proposal: Proposal, verdicts: Verdict[]): boolean =>
   verdicts.some((verdict) => verdict.messageId === proposal.messageId);
 
+const hasProposal = (message: ReportedMessage, proposals: Proposal[]): boolean =>
+  proposals.some((proposal) => proposal.messageId === message.id);
+
 const unproposed = (messages: ReportedMessage[], proposals: Proposal[]): ReportedMessage[] =>
   messages
-    .filter((message) => !proposals.some((proposal) => proposal.messageId === message.id))
+    .filter((message) => !hasProposal(message, proposals))
     .sort((first, second) => Date.parse(second.date) - Date.parse(first.date));
 
 export const triageQueue = (
