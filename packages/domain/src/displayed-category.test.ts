@@ -12,4 +12,14 @@ describe('displayedCategory', () => {
 
     expect(displayedCategory(proposal, message, 'franciscoc@psmutuus.com')).toBe('action');
   });
+
+  it('shows an action proposal as cc-thread when the user is only in Cc', () => {
+    const proposal = { category: 'action' };
+    const message = {
+      to: 'luis@example.com',
+      cc: 'Francisco <franciscoc@psmutuus.com>',
+    };
+
+    expect(displayedCategory(proposal, message, 'franciscoc@psmutuus.com')).toBe('cc-thread');
+  });
 });

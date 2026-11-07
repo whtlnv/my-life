@@ -1,7 +1,9 @@
+import { isAddressedToUser } from './addressed-to-user';
+
 export function displayedCategory(
   _proposal: { category: string },
-  _message: { to: string; cc: string },
-  _accountAddress: string,
+  message: { to: string; cc: string },
+  accountAddress: string,
 ): string {
-  return 'action';
+  return isAddressedToUser(message, accountAddress) ? 'action' : 'cc-thread';
 }
