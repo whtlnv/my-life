@@ -11,6 +11,7 @@ import {
   describeSourceFreshness,
   hasVerdict,
   isAccountFresh,
+  isLeadingCategory,
   mergeCalendarSnapshots,
   triageEffects,
   triageQueue,
@@ -104,7 +105,6 @@ function confirmedCheckLater(proposals: Proposal[], verdicts: { messageId: strin
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(proposals, verdicts);
   const withLink = (proposal: Proposal) => ({ ...proposal, link: gmailMessageLink(proposal) });
-  const inActionBlock = (category: string | undefined) => category === 'action' || category === 'unknown';
   const describeGroup = ({ category, proposals: grouped, systems }: (typeof groups)[number]) => ({
     category,
     count: grouped.length,
@@ -115,10 +115,10 @@ function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: str
   });
   return {
     action: groups
-      .filter(({ category }) => inActionBlock(category))
+      .filter(({ category }) => isLeadingCategory(category))
       .flatMap((group) => group.proposals)
       .map(withLink),
-    groups: groups.filter(({ category }) => !inActionBlock(category)).map(describeGroup),
+    groups: groups.filter(({ category }) => !isLeadingCategory(category)).map(describeGroup),
   };
 }
 

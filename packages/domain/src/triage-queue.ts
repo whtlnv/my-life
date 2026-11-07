@@ -55,7 +55,9 @@ const groupByCategory = (proposals: Proposal[]): ProposalGroup[] =>
 
 const leadingCategories = ['action', 'unknown'];
 
-const rankOf = (group: ProposalGroup): number => (leadingCategories.includes(group.category ?? '') ? 0 : 1);
+export const isLeadingCategory = (category: string | undefined): boolean => leadingCategories.includes(category ?? '');
+
+const rankOf = (group: ProposalGroup): number => (isLeadingCategory(group.category) ? 0 : 1);
 
 const categoryGroup = (category: string | undefined, proposals: Proposal[]): ProposalGroup => {
   if (category === 'system-update') return { category, proposals, systems: groupBySystem(proposals) };
