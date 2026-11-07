@@ -11,16 +11,15 @@ interface Verdict {
   messageId: string;
 }
 
+const isWaitingAction = (proposal: Proposal, verdicts: Verdict[]): boolean =>
+  proposal.category === 'action' && !verdicts.some((verdict) => verdict.messageId === proposal.messageId);
+
 export const badgeCount = (
   events: MergedCalendarEvent[],
   clock: Clock,
   proposals: Proposal[] = [],
   verdicts: Verdict[] = [],
 ): number => {
-  const waitingProposals = proposals.filter(
-    (proposal) =>
-      proposal.category === 'action' &&
-      !verdicts.some((verdict) => verdict.messageId === proposal.messageId),
-  );
-  return buildNowView(events, clock).next.length + waitingProposals.length;
+  const waitingActions = proposals.filter((proposal) => isWaitingAction(proposal, verdicts));
+  return buildNowView(events, clock).next.length + waitingActions.length;
 };
