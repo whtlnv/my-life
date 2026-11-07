@@ -55,6 +55,23 @@ const weeklySync = {
   attendees: [{ email: 'luis@example.com', displayName: 'Luis' }],
 };
 
+const archiveCcThreadTriage = () => {
+  const proposal = {
+    action: 'archive',
+    category: 'cc-thread',
+    summary: 'Luis shared the budget with the team',
+    extract: { sinceLastMessage: 'Luis shared the budget' },
+    reason: 'The user is only copied',
+  };
+  return { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+};
+
+const confirmArchiveOfBudgetReview = async (app: App) => {
+  await postJson(app, '/mail-report', budgetReviewReport);
+  await app.request('/triage-run', { method: 'POST' });
+  await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+};
+
 const appServingDashboardAsset = (fileName: string, content: string) => {
   const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
   mkdirSync(join(dashboardDirectory, 'assets'));
@@ -956,19 +973,13 @@ describe('backend app', () => {
     expect(stored.every(({ decision }) => decision === 'confirmed')).toBe(true);
   });
 
-  it('lists at GET /commands for the message\'s account an archive command with an id and the message id once its archive proposal is confirmed', async () => {
-    const proposal = {
-      action: 'archive',
-      category: 'cc-thread',
-      summary: 'Luis shared the budget with the team',
-      extract: { sinceLastMessage: 'Luis shared the budget' },
-      reason: 'The user is only copied',
-    };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
-    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+  it("lists at GET /commands for the message's account an archive command with an id and the message id once its archive proposal is confirmed", async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: archiveCcThreadTriage(),
+    });
+    await confirmArchiveOfBudgetReview(app);
 
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
 
@@ -977,18 +988,12 @@ describe('backend app', () => {
   });
 
   it('lists at GET /commands no archive command for an account other than the one whose message was confirmed for archive', async () => {
-    const proposal = {
-      action: 'archive',
-      category: 'cc-thread',
-      summary: 'Luis shared the budget with the team',
-      extract: { sinceLastMessage: 'Luis shared the budget' },
-      reason: 'The user is only copied',
-    };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
-    const app = createApp({ allowedEmails: ['ana@example.com', 'bea@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
-    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    const app = createApp({
+      allowedEmails: ['ana@example.com', 'bea@example.com'],
+      clock: clockAtTenPastThree,
+      triage: archiveCcThreadTriage(),
+    });
+    await confirmArchiveOfBudgetReview(app);
 
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('bea@example.com')}`);
 
