@@ -211,6 +211,9 @@
 
 ### Wiring and acceptance
 
+- [ ] A triage run hands the triage port each message with its account email, so a message that only copies the account is proposed on as not addressed to the user
+- [ ] A triage run passes the triage port the verdict examples chosen by the domain rule (same sender first, then same category, at most N) for that message
+- [ ] A triage run logs each spend row with the configured triage model, not an empty string
 - [ ] (hand-written) `apps/backend/prompts/triage-v1.md` exists: it names the seven categories with the extract each one carries, the addressed-to-the-user rule, the advise-first stance, and asks for the tool call the contract validates; the shipped backend reads it
 - [ ] The shipped backend reads the Anthropic key from `.env`, triages reported mail with the Claude adapter on a schedule and serves the triage queue
 - [ ] The shipped extension polls Gmail every 60 seconds and carries out pending archive commands
