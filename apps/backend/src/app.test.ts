@@ -1933,4 +1933,27 @@ describe('backend app', () => {
       tasks: { tasks: [] },
     });
   });
+
+  it('still lists at GET /commands the archive command of an archive proposal made while its category was automatic, after the category is switched back to advise', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    const switchCcThread = (mode: string) =>
+      app.request('/categories/cc-thread/mode', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+    await switchCcThread('automatic');
+    await proposeBudgetReview(app);
+    await switchCcThread('advise');
+
+    const response = await getCommands(app, 'ana@example.com');
+
+    expect(await response.json()).toEqual({
+      commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
+    });
+  });
 });

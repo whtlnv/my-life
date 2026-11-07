@@ -41,7 +41,7 @@ interface ReportedMessage {
   listId?: string;
 }
 
-type Proposal = Parameters<typeof triageQueue>[0][number] & { summary?: string };
+type Proposal = Parameters<typeof triageQueue>[0][number] & { summary?: string; madeAutomatic?: boolean };
 
 function withDisplayedCategory(
   proposal: Proposal,
@@ -100,12 +100,12 @@ function isStillConfirmed(messageId: string, verdicts: StoredVerdict[]): boolean
   return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
 }
 
-function isAutomatic(proposal: Proposal, categoryModes: Record<string, string>): boolean {
-  return categoryModes[proposal.category ?? ''] === 'automatic';
+function isAutomatic(proposal: Proposal): boolean {
+  return proposal.madeAutomatic === true;
 }
 
-function isCleared(proposal: Proposal, verdicts: StoredVerdict[], categoryModes: Record<string, string>): boolean {
-  return isStillConfirmed(proposal.messageId, verdicts) || isAutomatic(proposal, categoryModes);
+function isCleared(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
+  return isStillConfirmed(proposal.messageId, verdicts) || isAutomatic(proposal);
 }
 
 function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
@@ -113,9 +113,9 @@ function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
   return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
 }
 
-function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[], categoryModes: Record<string, string>) {
+function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
   return proposals.flatMap((proposal) => {
-    const effects = isAutomatic(proposal, categoryModes)
+    const effects = isAutomatic(proposal)
       ? triageEffects(proposal as Parameters<typeof triageEffects>[0], { decision: 'confirmed' })
       : proposalEffects(proposal, verdicts);
     return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
@@ -300,7 +300,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageId: message.id,
         accountEmail,
       };
-      proposals.push(withDisplayedCategory(proposal, message, accountEmail));
+      const displayedProposal = withDisplayedCategory(proposal, message, accountEmail);
+      const madeAutomatic = categoryModeStore.loadAll()[displayedProposal.category ?? ''] === 'automatic';
+      proposals.push({ ...displayedProposal, madeAutomatic });
     }
     return context.body(null, 200);
   });
@@ -342,17 +344,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
     const acknowledgedCommandIds = acknowledgementStore.loadAll();
-    const categoryModes = categoryModeStore.loadAll();
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
-      .filter((proposal) => isCleared(proposal, verdicts, categoryModes))
+      .filter((proposal) => isCleared(proposal, verdicts))
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });
   });
   app.get('/tasks', (context) => {
-    return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll(), categoryModeStore.loadAll()) });
+    return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   const categoryModeStore = openCategoryModeStore(databasePath);
   app.put('/categories/:category/mode', async (context) => {
