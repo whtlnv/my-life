@@ -491,4 +491,45 @@ describe('pollGmailOnce', () => {
     expect(messageReads).toBe(5);
     expect(backendPosts).toEqual([]);
   });
+
+  it('reads message metadata up to 10 at a time in parallel, never more than 10 in flight, and keeps the inbox order', async () => {
+    const inboxIds = Array.from({ length: 25 }, (_, index) => `message-${index + 1}`);
+    let readsInFlight = 0;
+    let mostReadsInFlight = 0;
+    const backendPosts: { messages: { id: string }[] }[] = [];
+    const fakeFetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' });
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages` && url.searchParams.get('labelIds') === 'INBOX') {
+        return Response.json({ messages: inboxIds.map((id) => ({ id, threadId: `thread-${id}` })) });
+      }
+      const messagePath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)$/.exec(url.pathname);
+      if (url.origin === 'https://gmail.googleapis.com' && messagePath !== null) {
+        readsInFlight++;
+        mostReadsInFlight = Math.max(mostReadsInFlight, readsInFlight);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        readsInFlight--;
+        const id = messagePath[1] ?? '';
+        return Response.json(gmailMessage(id, `Subject of ${id}`, 'Thu, 5 Nov 2026 10:00:00 -0600'));
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        backendPosts.push(JSON.parse(init.body as string));
+        return Response.json({ ok: true });
+      }
+      return new Response('unexpected request', { status: 404 });
+    };
+
+    await pollGmailOnce({
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      storedHistoryId: undefined,
+    });
+
+    expect(mostReadsInFlight).toBe(10);
+    expect(backendPosts.map((post) => post.messages.map((message) => message.id))).toEqual([inboxIds]);
+  });
 });

@@ -92,7 +92,7 @@
 - [x] A Gmail read answering 429 or 5xx is retried with backoff
 - [x] A Gmail read answering 403 is not retried
 - [x] A Gmail read that keeps answering 5xx gives up after 5 tries and the poll fails instead of retrying forever
-- [ ] Message metadata is read up to 10 messages at a time in parallel, never more than 10 in flight, instead of one after another
+- [x] Message metadata is read up to 10 messages at a time in parallel, never more than 10 in flight, instead of one after another
 - [ ] The report is posted to the backend with the profile's account email
 - [ ] After a report the backend accepts, the next poll starts from the reported history id
 - [ ] After a report the backend refuses, the next poll starts from the previous history id

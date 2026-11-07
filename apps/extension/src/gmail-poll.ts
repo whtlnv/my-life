@@ -95,8 +95,9 @@ async function fetchInboxMessages(options: PollGmailOptions) {
   do {
     const pageQuery = pageToken === undefined ? '' : `&pageToken=${pageToken}`;
     const list = await fetchGmailJson<GmailMessageList>(options, `${gmailApi}/messages?labelIds=INBOX${pageQuery}`);
-    for (const { id } of list.messages) {
-      messages.push(await fetchReportedMessage(options, id));
+    for (let start = 0; start < list.messages.length; start += 10) {
+      const batch = list.messages.slice(start, start + 10);
+      messages.push(...(await Promise.all(batch.map(({ id }) => fetchReportedMessage(options, id)))));
     }
     pageToken = list.nextPageToken;
   } while (pageToken !== undefined);
