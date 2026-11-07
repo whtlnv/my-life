@@ -1157,4 +1157,29 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('includes in the GET /now badge count an action proposal waiting for a verdict', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'act',
+            category: 'action',
+            summary: 'Luis asks for a budget review',
+            extract: { asker: 'Luis', ask: 'Review the budget' },
+            reason: 'Luis asks the user directly',
+            taskDraft: { title: 'Review the budget by Friday' },
+          },
+          costInUsd: 1,
+          promptVersion: 'triage-v1',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+
+    const now = await app.request('/now');
+
+    expect(await now.json()).toMatchObject({ badgeCount: 1 });
+  });
 });

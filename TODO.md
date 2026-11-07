@@ -141,7 +141,7 @@
 - [x] An acknowledgement survives a backend restart (same database file): the command stays out of the pending list
 - [x] A confirmed `act` stores a task, and the task list shows its title, source link and account
 - [x] A confirmed `keep` on a `sales` proposal appears on the check-later list
-- [ ] GET /now's badge count includes the `action` proposals waiting
+- [x] GET /now's badge count includes the `action` proposals waiting
 
 ### Claude adapter
 

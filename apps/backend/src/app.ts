@@ -264,7 +264,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
-      badgeCount: badgeCount(events, clock),
+      badgeCount: badgeCount(events, clock, proposals, verdictStore.loadAll()),
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
     });
   });

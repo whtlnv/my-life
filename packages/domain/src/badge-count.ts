@@ -4,7 +4,7 @@ import { buildNowView } from './now-view';
 
 interface Proposal {
   messageId: string;
-  category: string;
+  category?: string;
 }
 
 interface Verdict {
