@@ -13,14 +13,18 @@ export interface FilterCandidate {
 
 const minimumConfirmedArchives = 3;
 
-export function filterCandidates(decidedProposals: DecidedProposal[]): FilterCandidate[] {
+function groupConfirmedBySender(decidedProposals: DecidedProposal[]): DecidedProposal[][] {
   const confirmedBySender = new Map<string, DecidedProposal[]>();
   for (const proposal of decidedProposals) {
     if (proposal.verdict.decision === 'confirmed') {
       confirmedBySender.set(proposal.from, [...(confirmedBySender.get(proposal.from) ?? []), proposal]);
     }
   }
-  return [...confirmedBySender.values()]
+  return [...confirmedBySender.values()];
+}
+
+export function filterCandidates(decidedProposals: DecidedProposal[]): FilterCandidate[] {
+  return groupConfirmedBySender(decidedProposals)
     .filter((proposals) => proposals.length >= minimumConfirmedArchives)
     .map((proposals) => {
       const [first] = proposals as [DecidedProposal];
