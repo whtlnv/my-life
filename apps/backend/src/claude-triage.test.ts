@@ -137,6 +137,23 @@ describe('Claude triage', () => {
     expect(firstSentRequest(sentRequests).system).toContain('Ana has two accounts: Acme for sales, Gmail for family.');
   });
 
+  it('still sends the shared accounts profile when the account has no profile file of its own', async () => {
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    writeFileSync(join(profileDirectory, 'accounts.md'), 'Ana has two accounts: Acme for sales, Gmail for family.');
+    const { sentRequests, createMessage } = recordRequests();
+    const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('Classify this email.'),
+      profileDirectory,
+      createMessage,
+    });
+
+    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@gmail.com' });
+
+    expect(firstSentRequest(sentRequests).system).toContain('Ana has two accounts: Acme for sales, Gmail for family.');
+  });
+
   it("sends the message's headers, snippet and whether it is addressed to the user", async () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({

@@ -38,8 +38,10 @@ function readSharedProfile(profileDirectory: string): string | undefined {
 }
 
 function readProfile(profileDirectory: string, accountEmail: string): string {
-  const accountProfile = readFileSync(join(profileDirectory, profileFileName(accountEmail)), 'utf8');
+  const accountProfilePath = join(profileDirectory, profileFileName(accountEmail));
   const sharedProfile = readSharedProfile(profileDirectory);
+  if (!existsSync(accountProfilePath)) return sharedProfile ?? '';
+  const accountProfile = readFileSync(accountProfilePath, 'utf8');
   return sharedProfile === undefined ? accountProfile : `${sharedProfile}\n\n${accountProfile}`;
 }
 
