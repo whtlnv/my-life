@@ -12,7 +12,6 @@ interface CarryOutArchiveCommandsOptions {
 
 interface ArchiveCommand {
   id: string;
-  kind: 'archive';
   messageId: string;
 }
 
