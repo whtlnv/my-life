@@ -208,7 +208,11 @@ describe('pollGmailOnce', () => {
           accountEmail: 'francisco@example.com',
           historyId: '98765',
           messages: [
-            expect.objectContaining({ id: 'arrivedSince', threadId: 'thread-arrivedSince', subject: 'Lunch on Friday?' }),
+            expect.objectContaining({
+              id: 'arrivedSince',
+              threadId: 'thread-arrivedSince',
+              subject: 'Lunch on Friday?',
+            }),
           ],
         },
       },
@@ -441,6 +445,50 @@ describe('pollGmailOnce', () => {
     await expect(poll).rejects.toThrow(/403/);
     expect(messageReads).toBe(1);
     expect(waitsInMilliseconds).toEqual([]);
+    expect(backendPosts).toEqual([]);
+  });
+
+  it('gives up on a Gmail read that keeps answering 5xx after 5 tries and fails the poll without reporting', async () => {
+    const readsBeforeTheFakeRecovers = 20;
+    let messageReads = 0;
+    const backendPosts: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages` && url.searchParams.get('labelIds') === 'INBOX') {
+        return Promise.resolve(Response.json({ messages: [{ id: 'contract', threadId: 'thread-contract' }] }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages/contract`) {
+        messageReads++;
+        if (messageReads > readsBeforeTheFakeRecovers) {
+          return Promise.resolve(
+            Response.json(gmailMessage('contract', 'Contract review', 'Thu, 5 Nov 2026 10:00:00 -0600')),
+          );
+        }
+        return Promise.resolve(
+          Response.json({ error: { code: 503, message: 'Service Unavailable' } }, { status: 503 }),
+        );
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        backendPosts.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    const poll = pollGmailOnce({
+      fetch: fakeFetch,
+      wait: () => Promise.resolve(),
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      storedHistoryId: undefined,
+    });
+
+    await expect(poll).rejects.toThrow(/503/);
+    expect(messageReads).toBe(5);
     expect(backendPosts).toEqual([]);
   });
 });

@@ -34,7 +34,7 @@ function isRetryable(response: Response) {
 async function fetchGmail(options: PollGmailOptions, url: string) {
   const authorization = { headers: { Authorization: `Bearer ${options.accessToken}` } };
   let response = await options.fetch(url, authorization);
-  for (let attempt = 0; isRetryable(response); attempt++) {
+  for (let attempt = 0; attempt < 4 && isRetryable(response); attempt++) {
     await options.wait?.(1000 * 2 ** attempt);
     response = await options.fetch(url, authorization);
   }
