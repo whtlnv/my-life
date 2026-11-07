@@ -114,4 +114,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('accepts a system-update proposal whose extract has the sending system, a severity and a significant flag', () => {
+    const proposal = {
+      action: 'archive',
+      category: 'system-update',
+      summary: 'Sentry reports a new error in the checkout service',
+      extract: { system: 'Sentry', severity: 'error', significant: true },
+      reason: 'An automated notification from a monitoring system.',
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
 });
