@@ -41,6 +41,26 @@ const RecentProposalList = ({ category, proposals }: { category: string; proposa
   </ul>
 );
 
+interface CategoryItemProps {
+  row: CategoryRow;
+  expanded: boolean;
+  onFlip: () => void;
+  onExpand: () => void;
+}
+
+const CategoryItem = ({ row, expanded, onFlip, onExpand }: CategoryItemProps) => (
+  <li>
+    <span>{rateText(row.agreementRate)}</span>
+    <button type="button" role="switch" aria-checked={row.mode === 'automatic'} onClick={onFlip}>
+      {row.category}
+    </button>
+    <button type="button" aria-expanded={expanded} onClick={onExpand}>
+      Recent proposals
+    </button>
+    {expanded && <RecentProposalList category={row.category} proposals={row.recentProposals} />}
+  </li>
+);
+
 export const CategoriesPage = () => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [expanded, setExpanded] = useState<string | undefined>();
@@ -74,31 +94,17 @@ export const CategoriesPage = () => {
       </button>
       <ul aria-label="Categories">
         {categories.map((row) => (
-          <li key={row.category}>
-            <span>{rateText(row.agreementRate)}</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={row.mode === 'automatic'}
-              onClick={() => {
-                flipMode(row);
-              }}
-            >
-              {row.category}
-            </button>
-            <button
-              type="button"
-              aria-expanded={expanded === row.category}
-              onClick={() => {
-                setExpanded(row.category);
-              }}
-            >
-              Recent proposals
-            </button>
-            {expanded === row.category && (
-              <RecentProposalList category={row.category} proposals={row.recentProposals} />
-            )}
-          </li>
+          <CategoryItem
+            key={row.category}
+            row={row}
+            expanded={expanded === row.category}
+            onFlip={() => {
+              flipMode(row);
+            }}
+            onExpand={() => {
+              setExpanded(row.category);
+            }}
+          />
         ))}
       </ul>
     </>
