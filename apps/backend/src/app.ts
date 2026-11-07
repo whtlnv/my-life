@@ -234,6 +234,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           ];
     });
   };
+  const describeMessages = (messageIds: string[], decidedMessages: ReturnType<typeof loadDecidedMessages>) =>
+    messageIds.map((messageId) => ({
+      from: decidedMessages.find((message) => message.messageId === messageId)?.from ?? '',
+      subject: reportedMessageStore.subjectOf(messageId),
+    }));
   const proposeNewFilterCandidates = async (): Promise<void> => {
     const filter = options.filter;
     if (filter === undefined) return;
@@ -243,11 +248,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const key = JSON.stringify([candidate.accountEmail, candidate.criteria]);
       if (proposedCandidateKeys.has(key)) continue;
       proposedCandidateKeys.add(key);
-      const messages = candidate.messageIds.map((messageId) => ({
-        from: decidedMessages.find((message) => message.messageId === messageId)?.from ?? '',
-        subject: reportedMessageStore.subjectOf(messageId),
-      }));
-      const result = await filter.propose({ ...candidate, messages });
+      const result = await filter.propose({
+        ...candidate,
+        messages: describeMessages(candidate.messageIds, decidedMessages),
+      });
       spendStore.save({ spentAt: clock.now().toISOString(), model: '', costInUsd: result.costInUsd });
       filterProposalStore.save(
         {
