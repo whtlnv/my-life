@@ -28,10 +28,10 @@ interface ReportedMessage {
   date: string;
 }
 
-interface TriageQueue {
+interface TriageQueue<Message extends ReportedMessage> {
   waiting: Proposal[];
   groups: ProposalGroup[];
-  remaining: ReportedMessage[];
+  remaining: Message[];
 }
 
 const groupBy = <Key>(
@@ -83,16 +83,16 @@ const hasVerdict = (proposal: Proposal, verdicts: Verdict[]): boolean =>
 const hasProposal = (message: ReportedMessage, proposals: Proposal[]): boolean =>
   proposals.some((proposal) => proposal.messageId === message.id);
 
-const unproposed = (messages: ReportedMessage[], proposals: Proposal[]): ReportedMessage[] =>
+const unproposed = <Message extends ReportedMessage>(messages: Message[], proposals: Proposal[]): Message[] =>
   messages
     .filter((message) => !hasProposal(message, proposals))
     .sort((first, second) => Date.parse(second.date) - Date.parse(first.date));
 
-export const triageQueue = (
+export const triageQueue = <Message extends ReportedMessage = ReportedMessage>(
   proposals: Proposal[],
   verdicts: Verdict[],
-  messages: ReportedMessage[] = [],
-): TriageQueue => {
+  messages: Message[] = [],
+): TriageQueue<Message> => {
   const waiting = proposals.filter((proposal) => !hasVerdict(proposal, verdicts));
   return { waiting, groups: groupByCategory(waiting), remaining: unproposed(messages, proposals) };
 };

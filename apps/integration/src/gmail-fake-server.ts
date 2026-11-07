@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense';
+type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense' | 'system-update-burst';
 
 interface FakeGmailMessage {
   id: string;
@@ -68,6 +68,47 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
             { name: 'To', value: accountEmail },
             { name: 'Subject', value: 'Your receipt' },
             { name: 'Date', value: 'Mon, 2 Nov 2026 12:00:00 -0600' },
+          ],
+        },
+      },
+    ],
+    'system-update-burst': [
+      {
+        id: 'github-build-passed',
+        threadId: 'github-build-passed',
+        snippet: 'Your build passed',
+        payload: {
+          headers: [
+            { name: 'From', value: 'GitHub <noreply@github.com>' },
+            { name: 'To', value: accountEmail },
+            { name: 'Subject', value: 'Build passed' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 13:00:00 -0600' },
+          ],
+        },
+      },
+      {
+        id: 'github-pull-request-merged',
+        threadId: 'github-pull-request-merged',
+        snippet: 'Your pull request was merged',
+        payload: {
+          headers: [
+            { name: 'From', value: 'GitHub <noreply@github.com>' },
+            { name: 'To', value: accountEmail },
+            { name: 'Subject', value: 'Pull request merged' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 13:05:00 -0600' },
+          ],
+        },
+      },
+      {
+        id: 'sentry-weekly-report',
+        threadId: 'sentry-weekly-report',
+        snippet: 'Your weekly error report',
+        payload: {
+          headers: [
+            { name: 'From', value: 'Sentry <noreply@sentry.io>' },
+            { name: 'To', value: accountEmail },
+            { name: 'Subject', value: 'Weekly report' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 13:10:00 -0600' },
           ],
         },
       },

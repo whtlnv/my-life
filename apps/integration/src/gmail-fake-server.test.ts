@@ -134,4 +134,47 @@ describe('Gmail fake server', () => {
       }),
     ]);
   });
+  it('polling the system-update-burst scenario groups its notifications by sending system in the system-update group of GET /triage-queue', async () => {
+    const messagesSeenByTriage: { id: string; from: string }[] = [];
+    const backend = createApp({
+      allowedEmails: [accountEmail],
+      clock: { now: () => triageTime },
+      triage: {
+        propose: (message) => {
+          messagesSeenByTriage.push(message);
+          const system = message.from.replace(/\s*<.*>$/, '');
+          return Promise.resolve({
+            proposal: {
+              action: 'archive',
+              category: 'system-update',
+              summary: `Notification from ${system}`,
+              extract: { system, severity: 'info', significant: false },
+              reason: 'An automated notification',
+            },
+            costInUsd: 0,
+            promptVersion: 'triage-v1',
+          });
+        },
+      },
+    });
+    await pollScenarioIntoBackend('system-update-burst', backend);
+    const queue = await runTriageAndReadQueue<{
+      groups: { category: string; systems?: { system: string; items: { messageId: string }[] }[] }[];
+    }>(backend);
+    const idsFrom = (system: string) =>
+      messagesSeenByTriage.filter(({ from }) => from.startsWith(system)).map(({ id }) => id);
+    const systems = queue.groups.find(({ category }) => category === 'system-update')?.systems ?? [];
+
+    expect(idsFrom('GitHub')).toHaveLength(2);
+    expect(idsFrom('Sentry')).toHaveLength(1);
+    expect(
+      systems.map(({ system, items }) => ({ system, messageIds: items.map(({ messageId }) => messageId).sort() })),
+    ).toEqual(
+      expect.arrayContaining([
+        { system: 'GitHub', messageIds: idsFrom('GitHub').sort() },
+        { system: 'Sentry', messageIds: idsFrom('Sentry').sort() },
+      ]),
+    );
+    expect(systems).toHaveLength(2);
+  });
 });

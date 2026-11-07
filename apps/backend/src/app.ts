@@ -26,6 +26,7 @@ import { openVerdictStore } from './verdict-store';
 
 interface ReportedMessage {
   id: string;
+  from: string;
   date: string;
 }
 
