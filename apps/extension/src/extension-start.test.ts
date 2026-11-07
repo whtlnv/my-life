@@ -157,6 +157,41 @@ describe('startExtension', () => {
     expect(badgeTexts).toEqual(['1', '3']);
   });
 
+  it('posts the Gmail report to the backend with the profile account email', async () => {
+    const mailReports: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === 'https://gmail.googleapis.com/gmail/v1/users/me/profile') {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
+      }
+      if (url.href === 'https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX') {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        mailReports.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
+      accessToken: () => Promise.resolve('token-for-francisco'),
+      backendUrl: 'http://127.0.0.1:7777',
+      now: new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+    });
+
+    expect(mailReports).toEqual([{ accountEmail: 'francisco@example.com', historyId: '4321', messages: [] }]);
+  });
+
   it('still starts and posts the calendar snapshot when Gmail is unreachable, reporting the Gmail failure to the console', async () => {
     const backendPosts: { path: string; body: unknown }[] = [];
     const gmailUnreachable = new TypeError('Failed to fetch');

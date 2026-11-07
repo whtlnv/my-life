@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-06 21:53 · `apps/extension/src/extension-start.test.ts::posts the Gmail report to the backend with the profile account email`
+- Behavior: The report is posted to the backend with the profile's account email
+- Predicted: pass (could not predict a right-reason failure: `extension-start.ts` already passes the profile's `accountEmail` to `pollGmailOnce`, which posts it in `/mail-report`)
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: The behavior arrived ahead of its item, in d4f4394/b90750b (the startup Gmail poll), but no test pinned it. A temporary mutation (`accountEmail: 'someone-else@example.com'` in `pollGmail`) made the test fail, so it is not vacuous. The production file was restored and the test kept as the pin; `/green` has nothing to implement.
+
 ## 2026-11-06 20:41 · `packages/domain/src/verdict-examples.test.ts::chooses at most the limit of examples even when sender and category verdicts together exceed it`
 - Behavior: At most N examples are chosen
 - Predicted: passes on first run (`.slice(0, limit)` already caps the combined list)
