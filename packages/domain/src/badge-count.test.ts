@@ -48,62 +48,37 @@ describe('badgeCount', () => {
     expect(badgeCount([weeklySync], clock)).toBe(0);
   });
 
-  it('adds the action proposals waiting', () => {
+  it.each([
+    {
+      rule: 'adds the action proposals waiting',
+      proposals: [
+        { messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com', action: 'act', category: 'action' },
+        { messageId: 'message-2', accountEmail: 'franciscoc@psmutuus.com', action: 'keep', category: 'action' },
+      ],
+      verdicts: [],
+      count: 3,
+    },
+    {
+      rule: 'does not count an action proposal that has a verdict',
+      proposals: [
+        { messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com', action: 'act', category: 'action' },
+        { messageId: 'message-2', accountEmail: 'franciscoc@psmutuus.com', action: 'keep', category: 'action' },
+      ],
+      verdicts: [{ messageId: 'message-1', decision: 'confirmed', decidedAt: '2026-11-02T14:40:00.000Z' }],
+      count: 2,
+    },
+    {
+      rule: 'does not count a waiting proposal of another category',
+      proposals: [
+        { messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com', action: 'act', category: 'action' },
+        { messageId: 'message-2', accountEmail: 'franciscoc@psmutuus.com', action: 'archive', category: 'sales' },
+      ],
+      verdicts: [],
+      count: 2,
+    },
+  ])('$rule', ({ proposals, verdicts, count }) => {
     const clock: Clock = { now: () => new Date('2026-11-02T14:50:00.000Z') };
-    const firstActionProposal = {
-      messageId: 'message-1',
-      accountEmail: 'franciscoc@psmutuus.com',
-      action: 'act',
-      category: 'action',
-    };
-    const secondActionProposal = {
-      messageId: 'message-2',
-      accountEmail: 'franciscoc@psmutuus.com',
-      action: 'keep',
-      category: 'action',
-    };
 
-    expect(badgeCount([weeklySync], clock, [firstActionProposal, secondActionProposal], [])).toBe(3);
-  });
-
-  it('does not count an action proposal that has a verdict', () => {
-    const clock: Clock = { now: () => new Date('2026-11-02T14:50:00.000Z') };
-    const decidedActionProposal = {
-      messageId: 'message-1',
-      accountEmail: 'franciscoc@psmutuus.com',
-      action: 'act',
-      category: 'action',
-    };
-    const waitingActionProposal = {
-      messageId: 'message-2',
-      accountEmail: 'franciscoc@psmutuus.com',
-      action: 'keep',
-      category: 'action',
-    };
-    const verdict = {
-      messageId: 'message-1',
-      decision: 'confirmed',
-      decidedAt: '2026-11-02T14:40:00.000Z',
-    };
-
-    expect(badgeCount([weeklySync], clock, [decidedActionProposal, waitingActionProposal], [verdict])).toBe(2);
-  });
-
-  it('does not count a waiting proposal of another category', () => {
-    const clock: Clock = { now: () => new Date('2026-11-02T14:50:00.000Z') };
-    const actionProposal = {
-      messageId: 'message-1',
-      accountEmail: 'franciscoc@psmutuus.com',
-      action: 'act',
-      category: 'action',
-    };
-    const salesProposal = {
-      messageId: 'message-2',
-      accountEmail: 'franciscoc@psmutuus.com',
-      action: 'archive',
-      category: 'sales',
-    };
-
-    expect(badgeCount([weeklySync], clock, [actionProposal, salesProposal], [])).toBe(2);
+    expect(badgeCount([weeklySync], clock, proposals, verdicts)).toBe(count);
   });
 });
