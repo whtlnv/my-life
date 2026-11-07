@@ -434,6 +434,14 @@ describe('backend app', () => {
     expect(await queue.json()).toMatchObject({ remaining: 1 });
   });
 
+  it('says when GET /triage-queue was fetched, from the clock', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    const queue = await app.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({ fetchedAt: '2026-11-02T15:10:00.000Z' });
+  });
+
   it('refuses a mail report from an account outside the allow-list and counts none of its messages as remaining in GET /triage-queue', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
 

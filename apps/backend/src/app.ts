@@ -266,6 +266,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...splitActionFromGroups(proposals, verdictStore.loadAll()),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
+      fetchedAt: clock.now().toISOString(),
     });
   });
   const acknowledgementStore = openAcknowledgementStore(databasePath);
