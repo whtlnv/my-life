@@ -214,7 +214,7 @@
 - [x] A triage run hands the triage port each message with its account email, so a message that only copies the account is proposed on as not addressed to the user
 - [x] A triage run passes the triage port the verdict examples chosen by the domain rule (same sender first, then same category, at most N) for that message
 - [x] A triage run's same-sender examples are ordered newest first (delivered scope of the former example-chooser item; the category fallback cannot apply before classification, see BACKLOG)
-- [ ] With ten same-sender verdicts, a triage run passes the triage port only the newest eight, by calling the domain's `chooseVerdictExamples` with a limit of 8
+- [x] With ten same-sender verdicts, a triage run passes the triage port only the newest eight, by calling the domain's `chooseVerdictExamples` with a limit of 8
 - [ ] A triage run logs each spend row with the configured triage model, not an empty string
 - [ ] After each Gmail poll (the first and every scheduled one), the extension carries out the pending archive commands for the profile's account against Gmail and acknowledges them; a failure there is logged and does not stop the poll
 - [ ] (hand-written) `apps/backend/prompts/triage-v1.md` exists: it names the seven categories with the extract each one carries, the addressed-to-the-user rule, the advise-first stance, and asks for the tool call the contract validates; the shipped backend reads it
