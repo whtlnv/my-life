@@ -14,6 +14,7 @@ const extractForCategory: Record<string, z.ZodType | undefined> = {
   expense: expenseExtract,
   'system-update': systemUpdateExtract,
   sales: salesExtract,
+  'calendar-drive': calendarDriveExtract,
 };
 
 const extractMatchesCategory = (proposal: { category: string; extract: unknown }): boolean =>

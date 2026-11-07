@@ -174,4 +174,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
+
+  it('rejects a calendar-drive proposal whose extract does not say what changed, even when it carries an ask', () => {
+    const proposal = {
+      action: 'archive',
+      category: 'calendar-drive',
+      summary: 'Weekly sync moved to Thursday',
+      extract: { item: 'Weekly product sync', asker: 'Google Calendar', ask: 'Accept the new time' },
+      reason: 'An automated calendar update with nothing to do.',
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });
