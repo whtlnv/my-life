@@ -115,4 +115,15 @@ describe('triageEffects', () => {
       tasks: [],
     });
   });
+  it('puts nothing on the check-later list for a sales archive proposal the user confirmed', () => {
+    const salesArchiveProposal = {
+      ...archiveProposal,
+      category: 'sales',
+      extract: { company: 'Acme' },
+    };
+    expect(triageEffects(salesArchiveProposal, { decision: 'confirmed' })).toEqual({
+      archives: [{ messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' }],
+      tasks: [],
+    });
+  });
 });

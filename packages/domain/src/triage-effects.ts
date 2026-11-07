@@ -21,7 +21,7 @@ export const triageEffects = (
   const decidedAction = verdict?.correction?.action ?? (confirmed ? proposal.action : undefined);
   const taskDraft = verdict?.correction?.taskDraft ?? proposal.taskDraft;
   const salesCompany =
-    confirmed && proposal.category === 'sales' ? proposal.extract?.company : undefined;
+    confirmed && decidedAction === 'keep' && proposal.category === 'sales' ? proposal.extract?.company : undefined;
   return {
     archives: decidedAction === 'archive' ? [source] : [],
     tasks: decidedAction === 'act' && taskDraft ? [{ title: taskDraft.title, ...source }] : [],
