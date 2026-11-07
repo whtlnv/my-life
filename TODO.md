@@ -164,6 +164,8 @@
 - [x] The triage page shows the `action` block first, one card per item with who asks, what is asked and by when
 - [x] An `action` proposal whose extract carries an optional `due` time (ISO 8601) passes the shared contract, and one without it still passes, so the card's "by when" has a real field
 - [x] An `unknown` item is shown in the `action` block
+- [ ] `GET /triage-queue`'s action block includes `unknown` proposals next to `action` ones, and no `unknown` group exists
+- [ ] `GET /triage-queue`'s groups carry their items (message id, category, summary, extract, reason, account, Gmail link), and a `system-update` group carries its sending-system sub-groups with their items
 - [ ] An `action` card with no due time says it has none
 - [ ] Every item shows its reason, its account and a link to the message
 - [ ] Each category group shows collapsed with its count
