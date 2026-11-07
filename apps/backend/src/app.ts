@@ -72,24 +72,21 @@ function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
 
+function proposalEffects(proposal: Proposal, verdicts: { messageId: string }[]) {
+  const verdict = verdicts.find((candidate) => candidate.messageId === proposal.messageId);
+  return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
+}
+
 function confirmedTasks(proposals: Proposal[], verdicts: { messageId: string }[]) {
   return proposals.flatMap((proposal) => {
-    const verdict = verdicts.find((candidate) => candidate.messageId === proposal.messageId);
-    const effects = triageEffects(
-      proposal as Parameters<typeof triageEffects>[0],
-      verdict as Parameters<typeof triageEffects>[1],
-    );
+    const effects = proposalEffects(proposal, verdicts);
     return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
   });
 }
 
 function confirmedCheckLater(proposals: Proposal[], verdicts: { messageId: string }[]) {
   return proposals.flatMap((proposal) => {
-    const verdict = verdicts.find((candidate) => candidate.messageId === proposal.messageId);
-    const effects = triageEffects(
-      proposal as Parameters<typeof triageEffects>[0],
-      verdict as Parameters<typeof triageEffects>[1],
-    );
+    const effects = proposalEffects(proposal, verdicts);
     return (effects.checkLater ?? []).map(({ company, accountEmail }) => ({
       company,
       link: gmailMessageLink(proposal),
