@@ -142,4 +142,29 @@ describe('carryOutArchiveCommands', () => {
 
     expect(events).toEqual(['modify refused', 'modify carried out', 'acknowledge command-1']);
   });
+  it('adds the label my-life/auto, created when missing, to a message archived by a command labeled my-life/auto', async () => {
+    const gmailRequests: GmailRequest[] = [];
+    const gmail = fakeBackendAndGmail([inboxLabel, archivedLabel], gmailRequests);
+    const backendWithAutomaticCommand: FetchFunction = (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === 'http://127.0.0.1:7777/commands') {
+        return Promise.resolve(
+          Response.json({ commands: [{ id: 'command-1', messageId: 'message-to-archive', label: 'my-life/auto' }] }),
+        );
+      }
+      if (url.origin + url.pathname === `${gmailApi}/labels` && init?.method === 'POST') {
+        const body = JSON.parse(init.body as string) as { name: string };
+        gmailRequests.push({ request: 'create label', body });
+        return Promise.resolve(Response.json({ id: 'Label_77', name: body.name, type: 'user' }));
+      }
+      return gmail(input, init);
+    };
+
+    await runArchive(backendWithAutomaticCommand);
+
+    expect(gmailRequests).toEqual([
+      { request: 'create label', body: expect.objectContaining({ name: 'my-life/auto' }) as unknown },
+      { request: 'modify message-to-archive', body: { removeLabelIds: ['INBOX'], addLabelIds: ['Label_77'] } },
+    ]);
+  });
 });
