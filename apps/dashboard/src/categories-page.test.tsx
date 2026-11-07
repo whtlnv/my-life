@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { agreementRateText, CategoriesPage } from './categories-page';
+import { agreementRateText, CategoriesPage, noProposalsYetText } from './categories-page';
 
 const answerGetCategoriesWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -43,5 +43,20 @@ describe('CategoriesPage', () => {
       expect(modeSwitch).toHaveAttribute('aria-checked', automatic);
       expect(rateNode.compareDocumentPosition(modeSwitch) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
+  });
+
+  it('shows "no proposals yet" in place of the rate for a category without proposals', async () => {
+    answerGetCategoriesWith({
+      categories: [{ category: 'unknown', mode: 'advise', recentProposals: [] }],
+    });
+
+    render(<CategoriesPage />);
+
+    const list = await screen.findByRole('list', { name: 'Categories' });
+    const row = within(list).getByRole('listitem');
+    expect(noProposalsYetText).toMatch(/^no proposals yet$/i);
+    const placeholder = within(row).getByText(noProposalsYetText);
+    expect(placeholder.compareDocumentPosition(within(row).getByRole('switch')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(row).queryByText(/agreement/)).toBeNull();
   });
 });
