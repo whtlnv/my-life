@@ -14,6 +14,7 @@ import {
 } from '@my-life/domain';
 
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
+import { openReportedMessageStore } from './reported-message-store';
 
 export interface AppOptions {
   allowedEmails: string[];
@@ -42,8 +43,9 @@ function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
-  const snapshotStore = openCalendarSnapshotStore(options.databasePath ?? ':memory:');
-  const reportedMessageIds = new Set<string>();
+  const databasePath = options.databasePath ?? ':memory:';
+  const snapshotStore = openCalendarSnapshotStore(databasePath);
+  const reportedMessageStore = openReportedMessageStore(databasePath);
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -76,10 +78,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (refusal !== undefined) {
       return context.body(null, refusal);
     }
-    report.messages.forEach((message) => reportedMessageIds.add(message.id));
+    report.messages.forEach((message) => reportedMessageStore.save(message.id));
     return context.body(null, 200);
   });
-  app.get('/triage-queue', (context) => context.json({ remaining: reportedMessageIds.size }));
+  app.get('/triage-queue', (context) => context.json({ remaining: reportedMessageStore.count() }));
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
     const latestSnapshots = stored.map((entry) => entry.snapshot);

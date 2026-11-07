@@ -446,4 +446,34 @@ describe('backend app', () => {
     expect(second.status).toBe(200);
     expect(await queue.json()).toMatchObject({ remaining: 1 });
   });
+
+  it('still counts in GET /triage-queue a message reported before a backend restart, and once when it is reported again after it', async () => {
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const options = { allowedEmails: ['ana@example.com'], databasePath };
+    const report = {
+      accountEmail: 'ana@example.com',
+      historyId: '1001',
+      messages: [
+        {
+          id: 'message-1',
+          threadId: 'thread-1',
+          from: 'Luis <luis@example.com>',
+          to: 'ana@example.com',
+          subject: 'Budget review',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+          snippet: 'Can you review the budget by Friday?',
+        },
+      ],
+    };
+    const beforeRestart = createApp(options);
+    await postJson(beforeRestart, '/mail-report', report);
+
+    const afterRestart = createApp(options);
+    const queueAfterRestart = await afterRestart.request('/triage-queue');
+    await postJson(afterRestart, '/mail-report', report);
+    const queueAfterReportedAgain = await afterRestart.request('/triage-queue');
+
+    expect(await queueAfterRestart.json()).toMatchObject({ remaining: 1 });
+    expect(await queueAfterReportedAgain.json()).toMatchObject({ remaining: 1 });
+  });
 });
