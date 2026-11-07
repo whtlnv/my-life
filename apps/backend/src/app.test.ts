@@ -25,6 +25,8 @@ const postCalendarSnapshot = (app: App, accountEmail: string, events: unknown[])
 
 const postRegistration = (app: App, email: string) => postJson(app, '/register', { email });
 
+const temporaryDatabasePath = () => join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+
 const clockAtTenPastThree = { now: () => new Date('2026-11-02T15:10:00.000Z') };
 
 const budgetReviewReport = {
@@ -308,7 +310,7 @@ describe('backend app', () => {
   });
 
   it('still serves in GET /now a snapshot reported before a backend restart', async () => {
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -438,7 +440,7 @@ describe('backend app', () => {
   });
 
   it('still counts in GET /triage-queue a message reported before a backend restart, and once when it is reported again after it', async () => {
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], databasePath };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
@@ -483,7 +485,7 @@ describe('backend app', () => {
   });
 
   it("still shows in GET /now when an account's mail source last reported, after a backend restart on the same database file", async () => {
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
@@ -602,7 +604,7 @@ describe('backend app', () => {
     const triage = {
       propose: () => Promise.resolve({ proposal, costInUsd: 0.05, promptVersion: 'triage-v1' }),
     };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
 
@@ -618,7 +620,7 @@ describe('backend app', () => {
       propose: () =>
         Promise.resolve({ proposal: {}, costInUsd: 0.05, model: 'claude-opus-5-5', promptVersion: 'triage-v1' }),
     };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
 
@@ -636,7 +638,7 @@ describe('backend app', () => {
         return Promise.resolve({ proposal: {}, costInUsd: 12, model: 'claude-opus-5-5', promptVersion: 'triage-v1' });
       },
     };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -672,7 +674,7 @@ describe('backend app', () => {
         return Promise.resolve({ proposal: {}, costInUsd: 10, model: 'claude-opus-5-5', promptVersion: 'triage-v1' });
       },
     };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const spendBeforeRestart = openSpendStore(databasePath);
     // 05:00Z on Nov 2 is still 23:00 on Nov 1 in Mexico City: yesterday for a clock at 15:10Z on Nov 2.
     spendBeforeRestart.save({ spentAt: '2026-11-02T05:00:00.000Z', model: 'claude-opus-5-5', costInUsd: 15 });
@@ -787,7 +789,7 @@ describe('backend app', () => {
       reason: 'Luis asks the user directly',
     };
     const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
@@ -846,7 +848,7 @@ describe('backend app', () => {
       reason: 'Luis asks the user directly',
     };
     const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await app.request('/triage-run', { method: 'POST' });
@@ -862,7 +864,7 @@ describe('backend app', () => {
   });
 
   it('refuses a verdict posted at POST /verdicts for a message that has no proposal as not found, and stores nothing', async () => {
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
 
     const response = await postJson(app, '/verdicts', { messageId: 'unknown-message', decision: 'confirmed' });
@@ -880,7 +882,7 @@ describe('backend app', () => {
       reason: 'Luis asks the user directly',
     };
     const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await app.request('/triage-run', { method: 'POST' });
@@ -902,7 +904,7 @@ describe('backend app', () => {
       reason: 'Luis asks the user directly',
     };
     const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
-    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
