@@ -7,4 +7,5 @@ export const triageProposal = z.object({
   summary: z.string(),
   extract: z.object({ sinceLastMessage: z.string() }),
   reason: z.string(),
+  taskDraft: z.object({ title: z.string() }).optional(),
 });

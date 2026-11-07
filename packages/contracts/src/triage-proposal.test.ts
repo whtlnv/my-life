@@ -26,4 +26,14 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('accepts an act proposal carrying a task draft with a title', () => {
+    const proposal = {
+      ...archiveCcThreadProposal,
+      action: 'act',
+      taskDraft: { title: 'Send Luis the signed vendor contract for filing' },
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
 });
