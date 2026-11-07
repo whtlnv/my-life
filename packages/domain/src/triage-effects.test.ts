@@ -56,4 +56,13 @@ describe('triageEffects', () => {
       },
     ]);
   });
+
+  it('produces an archive and no task for a keep proposal the user rejected and corrected to archive', () => {
+    const keepProposal = { ...archiveProposal, action: 'keep' };
+    const verdict = { decision: 'rejected', correction: { action: 'archive' } };
+    expect(triageEffects(keepProposal, verdict)).toEqual({
+      archives: [{ messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' }],
+      tasks: [],
+    });
+  });
 });
