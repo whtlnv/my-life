@@ -1,7 +1,4 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-
-import Database from 'better-sqlite3';
+import { openDatabase } from './open-database';
 
 interface StoredSpend {
   spentAt: string;
@@ -10,8 +7,7 @@ interface StoredSpend {
 }
 
 export function openSpendStore(databasePath: string) {
-  mkdirSync(dirname(databasePath), { recursive: true });
-  const database = new Database(databasePath);
+  const database = openDatabase(databasePath);
   database.exec(
     'CREATE TABLE IF NOT EXISTS spend (spent_at TEXT NOT NULL, model TEXT NOT NULL, cost_in_usd REAL NOT NULL)',
   );

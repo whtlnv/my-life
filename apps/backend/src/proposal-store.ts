@@ -1,7 +1,4 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-
-import Database from 'better-sqlite3';
+import { openDatabase } from './open-database';
 
 interface StoredProposal {
   messageId: string;
@@ -11,8 +8,7 @@ interface StoredProposal {
 }
 
 export function openProposalStore(databasePath: string) {
-  mkdirSync(dirname(databasePath), { recursive: true });
-  const database = new Database(databasePath);
+  const database = openDatabase(databasePath);
   database.exec(
     'CREATE TABLE IF NOT EXISTS proposals (message_id TEXT NOT NULL, made_at TEXT NOT NULL, prompt_version TEXT NOT NULL, proposal TEXT NOT NULL)',
   );

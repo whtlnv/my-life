@@ -1,13 +1,9 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-
-import Database from 'better-sqlite3';
-
 import type { SourceReport } from '@my-life/domain';
 
+import { openDatabase } from './open-database';
+
 export function openMailSourceStore(databasePath: string) {
-  mkdirSync(dirname(databasePath), { recursive: true });
-  const database = new Database(databasePath);
+  const database = openDatabase(databasePath);
   database.exec(
     'CREATE TABLE IF NOT EXISTS mail_sources (account_email TEXT PRIMARY KEY, last_reported_at TEXT NOT NULL)',
   );

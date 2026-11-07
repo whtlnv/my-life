@@ -1,7 +1,4 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-
-import Database from 'better-sqlite3';
+import { openDatabase } from './open-database';
 
 interface StoredVerdict {
   messageId: string;
@@ -11,8 +8,7 @@ interface StoredVerdict {
 }
 
 export function openVerdictStore(databasePath: string) {
-  mkdirSync(dirname(databasePath), { recursive: true });
-  const database = new Database(databasePath);
+  const database = openDatabase(databasePath);
   database.exec(
     'CREATE TABLE IF NOT EXISTS verdicts (message_id TEXT NOT NULL, decision TEXT NOT NULL, correction TEXT, decided_at TEXT NOT NULL)',
   );

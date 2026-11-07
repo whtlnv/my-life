@@ -1,9 +1,6 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-
-import Database from 'better-sqlite3';
-
 import type { CalendarSnapshot } from '@my-life/domain';
+
+import { openDatabase } from './open-database';
 
 export interface StoredCalendarSnapshot {
   accountEmail: string;
@@ -12,8 +9,7 @@ export interface StoredCalendarSnapshot {
 }
 
 export function openCalendarSnapshotStore(databasePath: string) {
-  mkdirSync(dirname(databasePath), { recursive: true });
-  const database = new Database(databasePath);
+  const database = openDatabase(databasePath);
   database.exec(
     'CREATE TABLE IF NOT EXISTS calendar_snapshots (account_email TEXT PRIMARY KEY, snapshot TEXT NOT NULL, reported_at TEXT NOT NULL)',
   );
