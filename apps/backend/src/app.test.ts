@@ -2534,4 +2534,56 @@ describe('backend app', () => {
       afterAcknowledgement: [],
     });
   });
+
+  it('no longer lists at GET /filter-proposals a filter proposal rejected through POST /filter-proposals/:id/rejection', async () => {
+    const app = appProposingShopNewslettersFilter();
+    await reportTriageAndConfirmShopNewsletters(app);
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+
+    const rejection = await app.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/rejection`, {
+      method: 'POST',
+    });
+    const afterRejection = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
+
+    expect({ status: rejection.status, proposals: afterRejection.proposals }).toEqual({ status: 200, proposals: [] });
+  });
+
+  it('neither asks the filter port again nor lists a proposal at GET /filter-proposals for further confirmed archives from a sender whose filter proposal was rejected, also after a backend restart on the same database file', async () => {
+    const askedCandidates: unknown[] = [];
+    const filter = {
+      propose: (candidate: unknown) => {
+        askedCandidates.push(candidate);
+        return Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+          costInUsd: 0.05,
+          promptVersion: 'filter-v1',
+        });
+      },
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage,
+      filter,
+    };
+    const beforeRestart = createApp(options);
+    await reportTriageAndConfirmShopNewsletters(beforeRestart);
+    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    await beforeRestart.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/rejection`, { method: 'POST' });
+    askedCandidates.length = 0;
+    const afterRestart = createApp(options);
+
+    await reportTriageAndConfirmShopNewsletters(afterRestart, ['newsletter-4', 'newsletter-5']);
+    const afterRejection = (await (await afterRestart.request('/filter-proposals')).json()) as { proposals: unknown[] };
+
+    expect({ askedCandidates, proposals: afterRejection.proposals }).toEqual({ askedCandidates: [], proposals: [] });
+  });
 });

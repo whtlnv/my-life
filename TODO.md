@@ -75,7 +75,7 @@
 - [x] `POST /filter-proposals/:id/approval` stores the approval with its time, and `GET /commands?accountEmail=…` then lists a `create-filter` command for that account with the criteria and label
 - [x] A filter proposal with no stored approval never yields a `create-filter` command
 - [x] A `create-filter` command carries an id (`create-filter-<proposal id>`), and once it is acknowledged through `POST /commands/:id/acknowledgement` it is no longer listed by `GET /commands?accountEmail=…` (supervisor keystone: the command has no id, so the extension could never acknowledge it)
-- [ ] `POST /filter-proposals/:id/rejection` removes the proposal from `GET /filter-proposals`, and the same sender or List-Id is not proposed again
+- [x] `POST /filter-proposals/:id/rejection` removes the proposal from `GET /filter-proposals`, and the same sender or List-Id is not proposed again
 - [ ] Filter proposals, approvals and rejections survive a backend restart on the same database
 - [ ] The extension manifest requests the `gmail.settings.basic` scope
 - [ ] The fake Gmail server answers `users.settings.filters` create, list and delete, and the label calls the filter needs

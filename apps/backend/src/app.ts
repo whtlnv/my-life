@@ -23,6 +23,7 @@ import {
 } from '@my-life/domain';
 
 import { openAcknowledgementStore } from './acknowledgement-store';
+import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 import { openFilterProposalStore } from './filter-proposal-store';
@@ -408,15 +409,24 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       fetchedAt: clock.now().toISOString(),
     });
   });
+  const filterProposalRejectionStore = openFilterProposalRejectionStore(databasePath);
   app.get('/filter-proposals', (context) => {
+    const rejectedFilterProposalIds = filterProposalRejectionStore.loadAll();
     return context.json({
-      proposals: filterProposalStore.loadAll().map((stored) => ({
-        ...(stored.proposal as object),
-        id: stored.id,
-        accountEmail: stored.accountEmail,
-        archiveCount: stored.messageIds.length,
-      })),
+      proposals: filterProposalStore
+        .loadAll()
+        .filter((stored) => !rejectedFilterProposalIds.includes(stored.id))
+        .map((stored) => ({
+          ...(stored.proposal as object),
+          id: stored.id,
+          accountEmail: stored.accountEmail,
+          archiveCount: stored.messageIds.length,
+        })),
     });
+  });
+  app.post('/filter-proposals/:id/rejection', (context) => {
+    filterProposalRejectionStore.save(context.req.param('id'));
+    return context.body(null, 200);
   });
   const approvedFilterProposalIds = new Set<string>();
   app.post('/filter-proposals/:id/approval', (context) => {
