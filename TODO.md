@@ -69,6 +69,7 @@
 - [x] The Claude filter adapter calls the model from config with a strict `propose_filter` tool built from the filter-proposal contract and a versioned prompt file, and returns the validated proposal
 - [x] Each filter-adapter call is logged as spend and counts against the daily ceiling; at the ceiling no filter proposal is asked for
 - [ ] The filter port is asked with the candidate's account, its criteria (sender or List-Id) and, for each of its messages, the sender and subject, and the Claude filter adapter puts all of that in the user message of its request, so a proposal about sender X is asked with X's archived mail in front of the model (supervisor keystone: the adapter ignores the candidate it is given and sends no messages)
+- [ ] The Claude filter adapter reports each call's cost in USD from the response usage and the configured pricing, the way the triage adapter does, so the backend's spend log for filter calls is real (supervisor keystone: the adapter returns no cost)
 - [ ] `GET /filter-proposals` lists pending proposals with criteria, label, account and the count of archives behind each
 - [ ] `POST /filter-proposals/:id/approval` stores the approval with its time, and `GET /commands?accountEmail=…` then lists a `create-filter` command for that account with the criteria and label
 - [ ] A filter proposal with no stored approval never yields a `create-filter` command
