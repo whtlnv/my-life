@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type GmailScenario = 'action-to-me' | 'cc-thread';
+type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense';
 
 interface FakeGmailMessage {
   id: string;
@@ -53,6 +53,21 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
             { name: 'Cc', value: accountEmail },
             { name: 'Subject', value: 'Re: Launch review' },
             { name: 'Date', value: 'Mon, 2 Nov 2026 11:00:00 -0600' },
+          ],
+        },
+      },
+    ],
+    expense: [
+      {
+        id: 'papeleria-receipt',
+        threadId: 'papeleria-receipt',
+        snippet: 'Your receipt for MXN 1,250.50',
+        payload: {
+          headers: [
+            { name: 'From', value: 'Papelería Central <recibos@papeleria.example.com>' },
+            { name: 'To', value: accountEmail },
+            { name: 'Subject', value: 'Your receipt' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 12:00:00 -0600' },
           ],
         },
       },

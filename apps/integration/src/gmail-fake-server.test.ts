@@ -25,6 +25,14 @@ const ccThreadProposal = {
   reason: 'The user is only copied',
 };
 
+const expenseProposal = {
+  action: 'archive',
+  category: 'expense',
+  summary: 'Receipt from Papelería Central',
+  extract: { vendor: 'Papelería Central', amount: 1250.5, currency: 'MXN', date: '2026-11-02' },
+  reason: 'A receipt for a purchase',
+};
+
 type Backend = ReturnType<typeof createApp>;
 
 interface MessageSeenByTriage {
@@ -110,5 +118,20 @@ describe('Gmail fake server', () => {
     expect(queue.groups.find(({ category }) => category === 'cc-thread')).toEqual(
       expect.objectContaining({ count: 1, items: [expect.objectContaining({ messageId: newest?.id })] }),
     );
+  });
+  it('polling the expense scenario shows the receipt with its amount in the expense group of GET /triage-queue', async () => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(expenseProposal);
+    await pollScenarioIntoBackend('expense', backend);
+    const queue = await runTriageAndReadQueue<{
+      groups: { category: string; items: { messageId: string; extract: { amount?: number } }[] }[];
+    }>(backend);
+
+    expect(messagesSeenByTriage).toHaveLength(1);
+    expect(queue.groups.find(({ category }) => category === 'expense')?.items).toEqual([
+      expect.objectContaining({
+        messageId: messagesSeenByTriage[0]?.id,
+        extract: expect.objectContaining({ amount: expenseProposal.extract.amount }),
+      }),
+    ]);
   });
 });
