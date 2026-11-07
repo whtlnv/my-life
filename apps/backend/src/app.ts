@@ -83,6 +83,21 @@ function confirmedTasks(proposals: Proposal[], verdicts: { messageId: string }[]
   });
 }
 
+function confirmedCheckLater(proposals: Proposal[], verdicts: { messageId: string }[]) {
+  return proposals.flatMap((proposal) => {
+    const verdict = verdicts.find((candidate) => candidate.messageId === proposal.messageId);
+    const effects = triageEffects(
+      proposal as Parameters<typeof triageEffects>[0],
+      verdict as Parameters<typeof triageEffects>[1],
+    );
+    return (effects.checkLater ?? []).map(({ company, accountEmail }) => ({
+      company,
+      link: gmailMessageLink(proposal),
+      accountEmail,
+    }));
+  });
+}
+
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(proposals, verdicts);
   return {
@@ -241,6 +256,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
+  });
+  app.get('/check-later', (context) => {
+    return context.json({ checkLater: confirmedCheckLater(proposals, verdictStore.loadAll()) });
   });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();

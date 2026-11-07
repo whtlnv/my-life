@@ -1125,4 +1125,36 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('lists at GET /check-later the company, Gmail link and account of a sales proposal the user confirmed to keep', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'sales',
+            summary: 'Acme pitches invoice automation',
+            extract: { company: 'Acme', solution: 'Invoice automation', problem: 'Manual invoice entry' },
+            reason: 'An unsolicited pitch that may be worth a look',
+          },
+          costInUsd: 1,
+          promptVersion: 'triage-v1',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await confirmBudgetReviewProposal(app);
+
+    const response = await app.request('/check-later');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      checkLater: [
+        {
+          company: 'Acme',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+          accountEmail: 'ana@example.com',
+        },
+      ],
+    });
+  });
 });
