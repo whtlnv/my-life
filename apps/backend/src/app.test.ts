@@ -26,6 +26,8 @@ const postCalendarSnapshot = (app: App, accountEmail: string, events: unknown[])
 
 const postRegistration = (app: App, email: string) => postJson(app, '/register', { email });
 
+const postTriageRun = (app: App) => app.request('/triage-run', { method: 'POST' });
+
 const temporaryDatabasePath = () => join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
 
 const clockAtTenPastThree = { now: () => new Date('2026-11-02T15:10:00.000Z') };
@@ -69,7 +71,7 @@ const ccThreadTriage = (action: 'archive' | 'keep') => {
 
 const confirmBudgetReviewProposal = async (app: App) => {
   await postJson(app, '/mail-report', budgetReviewReport);
-  await app.request('/triage-run', { method: 'POST' });
+  await postTriageRun(app);
   await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 };
 
@@ -543,7 +545,7 @@ describe('backend app', () => {
       ],
     });
 
-    const run = await app.request('/triage-run', { method: 'POST' });
+    const run = await postTriageRun(app);
 
     expect(run.status).toBe(200);
     expect(askedMessageIds).toEqual(['message-newest', 'message-middle', 'message-older']);
@@ -564,7 +566,7 @@ describe('backend app', () => {
       messages: [{ ...budgetReview, to: 'team@example.com', cc: 'ana@example.com' }],
     });
 
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     expect(askedMessages).toEqual([
       expect.objectContaining({ id: 'message-1', cc: 'ana@example.com', accountEmail: 'ana@example.com' }),
@@ -594,7 +596,7 @@ describe('backend app', () => {
       messages: [{ ...budgetReview, id: 'message-2', threadId: 'thread-2', subject: 'Budget follow-up' }],
     });
 
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     expect(examplesAskedWith[1]).toEqual([
       expect.objectContaining({ messageId: 'message-1', decision: 'confirmed', category: 'cc-thread' }),
@@ -624,13 +626,13 @@ describe('backend app', () => {
       ...budgetReviewReport,
       messages: [fromLuis('message-1', 'Budget review'), fromLuis('message-2', 'Budget draft')],
     });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
     await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
     now = new Date('2026-11-02T15:20:00.000Z');
     await postJson(app, '/verdicts', { messageId: 'message-2', decision: 'confirmed' });
     await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [fromLuis('message-3', 'Budget final')] });
 
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     expect(examplesByMessageId.get('message-3')).toEqual([
       expect.objectContaining({ messageId: 'message-2' }),
@@ -659,14 +661,14 @@ describe('backend app', () => {
     const fromLuis = (id: string) => ({ ...budgetReview, id, threadId: `thread-${id}`, subject: `Budget ${id}` });
     const earlierIds = Array.from({ length: 10 }, (_, index) => `message-${index + 1}`);
     await postJson(app, '/mail-report', { ...budgetReviewReport, messages: earlierIds.map(fromLuis) });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
     for (const [index, messageId] of earlierIds.entries()) {
       now = new Date(Date.parse('2026-11-02T15:00:00.000Z') + (index + 1) * 60_000);
       await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
     }
     await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [fromLuis('message-11')] });
 
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     expect(examplesByMessageId.get('message-11')).toEqual(
       earlierIds
@@ -695,9 +697,9 @@ describe('backend app', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [{ ...budgetReview, id: 'message-once' }] });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
-    const secondRun = await app.request('/triage-run', { method: 'POST' });
+    const secondRun = await postTriageRun(app);
 
     expect(secondRun.status).toBe(200);
     expect(askedMessageIds).toEqual(['message-once']);
@@ -736,7 +738,7 @@ describe('backend app', () => {
       ],
     });
 
-    const run = await app.request('/triage-run', { method: 'POST' });
+    const run = await postTriageRun(app);
 
     expect(run.status).toBe(200);
     expect(askedMessageIds).toEqual(['message-newest', 'message-middle']);
@@ -757,7 +759,7 @@ describe('backend app', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
 
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     expect(openProposalStore(databasePath).loadAll()).toEqual([
       { messageId: 'message-1', madeAt: '2026-11-02T15:10:00.000Z', promptVersion: 'triage-v1', proposal },
@@ -773,7 +775,7 @@ describe('backend app', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
 
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     expect(openSpendStore(databasePath).loadAll()).toEqual([
       { spentAt: '2026-11-02T15:10:00.000Z', model: 'claude-opus-5-5', costInUsd: 0.05 },
@@ -793,7 +795,7 @@ describe('backend app', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
 
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     expect(
       openSpendStore(databasePath)
@@ -821,7 +823,7 @@ describe('backend app', () => {
     const newest = { ...budgetReview, id: 'message-newest', date: 'Mon, 2 Nov 2026 10:00:00 -0600' };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', { ...budgetReviewReport, messages: [newest] });
-    await beforeRestart.request('/triage-run', { method: 'POST' });
+    await postTriageRun(beforeRestart);
     askedMessageIds.length = 0;
     const afterRestart = createApp(options);
     await postJson(afterRestart, '/mail-report', {
@@ -833,7 +835,7 @@ describe('backend app', () => {
       ],
     });
 
-    await afterRestart.request('/triage-run', { method: 'POST' });
+    await postTriageRun(afterRestart);
 
     expect(askedMessageIds).toEqual(['message-middle']);
   });
@@ -866,7 +868,7 @@ describe('backend app', () => {
       ],
     });
 
-    await afterRestart.request('/triage-run', { method: 'POST' });
+    await postTriageRun(afterRestart);
 
     expect(askedMessageIds).toEqual(['message-newest']);
   });
@@ -906,7 +908,7 @@ describe('backend app', () => {
         { ...budgetReview, id: 'message-middle', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
       ],
     });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -948,7 +950,7 @@ describe('backend app', () => {
         { ...budgetReview, id: 'message-unknown', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
       ],
     });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -988,7 +990,7 @@ describe('backend app', () => {
         { ...budgetReview, id: 'message-system', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
       ],
     });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -1035,7 +1037,7 @@ describe('backend app', () => {
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -1063,7 +1065,7 @@ describe('backend app', () => {
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
-    await beforeRestart.request('/triage-run', { method: 'POST' });
+    await postTriageRun(beforeRestart);
 
     const afterRestart = createApp(options);
     const queue = await afterRestart.request('/triage-queue');
@@ -1093,7 +1095,7 @@ describe('backend app', () => {
     const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -1121,7 +1123,7 @@ describe('backend app', () => {
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const response = await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 
@@ -1155,7 +1157,7 @@ describe('backend app', () => {
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
     const correction = { action: 'act', taskDraft: { title: 'Review the budget for Luis' } };
 
     await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'rejected', correction });
@@ -1178,7 +1180,7 @@ describe('backend app', () => {
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
-    await beforeRestart.request('/triage-run', { method: 'POST' });
+    await postTriageRun(beforeRestart);
     await postJson(beforeRestart, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 
     const afterRestart = createApp(options);
@@ -1216,7 +1218,7 @@ describe('backend app', () => {
         { ...budgetReview, id: 'receipt-older', threadId: 'thread-3', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
       ],
     });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const response = await postJson(app, '/group-verdicts', { category: 'expense', decision: 'confirmed' });
 
@@ -1261,7 +1263,7 @@ describe('backend app', () => {
       triage: ccThreadTriage('archive'),
     });
     await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
 
@@ -1294,7 +1296,7 @@ describe('backend app', () => {
       ...budgetReviewReport,
       messages: [budgetReview, { ...budgetReview, id: 'message-2', threadId: 'thread-2' }],
     });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
     await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
     await postJson(app, '/verdicts', { messageId: 'message-2', decision: 'confirmed' });
 
@@ -1429,7 +1431,7 @@ describe('backend app', () => {
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const now = await app.request('/now');
 
