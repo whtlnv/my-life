@@ -100,8 +100,12 @@ function isStillConfirmed(messageId: string, verdicts: StoredVerdict[]): boolean
   return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
 }
 
+function isAutomatic(proposal: Proposal, categoryModes: Record<string, string>): boolean {
+  return categoryModes[proposal.category ?? ''] === 'automatic';
+}
+
 function isCleared(proposal: Proposal, verdicts: StoredVerdict[], categoryModes: Record<string, string>): boolean {
-  return isStillConfirmed(proposal.messageId, verdicts) || categoryModes[proposal.category ?? ''] === 'automatic';
+  return isStillConfirmed(proposal.messageId, verdicts) || isAutomatic(proposal, categoryModes);
 }
 
 function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
@@ -111,8 +115,7 @@ function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
 
 function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[], categoryModes: Record<string, string>) {
   return proposals.flatMap((proposal) => {
-    const isAutomatic = categoryModes[proposal.category ?? ''] === 'automatic';
-    const effects = isAutomatic
+    const effects = isAutomatic(proposal, categoryModes)
       ? triageEffects(proposal as Parameters<typeof triageEffects>[0], { decision: 'confirmed' })
       : proposalEffects(proposal, verdicts);
     return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
