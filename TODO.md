@@ -55,7 +55,7 @@
 
 - [x] After a third confirmed `archive` from the same sender (in any category), a filter candidate on `from` exists for that sender and account
 - [x] After only two confirmed `archive`s from the same sender, no filter candidate exists
-- [ ] Rejected or corrected archive proposals do not count toward a sender's three
+- [x] Rejected or corrected archive proposals do not count toward a sender's three
 - [ ] Confirmed archives are counted per sender: two senders with two confirmed archives each in the same account yield no candidate, and three from one sender plus one from another yield exactly one candidate, on the first sender, listing only its three messages (supervisor triangulation: the green counts every input as one sender)
 - [ ] Three confirmed archives of messages carrying the same `listId` yield a candidate on the List-Id rather than on the sender
 - [ ] Confirmed archives from the same sender in two different accounts are counted per account, so two in each yield no candidate

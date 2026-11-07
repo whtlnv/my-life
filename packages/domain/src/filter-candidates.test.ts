@@ -36,4 +36,18 @@ describe('filterCandidates', () => {
 
     expect(filterCandidates(decidedProposals)).toEqual([]);
   });
+
+  it('does not count rejected or corrected archive proposals toward the three a sender needs', () => {
+    const decidedProposals = [
+      confirmedArchive('message-1', 'sales'),
+      confirmedArchive('message-2', 'system-update'),
+      { ...confirmedArchive('message-3', 'sales'), verdict: { decision: 'rejected' } },
+      {
+        ...confirmedArchive('message-4', 'sales'),
+        verdict: { decision: 'rejected', correction: { action: 'keep' } },
+      },
+    ];
+
+    expect(filterCandidates(decidedProposals)).toEqual([]);
+  });
 });

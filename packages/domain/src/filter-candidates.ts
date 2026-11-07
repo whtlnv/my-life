@@ -2,6 +2,7 @@ export interface DecidedProposal {
   messageId: string;
   accountEmail: string;
   from: string;
+  verdict: { decision: string };
 }
 
 export interface FilterCandidate {
@@ -13,15 +14,16 @@ export interface FilterCandidate {
 const minimumConfirmedArchives = 3;
 
 export function filterCandidates(decidedProposals: DecidedProposal[]): FilterCandidate[] {
-  if (decidedProposals.length < minimumConfirmedArchives) {
+  const confirmed = decidedProposals.filter((proposal) => proposal.verdict.decision === 'confirmed');
+  if (confirmed.length < minimumConfirmedArchives) {
     return [];
   }
-  const [first] = decidedProposals as [DecidedProposal];
+  const [first] = confirmed as [DecidedProposal];
   return [
     {
       accountEmail: first.accountEmail,
       criteria: { from: first.from },
-      messageIds: decidedProposals.map((proposal) => proposal.messageId),
+      messageIds: confirmed.map((proposal) => proposal.messageId),
     },
   ];
 }
