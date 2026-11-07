@@ -41,4 +41,43 @@ describe('chooseVerdictExamples', () => {
 
     expect(examples).toEqual([newestFromSender, middleFromSender]);
   });
+
+  it('fills the remaining examples with the most recent verdicts of the same category when the sender has too few', () => {
+    const newestFromSender = {
+      messageId: 'message-1',
+      from: 'ana@proveedor.mx',
+      category: 'expense',
+      decision: 'confirmed',
+      decidedAt: '2026-11-04T09:00:00-06:00',
+    };
+    const olderFromSender = {
+      messageId: 'message-2',
+      from: 'ana@proveedor.mx',
+      category: 'sales',
+      decision: 'rejected',
+      decidedAt: '2026-11-02T09:00:00-06:00',
+    };
+    const olderOfSameCategory = {
+      messageId: 'message-3',
+      from: 'luis@otra.mx',
+      category: 'expense',
+      decision: 'confirmed',
+      decidedAt: '2026-11-01T09:00:00-06:00',
+    };
+    const newestOfSameCategory = {
+      messageId: 'message-4',
+      from: 'marta@tienda.mx',
+      category: 'expense',
+      decision: 'confirmed',
+      decidedAt: '2026-11-05T09:00:00-06:00',
+    };
+
+    const examples = chooseVerdictExamples(
+      { from: 'ana@proveedor.mx', category: 'expense' },
+      [olderOfSameCategory, newestFromSender, newestOfSameCategory, olderFromSender],
+      3,
+    );
+
+    expect(examples).toEqual([newestFromSender, olderFromSender, newestOfSameCategory]);
+  });
 });

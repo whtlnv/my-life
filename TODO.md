@@ -63,7 +63,7 @@
 - [x] Spend logged today below the daily ceiling does not pause triage
 - [x] Spend logged before midnight in America/Mexico_City does not count toward today's ceiling
 - [x] The examples for a new message are the most recent verdicts from the same sender
-- [ ] When there are fewer than N same-sender verdicts, the examples are filled with the most recent verdicts of the same category
+- [x] When there are fewer than N same-sender verdicts, the examples are filled with the most recent verdicts of the same category
 - [ ] Verdicts from another sender in another category are never examples
 - [ ] At most N examples are chosen
 - [ ] The badge count adds the `action` proposals waiting
