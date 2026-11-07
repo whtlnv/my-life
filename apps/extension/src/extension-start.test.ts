@@ -379,4 +379,53 @@ describe('startExtension', () => {
       consoleError.mockRestore();
     }
   });
+
+  it('after the first Gmail poll, archives the pending archive commands for the profile account in Gmail and acknowledges them', async () => {
+    const gmailModifications: string[] = [];
+    const acknowledgements: string[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${gmailApi}/users/me/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
+      }
+      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.href === `${gmailApi}/users/me/labels` && init?.method !== 'POST') {
+        return Promise.resolve(Response.json({ labels: [{ id: 'Label_9', name: 'my-life/archived' }] }));
+      }
+      if (url.pathname.endsWith('/modify') && init?.method === 'POST') {
+        gmailModifications.push(url.pathname);
+        return Promise.resolve(Response.json({ id: 'message-7' }));
+      }
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/commands?accountEmail=francisco%40example.com') {
+        return Promise.resolve(
+          Response.json({ commands: [{ id: 'command-1', kind: 'archive', messageId: 'message-7' }] }),
+        );
+      }
+      if (url.pathname.endsWith('/acknowledgement') && init?.method === 'POST') {
+        acknowledgements.push(url.pathname);
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
+      accessToken: () => Promise.resolve('token-for-francisco'),
+      backendUrl: 'http://127.0.0.1:7777',
+      now: new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+    });
+
+    expect(gmailModifications).toEqual(['/gmail/v1/users/me/messages/message-7/modify']);
+    expect(acknowledgements).toEqual(['/commands/command-1/acknowledgement']);
+  });
 });

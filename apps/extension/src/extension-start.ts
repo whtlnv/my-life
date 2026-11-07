@@ -1,5 +1,6 @@
 import { refreshBadge } from './badge-refresh';
 import { pollCalendarOnce } from './calendar-poll';
+import { carryOutArchiveCommands } from './gmail-archive';
 import { pollGmailOnce } from './gmail-poll';
 import type { FetchFunction } from './fetch-function';
 
@@ -40,13 +41,15 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
   };
   let storedHistoryId: string | undefined;
   const pollGmail = async () => {
+    const accessToken = await options.accessToken();
     storedHistoryId = await pollGmailOnce({
       fetch: options.fetch,
-      accessToken: await options.accessToken(),
+      accessToken,
       accountEmail,
       backendUrl: options.backendUrl,
       storedHistoryId,
     });
+    await carryOutArchiveCommands({ fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl });
   };
   const pollGmailAndLogFailure = () =>
     pollGmail().catch((error: unknown) => {
