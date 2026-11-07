@@ -15,7 +15,9 @@ export const badgeCount = (
   clock: Clock,
   proposals: Proposal[] = [],
   verdicts: Verdict[] = [],
-): number =>
-  buildNowView(events, clock).next.length +
-  proposals.filter((proposal) => !verdicts.some((verdict) => verdict.messageId === proposal.messageId))
-    .length;
+): number => {
+  const waitingProposals = proposals.filter(
+    (proposal) => !verdicts.some((verdict) => verdict.messageId === proposal.messageId),
+  );
+  return buildNowView(events, clock).next.length + waitingProposals.length;
+};
