@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-06 20:37 · `packages/domain/src/verdict-examples.test.ts::never chooses a verdict from another sender in another category`
+- Behavior: Verdicts from another sender in another category are never examples
+- Predicted: pass on first run, because `chooseVerdictExamples` already keeps only same-sender verdicts and other-sender verdicts of the same category
+- Actual: passed (1 passed, 2 skipped)
+- Type: passed unexpectedly
+- Resolution: The previous green (9c5dbd7) already delivers this through its two filters. The test was not rewritten, because a failing version would drive a different behavior. To prove it is not vacuous, I temporarily removed the category condition and it failed (`AssertionError`, 3 examples instead of 2), then I reverted it. It stays as a regression pin, and /green has nothing to add.
+
 ## 2026-11-06 20:14 · `packages/domain/src/triage-queue.test.ts::shows two waiting cc-thread proposals from different threads as two lines`
 - Behavior: Two waiting `cc-thread` proposals from different threads show as two lines
 - Predicted: pass on first run, because `newestPerThread` already groups by `threadId`

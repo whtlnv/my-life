@@ -80,4 +80,35 @@ describe('chooseVerdictExamples', () => {
 
     expect(examples).toEqual([newestFromSender, olderFromSender, newestOfSameCategory]);
   });
+  it('never chooses a verdict from another sender in another category', () => {
+    const fromSender = {
+      messageId: 'message-1',
+      from: 'ana@proveedor.mx',
+      category: 'sales',
+      decision: 'confirmed',
+      decidedAt: '2026-11-02T09:00:00-06:00',
+    };
+    const ofSameCategory = {
+      messageId: 'message-2',
+      from: 'luis@otra.mx',
+      category: 'expense',
+      decision: 'confirmed',
+      decidedAt: '2026-11-03T09:00:00-06:00',
+    };
+    const fromAnotherSenderInAnotherCategory = {
+      messageId: 'message-3',
+      from: 'marta@tienda.mx',
+      category: 'system-update',
+      decision: 'confirmed',
+      decidedAt: '2026-11-06T09:00:00-06:00',
+    };
+
+    const examples = chooseVerdictExamples(
+      { from: 'ana@proveedor.mx', category: 'expense' },
+      [fromAnotherSenderInAnotherCategory, ofSameCategory, fromSender],
+      5,
+    );
+
+    expect(examples).toEqual([fromSender, ofSameCategory]);
+  });
 });
