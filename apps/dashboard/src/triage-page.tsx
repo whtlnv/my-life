@@ -50,8 +50,8 @@ function confirmVerdict(messageId: TriageItem['messageId']) {
   postVerdict({ messageId, decision: 'confirmed' });
 }
 
-function rejectVerdict(messageId: TriageItem['messageId']) {
-  postVerdict({ messageId, decision: 'rejected', correction: { action: 'keep' } });
+function correctToAction(messageId: TriageItem['messageId'], action: 'keep' | 'archive') {
+  postVerdict({ messageId, decision: 'rejected', correction: { action } });
 }
 
 function correctToTask(item: TriageItem) {
@@ -71,11 +71,11 @@ function ActionCard({ item }: { item: TriageItem }) {
       tabIndex={0}
       onKeyDown={(event) => {
         if (correcting) {
-          rejectVerdict(item.messageId);
+          correctToAction(item.messageId, 'keep');
         } else if (event.key === 't' && item.action === 'keep') {
           correctToTask(item);
         } else if (event.key === 'a' && item.action === 'act') {
-          postVerdict({ messageId: item.messageId, decision: 'rejected', correction: { action: 'archive' } });
+          correctToAction(item.messageId, 'archive');
         } else if (event.key === 'r') {
           setCorrecting(true);
         } else if (verdictKeys.has(event.key)) {
