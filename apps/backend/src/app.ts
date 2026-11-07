@@ -420,7 +420,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/filter-proposals', (context) => {
     const decidedFilterProposalIds = new Set([
       ...filterProposalRejectionStore.loadAll(),
-      ...filterProposalApprovalStore.loadAll(),
+      ...filterProposalApprovalStore.loadAll().map(({ proposalId }) => proposalId),
     ]);
     return context.json({
       proposals: filterProposalStore
@@ -439,7 +439,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.post('/filter-proposals/:id/approval', (context) => {
-    filterProposalApprovalStore.save(context.req.param('id'));
+    filterProposalApprovalStore.save(context.req.param('id'), clock.now().toISOString());
     return context.body(null, 200);
   });
   const acknowledgementStore = openAcknowledgementStore(databasePath);
@@ -450,20 +450,23 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const body = await context.req.text();
     if (body !== '') {
       const { gmailFilterId } = JSON.parse(body) as { gmailFilterId: string };
-      createdFilterStore.save(commandId, gmailFilterId);
+      createdFilterStore.save(commandId, gmailFilterId, clock.now().toISOString());
     }
     return context.body(null, 200);
   });
   app.get('/filters', (context) => {
     const createdFilters = createdFilterStore.loadAll();
+    const approvals = filterProposalApprovalStore.loadAll();
     return context.json({
       filters: filterProposalStore.loadAll().flatMap((stored) =>
         createdFilters
           .filter(({ commandId }) => commandId === createFilterCommandId(stored.id))
-          .map(({ gmailFilterId }) => ({
+          .map(({ gmailFilterId, acknowledgedAt }) => ({
             ...(stored.proposal as object),
             accountEmail: stored.accountEmail,
             gmailFilterId,
+            approvedAt: approvals.find(({ proposalId }) => proposalId === stored.id)?.approvedAt,
+            acknowledgedAt,
           })),
       ),
     });
@@ -472,7 +475,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
     const acknowledgedCommandIds = acknowledgementStore.loadAll();
-    const approvedFilterProposalIds = filterProposalApprovalStore.loadAll();
+    const approvedFilterProposalIds = filterProposalApprovalStore.loadAll().map(({ proposalId }) => proposalId);
     const archiveCommands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')

@@ -2608,6 +2608,57 @@ describe('backend app', () => {
     });
   });
 
+  it('says at GET /filters when each filter was approved and when its creation was acknowledged, from the clock at each event, also after a backend restart on the same database file', async () => {
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      databasePath: temporaryDatabasePath(),
+      triage: triageAnswering({
+        action: 'archive',
+        category: 'sales',
+        summary: 'A shop newsletter',
+        extract: {},
+        reason: 'Promotional mail',
+      }),
+      filter: {
+        propose: () =>
+          Promise.resolve({
+            proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+            costInUsd: 0.05,
+            promptVersion: 'filter-v1',
+          }),
+      },
+    };
+    const beforeRestart = createApp(options);
+    await reportTriageAndConfirmShopNewsletters(beforeRestart);
+    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
+      proposals: { id?: string }[];
+    };
+    const proposalId = listed.proposals[0]?.id ?? '';
+    currentTime = new Date('2026-11-02T15:20:00.000Z');
+    await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
+    currentTime = new Date('2026-11-02T15:25:00.000Z');
+    await beforeRestart.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
+      method: 'POST',
+      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
+    });
+    currentTime = new Date('2026-11-02T16:00:00.000Z');
+    const afterRestart = createApp(options);
+
+    const response = await afterRestart.request('/filters');
+
+    expect(await response.json()).toEqual({
+      filters: [
+        expect.objectContaining({
+          gmailFilterId: 'gmail-filter-1',
+          approvedAt: '2026-11-02T15:20:00.000Z',
+          acknowledgedAt: '2026-11-02T15:25:00.000Z',
+        }),
+      ],
+    });
+  });
+
   it('no longer lists at GET /filter-proposals a filter proposal rejected through POST /filter-proposals/:id/rejection', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
