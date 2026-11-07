@@ -14,36 +14,26 @@ const message = {
   listId: '<finance.example.com>',
 };
 
+function reportWith(messages: unknown[]) {
+  return { accountEmail: 'francisco@example.com', historyId: '987654', messages };
+}
+
 describe('mailReport', () => {
   it('accepts a report with the account email, the history id and a message with its headers and snippet', () => {
-    const report = {
-      accountEmail: 'francisco@example.com',
-      historyId: '987654',
-      messages: [message],
-    };
+    const report = reportWith([message]);
 
     expect(mailReport.parse(report)).toEqual(report);
   });
 
   it('rejects a report whose message has no id', () => {
-    const report = {
-      accountEmail: 'francisco@example.com',
-      historyId: '987654',
-      messages: [{ ...message, id: undefined }],
-    };
+    const report = reportWith([{ ...message, id: undefined }]);
 
     expect(mailReport.safeParse(report).success).toBe(false);
   });
 
   it('accepts a report whose message has no Cc header', () => {
-    const messageWithoutCc = Object.fromEntries(
-      Object.entries(message).filter(([key]) => key !== 'cc'),
-    );
-    const report = {
-      accountEmail: 'francisco@example.com',
-      historyId: '987654',
-      messages: [messageWithoutCc],
-    };
+    const messageWithoutCc = Object.fromEntries(Object.entries(message).filter(([key]) => key !== 'cc'));
+    const report = reportWith([messageWithoutCc]);
 
     expect(mailReport.parse(report)).toEqual(report);
   });
