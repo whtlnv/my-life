@@ -35,6 +35,9 @@
 - [ ] In an `advise` category, a new `archive` proposal yields no archive command until it is confirmed
 - [ ] In an `automatic` category, a new `act` proposal with a task draft appears in `GET /tasks` with no verdict
 - [ ] In an `automatic` category, a new `keep` proposal yields neither a command nor a task
+- [ ] An `archive` proposal made while its category was `automatic` still yields its archive command after the category is switched back to `advise`: the automatic decision is recorded when the proposal is made, as an append-only verdict-like event, not derived from the current mode (supervisor keystone: `GET /commands` reads the current mode at request time)
+- [ ] In an `automatic` category, an `archive` proposal the user then rejects through `POST /verdicts` yields no archive command: the user's later decision wins over the automatic one (supervisor keystone)
+- [ ] An `archive` proposal made while its category was `advise` yields no command when the category is later switched to `automatic`; it waits for its confirmation (automatic applies to new proposals only)
 - [ ] A proposal acted on automatically no longer appears in `GET /triage-queue` and is not counted in the badge
 - [ ] An archive command issued automatically carries the label `my-life/auto`; one issued after a confirmation carries `my-life/archived`
   - predicted-contradiction: `apps/backend/src/app.test.ts::lists at GET /commands for the message's account an archive command with an id and the message id once its archive proposal is confirmed` — asserts: a confirmed archive's command is exactly `{ id, messageId }` (`toEqual`, no label field) — retired-by: "one issued after a confirmation carries `my-life/archived`"
