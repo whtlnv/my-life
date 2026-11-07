@@ -5,6 +5,7 @@
   "exports": {
     "./calendar-poll": "./src/calendar-poll.ts",
     "./gmail-archive": "./src/gmail-archive.ts",
+    "./gmail-filter": "./src/gmail-filter.ts",
     "./gmail-poll": "./src/gmail-poll.ts"
   },
   "version": "0.0.1",

@@ -459,7 +459,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const filterCommands = filterProposalStore
       .loadAll()
       .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.includes(stored.id))
-      .map((stored) => ({ id: `create-filter-${stored.id}`, type: 'create-filter', ...(stored.proposal as object) }));
+      .map((stored) => {
+        const proposal = stored.proposal as { labelName: string };
+        return { id: `create-filter-${stored.id}`, type: 'create-filter', ...proposal, label: proposal.labelName };
+      });
     const pendingCommands = [...archiveCommands, ...filterCommands].filter(
       (command) => !acknowledgedCommandIds.includes(command.id),
     );

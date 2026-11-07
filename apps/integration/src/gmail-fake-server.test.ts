@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createApp } from '@my-life/backend/app';
 import { carryOutArchiveCommands } from '@my-life/extension/gmail-archive';
+import { carryOutFilterCommands } from '@my-life/extension/gmail-filter';
 import { pollGmailOnce } from '@my-life/extension/gmail-poll';
 
 import { startGmailFakeServer } from './gmail-fake-server';
@@ -318,6 +319,94 @@ describe('Gmail fake server', () => {
 
       expect(created.id).toEqual(expect.any(String));
       expect(listed).toEqual([{ id: created.id, ...filter }]);
+    } finally {
+      await gmail.close();
+    }
+  });
+  it('an approved filter proposal in the backend becomes a filter in the fake Gmail when the extension carries out its create-filter command, and the command is then acknowledged', async () => {
+    const backend = createApp({
+      allowedEmails: [accountEmail],
+      clock: { now: () => triageTime },
+      triage: {
+        propose: () =>
+          Promise.resolve({
+            proposal: {
+              action: 'archive',
+              category: 'sales',
+              summary: 'A shop newsletter',
+              extract: {},
+              reason: 'Promotional mail',
+            },
+            costInUsd: 0,
+            promptVersion: 'triage-v1',
+          }),
+      },
+      filter: {
+        propose: () =>
+          Promise.resolve({
+            proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+            costInUsd: 0,
+            promptVersion: 'filter-v1',
+          }),
+      },
+    });
+    const postToBackend = (path: string, body: unknown) =>
+      backend.request(path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3']) {
+      await postToBackend('/mail-report', {
+        accountEmail,
+        historyId: '1001',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Shop <news@shop.example.com>',
+            to: accountEmail,
+            subject: 'This week at the shop',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'New arrivals',
+          },
+        ],
+      });
+      await backend.request('/triage-run', { method: 'POST' });
+      await postToBackend('/verdicts', { messageId, decision: 'confirmed' });
+    }
+    const { proposals } = (await (await backend.request('/filter-proposals')).json()) as {
+      proposals: { id: string }[];
+    };
+    await backend.request(`/filter-proposals/${proposals[0]?.id ?? ''}/approval`, { method: 'POST' });
+    const gmail = await startGmailFakeServer('expense', accountEmail);
+    const gmailApi = `${gmail.url}/gmail/v1/users/me`;
+    try {
+      await carryOutFilterCommands(extensionOptionsFor(gmail.url, backend));
+
+      const { filter: filters } = (await (await fetch(`${gmailApi}/settings/filters`)).json()) as {
+        filter?: { criteria: unknown; action: { addLabelIds: string[]; removeLabelIds: string[] } }[];
+      };
+      const { labels } = (await (await fetch(`${gmailApi}/labels`)).json()) as {
+        labels: { id: string; name: string }[];
+      };
+      const { commands } = (await (
+        await backend.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`)
+      ).json()) as { commands: { type?: string }[] };
+
+      expect({
+        filters: (filters ?? []).map(({ criteria, action }) => ({
+          criteria,
+          labelNames: action.addLabelIds.map((labelId) => labels.find(({ id }) => id === labelId)?.name),
+          removeLabelIds: action.removeLabelIds,
+        })),
+        createFilterCommandsLeft: commands.filter(({ type }) => type === 'create-filter'),
+      }).toEqual({
+        filters: [
+          { criteria: { from: 'news@shop.example.com' }, labelNames: ['Shop newsletters'], removeLabelIds: ['INBOX'] },
+        ],
+        createFilterCommandsLeft: [],
+      });
     } finally {
       await gmail.close();
     }

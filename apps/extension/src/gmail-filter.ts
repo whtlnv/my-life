@@ -11,6 +11,7 @@ interface CarryOutFilterCommandsOptions {
 
 interface CreateFilterCommand {
   id: string;
+  type: string;
   criteria: Record<string, string>;
   label: string;
 }
@@ -19,7 +20,7 @@ export async function carryOutFilterCommands(options: CarryOutFilterCommandsOpti
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: CreateFilterCommand[] };
-  for (const command of commands) {
+  for (const command of commands.filter(({ type }) => type === 'create-filter')) {
     const gmailFilterId = await createGmailFilter(options.fetch, authorization, command);
     if (gmailFilterId === undefined) continue;
     await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, {
