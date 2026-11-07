@@ -12,7 +12,7 @@
 - [x] A triage proposal whose category is not one of the seven categories fails the shared contract
 - [x] A triage proposal whose action is not `archive`, `keep` or `act` fails the shared contract
 - [x] An `act` proposal carrying a task draft with a title passes the shared contract
-- [ ] An `action` proposal whose extract names who asks and what is asked, with no due time, passes the shared contract
+- [x] An `action` proposal whose extract names who asks and what is asked, with no due time, passes the shared contract
 - [ ] An `action` proposal whose extract does not say what is asked fails the shared contract
 - [ ] An `expense` proposal whose extract has vendor, amount, currency and date passes the shared contract
 - [ ] An `expense` proposal whose extract has no amount fails the shared contract

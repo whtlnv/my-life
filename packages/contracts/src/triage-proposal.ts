@@ -5,7 +5,7 @@ export const triageProposal = z.object({
   action: z.enum(['archive', 'keep', 'act']),
   category: z.enum(['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown']),
   summary: z.string(),
-  extract: z.object({ sinceLastMessage: z.string() }),
+  extract: z.union([z.object({ sinceLastMessage: z.string() }), z.object({ asker: z.string(), ask: z.string() })]),
   reason: z.string(),
   taskDraft: z.object({ title: z.string() }).optional(),
 });
