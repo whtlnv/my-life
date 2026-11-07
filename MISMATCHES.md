@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 13:44 · `apps/backend/src/app.test.ts::lists at GET /commands the archive command once its rejected archive proposal is re-decided as confirmed through POST /verdicts`
+- Behavior: a rejected `archive` proposal that is re-decided as confirmed through `POST /verdicts` lists its archive command at `GET /commands`
+- Predicted: pass on first run, because `isStillConfirmed` (apps/backend/src/app.ts) already reads the latest verdict per message
+- Actual: passed (1 passed, 65 skipped)
+- Type: passed unexpectedly (from the TODO item's premise; the prediction itself matched)
+- Resolution: 04a86fd already delivered this behavior. Its latest-verdict filter covers both directions, so no honest failing test exists for this item. The test stays as a pin, and the item needs no green step. `currentVerdict` (ordered by `decidedAt`) is still not called: the backend orders verdicts by insertion, not by `decidedAt`.
+
 ## 2026-11-07 03:35 · `apps/integration/src/gmail-fake-server.test.ts::polling the cc-thread scenario shows its two messages as one line, the newest, in the cc-thread group of GET /triage-queue`
 - Behavior: Against the `cc-thread` scenario, the thread shows as one line in its group
 - Predicted: TypeError `Cannot read properties of undefined (reading 'map')` in the fake server's listing handler (no `cc-thread` scenario), so the poll fails

@@ -1410,6 +1410,23 @@ describe('backend app', () => {
     expect(await response.json()).toEqual({ commands: [] });
   });
 
+  it('lists at GET /commands the archive command once its rejected archive proposal is re-decided as confirmed through POST /verdicts', async () => {
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      triage: ccThreadTriage('archive'),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'rejected' });
+    currentTime = new Date('2026-11-02T15:11:00.000Z');
+
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+
+    const response = await getCommands(app, 'ana@example.com');
+    expect(await response.json()).toEqual({ commands: [{ id: 'archive-message-1', messageId: 'message-1' }] });
+  });
+
   it('lists at GET /commands no command once the extension acknowledged it through POST /commands/:id/acknowledgement', async () => {
     const app = createApp({
       allowedEmails: ['ana@example.com'],
