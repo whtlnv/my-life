@@ -3,6 +3,10 @@ import { basename, extname, join } from 'node:path';
 
 import { isAddressedToUser } from '@my-life/domain';
 
+interface ClaudeResponse {
+  content: { type: string; input?: unknown }[];
+}
+
 interface ClaudeTriageDependencies {
   model: string;
   promptPath?: string;
@@ -11,7 +15,7 @@ interface ClaudeTriageDependencies {
     model: string;
     system?: string;
     messages: { role: string; content: string }[];
-  }) => Promise<{ content: { type: string; input?: unknown }[] }>;
+  }) => Promise<ClaudeResponse>;
 }
 
 function readProfile(profileDirectory: string): string {
@@ -47,6 +51,10 @@ function describeMessage(message: TriageMessage, examples: unknown[] | undefined
   });
 }
 
+function readToolUseInput(response: ClaudeResponse): unknown {
+  return response.content.find((block) => block.type === 'tool_use')?.input;
+}
+
 export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
   return {
     propose: async (
@@ -56,7 +64,7 @@ export function createClaudeTriage({ model, promptPath, profileDirectory, create
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       if (promptPath === undefined) {
         const response = await createMessage({ model, messages });
-        return { proposal: response.content.find((block) => block.type === 'tool_use')?.input };
+        return { proposal: readToolUseInput(response) };
       }
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
