@@ -2,5 +2,17 @@ import type { Clock } from './clock';
 import type { MergedCalendarEvent } from './merge-calendar-snapshots';
 import { buildNowView } from './now-view';
 
-export const badgeCount = (events: MergedCalendarEvent[], clock: Clock): number =>
-  buildNowView(events, clock).next.length;
+interface Proposal {
+  messageId: string;
+}
+
+interface Verdict {
+  messageId: string;
+}
+
+export const badgeCount = (
+  events: MergedCalendarEvent[],
+  clock: Clock,
+  proposals: Proposal[] = [],
+  _verdicts: Verdict[] = [],
+): number => buildNowView(events, clock).next.length + proposals.length;

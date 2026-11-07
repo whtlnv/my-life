@@ -47,4 +47,22 @@ describe('badgeCount', () => {
 
     expect(badgeCount([weeklySync], clock)).toBe(0);
   });
+
+  it('adds the action proposals waiting', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T14:50:00.000Z') };
+    const firstActionProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'act',
+      category: 'action',
+    };
+    const secondActionProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'action',
+    };
+
+    expect(badgeCount([weeklySync], clock, [firstActionProposal, secondActionProposal], [])).toBe(3);
+  });
 });
