@@ -27,4 +27,13 @@ describe('filterCandidates', () => {
       },
     ]);
   });
+
+  it('proposes no candidate after only two confirmed archives from the same sender', () => {
+    const decidedProposals = [
+      confirmedArchive('message-1', 'sales'),
+      confirmedArchive('message-2', 'system-update'),
+    ];
+
+    expect(filterCandidates(decidedProposals)).toEqual([]);
+  });
 });

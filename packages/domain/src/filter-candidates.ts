@@ -11,6 +11,9 @@ export interface FilterCandidate {
 }
 
 export function filterCandidates(decidedProposals: DecidedProposal[]): FilterCandidate[] {
+  if (decidedProposals.length < 3) {
+    return [];
+  }
   const [first] = decidedProposals as [DecidedProposal];
   return [
     {

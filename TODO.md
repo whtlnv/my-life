@@ -54,7 +54,7 @@
 ### Filter proposals
 
 - [x] After a third confirmed `archive` from the same sender (in any category), a filter candidate on `from` exists for that sender and account
-- [ ] After only two confirmed `archive`s from the same sender, no filter candidate exists
+- [x] After only two confirmed `archive`s from the same sender, no filter candidate exists
 - [ ] Rejected or corrected archive proposals do not count toward a sender's three
 - [ ] Three confirmed archives of messages carrying the same `listId` yield a candidate on the List-Id rather than on the sender
 - [ ] Confirmed archives from the same sender in two different accounts are counted per account, so two in each yield no candidate
