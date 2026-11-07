@@ -292,6 +292,44 @@ describe('DashboardApp', () => {
     expect(item).not.toHaveTextContent(/\d{2}:\d{2}/);
   });
 
+  it('still shows the start time of a timed later-today event listed beside an all-day one', async () => {
+    answerGetNowWith({
+      current: [],
+      next: [],
+      laterToday: [
+        {
+          id: 'event-6',
+          iCalUID: 'home@google.com',
+          title: 'Home',
+          allDay: true,
+          start: '2026-11-03',
+          end: '2026-11-04',
+          attendees: [],
+          accounts: ['personal@example.com'],
+        },
+        {
+          id: 'event-7',
+          iCalUID: 'standup@google.com',
+          title: 'Standup',
+          allDay: false,
+          start: '2026-11-03T17:00:00.000Z',
+          end: '2026-11-03T17:15:00.000Z',
+          attendees: [],
+          accounts: ['work@example.com'],
+        },
+      ],
+      accounts: [],
+      badgeCount: 0,
+    });
+
+    render(<DashboardApp />);
+
+    const laterTodayBlock = await screen.findByRole('region', { name: 'Later today' });
+    const timedItem = await within(laterTodayBlock).findByText(/Standup/);
+    expect(timedItem).toHaveTextContent('11:00');
+    expect(timedItem).not.toHaveTextContent(/all day/i);
+  });
+
   it('shows each account with the time it last reported in America/Mexico_City', async () => {
     answerGetNowWith({
       current: [],

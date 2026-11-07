@@ -195,7 +195,7 @@
 - [x] When triage is not paused, the page shows no paused notice
 - [x] The triage page says when the queue was fetched
 - [x] An all-day event under _Later today_ reads _all day_ instead of a clock time (backlog: apps/dashboard/src/dashboard-app.tsx All-day events show a clock time)
-- [ ] A timed event under _Later today_ still shows its start time (backlog: apps/dashboard/src/dashboard-app.tsx All-day events show a clock time)
+- [x] A timed event under _Later today_ still shows its start time (backlog: apps/dashboard/src/dashboard-app.tsx All-day events show a clock time)
 
 ### Gmail fake server and integration
 

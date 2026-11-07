@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 03:25 · `apps/dashboard/src/dashboard-app.test.tsx::still shows the start time of a timed later-today event listed beside an all-day one`
+- Behavior: a timed event under _Later today_ still shows its start time when an all-day event is listed next to it
+- Predicted: test passes on first run (no failure). The behavior shipped in 1c05340 with the `allDay ? 'All day' : time` branch
+- Actual: test passes (1 passed, 14 skipped)
+- Type: passed unexpectedly
+- Resolution: this TODO item guards against a regression in behavior a prior cycle delivered, so no failing test exists to write. The test was kept as a real guard (it pins `11:00` and no _all day_ on the timed item, with an explicit `allDay: false` beside an all-day event) and was not rewritten to fail artificially. `/green` has nothing to implement.
+
 ## 2026-11-07 03:15 · `apps/dashboard/src/triage-page.test.tsx::shows no paused notice when triage is not paused`
 - Behavior: When triage is not paused, the page shows no paused notice
 - Predicted: passes on first run — `triage-page.tsx:242` already gates the notice on `queue.paused`, delivered by the previous item's green step
