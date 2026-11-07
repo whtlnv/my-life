@@ -641,6 +641,38 @@ describe('backend app', () => {
     ]);
   });
 
+  it('hands triage at POST /triage-run the verdict on an earlier message from the same sender domain as an example when the sender has no verdicts', async () => {
+    const examplesByMessageId = new Map<string, unknown[] | undefined>();
+    const proposal = {
+      action: 'archive',
+      category: 'cc-thread',
+      summary: 'Luis shared the budget with the team',
+      extract: { sinceLastMessage: 'Luis shared the budget' },
+      reason: 'The user is only copied',
+    };
+    const triage = {
+      propose: (message: { id: string }, examples?: unknown[]) => {
+        examplesByMessageId.set(message.id, examples);
+        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await confirmBudgetReviewProposal(app);
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-2', threadId: 'thread-2', from: 'Marta <marta@example.com>', subject: 'Q4' },
+      ],
+    });
+
+    await postTriageRun(app);
+
+    expect(examplesByMessageId.get('message-2')).toEqual([
+      expect.objectContaining({ messageId: 'message-1', decision: 'confirmed' }),
+    ]);
+  });
+
   it('hands triage at POST /triage-run the same-sender verdicts as examples newest first, as the domain chooses them', async () => {
     const examplesByMessageId = new Map<string, unknown[] | undefined>();
     const proposal = {

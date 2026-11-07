@@ -4,10 +4,21 @@ export function chooseVerdictExamples<V extends { from: string; category: string
   limit: number,
 ): V[] {
   const fromSender = newestFirst(verdicts.filter((verdict) => verdict.from === message.from));
-  const ofSameCategory = newestFirst(
-    verdicts.filter((verdict) => verdict.from !== message.from && verdict.category === message.category),
+  const fromSenderDomain = newestFirst(
+    verdicts.filter(
+      (verdict) => verdict.from !== message.from && senderDomain(verdict.from) === senderDomain(message.from),
+    ),
   );
-  return [...fromSender, ...ofSameCategory].slice(0, limit);
+  const ofSameCategory = newestFirst(
+    verdicts.filter(
+      (verdict) => senderDomain(verdict.from) !== senderDomain(message.from) && verdict.category === message.category,
+    ),
+  );
+  return [...fromSender, ...fromSenderDomain, ...ofSameCategory].slice(0, limit);
+}
+
+function senderDomain(from: string): string {
+  return from.slice(from.lastIndexOf('@') + 1).replace('>', '');
 }
 
 function newestFirst<V extends { decidedAt: string }>(verdicts: V[]): V[] {
