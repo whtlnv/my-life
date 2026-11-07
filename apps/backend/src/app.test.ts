@@ -1765,6 +1765,20 @@ describe('backend app', () => {
     });
   });
 
+  it('returns every automatic category to advise through POST /categories/kill-switch', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await switchCategory(app, 'sales', 'automatic');
+    await switchCategory(app, 'expense', 'automatic');
+
+    const response = await app.request('/categories/kill-switch', { method: 'POST' });
+    const categories = await app.request('/categories');
+
+    expect(response.status).toBe(200);
+    expect(await categories.json()).toMatchObject({
+      categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
+    });
+  });
+
   it('shows at GET /categories the agreement rate of a category as its confirmed verdicts divided by its proposals, a rejection or a correction counting as not confirmed', async () => {
     const sales = {
       action: 'keep',

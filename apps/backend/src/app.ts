@@ -381,6 +381,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     categoryModeStore.save(category, mode);
     return context.body(null, 200);
   });
+  app.post('/categories/kill-switch', (context) => {
+    for (const category of triageCategories) {
+      categoryModeStore.save(category, 'advise');
+    }
+    return context.body(null, 200);
+  });
   app.get('/categories', (context) => {
     const categoryModes = categoryModeStore.loadAll();
     const verdicts = verdictStore.loadAll();
