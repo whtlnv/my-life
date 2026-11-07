@@ -1,4 +1,5 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { agreementRateText, CategoriesPage, noProposalsYetText } from './categories-page';
@@ -58,5 +59,39 @@ describe('CategoriesPage', () => {
     const placeholder = within(row).getByText(noProposalsYetText);
     expect(placeholder.compareDocumentPosition(within(row).getByRole('switch')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(row).queryByText(/agreement/)).toBeNull();
+  });
+
+  it('sends PUT /categories/:category/mode with the new mode when a switch is flipped and shows the mode the backend then reports', async () => {
+    let salesMode = 'advise';
+    const modeRequests: { url: string; method: string | undefined; body: unknown }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === '/categories/sales/mode') {
+          const body = JSON.parse(String(init?.body)) as { mode: string };
+          modeRequests.push({ url: input, method: init?.method, body });
+          salesMode = body.mode;
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        if (input === '/categories') {
+          const categories = [{ category: 'sales', mode: salesMode, agreementRate: 0.5, recentProposals: [] }];
+          return Promise.resolve(
+            new Response(JSON.stringify({ categories }), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<CategoriesPage />);
+
+    const modeSwitch = await screen.findByRole('switch', { name: 'sales' });
+    expect(modeSwitch).toHaveAttribute('aria-checked', 'false');
+    await userEvent.click(modeSwitch);
+
+    expect(modeRequests).toEqual([{ url: '/categories/sales/mode', method: 'PUT', body: { mode: 'automatic' } }]);
+    await waitFor(() => {
+      expect(screen.getByRole('switch', { name: 'sales' })).toHaveAttribute('aria-checked', 'true');
+    });
   });
 });

@@ -19,20 +19,37 @@ const rateText = (rate: number | undefined) => (rate === undefined ? noProposals
 export const CategoriesPage = () => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
 
-  useEffect(() => {
-    void fetch('/categories')
+  const loadCategories = () =>
+    fetch('/categories')
       .then((response) => response.json() as Promise<CategoriesResponse>)
       .then((body) => {
         setCategories(body.categories);
       });
+
+  useEffect(() => {
+    void loadCategories();
   }, []);
+
+  const flipMode = (row: CategoryRow) => {
+    const mode = row.mode === 'automatic' ? 'advise' : 'automatic';
+    void fetch(`/categories/${row.category}/mode`, { method: 'PUT', body: JSON.stringify({ mode }) }).then(
+      loadCategories,
+    );
+  };
 
   return (
     <ul aria-label="Categories">
       {categories.map((row) => (
         <li key={row.category}>
           <span>{rateText(row.agreementRate)}</span>
-          <button type="button" role="switch" aria-checked={row.mode === 'automatic'}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={row.mode === 'automatic'}
+            onClick={() => {
+              flipMode(row);
+            }}
+          >
             {row.category}
           </button>
         </li>

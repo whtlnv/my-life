@@ -47,7 +47,7 @@
 - [x] The dashboard app shell has a `Categories` tab linking to `#/categories`, marked current on that route
 - [x] The `#/categories` page shows one row per category from `GET /categories` with its agreement rate placed before its `advise` / `automatic` switch
 - [x] The `#/categories` page shows "no proposals yet" in place of the rate for a category without proposals
-- [ ] Flipping a category's switch on `#/categories` sends `PUT /categories/:category/mode` with the new mode and shows the mode the backend returns
+- [x] Flipping a category's switch on `#/categories` sends `PUT /categories/:category/mode` with the new mode and shows the mode the backend returns
 - [ ] Expanding a category on `#/categories` lists its recent proposals with summary, action, account name and a link to the message
 - [ ] The kill-switch button on `#/categories` sends `POST /categories/kill-switch` and every switch then reads `advise`
 
