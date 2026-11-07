@@ -568,6 +568,36 @@ describe('backend app', () => {
     ]);
   });
 
+  it('hands triage at POST /triage-run the verdict on an earlier message from the same sender as an example', async () => {
+    const examplesAskedWith: unknown[] = [];
+    const proposal = {
+      action: 'archive',
+      category: 'cc-thread',
+      summary: 'Luis shared the budget with the team',
+      extract: { sinceLastMessage: 'Luis shared the budget' },
+      reason: 'The user is only copied',
+    };
+    const triage = {
+      propose: (_message: unknown, examples?: unknown[]) => {
+        examplesAskedWith.push(examples);
+        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await confirmBudgetReviewProposal(app);
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-2', threadId: 'thread-2', subject: 'Budget follow-up' }],
+    });
+
+    await app.request('/triage-run', { method: 'POST' });
+
+    expect(examplesAskedWith[1]).toEqual([
+      expect.objectContaining({ messageId: 'message-1', decision: 'confirmed', category: 'cc-thread' }),
+    ]);
+  });
+
   it('does not ask triage again at POST /triage-run for a message that already has a proposal', async () => {
     const askedMessageIds: string[] = [];
     const triage = {

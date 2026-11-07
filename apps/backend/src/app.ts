@@ -46,7 +46,9 @@ export interface AppOptions {
   databasePath?: string;
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
-  triage?: { propose: (message: ReportedMessage & { accountEmail: string }) => Promise<unknown> };
+  triage?: {
+    propose: (message: ReportedMessage & { accountEmail: string }, examples?: unknown[]) => Promise<unknown>;
+  };
 }
 
 const systemClock: Clock = { now: () => new Date() };
@@ -194,7 +196,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         break;
       }
       const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
-      const result = (await options.triage?.propose({ ...message, accountEmail })) as TriageResult | undefined;
+      const examples = verdictStore
+        .loadAll()
+        .map((verdict) => ({
+          ...verdict,
+          from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from,
+          category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category,
+        }))
+        .filter((verdict) => verdict.from === message.from);
+      const result = (await options.triage?.propose({ ...message, accountEmail }, examples)) as
+        | TriageResult
+        | undefined;
       const costInUsd = result?.costInUsd ?? 0;
       const answeredAt = clock.now().toISOString();
       spentInUsd += costInUsd;
