@@ -6,3 +6,4 @@ export { buildNowView } from './now-view';
 export { badgeCount } from './badge-count';
 export { triageQueue } from './triage-queue';
 export { triageEffects } from './triage-effects';
+export { isAddressedToUser } from './addressed-to-user';

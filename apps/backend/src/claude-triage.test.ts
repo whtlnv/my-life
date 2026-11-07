@@ -100,4 +100,28 @@ describe('Claude triage', () => {
       addressedToUser: true,
     });
   });
+
+  it('says a message is not addressed to the user when the account is only in Cc', async () => {
+    const sentRequests: { model: string; messages?: { role: string; content: string }[] }[] = [];
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      createMessage: async (request: { model: string; messages?: { role: string; content: string }[] }) => {
+        sentRequests.push(request);
+        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+      },
+    });
+
+    await triage.propose({
+      id: 'message-2',
+      accountEmail: 'ana@acme.com',
+      from: 'Bruno <bruno@supplier.com>',
+      to: 'Carla <carla@acme.com>',
+      cc: 'Ana <ana@acme.com>',
+      subject: 'Quote for November',
+      date: '2026-11-07T10:00:00Z',
+      snippet: 'Carla, could you approve the attached quote by Friday?',
+    });
+
+    expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toMatchObject({ addressedToUser: false });
+  });
 });

@@ -1,6 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
+import { isAddressedToUser } from '@my-life/domain';
+
 interface ClaudeTriageDependencies {
   model: string;
   promptPath?: string;
@@ -40,7 +42,7 @@ function describeMessage(message: TriageMessage): string {
     date: message.date,
     listId: message.listId,
     snippet: message.snippet,
-    addressedToUser: true,
+    addressedToUser: isAddressedToUser({ to: message.to ?? '' }, message.accountEmail ?? ''),
   });
 }
 
