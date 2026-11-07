@@ -78,25 +78,20 @@ describe('TriagePage', () => {
   });
 
   it('shows an unknown item in the action block', async () => {
+    // The backend sends `unknown` items in the action list, next to `action` ones; there is no `unknown` group.
     answerGetTriageQueueWith({
-      action: [],
-      groups: [
+      action: [
         {
+          messageId: 'message-4',
+          accountEmail: 'ana@example.com',
+          action: 'keep',
           category: 'unknown',
-          count: 1,
-          items: [
-            {
-              messageId: 'message-4',
-              accountEmail: 'ana@example.com',
-              action: 'keep',
-              category: 'unknown',
-              summary: 'A note from an unfamiliar sender about a pallet',
-              extract: {},
-              reason: 'Nothing in the message fits a known category',
-            },
-          ],
+          summary: 'A note from an unfamiliar sender about a pallet',
+          extract: {},
+          reason: 'Nothing in the message fits a known category',
         },
       ],
+      groups: [],
       remaining: 0,
       paused: false,
     });

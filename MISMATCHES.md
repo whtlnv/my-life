@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 01:48 · `apps/dashboard/src/triage-page.test.tsx::takes unknown items from the action list only and renders no unknown group button`
+- Behavior: An `unknown` item arrives in the payload's `action` list (as the backend sends it) and shows in the action block; the page renders no `unknown` group button
+- Predicted: passes on first run — the page already renders every `queue.action` item, and group buttons come only from `queue.groups`
+- Actual: passed (as predicted), so the literal test was vacuous
+- Type: passed unexpectedly
+- Resolution: The missing behavior is that the page still reads `unknown` items from `groups` (triage-page.tsx:50); the payload now also carries a leftover old-shape `unknown` group holding the same item, and the test fails with 2 cards instead of 1, which drives removing the groups read path.
+
 ## 2026-11-06 23:52 · `apps/backend/src/app.test.ts::keeps out of GET /triage-queue after a backend restart on the same database file an item whose verdict was posted before it`
 - Behavior: A verdict posted before the backend restarts (same database file) still keeps its item out of the queue after it
 - Predicted: passes on first run — `GET /triage-queue` already reads `verdictStore.loadAll()` from SQLite on every request, so no right-reason failure was available
