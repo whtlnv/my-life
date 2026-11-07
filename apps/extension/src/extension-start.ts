@@ -38,14 +38,16 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       await refreshBadge({ fetch: options.fetch, backendUrl: options.backendUrl, setBadgeText: options.setBadgeText });
     }
   };
-  const pollGmail = async () =>
-    pollGmailOnce({
+  let storedHistoryId: string | undefined;
+  const pollGmail = async () => {
+    storedHistoryId = await pollGmailOnce({
       fetch: options.fetch,
       accessToken: await options.accessToken(),
       accountEmail,
       backendUrl: options.backendUrl,
-      storedHistoryId: undefined,
+      storedHistoryId,
     });
+  };
   await pollCalendar();
   await pollGmail().catch((error: unknown) => {
     console.error('Gmail poll failed', error);

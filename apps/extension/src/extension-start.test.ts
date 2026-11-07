@@ -278,4 +278,48 @@ describe('startExtension', () => {
     expect(gmailPoll).toBeDefined();
     expect(mailReports).toHaveLength(2);
   });
+
+  it('starts the second scheduled Gmail poll from the history id the first poll reported, not from an empty inbox read', async () => {
+    const gmailReads: string[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin === 'https://gmail.googleapis.com') {
+        gmailReads.push(url.pathname + url.search);
+      }
+      if (url.href === `${gmailApi}/users/me/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
+      }
+      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.href.startsWith(`${gmailApi}/users/me/history`)) {
+        return Promise.resolve(Response.json({ historyId: '4321' }));
+      }
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const scheduledPolls = new Map<number, () => Promise<void>>();
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
+      accessToken: () => Promise.resolve('token-for-francisco'),
+      backendUrl: 'http://127.0.0.1:7777',
+      now: new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+      every: (milliseconds: number, poll: () => Promise<void>) => {
+        scheduledPolls.set(milliseconds, poll);
+      },
+    });
+    gmailReads.length = 0;
+    await scheduledPolls.get(60 * 1000)?.();
+
+    expect(gmailReads).toContain('/gmail/v1/users/me/history?startHistoryId=4321');
+    expect(gmailReads).not.toContain('/gmail/v1/users/me/messages?labelIds=INBOX');
+  });
 });
