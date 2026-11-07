@@ -2441,7 +2441,7 @@ describe('backend app', () => {
     expect(askedCandidates).toMatchObject([]);
   });
 
-  it('lists at GET /filter-proposals each pending filter proposal with its criteria, label, account and the count of archives behind it', async () => {
+  function appProposingShopNewslettersFilter() {
     const filter = {
       propose: () =>
         Promise.resolve({
@@ -2457,7 +2457,11 @@ describe('backend app', () => {
       extract: {},
       reason: 'Promotional mail',
     });
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
+    return createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
+  }
+
+  it('lists at GET /filter-proposals each pending filter proposal with its criteria, label, account and the count of archives behind it', async () => {
+    const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app, ['newsletter-1', 'newsletter-2', 'newsletter-3']);
 
     const response = await app.request('/filter-proposals');
@@ -2478,22 +2482,7 @@ describe('backend app', () => {
   });
 
   it('lists at GET /commands for the account a create-filter command with the criteria and label once its filter proposal is approved through POST /filter-proposals/:id/approval', async () => {
-    const filter = {
-      propose: () =>
-        Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-          costInUsd: 0.05,
-          promptVersion: 'filter-v1',
-        }),
-    };
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    });
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
+    const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
     const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
 
@@ -2515,22 +2504,7 @@ describe('backend app', () => {
   });
 
   it('lists no create-filter command at GET /commands for a pending filter proposal that was never approved', async () => {
-    const filter = {
-      propose: () =>
-        Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-          costInUsd: 0.05,
-          promptVersion: 'filter-v1',
-        }),
-    };
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    });
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
+    const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
 
     const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
