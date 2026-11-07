@@ -22,17 +22,35 @@ interface GmailLabel {
 
 export async function carryOutArchiveCommands(options: CarryOutArchiveCommandsOptions) {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
+  const commands = await fetchPendingArchiveCommands(options);
+  const archivedLabelId = await findArchivedLabelId(options.fetch, authorization);
+  for (const command of commands) {
+    await archiveMessage(options.fetch, authorization, command.messageId, archivedLabelId);
+  }
+}
+
+async function archiveMessage(
+  fetch: FetchFunction,
+  authorization: { Authorization: string },
+  messageId: string,
+  archivedLabelId: string | undefined,
+) {
+  await fetch(`${gmailApi}/messages/${messageId}/modify`, {
+    method: 'POST',
+    headers: authorization,
+    body: JSON.stringify({ removeLabelIds: ['INBOX'], addLabelIds: [archivedLabelId] }),
+  });
+}
+
+async function fetchPendingArchiveCommands(options: CarryOutArchiveCommandsOptions) {
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: ArchiveCommand[] };
-  const { labels } = (await (await options.fetch(`${gmailApi}/labels`, { headers: authorization })).json()) as {
+  return commands;
+}
+
+async function findArchivedLabelId(fetch: FetchFunction, authorization: { Authorization: string }) {
+  const { labels } = (await (await fetch(`${gmailApi}/labels`, { headers: authorization })).json()) as {
     labels: GmailLabel[];
   };
-  const archivedLabel = labels.find((label) => label.name === 'my-life/archived');
-  for (const command of commands) {
-    await options.fetch(`${gmailApi}/messages/${command.messageId}/modify`, {
-      method: 'POST',
-      headers: authorization,
-      body: JSON.stringify({ removeLabelIds: ['INBOX'], addLabelIds: [archivedLabel?.id] }),
-    });
-  }
+  return labels.find((label) => label.name === 'my-life/archived')?.id;
 }
