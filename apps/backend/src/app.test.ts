@@ -2515,4 +2515,23 @@ describe('backend app', () => {
       createFilterCommands: commands.commands.filter(({ type }) => type === 'create-filter'),
     }).toEqual({ pendingProposals: 1, createFilterCommands: [] });
   });
+
+  it('lists at GET /commands a create-filter command with the id create-filter-<proposal id>, and no longer lists it once acknowledged through POST /commands/:id/acknowledgement', async () => {
+    const app = appProposingShopNewslettersFilter();
+    await reportTriageAndConfirmShopNewsletters(app);
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const proposalId = listed.proposals[0]?.id ?? '';
+    await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
+    const createFilterCommands = async () =>
+      ((await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type?: string; id?: string }[] })
+        .commands.filter(({ type }) => type === 'create-filter');
+
+    const [command] = await createFilterCommands();
+    await app.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
+
+    expect({ id: command?.id, afterAcknowledgement: await createFilterCommands() }).toEqual({
+      id: `create-filter-${proposalId}`,
+      afterAcknowledgement: [],
+    });
+  });
 });

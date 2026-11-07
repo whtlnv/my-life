@@ -445,7 +445,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const filterCommands = filterProposalStore
       .loadAll()
       .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.has(stored.id))
-      .map((stored) => ({ type: 'create-filter', ...(stored.proposal as object) }));
+      .map((stored) => ({ id: `create-filter-${stored.id}`, type: 'create-filter', ...(stored.proposal as object) }))
+      .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: [...commands, ...filterCommands] });
   });
   app.get('/tasks', (context) => {
