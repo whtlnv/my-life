@@ -134,7 +134,7 @@
 - [x] A verdict posted before the backend restarts (same database file) still keeps its item out of the queue after it
 - [x] Confirming a whole group stores one confirm verdict for every item in that group and none outside it
 - [x] A confirmed archive queues an archive command for the message's account, listed by `GET /commands?accountEmail=…` (the path the extension already calls) with an `id` and `messageId` per command
-- [ ] The commands for one account do not include another account's commands
+- [x] The commands for one account do not include another account's commands
 - [ ] A confirmed `keep` and a proposal with no verdict queue no archive command; two confirmed archives on one account list two commands with distinct ids and their own message ids
 - [ ] A command acknowledged through `POST /commands/:id/acknowledgement` (the path the extension already calls) is no longer pending
 - [ ] An acknowledgement survives a backend restart (same database file): the command stays out of the pending list

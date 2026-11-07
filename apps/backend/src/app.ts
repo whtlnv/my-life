@@ -209,7 +209,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       paused: hasReachedDailySpendCeiling(),
     });
   });
-  app.get('/commands', (context) => context.json({ commands: [{ id: 'command-1', messageId: 'message-1' }] }));
+  app.get('/commands', (context) => {
+    const accountEmail = context.req.query('accountEmail');
+    const commands = proposals
+      .filter((proposal) => proposal.accountEmail === accountEmail)
+      .map(({ messageId }) => ({ id: 'command-1', messageId }));
+    return context.json({ commands });
+  });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
     const latestSnapshots = stored.map((entry) => entry.snapshot);
