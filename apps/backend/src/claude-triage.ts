@@ -68,7 +68,24 @@ function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
 
-export function createClaudeTriage({ model, promptPath, profileDirectory, pricing, createMessage }: ClaudeTriageDependencies) {
+function computeCostInUsd(
+  usage: NonNullable<ClaudeResponse['usage']>,
+  pricing: NonNullable<ClaudeTriageDependencies['pricing']>,
+): number {
+  return (
+    (usage.input_tokens * pricing.inputPerMillionTokensInUsd +
+      usage.output_tokens * pricing.outputPerMillionTokensInUsd) /
+    1_000_000
+  );
+}
+
+export function createClaudeTriage({
+  model,
+  promptPath,
+  profileDirectory,
+  pricing,
+  createMessage,
+}: ClaudeTriageDependencies) {
   return {
     propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome | undefined> => {
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
@@ -77,11 +94,7 @@ export function createClaudeTriage({ model, promptPath, profileDirectory, pricin
         const input = readToolUseInput(response);
         if (!triageProposal.safeParse(input).success) {
           if (pricing !== undefined && response.usage !== undefined) {
-            const costInUsd =
-              (response.usage.input_tokens * pricing.inputPerMillionTokensInUsd +
-                response.usage.output_tokens * pricing.outputPerMillionTokensInUsd) /
-              1_000_000;
-            return { failure: { input }, costInUsd };
+            return { failure: { input }, costInUsd: computeCostInUsd(response.usage, pricing) };
           }
           return { failure: { input } };
         }
