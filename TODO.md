@@ -217,8 +217,8 @@
 - [x] With ten same-sender verdicts, a triage run passes the triage port only the newest eight, by calling the domain's `chooseVerdictExamples` with a limit of 8
 - [x] A triage run logs each spend row with the configured triage model, not an empty string
 - [x] After each Gmail poll (the first and every scheduled one), the extension carries out the pending archive commands for the profile's account against Gmail and acknowledges them; a failure there is logged and does not stop the poll
-- [ ] (hand-written) `apps/backend/prompts/triage-v1.md` exists: it names the seven categories with the extract each one carries, the addressed-to-the-user rule, the advise-first stance, and asks for the tool call the contract validates; the shipped backend reads it
-- [ ] The shipped backend reads the Anthropic key from `.env`, triages reported mail with the Claude adapter on a schedule and serves the triage queue
-- [ ] The shipped extension polls Gmail every 60 seconds and carries out pending archive commands
-- [ ] The shipped dashboard links to the triage page and the page runs against the shipped backend
+- [x] (hand-written) `apps/backend/prompts/triage-v1.md` exists: it names the seven categories with the extract each one carries, the addressed-to-the-user rule, the advise-first stance, and asks for the tool call the contract validates; the shipped backend reads it
+- [x] The shipped backend reads the Anthropic key from `.env`, triages reported mail with the Claude adapter on a schedule and serves the triage queue
+- [x] The shipped extension polls Gmail every 60 seconds and carries out pending archive commands
+- [x] The shipped dashboard links to the triage page and the page runs against the shipped backend
 - [ ] Screenshot of the triage page over the real `franciscoc@psmutuus.com` inbox, with the action block, the groups and the remaining count

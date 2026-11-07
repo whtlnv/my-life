@@ -19,7 +19,11 @@ export default defineConfig({
     host_permissions: ['http://127.0.0.1/*', 'http://localhost/*', 'https://www.googleapis.com/*'],
     oauth2: {
       client_id: process.env.WXT_GOOGLE_OAUTH_CLIENT_ID ?? '',
-      scopes: ['https://www.googleapis.com/auth/calendar.readonly', 'https://www.googleapis.com/auth/userinfo.email'],
+      scopes: [
+        'https://www.googleapis.com/auth/calendar.readonly',
+        'https://www.googleapis.com/auth/gmail.modify',
+        'https://www.googleapis.com/auth/userinfo.email',
+      ],
     },
   }),
 });
