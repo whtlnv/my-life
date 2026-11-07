@@ -14,7 +14,7 @@
 - [x] An `act` proposal carrying a task draft with a title passes the shared contract
 - [x] An `action` proposal whose extract names who asks and what is asked, with no due time, passes the shared contract
 - [x] An `action` proposal whose extract does not say what is asked fails the shared contract
-- [ ] An `action` proposal whose extract is a `cc-thread` extract (what happened since the last message, no ask) fails the shared contract
+- [x] An `action` proposal whose extract is a `cc-thread` extract (what happened since the last message, no ask) fails the shared contract
 - [ ] A `cc-thread` proposal whose extract is an `action` extract (asker and ask) fails the shared contract
 - [ ] An `expense` proposal whose extract has vendor, amount, currency and date passes the shared contract
 - [ ] An `expense` proposal whose extract has no amount fails the shared contract

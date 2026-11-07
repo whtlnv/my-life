@@ -11,4 +11,4 @@ export const triageProposal = z.object({
   extract: z.union([ccThreadExtract, actionExtract]),
   reason: z.string(),
   taskDraft: z.object({ title: z.string() }).optional(),
-});
+}).refine((proposal) => proposal.category !== 'action' || actionExtract.safeParse(proposal.extract).success);
