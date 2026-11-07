@@ -32,17 +32,14 @@ function profileFileName(accountEmail: string): string {
   return `${domainName}.md`;
 }
 
-function readSharedProfile(profileDirectory: string): string | undefined {
-  const sharedProfilePath = join(profileDirectory, 'accounts.md');
-  return existsSync(sharedProfilePath) ? readFileSync(sharedProfilePath, 'utf8') : undefined;
+function readOptionalFile(path: string): string | undefined {
+  return existsSync(path) ? readFileSync(path, 'utf8') : undefined;
 }
 
 function readProfile(profileDirectory: string, accountEmail: string): string {
-  const accountProfilePath = join(profileDirectory, profileFileName(accountEmail));
-  const sharedProfile = readSharedProfile(profileDirectory);
-  if (!existsSync(accountProfilePath)) return sharedProfile ?? '';
-  const accountProfile = readFileSync(accountProfilePath, 'utf8');
-  return sharedProfile === undefined ? accountProfile : `${sharedProfile}\n\n${accountProfile}`;
+  const sharedProfile = readOptionalFile(join(profileDirectory, 'accounts.md'));
+  const accountProfile = readOptionalFile(join(profileDirectory, profileFileName(accountEmail)));
+  return [sharedProfile, accountProfile].filter((part) => part !== undefined).join('\n\n');
 }
 
 function composeSystemPrompt(promptPath: string, profileDirectory: string | undefined, accountEmail: string): string {
