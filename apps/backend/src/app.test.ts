@@ -765,6 +765,47 @@ describe('backend app', () => {
     });
   });
 
+  it('puts in the action block of GET /triage-queue the unknown proposals next to the action ones, with no unknown group', async () => {
+    const proposalsInOrder = [
+      {
+        action: 'act',
+        category: 'action',
+        summary: 'Luis asks for a budget review',
+        extract: { asker: 'Luis', ask: 'Review the budget' },
+        reason: 'Luis asks the user directly',
+      },
+      {
+        action: 'keep',
+        category: 'unknown',
+        summary: 'A message that fits no category',
+        extract: {},
+        reason: 'Nothing in it matches a known category',
+      },
+    ];
+    const triage = {
+      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-action', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-unknown', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    });
+    await app.request('/triage-run', { method: 'POST' });
+
+    const queue = await app.request('/triage-queue');
+
+    const { action, groups } = (await queue.json()) as {
+      action: { messageId: string }[];
+      groups: { category: string }[];
+    };
+    expect(action.map(({ messageId }) => messageId).sort()).toEqual(['message-action', 'message-unknown']);
+    expect(groups.map(({ category }) => category)).not.toContain('unknown');
+  });
+
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
     const triage = {
       propose: () =>

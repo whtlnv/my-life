@@ -97,16 +97,17 @@ function confirmedCheckLater(proposals: Proposal[], verdicts: { messageId: strin
 
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(proposals, verdicts);
+  const inActionBlock = (category: string | undefined) => category === 'action' || category === 'unknown';
   return {
     action: groups
-      .filter(({ category }) => category === 'action')
+      .filter(({ category }) => inActionBlock(category))
       .flatMap((group) => group.proposals)
       .map((proposal) => ({
         ...proposal,
         link: gmailMessageLink(proposal),
       })),
     groups: groups
-      .filter(({ category }) => category !== 'action')
+      .filter(({ category }) => !inActionBlock(category))
       .map(({ category, proposals: grouped }) => ({ category, count: grouped.length })),
   };
 }
