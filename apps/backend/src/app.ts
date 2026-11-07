@@ -130,10 +130,12 @@ function agreementRate(category: string, proposals: Proposal[], verdicts: Stored
   return confirmedCount / categoryProposals.length;
 }
 
+const recentProposalCount = 5;
+
 function recentProposals(category: string, proposals: Proposal[]) {
   return proposals
     .filter((proposal) => proposal.category === category)
-    .slice(-5)
+    .slice(-recentProposalCount)
     .reverse()
     .map((proposal) => ({
       summary: proposal.summary,
