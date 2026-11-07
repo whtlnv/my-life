@@ -24,6 +24,22 @@ const postRegistration = (app: App, email: string) => postJson(app, '/register',
 
 const clockAtTenPastThree = { now: () => new Date('2026-11-02T15:10:00.000Z') };
 
+const budgetReviewReport = {
+  accountEmail: 'ana@example.com',
+  historyId: '1001',
+  messages: [
+    {
+      id: 'message-1',
+      threadId: 'thread-1',
+      from: 'Luis <luis@example.com>',
+      to: 'ana@example.com',
+      subject: 'Budget review',
+      date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+      snippet: 'Can you review the budget by Friday?',
+    },
+  ],
+};
+
 const weeklySync = {
   id: 'event-1',
   iCalUID: 'event-1@google.com',
@@ -353,21 +369,7 @@ describe('backend app', () => {
   it('accepts a mail report from an allow-listed account at POST /mail-report and counts its message as remaining in GET /triage-queue', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
 
-    const posted = await postJson(app, '/mail-report', {
-      accountEmail: 'ana@example.com',
-      historyId: '1001',
-      messages: [
-        {
-          id: 'message-1',
-          threadId: 'thread-1',
-          from: 'Luis <luis@example.com>',
-          to: 'ana@example.com',
-          subject: 'Budget review',
-          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-          snippet: 'Can you review the budget by Friday?',
-        },
-      ],
-    });
+    const posted = await postJson(app, '/mail-report', budgetReviewReport);
     const queue = await app.request('/triage-queue');
 
     expect(posted.status).toBe(200);
@@ -423,24 +425,9 @@ describe('backend app', () => {
 
   it('counts a message reported twice at POST /mail-report once in GET /triage-queue', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const report = {
-      accountEmail: 'ana@example.com',
-      historyId: '1001',
-      messages: [
-        {
-          id: 'message-1',
-          threadId: 'thread-1',
-          from: 'Luis <luis@example.com>',
-          to: 'ana@example.com',
-          subject: 'Budget review',
-          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-          snippet: 'Can you review the budget by Friday?',
-        },
-      ],
-    };
 
-    await postJson(app, '/mail-report', report);
-    const second = await postJson(app, '/mail-report', report);
+    await postJson(app, '/mail-report', budgetReviewReport);
+    const second = await postJson(app, '/mail-report', budgetReviewReport);
     const queue = await app.request('/triage-queue');
 
     expect(second.status).toBe(200);
@@ -450,27 +437,12 @@ describe('backend app', () => {
   it('still counts in GET /triage-queue a message reported before a backend restart, and once when it is reported again after it', async () => {
     const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
     const options = { allowedEmails: ['ana@example.com'], databasePath };
-    const report = {
-      accountEmail: 'ana@example.com',
-      historyId: '1001',
-      messages: [
-        {
-          id: 'message-1',
-          threadId: 'thread-1',
-          from: 'Luis <luis@example.com>',
-          to: 'ana@example.com',
-          subject: 'Budget review',
-          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-          snippet: 'Can you review the budget by Friday?',
-        },
-      ],
-    };
     const beforeRestart = createApp(options);
-    await postJson(beforeRestart, '/mail-report', report);
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
 
     const afterRestart = createApp(options);
     const queueAfterRestart = await afterRestart.request('/triage-queue');
-    await postJson(afterRestart, '/mail-report', report);
+    await postJson(afterRestart, '/mail-report', budgetReviewReport);
     const queueAfterReportedAgain = await afterRestart.request('/triage-queue');
 
     expect(await queueAfterRestart.json()).toMatchObject({ remaining: 1 });
