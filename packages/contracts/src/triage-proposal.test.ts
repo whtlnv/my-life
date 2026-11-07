@@ -49,4 +49,17 @@ describe('triageProposal', () => {
 
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
+
+  it('rejects an action proposal whose extract does not say what is asked', () => {
+    const proposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Ana asks for the Q3 budget review',
+      extract: { asker: 'Ana Ruiz', sinceLastMessage: 'Ana shared the Q3 budget spreadsheet.' },
+      reason: 'Sent to the user and asks them to review a document.',
+      taskDraft: { title: 'Review the Q3 budget for Ana' },
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });
