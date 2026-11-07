@@ -18,6 +18,26 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/integration/.vitest/json/output.json:1] A Vitest JSON report from a failing run is tracked in git** (added: 2026-11-07)
+  Committed by 56f1b6b; it fails the lint wall's Prettier check (`Code style issues found`) and is rewritten by any run that
+  writes it. Deferred because the fix is repository hygiene, not a refactor: untrack it and ignore `**/.vitest/` in `.gitignore`
+  and `.prettierignore`.
+- **[apps/dashboard/src/triage-page.tsx:39] The `GET /triage-queue` body shape is declared apart from the route that builds it** (added: 2026-11-07)
+  `TriageQueueResponse` and `TriageItem` here and `splitActionFromGroups` in `apps/backend/src/app.ts` must change together, and
+  nothing ties them; the page already reads a `fetchedAt` the route never sends. Deferred for the same reason as the `/now` entry
+  below: there is no response contract to unify into, and adding one is new `packages/contracts` surface delivered test-first.
+- **[packages/domain/src/triage-spend.ts:16] `isTriagePaused` is tested but never called; the backend keeps its own spend-day math** (added: 2026-11-07)
+  `apps/backend/src/app.ts` computes the day's spend once at startup (`businessDate`, `spentOnBusinessDateInUsd`) and then only adds
+  to it, so the ceiling never resets at business midnight while the process runs; the domain rule recomputes per day. Deferred
+  because routing the backend through `isTriagePaused` changes that behavior; it is a planned item, and it also retires the
+  duplicate `localCalendarDate`/`businessDate` definitions.
+- **[packages/domain/src/current-verdict.ts:1] `currentVerdict` is tested but never called** (added: 2026-11-07)
+  The backend takes the first stored verdict per message (`find`/`some` in `apps/backend/src/app.ts`), not the latest. Deferred
+  because using the latest verdict changes which decision wins after a re-decision.
+- **[packages/domain/src/displayed-category.ts:3] `displayedCategory` is tested but never called** (added: 2026-11-07)
+  No route demotes an `action` proposal that is not addressed to the account to `cc-thread`. Deferred because wiring it changes
+  what the triage queue shows.
+
 - **[apps/dashboard/src/dashboard-app.tsx:32] The `GET /now` body shape is declared apart from the route that builds it** (added: 2026-11-02)
   `NowResponse` here, `{ badgeCount: number }` in `apps/extension/src/badge-refresh.ts` and the object `apps/backend/src/app.ts`
   returns must change together, and nothing ties them: a renamed field compiles and renders an empty dashboard. Deferred because
@@ -36,4 +56,3 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 - **Triage sends every `profile/*.md` file to Claude, not the account's own.** `apps/backend/src/claude-triage.ts` concatenates the folder (2026-11-07). Fine while Phase 1 triages one account; Phase 2 (every account) needs a per-account selection rule (for example `accounts.md` plus the file named after the account's domain) and a test with two accounts proving only the matching file is sent.
 
 - **Same-category verdict examples cannot be chosen at proposal time.** `chooseVerdictExamples` (`packages/domain/src/verdict-examples.ts`) falls back to verdicts of the message's category, but a message being triaged has no category yet, so the backend's run (`apps/backend/src/app.ts` `verdictExamplesFor`) can only ever supply same-sender examples (2026-11-07). A usable fallback needs a pre-classification key: the sender's domain or the List-Id. Phase 2 material.
-
