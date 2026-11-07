@@ -1985,6 +1985,29 @@ describe('backend app', () => {
     });
   });
 
+  it('lists no archive command at GET /commands for a new archive proposal in a category that was automatic before POST /categories/kill-switch, until it is confirmed', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await switchCategory(app, 'cc-thread', 'automatic');
+    await app.request('/categories/kill-switch', { method: 'POST' });
+    await proposeBudgetReview(app);
+
+    const beforeConfirmation = await getCommands(app, 'ana@example.com');
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    const afterConfirmation = await getCommands(app, 'ana@example.com');
+
+    expect({
+      beforeConfirmation: await beforeConfirmation.json(),
+      afterConfirmation: await afterConfirmation.json(),
+    }).toMatchObject({
+      beforeConfirmation: { commands: [] },
+      afterConfirmation: { commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }] },
+    });
+  });
+
   it('labels at GET /commands an archive command issued automatically my-life/auto and one issued after a confirmation my-life/archived', async () => {
     const automaticApp = createApp({
       allowedEmails: ['ana@example.com'],

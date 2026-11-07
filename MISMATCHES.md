@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 15:18 · `apps/backend/src/app.test.ts::lists no archive command at GET /commands for a new archive proposal in a category that was automatic before POST /categories/kill-switch, until it is confirmed`
+- Behavior: After the kill switch, a new `archive` proposal in a category that was `automatic` yields no command until confirmed
+- Predicted: pass on first run. The kill switch writes `advise` to the same mode store that is read when a proposal is made, so the behavior falls out of the previous item.
+- Actual: passed on first run, as predicted
+- Type: passed unexpectedly (predicted, but not a right-reason failure)
+- Resolution: Not vacuous. With the kill-switch call removed, the test fails on `beforeConfirmation` (a command is listed). No rewrite can make it fail without breaking real behavior, so it stays as a pin. `/green` has nothing to implement.
+
 ## 2026-11-07 14:50 · `apps/backend/src/app.test.ts::lists no archive command at GET /commands for an archive proposal made while its category was advise, after the category is switched to automatic`
 - Behavior: An `archive` proposal made while its category was `advise` yields no command when the category is later switched to `automatic`; it waits for its confirmation
 - Predicted: passes on first run — `dea55db` already stamps `madeAutomatic` when the proposal is made and `isCleared` never reads the current mode
