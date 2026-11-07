@@ -27,6 +27,12 @@ interface ReportedMessage {
 
 type Proposal = Parameters<typeof triageQueue>[0][number];
 
+interface TriageResult {
+  costInUsd?: number;
+  proposal?: unknown;
+  promptVersion?: string;
+}
+
 export interface AppOptions {
   allowedEmails: string[];
   clock?: Clock;
@@ -114,9 +120,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (hasReachedDailySpendCeiling()) {
         break;
       }
-      const result = (await options.triage?.propose(message)) as
-        | { costInUsd?: number; proposal?: unknown; promptVersion?: string }
-        | undefined;
+      const result = (await options.triage?.propose(message)) as TriageResult | undefined;
       spentInUsd += result?.costInUsd ?? 0;
       proposalStore.save({
         messageId: message.id,
