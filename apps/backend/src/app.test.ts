@@ -1015,4 +1015,24 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ commands: [] });
   });
+
+  it('lists at GET /commands no archive command for a keep proposal the user confirmed', async () => {
+    const proposal = {
+      action: 'keep',
+      category: 'cc-thread',
+      summary: 'Luis shared the budget with the team',
+      extract: { sinceLastMessage: 'Luis shared the budget' },
+      reason: 'The budget is worth rereading',
+    };
+    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+
+    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ commands: [] });
+  });
 });

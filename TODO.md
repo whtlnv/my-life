@@ -135,7 +135,7 @@
 - [x] Confirming a whole group stores one confirm verdict for every item in that group and none outside it
 - [x] A confirmed archive queues an archive command for the message's account, listed by `GET /commands?accountEmail=…` (the path the extension already calls) with an `id` and `messageId` per command
 - [x] The commands for one account do not include another account's commands
-- [ ] A confirmed `keep` queues no archive command
+- [x] A confirmed `keep` queues no archive command
 - [ ] Two confirmed archives on one account list two commands with distinct ids, each carrying its own message id
 - [ ] A command acknowledged through `POST /commands/:id/acknowledgement` (the path the extension already calls) is no longer pending
 - [ ] An acknowledgement survives a backend restart (same database file): the command stays out of the pending list

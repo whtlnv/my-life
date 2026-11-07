@@ -214,6 +214,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const verdicts = verdictStore.loadAll();
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
+      .filter((proposal) => proposal.action === 'archive')
       .filter((proposal) => verdicts.some((verdict) => verdict.messageId === proposal.messageId))
       .map(({ messageId }) => ({ id: 'command-1', messageId }));
     return context.json({ commands });
