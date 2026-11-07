@@ -2122,6 +2122,62 @@ describe('backend app', () => {
     });
   });
 
+  it('does not ask the filter port again after a backend restart on the same database file about a candidate whose filter proposal was stored before it', async () => {
+    const askedCandidates: unknown[] = [];
+    const filter = {
+      propose: (candidate: unknown) => {
+        askedCandidates.push(candidate);
+        return Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+          costInUsd: 0.05,
+          promptVersion: 'filter-v1',
+        });
+      },
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage,
+      filter,
+    };
+    const beforeRestart = createApp(options);
+    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3', 'newsletter-4']) {
+      await postJson(beforeRestart, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Shop <news@shop.example.com>',
+            to: 'ana@example.com',
+            subject: 'This week at the shop',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'New arrivals',
+          },
+        ],
+      });
+      await postTriageRun(beforeRestart);
+      if (messageId !== 'newsletter-4') {
+        await postJson(beforeRestart, '/verdicts', { messageId, decision: 'confirmed' });
+      }
+    }
+    askedCandidates.length = 0;
+    const afterRestart = createApp(options);
+
+    await postJson(afterRestart, '/verdicts', { messageId: 'newsletter-4', decision: 'confirmed' });
+
+    expect(askedCandidates).toEqual([]);
+  });
+
   it('counts toward a filter candidate only archives: a confirmed keep proposal does not count, while a rejected proposal corrected to archive does', async () => {
     const askedCandidates: unknown[] = [];
     const filter = {

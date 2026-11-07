@@ -212,7 +212,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const spendStore = openSpendStore(databasePath);
   const verdictStore = openVerdictStore(databasePath);
   const filterProposalStore = openFilterProposalStore(databasePath);
-  const proposedCandidateKeys = new Set<string>();
+  const proposedCandidateKeys = new Set<string>(filterProposalStore.loadCandidateKeys());
   const loadDecidedMessages = () => {
     const verdicts = verdictStore.loadAll();
     return reportedMessageStore.loadAll().flatMap(({ messageId, accountEmail, from, listId }) => {
@@ -240,13 +240,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (proposedCandidateKeys.has(key)) continue;
       proposedCandidateKeys.add(key);
       const result = await filter.propose(candidate);
-      filterProposalStore.save({
-        accountEmail: candidate.accountEmail,
-        messageIds: candidate.messageIds,
-        promptVersion: result.promptVersion,
-        proposedAt: clock.now().toISOString(),
-        proposal: result.proposal,
-      });
+      filterProposalStore.save(
+        {
+          accountEmail: candidate.accountEmail,
+          messageIds: candidate.messageIds,
+          promptVersion: result.promptVersion,
+          proposedAt: clock.now().toISOString(),
+          proposal: result.proposal,
+        },
+        key,
+      );
     }
   };
   const reportedMessages: ReportedMessage[] = [];
