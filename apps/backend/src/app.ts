@@ -201,7 +201,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const verdictStore = openVerdictStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const accountEmailByMessageId = new Map<string, string>();
-  const automaticMessageIds = proposalStore.loadAutomaticMessageIds();
+  const automaticMessageIds = new Set(proposalStore.loadAutomaticMessageIds());
   const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => {
     const accountEmail = reportedMessageStore.accountEmailOf(messageId);
     return {
@@ -210,7 +210,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         reportedMessageStore.recipientsOf(messageId),
         accountEmail,
       ),
-      madeAutomatic: automaticMessageIds.includes(messageId),
+      madeAutomatic: automaticMessageIds.has(messageId),
     };
   });
   const loggedSpends = (): { loggedAt: string; costInUsd: number }[] =>
