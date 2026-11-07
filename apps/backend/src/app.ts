@@ -323,7 +323,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
     const category = context.req.param('category');
-    if (!(triageCategories as readonly string[]).includes(category) || !['advise', 'automatic'].includes(mode)) {
+    const isKnownCategory = (triageCategories as readonly string[]).includes(category);
+    const isKnownMode = ['advise', 'automatic'].includes(mode);
+    if (!isKnownCategory || !isKnownMode) {
       return context.body(null, 400);
     }
     categoryModes[category] = mode;
