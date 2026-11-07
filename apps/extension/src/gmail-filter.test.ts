@@ -122,4 +122,36 @@ describe('carryOutFilterCommands', () => {
       `acknowledge with ${JSON.stringify({ gmailFilterId: 'gmail-filter-7' })}`,
     ]);
   });
+  it('deletes the Gmail filter named by a delete-filter command and then acknowledges the command', async () => {
+    const recordedRequests: string[] = [];
+    const fetch: FetchFunction = (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      const path = url.origin + url.pathname;
+      if (path === `${backendUrl}/commands` && url.searchParams.get('accountEmail') === 'francisco@example.com') {
+        return Promise.resolve(
+          Response.json({
+            commands: [{ id: 'delete-filter-gmail-filter-7', type: 'delete-filter', gmailFilterId: 'gmail-filter-7' }],
+          }),
+        );
+      }
+      if (path === `${gmailApi}/settings/filters/gmail-filter-7` && init?.method === 'DELETE') {
+        recordedRequests.push('delete gmail-filter-7');
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      if (path === `${backendUrl}/commands/delete-filter-gmail-filter-7/acknowledgement` && init?.method === 'POST') {
+        recordedRequests.push('acknowledge delete-filter-gmail-filter-7');
+        return Promise.resolve(new Response(null, { status: 200 }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await carryOutFilterCommands({
+      fetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl,
+    });
+
+    expect(recordedRequests).toEqual(['delete gmail-filter-7', 'acknowledge delete-filter-gmail-filter-7']);
+  });
 });
