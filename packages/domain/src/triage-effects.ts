@@ -1,14 +1,15 @@
 type MessageSource = { messageId: string; accountEmail: string };
 type TaskDraft = { title: string };
+type CompanyExtract = { company: string };
 type Verdict = { decision: string; correction?: { action: string; taskDraft?: TaskDraft } };
 
 export const triageEffects = (
-  proposal: MessageSource & { action: string; taskDraft?: TaskDraft; extract?: { company: string } },
+  proposal: MessageSource & { action: string; taskDraft?: TaskDraft; extract?: CompanyExtract },
   verdict: Verdict | undefined,
 ): {
   archives: MessageSource[];
   tasks: (TaskDraft & MessageSource)[];
-  checkLater?: ({ company: string } & MessageSource)[];
+  checkLater?: (CompanyExtract & MessageSource)[];
 } => {
   const source = { messageId: proposal.messageId, accountEmail: proposal.accountEmail };
   const confirmed = verdict?.decision === 'confirmed';
