@@ -43,7 +43,17 @@ export const significantFlagText = 'Significant';
 
 function ActionCard({ item }: { item: TriageItem }) {
   return (
-    <article>
+    <article
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 't') {
+          void fetch('/verdicts', {
+            method: 'POST',
+            body: JSON.stringify({ messageId: item.messageId, decision: 'confirmed' }),
+          });
+        }
+      }}
+    >
       <p>{item.summary}</p>
       <p>{item.extract.asker}</p>
       <p>{item.extract.ask}</p>

@@ -391,4 +391,39 @@ describe('TriagePage', () => {
     expect(screen.getByText(/AI scheduling assistant/)).toBeInTheDocument();
     expect(screen.getByText(/Time lost coordinating meetings/)).toBeInTheDocument();
   });
+  it('confirms a focused action card as a task when `t` is pressed', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-17',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for the slides',
+          extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
+          reason: 'Luis asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-17',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(card);
+    await user.keyboard('t');
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ messageId: 'message-17', decision: 'confirmed' }),
+      }),
+    );
+  });
 });
