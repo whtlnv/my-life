@@ -10,6 +10,7 @@ import {
   chooseVerdictExamples,
   currentVerdict,
   describeSourceFreshness,
+  filterCandidates,
   isAccountFresh,
   isAddressedToUser,
   isLeadingCategory,
@@ -24,6 +25,7 @@ import {
 import { openAcknowledgementStore } from './acknowledgement-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
+import { openFilterProposalStore } from './filter-proposal-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore } from './reported-message-store';
@@ -73,7 +75,12 @@ export interface AppOptions {
   triage?: {
     propose: (message: ReportedMessage & { accountEmail: string }, examples?: unknown[]) => Promise<TriageResult>;
   };
+  filter?: {
+    propose: (candidate: FilterCandidate) => Promise<{ proposal: unknown; costInUsd: number; promptVersion: string }>;
+  };
 }
+
+type FilterCandidate = ReturnType<typeof filterCandidates>[number];
 
 const systemClock: Clock = { now: () => new Date() };
 
@@ -203,6 +210,30 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const proposalStore = openProposalStore(databasePath);
   const spendStore = openSpendStore(databasePath);
   const verdictStore = openVerdictStore(databasePath);
+  const filterProposalStore = openFilterProposalStore(databasePath);
+  const proposedCandidateKeys = new Set<string>();
+  const proposeNewFilterCandidates = async (): Promise<void> => {
+    const filter = options.filter;
+    if (filter === undefined) return;
+    const verdicts = verdictStore.loadAll();
+    const decidedProposals = reportedMessageStore.loadAll().flatMap(({ messageId, accountEmail, from, listId }) => {
+      const verdict = latestVerdictFor(messageId, verdicts);
+      return verdict === undefined ? [] : [{ messageId, accountEmail, from, ...(listId === null ? {} : { listId }), verdict }];
+    });
+    for (const candidate of filterCandidates(decidedProposals)) {
+      const key = JSON.stringify([candidate.accountEmail, candidate.criteria]);
+      if (proposedCandidateKeys.has(key)) continue;
+      proposedCandidateKeys.add(key);
+      const result = await filter.propose(candidate);
+      filterProposalStore.save({
+        accountEmail: candidate.accountEmail,
+        messageIds: candidate.messageIds,
+        promptVersion: result.promptVersion,
+        proposedAt: clock.now().toISOString(),
+        proposal: result.proposal,
+      });
+    }
+  };
   const reportedMessages: ReportedMessage[] = [];
   const accountEmailByMessageId = new Map<string, string>();
   const automaticMessageIds = new Set(proposalStore.loadAutomaticMessageIds());
@@ -326,6 +357,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, 404);
     }
     verdictStore.save({ messageId, decision, correction, decidedAt: clock.now().toISOString() });
+    await proposeNewFilterCandidates();
     return context.body(null, 200);
   });
   app.post('/group-verdicts', async (context) => {

@@ -2053,4 +2053,72 @@ describe('backend app', () => {
       now: { badgeCount: 0 },
     });
   });
+  it('asks the filter port once for a proposal when a filter candidate appears and stores it with the account, the candidate messages, the prompt version and the time, without asking again about the same candidate', async () => {
+    const filterProposal = {
+      criteria: { from: 'news@shop.example.com' },
+      labelName: 'Shop newsletters',
+      skipInbox: true,
+    };
+    const askedCandidates: unknown[] = [];
+    const filter = {
+      propose: (candidate: unknown) => {
+        askedCandidates.push(candidate);
+        return Promise.resolve({ proposal: filterProposal, costInUsd: 0.05, promptVersion: 'filter-v1' });
+      },
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+      filter,
+    });
+    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3', 'newsletter-4']) {
+      await postJson(app, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Shop <news@shop.example.com>',
+            to: 'ana@example.com',
+            subject: 'This week at the shop',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'New arrivals',
+          },
+        ],
+      });
+      await postTriageRun(app);
+      await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
+    }
+    const { openFilterProposalStore } = await import('./filter-proposal-store');
+
+    expect({ askedCandidates, stored: openFilterProposalStore(databasePath).loadAll() }).toEqual({
+      askedCandidates: [
+        {
+          accountEmail: 'ana@example.com',
+          criteria: { from: 'Shop <news@shop.example.com>' },
+          messageIds: ['newsletter-1', 'newsletter-2', 'newsletter-3'],
+        },
+      ],
+      stored: [
+        {
+          accountEmail: 'ana@example.com',
+          messageIds: ['newsletter-1', 'newsletter-2', 'newsletter-3'],
+          promptVersion: 'filter-v1',
+          proposedAt: '2026-11-02T15:10:00.000Z',
+          proposal: filterProposal,
+        },
+      ],
+    });
+  });
 });
