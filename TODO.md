@@ -91,6 +91,7 @@
 - [x] Each reported message carries its From, To, Cc, Subject, Date and List-Id headers and its snippet, read in batches of metadata
 - [x] A Gmail read answering 429 or 5xx is retried with backoff
 - [ ] A Gmail read answering 403 is not retried
+- [ ] A Gmail read that keeps answering 5xx gives up after 5 tries and the poll fails instead of retrying forever
 - [ ] Message metadata is read up to 10 messages at a time in parallel, never more than 10 in flight, instead of one after another
 - [ ] The report is posted to the backend with the profile's account email
 - [ ] After a report the backend accepts, the next poll starts from the reported history id
