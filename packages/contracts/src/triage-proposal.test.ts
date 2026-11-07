@@ -186,4 +186,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('accepts an unknown proposal whose extract is empty', () => {
+    const proposal = {
+      action: 'keep',
+      category: 'unknown',
+      summary: 'A message from an unfamiliar sender about an unclear topic',
+      extract: {},
+      reason: 'Nothing in the message fits a known category.',
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
 });

@@ -25,7 +25,7 @@ export const triageProposal = z.object({
   action: z.enum(['archive', 'keep', 'act']),
   category: z.enum(['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown']),
   summary: z.string(),
-  extract: z.union([ccThreadExtract, actionExtract, expenseExtract, systemUpdateExtract, salesExtract, calendarDriveExtract]),
+  extract: z.union([ccThreadExtract, actionExtract, expenseExtract, systemUpdateExtract, salesExtract, calendarDriveExtract, z.strictObject({})]),
   reason: z.string(),
   taskDraft: z.object({ title: z.string() }).optional(),
 }).refine(extractMatchesCategory);
