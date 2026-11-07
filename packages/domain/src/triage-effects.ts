@@ -20,10 +20,10 @@ export const triageEffects = (
   const confirmed = verdict?.decision === 'confirmed';
   const decidedAction = verdict?.correction?.action ?? (confirmed ? proposal.action : undefined);
   const taskDraft = verdict?.correction?.taskDraft ?? proposal.taskDraft;
+  const salesCompany = proposal.category === 'sales' ? proposal.extract?.company : undefined;
   return {
     archives: decidedAction === 'archive' ? [source] : [],
     tasks: decidedAction === 'act' && taskDraft ? [{ title: taskDraft.title, ...source }] : [],
-    ...(proposal.category === 'sales' &&
-      proposal.extract && { checkLater: [{ company: proposal.extract.company, ...source }] }),
+    ...(salesCompany !== undefined && { checkLater: [{ company: salesCompany, ...source }] }),
   };
 };
