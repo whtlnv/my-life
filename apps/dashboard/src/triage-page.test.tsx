@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { TriagePage } from './triage-page';
+import { noDueTimeText, TriagePage } from './triage-page';
 
 const answerGetTriageQueueWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -107,5 +107,29 @@ describe('TriagePage', () => {
     const cards = within(actionBlock).getAllByRole('article');
     expect(cards).toHaveLength(1);
     expect(within(actionBlock).getByText(/A note from an unfamiliar sender about a pallet/)).toBeInTheDocument();
+  });
+  it('says an action card with no due time has none', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-5',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for the slides',
+          extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
+          reason: 'Luis asks the user directly',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    expect(within(card).getByText(noDueTimeText)).toBeInTheDocument();
   });
 });

@@ -16,6 +16,8 @@ interface TriageQueueResponse {
   groups: TriageGroup[];
 }
 
+export const noDueTimeText = 'No due time';
+
 export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
 
@@ -36,7 +38,7 @@ export function TriagePage() {
           <p>{item.summary}</p>
           <p>{item.extract.asker}</p>
           <p>{item.extract.ask}</p>
-          <p>{item.extract.due}</p>
+          <p>{item.extract.due ?? noDueTimeText}</p>
         </article>
       ))}
     </section>

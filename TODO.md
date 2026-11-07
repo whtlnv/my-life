@@ -166,7 +166,7 @@
 - [x] An `unknown` item is shown in the `action` block
 - [x] `GET /triage-queue`'s action block includes `unknown` proposals next to `action` ones, and no `unknown` group exists
 - [x] `GET /triage-queue`'s groups carry their items (message id, category, summary, extract, reason, account, Gmail link), and a `system-update` group carries its sending-system sub-groups with their items
-- [ ] An `action` card with no due time says it has none
+- [x] An `action` card with no due time says it has none
 - [ ] Every item shows its reason, its account and a link to the message
 - [ ] Each category group shows collapsed with its count
 - [ ] Expanding a group lists its items
