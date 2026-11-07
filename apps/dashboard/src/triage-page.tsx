@@ -91,22 +91,23 @@ function handleVerdictKey(item: TriageItem, key: string): Promise<Response> | un
   return undefined;
 }
 
+function whenAccepted(request: Promise<Response> | undefined, onAccepted: () => void) {
+  void request?.then((response) => {
+    if (response.ok) onAccepted();
+  });
+}
+
 function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => void }) {
   const [correcting, setCorrecting] = useState(false);
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
-  const removeOnceAccepted = (request: Promise<Response> | undefined) => {
-    void request?.then((response) => {
-      if (response.ok) onAccepted();
-    });
-  };
   return (
     <article
       tabIndex={0}
       onKeyDown={(event) => {
         if (correcting) {
           if (event.key === 'Enter') {
-            removeOnceAccepted(correctToCategory(item.messageId, category, note));
+            whenAccepted(correctToCategory(item.messageId, category, note), onAccepted);
           } else if (event.key === 'Escape') {
             setCorrecting(false);
           } else if (event.target === event.currentTarget) {
@@ -119,7 +120,7 @@ function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => 
         } else if (event.key === 'ArrowUp') {
           (event.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
         } else {
-          removeOnceAccepted(handleVerdictKey(item, event.key));
+          whenAccepted(handleVerdictKey(item, event.key), onAccepted);
         }
       }}
     >
@@ -194,9 +195,7 @@ function CategoryGroup({ group, onAccepted }: { group: TriageGroup; onAccepted: 
         }}
         onKeyDown={(event) => {
           if (event.key === 'c') {
-            void confirmGroup(group.category).then((response) => {
-              if (response.ok) onAccepted();
-            });
+            whenAccepted(confirmGroup(group.category), onAccepted);
           }
         }}
       >
