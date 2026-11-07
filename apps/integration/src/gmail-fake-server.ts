@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense' | 'system-update-burst' | 'sales-pitch' | 'calendar-notification';
+type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense' | 'system-update-burst' | 'sales-pitch' | 'calendar-notification' | 'history-404';
 
 interface FakeGmailMessage {
   id: string;
@@ -143,6 +143,21 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
         },
       },
     ],
+    'history-404': [
+      {
+        id: 'budget-review',
+        threadId: 'budget-review',
+        snippet: 'Could you review the budget before Friday?',
+        payload: {
+          headers: [
+            { name: 'From', value: 'Luis <luis@example.com>' },
+            { name: 'To', value: accountEmail },
+            { name: 'Subject', value: 'Budget review' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+          ],
+        },
+      },
+    ],
   };
   return messages[scenario];
 }
@@ -152,6 +167,11 @@ export async function startGmailFakeServer(scenario: GmailScenario, accountEmail
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fake').pathname;
     const prefix = '/gmail/v1/users/me';
+    if (path === `${prefix}/history`) {
+      response.writeHead(404);
+      response.end();
+      return;
+    }
     let body: unknown;
     if (path === `${prefix}/profile`) {
       body = { historyId: '1' };

@@ -216,4 +216,33 @@ describe('Gmail fake server', () => {
       extract: { item: calendarDriveProposal.extract.item },
     });
   });
+  it('polling the history-404 scenario from an expired stored history id reports the whole inbox and returns a fresh history id', async () => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
+    const expiredHistoryId = 'expired-history-id';
+    const gmail = await startGmailFakeServer('history-404', accountEmail);
+    let returnedHistoryId: string | undefined;
+    try {
+      returnedHistoryId = await pollGmailOnce({
+        fetch: async (input, init) => {
+          const url = new URL(input instanceof Request ? input.url : input.toString());
+          if (url.origin === 'https://gmail.googleapis.com') {
+            return fetch(new URL(url.pathname + url.search, gmail.url), init);
+          }
+          return backend.request(url.pathname, init);
+        },
+        accessToken: 'fake-token',
+        accountEmail,
+        backendUrl,
+        storedHistoryId: expiredHistoryId,
+      });
+    } finally {
+      await gmail.close();
+    }
+    const queue = await runTriageAndReadQueue<{ action: { messageId: string }[] }>(backend);
+
+    expect(returnedHistoryId).toBeDefined();
+    expect(returnedHistoryId).not.toBe(expiredHistoryId);
+    expect(messagesSeenByTriage).toHaveLength(1);
+    expect(queue.action).toEqual([expect.objectContaining({ messageId: messagesSeenByTriage[0]?.id })]);
+  });
 });
