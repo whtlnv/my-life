@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { noDueTimeText, TriagePage } from './triage-page';
@@ -224,5 +225,51 @@ describe('TriagePage', () => {
     expect(groupToggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText(/Receipt from Acme/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Invoice from Globex/)).not.toBeInTheDocument();
+  });
+
+  it('lists the items of a group once it is expanded', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'expense',
+          count: 2,
+          items: [
+            {
+              messageId: 'message-10',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'expense',
+              summary: 'Receipt from Acme',
+              extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+              reason: 'A receipt to file',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-10',
+            },
+            {
+              messageId: 'message-11',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'expense',
+              summary: 'Invoice from Globex',
+              extract: { vendor: 'Globex', amount: 900, currency: 'MXN', date: '2026-11-03' },
+              reason: 'An invoice to file',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-11',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const groupToggle = await screen.findByRole('button', { name: /expense.*2/ });
+    await user.click(groupToggle);
+
+    expect(groupToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/Receipt from Acme/)).toBeInTheDocument();
+    expect(screen.getByText(/Invoice from Globex/)).toBeInTheDocument();
   });
 });

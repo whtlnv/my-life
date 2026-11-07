@@ -38,6 +38,7 @@ function ActionCard({ item }: { item: TriageItem }) {
 
 export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     void fetch('/triage-queue')
@@ -56,11 +57,23 @@ export function TriagePage() {
       </section>
       {queue.groups
         .filter((group) => group.category !== 'unknown')
-        .map((group) => (
-          <button key={group.category} type="button" aria-expanded={false}>
-            {group.category} {group.count}
-          </button>
-        ))}
+        .map((group) => {
+          const expanded = expandedCategories.includes(group.category);
+          return (
+            <section key={group.category}>
+              <button
+                type="button"
+                aria-expanded={expanded}
+                onClick={() => {
+                  setExpandedCategories([...expandedCategories, group.category]);
+                }}
+              >
+                {group.category} {group.count}
+              </button>
+              {expanded && group.items.map((item) => <p key={item.messageId}>{item.summary}</p>)}
+            </section>
+          );
+        })}
     </>
   );
 }
