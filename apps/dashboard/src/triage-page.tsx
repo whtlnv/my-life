@@ -62,6 +62,12 @@ function correctToTask(item: TriageItem) {
   });
 }
 
+function correctToCategory(messageId: TriageItem['messageId'], category: string, note: string) {
+  postVerdict({ messageId, decision: 'rejected', correction: { category, note } });
+}
+
+const categories = ['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown'];
+
 const verdictKeys = new Set(['t', 'k', 'a']);
 
 function handleVerdictKey(item: TriageItem, key: string) {
@@ -78,12 +84,18 @@ function handleVerdictKey(item: TriageItem, key: string) {
 
 function ActionCard({ item }: { item: TriageItem }) {
   const [correcting, setCorrecting] = useState(false);
+  const [category, setCategory] = useState('');
+  const [note, setNote] = useState('');
   return (
     <article
       tabIndex={0}
       onKeyDown={(event) => {
-        if (correcting) {
-          correctToAction(item.messageId, 'keep');
+        if (correcting && event.key === 'Enter') {
+          correctToCategory(item.messageId, category, note);
+        } else if (correcting && event.key === 'Escape') {
+          setCorrecting(false);
+        } else if (correcting) {
+          if (event.target === event.currentTarget) correctToAction(item.messageId, 'keep');
         } else if (event.key === 'r') {
           setCorrecting(true);
         } else {
@@ -91,7 +103,26 @@ function ActionCard({ item }: { item: TriageItem }) {
         }
       }}
     >
-      {correcting && <div role="dialog" />}
+      {correcting && (
+        <div role="dialog">
+          <select
+            value={category}
+            onChange={(event) => {
+              setCategory(event.target.value);
+            }}
+          >
+            {categories.map((option) => (
+              <option key={option}>{option}</option>
+            ))}
+          </select>
+          <input
+            value={note}
+            onChange={(event) => {
+              setNote(event.target.value);
+            }}
+          />
+        </div>
+      )}
       <p>{item.summary}</p>
       <p>{item.extract.asker}</p>
       <p>{item.extract.ask}</p>

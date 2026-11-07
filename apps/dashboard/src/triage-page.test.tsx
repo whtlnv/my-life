@@ -646,4 +646,81 @@ describe('TriagePage', () => {
       }),
     );
   });
+  it('rejects with the category picked and the note typed in the correction prompt when Enter is pressed', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-29',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Acme sends the November invoice',
+          extract: { asker: 'Acme billing', ask: 'Pay the invoice' },
+          reason: 'Asks for a payment',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-29',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(card);
+    await user.keyboard('r');
+    const prompt = screen.getByRole('dialog');
+    await user.selectOptions(within(prompt).getByRole('combobox'), 'expense');
+    await user.type(within(prompt).getByRole('textbox'), 'Invoices are expenses, not asks');
+    await user.keyboard('{Enter}');
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          messageId: 'message-29',
+          decision: 'rejected',
+          correction: { category: 'expense', note: 'Invoices are expenses, not asks' },
+        }),
+      }),
+    );
+  });
+  it('closes the correction prompt and posts nothing when Escape is pressed after picking a category and typing a note', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-30',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Acme sends the December invoice',
+          extract: { asker: 'Acme billing', ask: 'Pay the invoice' },
+          reason: 'Asks for a payment',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-30',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(card);
+    await user.keyboard('r');
+    const prompt = screen.getByRole('dialog');
+    await user.selectOptions(within(prompt).getByRole('combobox'), 'expense');
+    await user.type(within(prompt).getByRole('textbox'), 'Invoices are expenses, not asks');
+    await user.keyboard('{Escape}');
+
+    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/verdicts', expect.anything());
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });
