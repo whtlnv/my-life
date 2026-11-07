@@ -60,4 +60,36 @@ describe('triageQueue', () => {
     expect(groups).toContainEqual({ category: 'sales', proposals: [firstSalesProposal, secondSalesProposal] });
     expect(groups).toContainEqual({ category: 'expense', proposals: [expenseProposal] });
   });
+
+  it('groups the waiting system-update proposals within their category by sending system', () => {
+    const firstSentryProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'Sentry', severity: 'error', significant: true },
+    };
+    const awsProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'AWS', severity: 'info', significant: false },
+    };
+    const secondSentryProposal = {
+      messageId: 'message-3',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'Sentry', severity: 'warning', significant: false },
+    };
+    const { groups } = triageQueue([firstSentryProposal, awsProposal, secondSentryProposal], []);
+    const systemUpdateGroup = groups.find((group) => group.category === 'system-update');
+    expect(systemUpdateGroup?.systems).toHaveLength(2);
+    expect(systemUpdateGroup?.systems).toContainEqual({
+      system: 'Sentry',
+      proposals: [firstSentryProposal, secondSentryProposal],
+    });
+    expect(systemUpdateGroup?.systems).toContainEqual({ system: 'AWS', proposals: [awsProposal] });
+  });
 });
