@@ -95,15 +95,18 @@ function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => 
   const [correcting, setCorrecting] = useState(false);
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
+  const removeOnceAccepted = (request: Promise<Response> | undefined) => {
+    void request?.then((response) => {
+      if (response.ok) onAccepted();
+    });
+  };
   return (
     <article
       tabIndex={0}
       onKeyDown={(event) => {
         if (correcting) {
           if (event.key === 'Enter') {
-            void correctToCategory(item.messageId, category, note).then((response) => {
-              if (response.ok) onAccepted();
-            });
+            removeOnceAccepted(correctToCategory(item.messageId, category, note));
           } else if (event.key === 'Escape') {
             setCorrecting(false);
           } else if (event.target === event.currentTarget) {
@@ -116,9 +119,7 @@ function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => 
         } else if (event.key === 'ArrowUp') {
           (event.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
         } else {
-          void handleVerdictKey(item, event.key)?.then((response) => {
-            if (response.ok) onAccepted();
-          });
+          removeOnceAccepted(handleVerdictKey(item, event.key));
         }
       }}
     >
