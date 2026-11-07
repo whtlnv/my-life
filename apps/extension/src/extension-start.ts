@@ -52,8 +52,6 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
   await pollGmail().catch((error: unknown) => {
     console.error('Gmail poll failed', error);
   });
-  options.every?.(gmailPollIntervalMilliseconds, async () => {
-    await pollGmail();
-  });
+  options.every?.(gmailPollIntervalMilliseconds, pollGmail);
   options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
 }
