@@ -161,7 +161,7 @@
 
 ### Dashboard — triage page
 
-- [ ] The triage page shows the `action` block first, one card per item with who asks, what is asked and by when
+- [x] The triage page shows the `action` block first, one card per item with who asks, what is asked and by when
 - [ ] An `unknown` item is shown in the `action` block
 - [ ] An `action` card with no due time says it has none
 - [ ] Every item shows its reason, its account and a link to the message
