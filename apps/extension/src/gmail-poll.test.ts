@@ -532,4 +532,36 @@ describe('pollGmailOnce', () => {
     expect(mostReadsInFlight).toBe(10);
     expect(backendPosts.map((post) => post.messages.map((message) => message.id))).toEqual([inboxIds]);
   });
+
+  it('after a report the backend accepts, the next poll starts from the reported history id', async () => {
+    const historyReadsFrom: (string | null)[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages` && url.searchParams.get('labelIds') === 'INBOX') {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/history`) {
+        historyReadsFrom.push(url.searchParams.get('startHistoryId'));
+        return Promise.resolve(Response.json({ history: [], historyId: '98765' }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const pollOptions = {
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+    };
+
+    const nextHistoryId = await pollGmailOnce({ ...pollOptions, storedHistoryId: undefined });
+    await pollGmailOnce({ ...pollOptions, storedHistoryId: nextHistoryId });
+
+    expect(historyReadsFrom).toEqual(['98765']);
+  });
 });

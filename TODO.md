@@ -95,7 +95,7 @@
 - [x] Message metadata is read up to 10 messages at a time in parallel, never more than 10 in flight, instead of one after another
 - [x] When Gmail is unreachable at startup, the extension still starts and the calendar snapshot is still posted; the Gmail failure is reported to the console, not thrown
 - [x] The report is posted to the backend with the profile's account email
-- [ ] After a report the backend accepts, the next poll starts from the reported history id
+- [x] After a report the backend accepts, the next poll starts from the reported history id
 - [ ] After a report the backend refuses, the next poll starts from the previous history id
 - [ ] The extension polls Gmail every 60 seconds
 - [ ] A pending archive command for the profile's account removes the message from the inbox and adds the label `my-life/archived`
