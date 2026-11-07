@@ -132,4 +132,35 @@ describe('TriagePage', () => {
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     expect(within(card).getByText(noDueTimeText)).toBeInTheDocument();
   });
+
+  it('shows each item with its reason, its account and a link to the message', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-6',
+          accountEmail: 'franciscoc@psmutuus.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for the slides',
+          extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
+          reason: 'Luis asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-6',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    expect(within(card).getByText(/Luis asks the user directly/)).toBeInTheDocument();
+    expect(within(card).getByText(/franciscoc@psmutuus\.com/)).toBeInTheDocument();
+    expect(within(card).getByRole('link')).toHaveAttribute(
+      'href',
+      'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-6',
+    );
+  });
 });

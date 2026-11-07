@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 interface TriageItem {
   messageId: string;
   summary: string;
+  reason: string;
+  accountEmail: string;
+  link: string;
   extract: { asker?: string; ask?: string; due?: string };
 }
 
@@ -39,6 +42,9 @@ export function TriagePage() {
           <p>{item.extract.asker}</p>
           <p>{item.extract.ask}</p>
           <p>{item.extract.due ?? noDueTimeText}</p>
+          <p>{item.reason}</p>
+          <p>{item.accountEmail}</p>
+          <a href={item.link}>Open in Gmail</a>
         </article>
       ))}
     </section>
