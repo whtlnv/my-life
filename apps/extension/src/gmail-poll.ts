@@ -22,6 +22,7 @@ interface GmailMessageList {
 interface GmailMessage {
   id: string;
   threadId: string;
+  snippet: string;
   payload: { headers: { name: string; value: string }[] };
 }
 
@@ -35,12 +36,22 @@ async function fetchGmailJson<ResponseBody>(options: PollGmailOptions, url: stri
 }
 
 function toReportedMessage(message: GmailMessage) {
-  const subject = message.payload.headers.find((header) => header.name === 'Subject')?.value;
-  return { id: message.id, threadId: message.threadId, subject };
+  const header = (name: string) => message.payload.headers.find((candidate) => candidate.name === name)?.value;
+  return {
+    id: message.id,
+    threadId: message.threadId,
+    from: header('From'),
+    to: header('To'),
+    cc: header('Cc'),
+    subject: header('Subject'),
+    date: header('Date'),
+    snippet: message.snippet,
+    listId: header('List-Id'),
+  };
 }
 
 async function fetchReportedMessage(options: PollGmailOptions, messageId: string) {
-  const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${messageId}`);
+  const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${messageId}?format=metadata`);
   return toReportedMessage(message);
 }
 

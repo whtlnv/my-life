@@ -279,4 +279,73 @@ describe('pollGmailOnce', () => {
       },
     ]);
   });
+  it('reports each message with its From, To, Cc, Subject, Date and List-Id headers and its snippet, read as metadata', async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages` && url.searchParams.get('labelIds') === 'INBOX') {
+        return Promise.resolve(Response.json({ messages: [{ id: 'digest', threadId: 'thread-digest' }] }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages/digest`) {
+        if (url.searchParams.get('format') !== 'metadata') {
+          return Promise.resolve(new Response('only metadata reads are served', { status: 400 }));
+        }
+        return Promise.resolve(
+          Response.json({
+            id: 'digest',
+            threadId: 'thread-digest',
+            labelIds: ['INBOX'],
+            snippet: 'This week in the board: agenda and minutes',
+            payload: {
+              headers: [
+                { name: 'From', value: 'Board <board@lists.example.com>' },
+                { name: 'To', value: 'team@example.com' },
+                { name: 'Cc', value: 'Francisco <francisco@example.com>' },
+                { name: 'Subject', value: 'Weekly board digest' },
+                { name: 'Date', value: 'Fri, 6 Nov 2026 08:00:00 -0600' },
+                { name: 'List-Id', value: 'Board <board.lists.example.com>' },
+                { name: 'Received', value: 'from mail.example.com' },
+              ],
+            },
+          }),
+        );
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await pollGmailOnce({
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      storedHistoryId: undefined,
+    });
+
+    expect(backendPosts.map((post) => post.body)).toEqual([
+      {
+        accountEmail: 'francisco@example.com',
+        historyId: '98765',
+        messages: [
+          {
+            id: 'digest',
+            threadId: 'thread-digest',
+            from: 'Board <board@lists.example.com>',
+            to: 'team@example.com',
+            cc: 'Francisco <francisco@example.com>',
+            subject: 'Weekly board digest',
+            date: 'Fri, 6 Nov 2026 08:00:00 -0600',
+            snippet: 'This week in the board: agenda and minutes',
+            listId: 'Board <board.lists.example.com>',
+          },
+        ],
+      },
+    ]);
+  });
 });

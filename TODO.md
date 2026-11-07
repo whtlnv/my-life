@@ -88,7 +88,7 @@
 - [x] Inbox listing follows every page until the last
 - [x] With a stored history id, the extension reports only the messages added since that id
 - [x] When the history read answers 404, the extension falls back to a full inbox report
-- [ ] Each reported message carries its From, To, Cc, Subject, Date and List-Id headers and its snippet, read in batches of metadata
+- [x] Each reported message carries its From, To, Cc, Subject, Date and List-Id headers and its snippet, read in batches of metadata
 - [ ] A Gmail read answering 429 or 5xx is retried with backoff
 - [ ] A Gmail read answering 403 is not retried
 - [ ] The report is posted to the backend with the profile's account email
