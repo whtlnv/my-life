@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { accountName } from './account-name';
-import { agreementRateText, CategoriesPage, noProposalsYetText } from './categories-page';
+import { agreementRateText, CategoriesPage, killSwitchLabel, noProposalsYetText } from './categories-page';
 
 const answerGetCategoriesWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -119,5 +119,45 @@ describe('CategoriesPage', () => {
     expect(within(item).getByText(proposal.action)).toBeInTheDocument();
     expect(within(item).getByText(accountName(proposal.accountEmail))).toBeInTheDocument();
     expect(within(item).getByRole('link')).toHaveAttribute('href', proposal.link);
+  });
+
+  it('sends POST /categories/kill-switch when the kill-switch button is pressed and every switch then reads advise', async () => {
+    let mode = 'automatic';
+    const killSwitchRequests: { url: string; method: string | undefined }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === '/categories/kill-switch') {
+          killSwitchRequests.push({ url: input, method: init?.method });
+          mode = 'advise';
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        if (input === '/categories') {
+          const categories = [
+            { category: 'sales', mode, agreementRate: 0.5, recentProposals: [] },
+            { category: 'expense', mode, agreementRate: 0.9, recentProposals: [] },
+          ];
+          return Promise.resolve(
+            new Response(JSON.stringify({ categories }), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<CategoriesPage />);
+
+    expect(killSwitchLabel).toMatch(/kill switch/i);
+    await screen.findByRole('switch', { name: 'sales' });
+    await userEvent.click(screen.getByRole('button', { name: killSwitchLabel }));
+
+    expect(killSwitchRequests).toEqual([{ url: '/categories/kill-switch', method: 'POST' }]);
+    await waitFor(() => {
+      const switches = screen.getAllByRole('switch');
+      expect(switches).toHaveLength(2);
+      switches.forEach((modeSwitch) => {
+        expect(modeSwitch).toHaveAttribute('aria-checked', 'false');
+      });
+    });
   });
 });

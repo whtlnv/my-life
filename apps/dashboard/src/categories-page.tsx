@@ -24,6 +24,8 @@ export const agreementRateText = (rate: number) => `${String(Math.round(rate * 1
 
 export const noProposalsYetText = 'no proposals yet';
 
+export const killSwitchLabel = 'Kill switch: every category back to advise';
+
 const rateText = (rate: number | undefined) => (rate === undefined ? noProposalsYetText : agreementRateText(rate));
 
 const RecentProposalList = ({ category, proposals }: { category: string; proposals: RecentProposal[] }) => (
@@ -61,33 +63,44 @@ export const CategoriesPage = () => {
     );
   };
 
+  const killSwitch = () => {
+    void fetch('/categories/kill-switch', { method: 'POST' }).then(loadCategories);
+  };
+
   return (
-    <ul aria-label="Categories">
-      {categories.map((row) => (
-        <li key={row.category}>
-          <span>{rateText(row.agreementRate)}</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={row.mode === 'automatic'}
-            onClick={() => {
-              flipMode(row);
-            }}
-          >
-            {row.category}
-          </button>
-          <button
-            type="button"
-            aria-expanded={expanded === row.category}
-            onClick={() => {
-              setExpanded(row.category);
-            }}
-          >
-            Recent proposals
-          </button>
-          {expanded === row.category && <RecentProposalList category={row.category} proposals={row.recentProposals} />}
-        </li>
-      ))}
-    </ul>
+    <>
+      <button type="button" onClick={killSwitch}>
+        {killSwitchLabel}
+      </button>
+      <ul aria-label="Categories">
+        {categories.map((row) => (
+          <li key={row.category}>
+            <span>{rateText(row.agreementRate)}</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={row.mode === 'automatic'}
+              onClick={() => {
+                flipMode(row);
+              }}
+            >
+              {row.category}
+            </button>
+            <button
+              type="button"
+              aria-expanded={expanded === row.category}
+              onClick={() => {
+                setExpanded(row.category);
+              }}
+            >
+              Recent proposals
+            </button>
+            {expanded === row.category && (
+              <RecentProposalList category={row.category} proposals={row.recentProposals} />
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
   );
 };

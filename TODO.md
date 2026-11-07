@@ -49,7 +49,7 @@
 - [x] The `#/categories` page shows "no proposals yet" in place of the rate for a category without proposals
 - [x] Flipping a category's switch on `#/categories` sends `PUT /categories/:category/mode` with the new mode and shows the mode the backend returns
 - [x] Expanding a category on `#/categories` lists its recent proposals with summary, action, account name and a link to the message
-- [ ] The kill-switch button on `#/categories` sends `POST /categories/kill-switch` and every switch then reads `advise`
+- [x] The kill-switch button on `#/categories` sends `POST /categories/kill-switch` and every switch then reads `advise`
 
 ### Filter proposals
 
