@@ -1065,4 +1065,70 @@ describe('TriagePage', () => {
       expect(within(actionBlock).queryByText('Acme sends the January invoice')).not.toBeInTheDocument();
     });
   });
+
+  it('removes a group from the page once the backend accepts its confirm-all, and keeps the other groups', async () => {
+    const queue = {
+      action: [],
+      groups: [
+        {
+          category: 'expense',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-37',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'expense',
+              summary: 'Receipt from Acme',
+              extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+              reason: 'A receipt to file',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-37',
+            },
+          ],
+        },
+        {
+          category: 'sales',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-38',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'sales',
+              summary: 'Initech pitches a CRM',
+              extract: { company: 'Initech', solution: 'A CRM', problem: 'Lost leads' },
+              reason: 'A cold sales pitch',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-38',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          input === '/triage-queue'
+            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
+            : input === '/group-verdicts'
+              ? new Response(null, { status: 201 })
+              : new Response(null, { status: 404 }),
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const expenseToggle = await screen.findByRole('button', { name: /expense.*1/ });
+    expenseToggle.focus();
+    await user.keyboard('c');
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /expense.*1/ })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /sales.*1/ })).toBeInTheDocument();
+  });
 });

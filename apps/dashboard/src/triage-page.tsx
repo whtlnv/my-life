@@ -55,7 +55,7 @@ function confirmVerdict(messageId: TriageItem['messageId']) {
 }
 
 function confirmGroup(category: TriageGroup['category']) {
-  void postJson('/group-verdicts', { category, decision: 'confirmed' });
+  return postJson('/group-verdicts', { category, decision: 'confirmed' });
 }
 
 function correctToAction(messageId: TriageItem['messageId'], action: 'keep' | 'archive') {
@@ -182,7 +182,7 @@ function GroupItem({ item }: { item: TriageItem }) {
   );
 }
 
-function CategoryGroup({ group }: { group: TriageGroup }) {
+function CategoryGroup({ group, onAccepted }: { group: TriageGroup; onAccepted: () => void }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <section>
@@ -194,7 +194,9 @@ function CategoryGroup({ group }: { group: TriageGroup }) {
         }}
         onKeyDown={(event) => {
           if (event.key === 'c') {
-            confirmGroup(group.category);
+            void confirmGroup(group.category).then((response) => {
+              if (response.ok) onAccepted();
+            });
           }
         }}
       >
@@ -225,6 +227,12 @@ export function TriagePage() {
     );
   }
 
+  function removeGroup(category: TriageGroup['category']) {
+    setQueue(
+      (current) => current && { ...current, groups: current.groups.filter((other) => other.category !== category) },
+    );
+  }
+
   return (
     <>
       <section aria-label="Action">
@@ -241,7 +249,13 @@ export function TriagePage() {
       {queue.groups
         .filter((group) => group.category !== 'unknown')
         .map((group) => (
-          <CategoryGroup key={group.category} group={group} />
+          <CategoryGroup
+            key={group.category}
+            group={group}
+            onAccepted={() => {
+              removeGroup(group.category);
+            }}
+          />
         ))}
     </>
   );
