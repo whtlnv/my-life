@@ -23,6 +23,7 @@ import {
 } from '@my-life/domain';
 
 import { openAcknowledgementStore } from './acknowledgement-store';
+import { openCreatedFilterStore } from './created-filter-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
@@ -438,9 +439,30 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   const acknowledgementStore = openAcknowledgementStore(databasePath);
-  app.post('/commands/:id/acknowledgement', (context) => {
-    acknowledgementStore.save(context.req.param('id'));
+  const createdFilterStore = openCreatedFilterStore(databasePath);
+  app.post('/commands/:id/acknowledgement', async (context) => {
+    const commandId = context.req.param('id');
+    acknowledgementStore.save(commandId);
+    const body = await context.req.text();
+    if (body !== '') {
+      const { gmailFilterId } = JSON.parse(body) as { gmailFilterId: string };
+      createdFilterStore.save(commandId, gmailFilterId);
+    }
     return context.body(null, 200);
+  });
+  app.get('/filters', (context) => {
+    const createdFilters = createdFilterStore.loadAll();
+    return context.json({
+      filters: filterProposalStore.loadAll().flatMap((stored) =>
+        createdFilters
+          .filter(({ commandId }) => commandId === `create-filter-${stored.id}`)
+          .map(({ gmailFilterId }) => ({
+            ...(stored.proposal as object),
+            accountEmail: stored.accountEmail,
+            gmailFilterId,
+          })),
+      ),
+    });
   });
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');

@@ -2572,6 +2572,42 @@ describe('backend app', () => {
     });
   });
 
+  it('lists at GET /filters a filter only once its create-filter command is acknowledged, with its criteria, label, account and the Gmail filter id', async () => {
+    const app = appProposingShopNewslettersFilter();
+    await reportTriageAndConfirmShopNewsletters(app);
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const proposalId = listed.proposals[0]?.id ?? '';
+    await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
+    const listFilters = async () => {
+      const response = await app.request('/filters');
+      return { status: response.status, body: response.ok ? ((await response.json()) as unknown) : undefined };
+    };
+
+    const beforeAcknowledgement = await listFilters();
+    await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
+      method: 'POST',
+      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
+    });
+    const afterAcknowledgement = await listFilters();
+
+    expect({ beforeAcknowledgement, afterAcknowledgement }).toEqual({
+      beforeAcknowledgement: { status: 200, body: { filters: [] } },
+      afterAcknowledgement: {
+        status: 200,
+        body: {
+          filters: [
+            expect.objectContaining({
+              criteria: { from: 'news@shop.example.com' },
+              labelName: 'Shop newsletters',
+              accountEmail: 'ana@example.com',
+              gmailFilterId: 'gmail-filter-1',
+            }),
+          ],
+        },
+      },
+    });
+  });
+
   it('no longer lists at GET /filter-proposals a filter proposal rejected through POST /filter-proposals/:id/rejection', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
