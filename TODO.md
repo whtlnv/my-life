@@ -79,7 +79,7 @@
 - [x] A triage model set in the environment replaces the default
 - [x] The daily spend ceiling defaults to USD 20
 - [x] A daily spend ceiling set in the environment replaces the default
-- [ ] The backend refuses to start triage and says why when the Anthropic key is missing
+- [x] The backend refuses to start triage and says why when the Anthropic key is missing
 
 ### Extension — Gmail poll
 

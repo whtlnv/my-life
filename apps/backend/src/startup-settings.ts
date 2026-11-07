@@ -10,6 +10,7 @@ export interface StartupSettings {
   gmailPollingIntervalInMilliseconds: number;
   triageModel: string;
   dailySpendCeilingInUsd: number;
+  triage: { enabled: false; reason: string };
 }
 
 const defaultPort = 7777;
@@ -36,6 +37,7 @@ export function readStartupSettings(
       environment.MY_LIFE_DAILY_SPEND_CEILING_USD,
       defaultDailySpendCeilingInUsd,
     ),
+    triage: { enabled: false, reason: 'ANTHROPIC_API_KEY is not set' },
   };
 }
 
