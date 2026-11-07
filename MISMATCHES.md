@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 03:35 · `apps/integration/src/gmail-fake-server.test.ts::polling the cc-thread scenario shows its two messages as one line, the newest, in the cc-thread group of GET /triage-queue`
+- Behavior: Against the `cc-thread` scenario, the thread shows as one line in its group
+- Predicted: TypeError `Cannot read properties of undefined (reading 'map')` in the fake server's listing handler (no `cc-thread` scenario), so the poll fails
+- Actual: the same TypeError, raised as an uncaught exception inside the fake server; the listing request never gets an answer, so the poll hangs and the test times out (10 s with `--testTimeout=10000`; the default 5 s otherwise)
+- Type: right-reason mismatch
+- Resolution: A handler that throws in the fake server leaves its request hanging instead of failing the poll. The cause is still the missing scenario, so the test stands. Also noted: the backend's `/triage-run` drops `threadId` and `date` from stored proposals, so every `cc-thread` proposal falls into one thread. Once the scenario exists, a single-thread fixture could pass without real per-thread grouping.
+
 ## 2026-11-07 03:29 · `apps/integration/src/gmail-fake-server.test.ts::polling the action-to-me scenario puts the message, addressed to the user, in the action block of GET /triage-queue`
 - Behavior: Against the fake Gmail server's `action-to-me` scenario, the message reaches the action block addressed to the user
 - Predicted: module resolution error — `./gmail-fake-server` (`startGmailFakeServer`) does not exist yet

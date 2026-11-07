@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type GmailScenario = 'action-to-me';
+type GmailScenario = 'action-to-me' | 'cc-thread';
 
 interface FakeGmailMessage {
   id: string;
@@ -23,6 +23,36 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
             { name: 'To', value: accountEmail },
             { name: 'Subject', value: 'Budget review' },
             { name: 'Date', value: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+          ],
+        },
+      },
+    ],
+    'cc-thread': [
+      {
+        id: 'launch-review-first',
+        threadId: 'launch-review',
+        snippet: 'Can we move the launch review?',
+        payload: {
+          headers: [
+            { name: 'From', value: 'Marta <marta@example.com>' },
+            { name: 'To', value: 'Diego <diego@example.com>' },
+            { name: 'Cc', value: accountEmail },
+            { name: 'Subject', value: 'Launch review' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+          ],
+        },
+      },
+      {
+        id: 'launch-review-reply',
+        threadId: 'launch-review',
+        snippet: 'Next Tuesday works for me.',
+        payload: {
+          headers: [
+            { name: 'From', value: 'Diego <diego@example.com>' },
+            { name: 'To', value: 'Marta <marta@example.com>' },
+            { name: 'Cc', value: accountEmail },
+            { name: 'Subject', value: 'Re: Launch review' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 11:00:00 -0600' },
           ],
         },
       },
