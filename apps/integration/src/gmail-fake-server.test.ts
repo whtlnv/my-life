@@ -167,16 +167,38 @@ describe('Gmail fake server', () => {
       expect.objectContaining({ count: 1, items: [expect.objectContaining({ messageId: newest?.id })] }),
     );
   });
-  it('polling the expense scenario shows the receipt with its amount in the expense group of GET /triage-queue', async () => {
-    const { backend, messagesSeenByTriage } = createBackendProposing(() => expenseProposal);
-    await pollScenarioIntoBackend('expense', backend);
-    const expenseItems = await runTriageAndReadGroupItems(backend, 'expense');
+  it.each([
+    {
+      rule: 'polling the expense scenario shows the receipt with its amount in the expense group of GET /triage-queue',
+      scenario: 'expense',
+      category: 'expense',
+      proposal: expenseProposal,
+      shownExtract: { amount: expenseProposal.extract.amount },
+    },
+    {
+      rule: 'polling the sales-pitch scenario shows the pitch with its company in the sales group of GET /triage-queue',
+      scenario: 'sales-pitch',
+      category: 'sales',
+      proposal: salesProposal,
+      shownExtract: { company: salesProposal.extract.company },
+    },
+    {
+      rule: 'polling the calendar-notification scenario shows the notification with its item in the calendar-drive group of GET /triage-queue',
+      scenario: 'calendar-notification',
+      category: 'calendar-drive',
+      proposal: calendarDriveProposal,
+      shownExtract: { item: calendarDriveProposal.extract.item },
+    },
+  ] as const)('$rule', async ({ scenario, category, proposal, shownExtract }) => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => proposal);
+    await pollScenarioIntoBackend(scenario, backend);
+    const groupItems = await runTriageAndReadGroupItems(backend, category);
 
     expect(messagesSeenByTriage).toHaveLength(1);
-    expect(expenseItems).toHaveLength(1);
-    expect(expenseItems[0]).toMatchObject({
+    expect(groupItems).toHaveLength(1);
+    expect(groupItems[0]).toMatchObject({
       messageId: messagesSeenByTriage[0]?.id,
-      extract: { amount: expenseProposal.extract.amount },
+      extract: shownExtract,
     });
   });
   it('polling the system-update-burst scenario groups its notifications by sending system in the system-update group of GET /triage-queue', async () => {
@@ -200,30 +222,6 @@ describe('Gmail fake server', () => {
       ]),
     );
     expect(systems).toHaveLength(2);
-  });
-  it('polling the sales-pitch scenario shows the pitch with its company in the sales group of GET /triage-queue', async () => {
-    const { backend, messagesSeenByTriage } = createBackendProposing(() => salesProposal);
-    await pollScenarioIntoBackend('sales-pitch', backend);
-    const salesItems = await runTriageAndReadGroupItems(backend, 'sales');
-
-    expect(messagesSeenByTriage).toHaveLength(1);
-    expect(salesItems).toHaveLength(1);
-    expect(salesItems[0]).toMatchObject({
-      messageId: messagesSeenByTriage[0]?.id,
-      extract: { company: salesProposal.extract.company },
-    });
-  });
-  it('polling the calendar-notification scenario shows the notification with its item in the calendar-drive group of GET /triage-queue', async () => {
-    const { backend, messagesSeenByTriage } = createBackendProposing(() => calendarDriveProposal);
-    await pollScenarioIntoBackend('calendar-notification', backend);
-    const calendarDriveItems = await runTriageAndReadGroupItems(backend, 'calendar-drive');
-
-    expect(messagesSeenByTriage).toHaveLength(1);
-    expect(calendarDriveItems).toHaveLength(1);
-    expect(calendarDriveItems[0]).toMatchObject({
-      messageId: messagesSeenByTriage[0]?.id,
-      extract: { item: calendarDriveProposal.extract.item },
-    });
   });
   it('polling the history-404 scenario from an expired stored history id reports the whole inbox and returns a fresh history id', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
