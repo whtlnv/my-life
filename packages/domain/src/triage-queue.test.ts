@@ -35,4 +35,29 @@ describe('triageQueue', () => {
       undecidedProposal,
     ]);
   });
+
+  it('groups the waiting proposals by category', () => {
+    const firstSalesProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'sales',
+    };
+    const expenseProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'expense',
+    };
+    const secondSalesProposal = {
+      messageId: 'message-3',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'sales',
+    };
+    const { groups } = triageQueue([firstSalesProposal, expenseProposal, secondSalesProposal], []);
+    expect(groups).toHaveLength(2);
+    expect(groups).toContainEqual({ category: 'sales', proposals: [firstSalesProposal, secondSalesProposal] });
+    expect(groups).toContainEqual({ category: 'expense', proposals: [expenseProposal] });
+  });
 });
