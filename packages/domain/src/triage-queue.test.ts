@@ -138,4 +138,26 @@ describe('triageQueue', () => {
     expect(ccThreadGroup?.proposals).toContainEqual(firstThreadProposal);
     expect(ccThreadGroup?.proposals).toContainEqual(secondThreadProposal);
   });
+
+  it('shows the newer cc-thread proposal of a thread even when it is listed before the older one', () => {
+    const newerProposal = {
+      messageId: 'message-2',
+      threadId: 'thread-1',
+      date: '2026-11-06T10:30:00-06:00',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'cc-thread',
+    };
+    const olderProposal = {
+      messageId: 'message-1',
+      threadId: 'thread-1',
+      date: '2026-11-06T09:00:00-06:00',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'cc-thread',
+    };
+    const { groups } = triageQueue([newerProposal, olderProposal], []);
+    const ccThreadGroup = groups.find((group) => group.category === 'cc-thread');
+    expect(ccThreadGroup?.proposals).toEqual([newerProposal]);
+  });
 });

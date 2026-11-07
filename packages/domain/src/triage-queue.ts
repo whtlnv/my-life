@@ -1,6 +1,7 @@
 interface Proposal {
   messageId: string;
   threadId?: string;
+  date?: string;
   accountEmail: string;
   action: string;
   category?: string;
@@ -51,7 +52,12 @@ const categoryGroup = (category: string | undefined, proposals: Proposal[]): Pro
 };
 
 const newestPerThread = (proposals: Proposal[]): Proposal[] =>
-  groupBy(proposals, (proposal) => proposal.threadId).flatMap(({ proposals }) => proposals.slice(-1));
+  groupBy(proposals, (proposal) => proposal.threadId).map(({ proposals }) => newest(proposals));
+
+const newest = (proposals: Proposal[]): Proposal =>
+  proposals.reduce((latest, proposal) => (timeOf(proposal) > timeOf(latest) ? proposal : latest));
+
+const timeOf = (proposal: Proposal): number => Date.parse(proposal.date ?? '');
 
 const groupBySystem = (proposals: Proposal[]): SystemGroup[] =>
   groupBy(proposals, (proposal) => proposal.extract?.system).map(({ key, proposals }) => ({
