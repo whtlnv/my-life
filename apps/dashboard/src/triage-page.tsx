@@ -38,11 +38,13 @@ interface TriageQueueResponse {
   action: TriageItem[];
   groups: TriageGroup[];
   remaining: number;
+  paused?: boolean;
 }
 
 export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
 export const remainingMessagesText = (count: number) => `${count} messages remaining`;
+export const pausedNoticeText = 'Triage is paused: the daily spend ceiling was reached';
 
 function postJson(path: string, body: object) {
   return fetch(path, { method: 'POST', body: JSON.stringify(body) });
@@ -237,6 +239,7 @@ export function TriagePage() {
   return (
     <>
       <p>{remainingMessagesText(queue.remaining)}</p>
+      {queue.paused && <p>{pausedNoticeText}</p>}
       <section aria-label="Action">
         {queue.action.map((item) => (
           <ActionCard

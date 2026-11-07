@@ -2,7 +2,13 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { noDueTimeText, remainingMessagesText, significantFlagText, TriagePage } from './triage-page';
+import {
+  noDueTimeText,
+  pausedNoticeText,
+  remainingMessagesText,
+  significantFlagText,
+  TriagePage,
+} from './triage-page';
 
 const answerGetTriageQueueWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -1138,5 +1144,13 @@ describe('TriagePage', () => {
     render(<TriagePage />);
 
     expect(await screen.findByText(remainingMessagesText(7))).toBeInTheDocument();
+  });
+
+  it('says so when the ceiling paused triage', async () => {
+    answerGetTriageQueueWith({ action: [], groups: [], remaining: 3, paused: true });
+
+    render(<TriagePage />);
+
+    expect(await screen.findByText(pausedNoticeText)).toBeInTheDocument();
   });
 });

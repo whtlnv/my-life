@@ -191,7 +191,7 @@
 - [x] A card disappears once the backend accepts the rejection posted from the `r` prompt
 - [x] A group disappears once the backend accepts its confirm-all
 - [x] The page shows how many messages remain to be triaged
-- [ ] When the ceiling paused triage, the page says so
+- [x] When the ceiling paused triage, the page says so
 - [ ] When triage is not paused, the page shows no paused notice
 - [ ] The triage page says when the queue was fetched
 - [ ] An all-day event under _Later today_ reads _all day_ instead of a clock time (backlog: apps/dashboard/src/dashboard-app.tsx All-day events show a clock time)
