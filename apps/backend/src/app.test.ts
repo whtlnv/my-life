@@ -874,6 +874,36 @@ describe('backend app', () => {
     expect(askedMessageIds).toEqual(['message-newest']);
   });
 
+  it('resumes triage at POST /triage-run and reports GET /triage-queue unpaused once the running backend passes business midnight after reaching the ceiling', async () => {
+    const askedMessageIds: string[] = [];
+    const triage = triageRecordingAskedMessageIds(askedMessageIds, 12);
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      dailySpendCeilingInUsd: 20,
+      triage,
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-older', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
+        { ...budgetReview, id: 'message-newest', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-middle', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(app);
+    // 07:00Z on Nov 3 is 01:00 on Nov 3 in Mexico City: the next business day.
+    currentTime = new Date('2026-11-03T07:00:00.000Z');
+
+    await postTriageRun(app);
+    const queue = await app.request('/triage-queue');
+
+    expect(askedMessageIds).toEqual(['message-newest', 'message-middle', 'message-older']);
+    expect(await queue.json()).toMatchObject({ paused: false });
+  });
+
   it('answers GET /triage-queue with the action block, the groups with their counts, the number of messages remaining and whether the ceiling paused triage', async () => {
     const proposalsInOrder = [
       {

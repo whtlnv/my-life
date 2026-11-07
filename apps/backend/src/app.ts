@@ -13,6 +13,7 @@ import {
   isAccountFresh,
   isAddressedToUser,
   isLeadingCategory,
+  isTriagePaused,
   mergeCalendarSnapshots,
   triageEffects,
   triageQueue,
@@ -77,17 +78,6 @@ const pollingIntervalsInMilliseconds = {
 };
 
 const businessTimeZone = 'America/Mexico_City';
-
-function businessDate(instant: Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
-}
-
-function spentOnBusinessDateInUsd(spends: { spentAt: string; costInUsd: number }[], instant: Date): number {
-  const day = businessDate(instant);
-  return spends
-    .filter(({ spentAt }) => businessDate(new Date(spentAt)) === day)
-    .reduce((total, { costInUsd }) => total + costInUsd, 0);
-}
 
 function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
@@ -183,9 +173,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       accountEmail,
     );
   });
-  let spentInUsd = spentOnBusinessDateInUsd(spendStore.loadAll(), clock.now());
   const hasReachedDailySpendCeiling = (): boolean =>
-    options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd;
+    options.dailySpendCeilingInUsd !== undefined &&
+    isTriagePaused(
+      spendStore.loadAll().map(({ spentAt, costInUsd }) => ({ loggedAt: spentAt, costInUsd })),
+      { dailyCeilingInUsd: options.dailySpendCeilingInUsd, timeZone: businessTimeZone },
+      clock,
+    );
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -251,7 +245,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const result = await triage.propose({ ...message, accountEmail }, examples);
       const costInUsd = result.costInUsd;
       const answeredAt = clock.now().toISOString();
-      spentInUsd += costInUsd;
       spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });
       proposalStore.save({
         messageId: message.id,
