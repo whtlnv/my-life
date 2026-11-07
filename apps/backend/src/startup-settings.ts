@@ -32,7 +32,7 @@ export function readStartupSettings(
       environment.MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS,
     ),
     triageModel: environment.MY_LIFE_TRIAGE_MODEL ?? defaultTriageModel,
-    dailySpendCeilingInUsd: defaultDailySpendCeilingInUsd,
+    dailySpendCeilingInUsd: parseDailySpendCeiling(environment.MY_LIFE_DAILY_SPEND_CEILING_USD),
   };
 }
 
@@ -41,6 +41,13 @@ function parseGmailPollingInterval(intervalSecondsText: string | undefined): num
     return defaultGmailPollingIntervalInMilliseconds;
   }
   return Number(intervalSecondsText) * millisecondsPerSecond;
+}
+
+function parseDailySpendCeiling(ceilingText: string | undefined): number {
+  if (ceilingText === undefined) {
+    return defaultDailySpendCeilingInUsd;
+  }
+  return Number(ceilingText);
 }
 
 function parsePort(portText: string | undefined): number {

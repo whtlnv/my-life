@@ -107,4 +107,10 @@ describe('startup settings', () => {
 
     expect(settings.dailySpendCeilingInUsd).toBe(20);
   });
+
+  it('caps daily triage spend at USD 35 when MY_LIFE_DAILY_SPEND_CEILING_USD is 35', () => {
+    const settings = readStartupSettings({ MY_LIFE_DAILY_SPEND_CEILING_USD: '35' }, '/Users/ana');
+
+    expect(settings.dailySpendCeilingInUsd).toBe(35);
+  });
 });
