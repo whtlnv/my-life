@@ -14,4 +14,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
+
+  it('rejects a proposal whose category is not one of the seven categories', () => {
+    const proposal = {
+      action: 'archive',
+      category: 'newsletter',
+      summary: 'Luis confirmed the vendor contract is signed',
+      extract: { sinceLastMessage: 'Luis confirmed the vendor signed the contract on Thursday.' },
+      reason: 'The user is only in Cc and nothing is asked of them.',
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });
