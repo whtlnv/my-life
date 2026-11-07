@@ -90,6 +90,25 @@ function createBackendProposing(proposalFor: (message: MessageSeenByTriage) => o
   return { backend, messagesSeenByTriage };
 }
 
+function extensionFetchRoutingTo(gmailUrl: string, backend: Backend): typeof fetch {
+  return async (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+    if (url.origin === 'https://gmail.googleapis.com') {
+      return fetch(new URL(url.pathname + url.search, gmailUrl), init);
+    }
+    return backend.request(url.pathname + url.search, init);
+  };
+}
+
+function extensionOptionsFor(gmailUrl: string, backend: Backend) {
+  return {
+    fetch: extensionFetchRoutingTo(gmailUrl, backend),
+    accessToken: 'fake-token',
+    accountEmail,
+    backendUrl,
+  };
+}
+
 async function pollScenarioIntoBackend(
   scenario: Parameters<typeof startGmailFakeServer>[0],
   backend: Backend,
@@ -97,19 +116,7 @@ async function pollScenarioIntoBackend(
 ): Promise<string | undefined> {
   const gmail = await startGmailFakeServer(scenario, accountEmail);
   try {
-    return await pollGmailOnce({
-      fetch: async (input, init) => {
-        const url = new URL(input instanceof Request ? input.url : input.toString());
-        if (url.origin === 'https://gmail.googleapis.com') {
-          return fetch(new URL(url.pathname + url.search, gmail.url), init);
-        }
-        return backend.request(url.pathname, init);
-      },
-      accessToken: 'fake-token',
-      accountEmail,
-      backendUrl,
-      storedHistoryId,
-    });
+    return await pollGmailOnce({ ...extensionOptionsFor(gmail.url, backend), storedHistoryId });
   } finally {
     await gmail.close();
   }
@@ -233,14 +240,7 @@ describe('Gmail fake server', () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => expenseProposal);
     const gmail = await startGmailFakeServer('expense', accountEmail);
     const gmailApi = `${gmail.url}/gmail/v1/users/me`;
-    const extensionFetch = async (input: string | URL | Request, init?: RequestInit) => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.origin === 'https://gmail.googleapis.com') {
-        return fetch(new URL(url.pathname + url.search, gmail.url), init);
-      }
-      return backend.request(url.pathname + url.search, init);
-    };
-    const extensionOptions = { fetch: extensionFetch, accessToken: 'fake-token', accountEmail, backendUrl };
+    const extensionOptions = extensionOptionsFor(gmail.url, backend);
     try {
       await pollGmailOnce(extensionOptions);
       await backend.request('/triage-run', { method: 'POST' });
