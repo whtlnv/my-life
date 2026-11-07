@@ -1492,6 +1492,26 @@ describe('backend app', () => {
     });
   });
 
+  it('lists at GET /tasks no task once its confirmed act proposal is re-decided as rejected through POST /verdicts', async () => {
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+      taskDraft: { title: 'Review the budget by Friday' },
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => currentTime }, triage });
+    await confirmBudgetReviewProposal(app);
+    currentTime = new Date('2026-11-02T15:11:00.000Z');
+
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'rejected' });
+
+    const response = await app.request('/tasks');
+    expect(await response.json()).toEqual({ tasks: [] });
+  });
+
   it('lists at GET /check-later the company, Gmail link and account of a sales proposal the user confirmed to keep', async () => {
     const triage = triageAnswering({
       action: 'keep',

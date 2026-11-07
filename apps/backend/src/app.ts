@@ -98,7 +98,7 @@ function isStillConfirmed(messageId: string, verdicts: { messageId: string; deci
 }
 
 function proposalEffects(proposal: Proposal, verdicts: { messageId: string }[]) {
-  const verdict = verdicts.find((candidate) => candidate.messageId === proposal.messageId);
+  const verdict = verdicts.filter((candidate) => candidate.messageId === proposal.messageId).at(-1);
   return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
 }
 
