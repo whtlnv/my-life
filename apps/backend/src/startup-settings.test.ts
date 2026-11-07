@@ -33,22 +33,14 @@ describe('startup settings', () => {
     expect(settings.allowedEmails).toEqual(allowedEmails);
   });
 
-  it('reads the port as a number from MY_LIFE_PORT', () => {
-    const settings = readStartupSettings({ MY_LIFE_PORT: '4321' }, '/Users/ana');
+  it.each([
+    { rule: 'reads the port as a number from MY_LIFE_PORT', environment: { MY_LIFE_PORT: '4321' }, port: 4321 },
+    { rule: 'uses port 8123 when MY_LIFE_PORT is 8123', environment: { MY_LIFE_PORT: '8123' }, port: 8123 },
+    { rule: 'uses port 7777 when MY_LIFE_PORT is unset', environment: {}, port: 7777 },
+  ])('$rule', ({ environment, port }) => {
+    const settings = readStartupSettings(environment, '/Users/ana');
 
-    expect(settings.port).toBe(4321);
-  });
-
-  it('uses port 8123 when MY_LIFE_PORT is 8123', () => {
-    const settings = readStartupSettings({ MY_LIFE_PORT: '8123' }, '/Users/ana');
-
-    expect(settings.port).toBe(8123);
-  });
-
-  it('uses port 7777 when MY_LIFE_PORT is unset', () => {
-    const settings = readStartupSettings({}, '/Users/ana');
-
-    expect(settings.port).toBe(7777);
+    expect(settings.port).toBe(port);
   });
 
   it('uses the Application Support database path when MY_LIFE_DATABASE_PATH is unset', () => {
