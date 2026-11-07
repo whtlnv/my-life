@@ -34,4 +34,17 @@ describe('mailReport', () => {
 
     expect(mailReport.safeParse(report).success).toBe(false);
   });
+
+  it('accepts a report whose message has no Cc header', () => {
+    const messageWithoutCc = Object.fromEntries(
+      Object.entries(message).filter(([key]) => key !== 'cc'),
+    );
+    const report = {
+      accountEmail: 'francisco@example.com',
+      historyId: '987654',
+      messages: [messageWithoutCc],
+    };
+
+    expect(mailReport.parse(report)).toEqual(report);
+  });
 });
