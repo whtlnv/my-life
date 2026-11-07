@@ -216,7 +216,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
       .filter((proposal) => verdicts.some((verdict) => verdict.messageId === proposal.messageId))
-      .map(({ messageId }) => ({ id: 'command-1', messageId }));
+      .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }));
     return context.json({ commands });
   });
   app.get('/now', (context) => {

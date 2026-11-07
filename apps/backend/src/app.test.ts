@@ -1029,4 +1029,26 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ commands: [] });
   });
+
+  it('lists at GET /commands two archive commands with distinct ids, each carrying its own message id, for two confirmed archives on one account', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [budgetReview, { ...budgetReview, id: 'message-2', threadId: 'thread-2' }],
+    });
+    await app.request('/triage-run', { method: 'POST' });
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    await postJson(app, '/verdicts', { messageId: 'message-2', decision: 'confirmed' });
+
+    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+
+    const { commands } = (await response.json()) as { commands: { id: string; messageId: string }[] };
+    expect(commands.map(({ messageId }) => messageId).sort()).toEqual(['message-1', 'message-2']);
+    expect(new Set(commands.map(({ id }) => id)).size).toBe(2);
+  });
 });
