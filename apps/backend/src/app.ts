@@ -122,6 +122,13 @@ function confirmedCheckLater(proposals: Proposal[], verdicts: StoredVerdict[]) {
   });
 }
 
+function agreementRate(category: string, proposals: Proposal[], verdicts: StoredVerdict[]): number | undefined {
+  const categoryProposals = proposals.filter((proposal) => proposal.category === category);
+  if (categoryProposals.length === 0) return undefined;
+  const confirmedCount = categoryProposals.filter(({ messageId }) => isStillConfirmed(messageId, verdicts)).length;
+  return confirmedCount / categoryProposals.length;
+}
+
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(proposals, verdicts);
   const withLink = (proposal: Proposal) => ({ ...proposal, link: gmailMessageLink(proposal) });
@@ -336,12 +343,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const categoryModes = categoryModeStore.loadAll();
     const verdicts = verdictStore.loadAll();
     return context.json({
-      categories: triageCategories.map((category) => {
-        const categoryProposals = proposals.filter((proposal) => proposal.category === category);
-        const confirmedCount = categoryProposals.filter(({ messageId }) => isStillConfirmed(messageId, verdicts)).length;
-        const agreementRate = categoryProposals.length > 0 ? confirmedCount / categoryProposals.length : undefined;
-        return { category, mode: categoryModes[category] ?? 'advise', agreementRate };
-      }),
+      categories: triageCategories.map((category) => ({
+        category,
+        mode: categoryModes[category] ?? 'advise',
+        agreementRate: agreementRate(category, proposals, verdicts),
+      })),
     });
   });
   app.get('/check-later', (context) => {
