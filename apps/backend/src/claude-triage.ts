@@ -27,9 +27,18 @@ interface ClaudeTriageDependencies {
   }) => Promise<ClaudeResponse>;
 }
 
-function readProfile(profileDirectory: string, accountEmail: string): string {
+function profileFileName(accountEmail: string): string {
   const domainName = accountEmail.split('@')[1]?.split('.')[0] ?? '';
-  return readFileSync(join(profileDirectory, `${domainName}.md`), 'utf8');
+  return `${domainName}.md`;
+}
+
+function readProfile(profileDirectory: string, accountEmail: string): string {
+  return readFileSync(join(profileDirectory, profileFileName(accountEmail)), 'utf8');
+}
+
+function composeSystemPrompt(promptPath: string, profileDirectory: string | undefined, accountEmail: string): string {
+  const prompt = readFileSync(promptPath, 'utf8');
+  return profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory, accountEmail)}`;
 }
 
 interface TriageMessage {
@@ -91,8 +100,7 @@ export function createClaudeTriage({
   const promptVersion = basename(promptPath, extname(promptPath));
   return {
     propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome> => {
-      const prompt = readFileSync(promptPath, 'utf8');
-      const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory, message.accountEmail ?? '')}`;
+      const system = composeSystemPrompt(promptPath, profileDirectory, message.accountEmail ?? '');
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       const response = await createMessage({ model, system, messages, tools: [proposeTriageTool] });
       const costInUsd = computeCostInUsd(response.usage, pricing);
