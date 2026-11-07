@@ -25,7 +25,7 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: new Date('2026-11-02T10:00:00-06:00'),
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
       timeZone: 'America/Mexico_City',
     });
 
@@ -61,7 +61,7 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: new Date('2026-11-02T10:00:00-06:00'),
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
       timeZone: 'America/Mexico_City',
       every: (milliseconds: number, poll: () => Promise<void>) => {
         scheduledMilliseconds = milliseconds;
@@ -102,7 +102,6 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: currentTime,
       clock: () => currentTime,
       timeZone: 'America/Mexico_City',
       every: (_milliseconds: number, poll: () => Promise<void>) => {
@@ -141,7 +140,7 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: new Date('2026-11-02T10:00:00-06:00'),
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
       timeZone: 'America/Mexico_City',
       every: (_milliseconds: number, poll: () => Promise<void>) => {
         scheduledPoll = poll;
@@ -186,7 +185,7 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: new Date('2026-11-02T10:00:00-06:00'),
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
       timeZone: 'America/Mexico_City',
     });
 
@@ -219,7 +218,7 @@ describe('startExtension', () => {
           profileAccountEmail: () => Promise.resolve('francisco@example.com'),
           accessToken: () => Promise.resolve('token-for-francisco'),
           backendUrl: 'http://127.0.0.1:7777',
-          now: new Date('2026-11-02T10:00:00-06:00'),
+          clock: () => new Date('2026-11-02T10:00:00-06:00'),
           timeZone: 'America/Mexico_City',
         }),
       ).resolves.toBeUndefined();
@@ -266,7 +265,7 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: new Date('2026-11-02T10:00:00-06:00'),
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
       timeZone: 'America/Mexico_City',
       every: (milliseconds: number, poll: () => Promise<void>) => {
         scheduledPolls.set(milliseconds, poll);
@@ -310,7 +309,7 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: new Date('2026-11-02T10:00:00-06:00'),
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
       timeZone: 'America/Mexico_City',
       every: (milliseconds: number, poll: () => Promise<void>) => {
         scheduledPolls.set(milliseconds, poll);
@@ -363,7 +362,7 @@ describe('startExtension', () => {
         profileAccountEmail: () => Promise.resolve('francisco@example.com'),
         accessToken: () => Promise.resolve('token-for-francisco'),
         backendUrl: 'http://127.0.0.1:7777',
-        now: new Date('2026-11-02T10:00:00-06:00'),
+        clock: () => new Date('2026-11-02T10:00:00-06:00'),
         timeZone: 'America/Mexico_City',
         every: (milliseconds: number, poll: () => Promise<void>) => {
           scheduledPolls.set(milliseconds, poll);
@@ -421,7 +420,7 @@ describe('startExtension', () => {
       profileAccountEmail: () => Promise.resolve('francisco@example.com'),
       accessToken: () => Promise.resolve('token-for-francisco'),
       backendUrl: 'http://127.0.0.1:7777',
-      now: new Date('2026-11-02T10:00:00-06:00'),
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
       timeZone: 'America/Mexico_City',
     });
 

@@ -12,8 +12,7 @@ interface StartExtensionOptions {
   profileAccountEmail: () => Promise<string>;
   accessToken: () => Promise<string>;
   backendUrl: string;
-  now: Date;
-  clock?: () => Date;
+  clock: () => Date;
   timeZone: string;
   every?: (milliseconds: number, poll: () => Promise<void>) => void;
   setBadgeText?: (text: string) => Promise<void>;
@@ -25,14 +24,13 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     method: 'POST',
     body: JSON.stringify({ email: accountEmail }),
   });
-  const currentTime = options.clock ?? (() => options.now);
   const pollCalendar = async () => {
     await pollCalendarOnce({
       fetch: options.fetch,
       accessToken: await options.accessToken(),
       accountEmail,
       backendUrl: options.backendUrl,
-      now: currentTime(),
+      now: options.clock(),
       timeZone: options.timeZone,
     });
     if (options.setBadgeText) {

@@ -30,7 +30,6 @@ export default defineBackground(() => {
     profileAccountEmail,
     accessToken,
     backendUrl: backend,
-    now: new Date(),
     clock: () => new Date(),
     timeZone: businessTimeZone,
     // One alarm per schedule: the Gmail poll (every minute) and the calendar poll (every 5 minutes) each get their own
