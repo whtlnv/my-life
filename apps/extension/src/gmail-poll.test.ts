@@ -21,6 +21,18 @@ function gmailMessage(id: string, subject: string, date: string) {
   };
 }
 
+function answerMessageRead(
+  url: URL,
+  messagesById: Record<string, ReturnType<typeof gmailMessage>>,
+): Promise<Response> | undefined {
+  const messagePath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)$/.exec(url.pathname);
+  if (url.origin !== 'https://gmail.googleapis.com' || messagePath === null) {
+    return undefined;
+  }
+  const message = messagesById[messagePath[1] ?? ''];
+  return Promise.resolve(message === undefined ? new Response('not found', { status: 404 }) : Response.json(message));
+}
+
 describe('pollGmailOnce', () => {
   it('on its first poll with no stored history id, reports every inbox message, newest first, with the current history id', async () => {
     const messagesById: Record<string, ReturnType<typeof gmailMessage>> = {
@@ -46,12 +58,9 @@ describe('pollGmailOnce', () => {
           }),
         );
       }
-      const messagePath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)$/.exec(url.pathname);
-      if (url.origin === 'https://gmail.googleapis.com' && messagePath !== null) {
-        const message = messagesById[messagePath[1] ?? ''];
-        return Promise.resolve(
-          message === undefined ? new Response('not found', { status: 404 }) : Response.json(message),
-        );
+      const messageRead = answerMessageRead(url, messagesById);
+      if (messageRead !== undefined) {
+        return messageRead;
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
         backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
@@ -105,12 +114,9 @@ describe('pollGmailOnce', () => {
           page === undefined ? new Response('unknown page token', { status: 400 }) : Response.json(page),
         );
       }
-      const messagePath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)$/.exec(url.pathname);
-      if (url.origin === 'https://gmail.googleapis.com' && messagePath !== null) {
-        const message = messagesById[messagePath[1] ?? ''];
-        return Promise.resolve(
-          message === undefined ? new Response('not found', { status: 404 }) : Response.json(message),
-        );
+      const messageRead = answerMessageRead(url, messagesById);
+      if (messageRead !== undefined) {
+        return messageRead;
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
         backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
@@ -179,12 +185,9 @@ describe('pollGmailOnce', () => {
           }),
         );
       }
-      const messagePath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)$/.exec(url.pathname);
-      if (url.origin === 'https://gmail.googleapis.com' && messagePath !== null) {
-        const message = messagesById[messagePath[1] ?? ''];
-        return Promise.resolve(
-          message === undefined ? new Response('not found', { status: 404 }) : Response.json(message),
-        );
+      const messageRead = answerMessageRead(url, messagesById);
+      if (messageRead !== undefined) {
+        return messageRead;
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
         backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
@@ -247,12 +250,9 @@ describe('pollGmailOnce', () => {
           }),
         );
       }
-      const messagePath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)$/.exec(url.pathname);
-      if (url.origin === 'https://gmail.googleapis.com' && messagePath !== null) {
-        const message = messagesById[messagePath[1] ?? ''];
-        return Promise.resolve(
-          message === undefined ? new Response('not found', { status: 404 }) : Response.json(message),
-        );
+      const messageRead = answerMessageRead(url, messagesById);
+      if (messageRead !== undefined) {
+        return messageRead;
       }
       if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
         backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
