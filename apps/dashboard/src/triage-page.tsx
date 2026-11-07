@@ -74,6 +74,8 @@ function ActionCard({ item }: { item: TriageItem }) {
           rejectVerdict(item.messageId);
         } else if (event.key === 't' && item.action === 'keep') {
           correctToTask(item);
+        } else if (event.key === 'a' && item.action === 'act') {
+          postVerdict({ messageId: item.messageId, decision: 'rejected', correction: { action: 'archive' } });
         } else if (event.key === 'r') {
           setCorrecting(true);
         } else if (verdictKeys.has(event.key)) {
