@@ -37,12 +37,24 @@ type Backend = ReturnType<typeof createApp>;
 
 interface MessageSeenByTriage {
   id: string;
+  from?: string;
   to?: string;
   threadId?: string;
   date?: string;
 }
 
-function createBackendProposing(proposal: object): {
+function systemUpdateProposalFor(message: MessageSeenByTriage): object {
+  const system = (message.from ?? '').replace(/\s*<.*>$/, '');
+  return {
+    action: 'archive',
+    category: 'system-update',
+    summary: `Notification from ${system}`,
+    extract: { system, severity: 'info', significant: false },
+    reason: 'An automated notification',
+  };
+}
+
+function createBackendProposing(proposalFor: (message: MessageSeenByTriage) => object): {
   backend: Backend;
   messagesSeenByTriage: MessageSeenByTriage[];
 } {
@@ -53,6 +65,7 @@ function createBackendProposing(proposal: object): {
     triage: {
       propose: (message) => {
         messagesSeenByTriage.push(message);
+        const proposal = proposalFor(message);
         return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
       },
     },
@@ -91,7 +104,7 @@ async function runTriageAndReadQueue<Queue>(backend: Backend): Promise<Queue> {
 
 describe('Gmail fake server', () => {
   it('polling the action-to-me scenario puts the message, addressed to the user, in the action block of GET /triage-queue', async () => {
-    const { backend, messagesSeenByTriage } = createBackendProposing(actionProposal);
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
     await pollScenarioIntoBackend('action-to-me', backend);
     const queue = await runTriageAndReadQueue<{
       action: { messageId: string; category: string; accountEmail: string }[];
@@ -104,7 +117,7 @@ describe('Gmail fake server', () => {
     ]);
   });
   it('polling the cc-thread scenario shows its two messages as one line, the newest, in the cc-thread group of GET /triage-queue', async () => {
-    const { backend, messagesSeenByTriage } = createBackendProposing(ccThreadProposal);
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => ccThreadProposal);
     await pollScenarioIntoBackend('cc-thread', backend);
     const queue = await runTriageAndReadQueue<{
       groups: { category: string; count: number; items: { messageId: string }[] }[];
@@ -120,7 +133,7 @@ describe('Gmail fake server', () => {
     );
   });
   it('polling the expense scenario shows the receipt with its amount in the expense group of GET /triage-queue', async () => {
-    const { backend, messagesSeenByTriage } = createBackendProposing(expenseProposal);
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => expenseProposal);
     await pollScenarioIntoBackend('expense', backend);
     const queue = await runTriageAndReadQueue<{
       groups: { category: string; items: { messageId: string; extract: { amount?: number } }[] }[];
@@ -135,34 +148,13 @@ describe('Gmail fake server', () => {
     ]);
   });
   it('polling the system-update-burst scenario groups its notifications by sending system in the system-update group of GET /triage-queue', async () => {
-    const messagesSeenByTriage: { id: string; from: string }[] = [];
-    const backend = createApp({
-      allowedEmails: [accountEmail],
-      clock: { now: () => triageTime },
-      triage: {
-        propose: (message) => {
-          messagesSeenByTriage.push(message);
-          const system = message.from.replace(/\s*<.*>$/, '');
-          return Promise.resolve({
-            proposal: {
-              action: 'archive',
-              category: 'system-update',
-              summary: `Notification from ${system}`,
-              extract: { system, severity: 'info', significant: false },
-              reason: 'An automated notification',
-            },
-            costInUsd: 0,
-            promptVersion: 'triage-v1',
-          });
-        },
-      },
-    });
+    const { backend, messagesSeenByTriage } = createBackendProposing(systemUpdateProposalFor);
     await pollScenarioIntoBackend('system-update-burst', backend);
     const queue = await runTriageAndReadQueue<{
       groups: { category: string; systems?: { system: string; items: { messageId: string }[] }[] }[];
     }>(backend);
     const idsFrom = (system: string) =>
-      messagesSeenByTriage.filter(({ from }) => from.startsWith(system)).map(({ id }) => id);
+      messagesSeenByTriage.filter(({ from }) => from?.startsWith(system)).map(({ id }) => id);
     const systems = queue.groups.find(({ category }) => category === 'system-update')?.systems ?? [];
 
     expect(idsFrom('GitHub')).toHaveLength(2);
