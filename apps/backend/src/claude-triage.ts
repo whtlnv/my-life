@@ -108,6 +108,10 @@ export function createClaudeTriage({
       const response = await createMessage({ model, system, messages, tools: [proposeTriageTool] });
       const promptVersion = basename(promptPath, extname(promptPath));
       const costInUsd = costOf(response);
+      const input = readToolUseInput(response);
+      if (costInUsd !== undefined && !triageProposal.safeParse(input).success) {
+        return { promptVersion, failure: { input }, costInUsd };
+      }
       if (costInUsd !== undefined) {
         return { promptVersion, proposal: readToolUseInput(response), costInUsd };
       }
