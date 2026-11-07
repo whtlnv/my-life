@@ -92,10 +92,11 @@ function createBackendProposing(proposalFor: (message: MessageSeenByTriage) => o
 async function pollScenarioIntoBackend(
   scenario: Parameters<typeof startGmailFakeServer>[0],
   backend: Backend,
-): Promise<void> {
+  storedHistoryId?: string,
+): Promise<string | undefined> {
   const gmail = await startGmailFakeServer(scenario, accountEmail);
   try {
-    await pollGmailOnce({
+    return await pollGmailOnce({
       fetch: async (input, init) => {
         const url = new URL(input instanceof Request ? input.url : input.toString());
         if (url.origin === 'https://gmail.googleapis.com') {
@@ -106,7 +107,7 @@ async function pollScenarioIntoBackend(
       accessToken: 'fake-token',
       accountEmail,
       backendUrl,
-      storedHistoryId: undefined,
+      storedHistoryId,
     });
   } finally {
     await gmail.close();
@@ -219,25 +220,7 @@ describe('Gmail fake server', () => {
   it('polling the history-404 scenario from an expired stored history id reports the whole inbox and returns a fresh history id', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
     const expiredHistoryId = 'expired-history-id';
-    const gmail = await startGmailFakeServer('history-404', accountEmail);
-    let returnedHistoryId: string | undefined;
-    try {
-      returnedHistoryId = await pollGmailOnce({
-        fetch: async (input, init) => {
-          const url = new URL(input instanceof Request ? input.url : input.toString());
-          if (url.origin === 'https://gmail.googleapis.com') {
-            return fetch(new URL(url.pathname + url.search, gmail.url), init);
-          }
-          return backend.request(url.pathname, init);
-        },
-        accessToken: 'fake-token',
-        accountEmail,
-        backendUrl,
-        storedHistoryId: expiredHistoryId,
-      });
-    } finally {
-      await gmail.close();
-    }
+    const returnedHistoryId = await pollScenarioIntoBackend('history-404', backend, expiredHistoryId);
     const queue = await runTriageAndReadQueue<{ action: { messageId: string }[] }>(backend);
 
     expect(returnedHistoryId).toBeDefined();
