@@ -59,7 +59,7 @@ function confirmGroup(category: TriageGroup['category']) {
 }
 
 function correctToAction(messageId: TriageItem['messageId'], action: 'keep' | 'archive') {
-  void postVerdict({ messageId, decision: 'rejected', correction: { action } });
+  return postVerdict({ messageId, decision: 'rejected', correction: { action } });
 }
 
 function correctToTask(item: TriageItem) {
@@ -82,9 +82,9 @@ function handleVerdictKey(item: TriageItem, key: string): Promise<Response> | un
   if (key === 't' && item.action === 'keep') {
     correctToTask(item);
   } else if (key === 'a' && item.action === 'act') {
-    correctToAction(item.messageId, 'archive');
+    return correctToAction(item.messageId, 'archive');
   } else if (key === 'k' && item.action === 'act') {
-    correctToAction(item.messageId, 'keep');
+    void correctToAction(item.messageId, 'keep');
   } else if (verdictKeys.has(key)) {
     return confirmVerdict(item.messageId);
   }
@@ -105,7 +105,7 @@ function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => 
           } else if (event.key === 'Escape') {
             setCorrecting(false);
           } else if (event.target === event.currentTarget) {
-            correctToAction(item.messageId, 'keep');
+            void correctToAction(item.messageId, 'keep');
           }
         } else if (event.key === 'r') {
           setCorrecting(true);

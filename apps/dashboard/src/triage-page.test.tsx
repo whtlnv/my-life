@@ -975,4 +975,47 @@ describe('TriagePage', () => {
     });
     expect(within(actionBlock).getByText('Marta asks for the signed contract')).toBeInTheDocument();
   });
+
+  it('removes a card from the page once the backend accepts the correction its key posts', async () => {
+    const queue = {
+      action: [
+        {
+          messageId: 'message-41',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Pedro shares the lunch menu',
+          extract: { asker: 'Pedro Ruiz', ask: 'Pick a dish' },
+          reason: 'Pedro asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-41',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          input === '/triage-queue'
+            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
+            : input === '/verdicts'
+              ? new Response(null, { status: 201 })
+              : new Response(null, { status: 404 }),
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    await user.click(within(actionBlock).getByRole('article'));
+    await user.keyboard('a');
+
+    await waitFor(() => {
+      expect(within(actionBlock).queryByText('Pedro shares the lunch menu')).not.toBeInTheDocument();
+    });
+  });
 });
