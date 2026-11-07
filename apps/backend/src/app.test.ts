@@ -1092,4 +1092,37 @@ describe('backend app', () => {
 
     expect(await response.json()).toEqual({ commands: [] });
   });
+
+  it('lists at GET /tasks the title, Gmail link and account of a task stored when an act proposal is confirmed', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'act',
+            category: 'action',
+            summary: 'Luis asks for a budget review',
+            extract: { asker: 'Luis', ask: 'Review the budget' },
+            reason: 'Luis asks the user directly',
+            taskDraft: { title: 'Review the budget by Friday' },
+          },
+          costInUsd: 1,
+          promptVersion: 'triage-v1',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await confirmBudgetReviewProposal(app);
+
+    const response = await app.request('/tasks');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      tasks: [
+        {
+          title: 'Review the budget by Friday',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+          accountEmail: 'ana@example.com',
+        },
+      ],
+    });
+  });
 });

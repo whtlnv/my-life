@@ -5,3 +5,4 @@ export { mergeCalendarSnapshots, type CalendarSnapshot } from './merge-calendar-
 export { buildNowView } from './now-view';
 export { badgeCount } from './badge-count';
 export { triageQueue } from './triage-queue';
+export { triageEffects } from './triage-effects';

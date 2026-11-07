@@ -10,6 +10,7 @@ import {
   describeSourceFreshness,
   isAccountFresh,
   mergeCalendarSnapshots,
+  triageEffects,
   triageQueue,
   type CalendarSnapshot,
   type Clock,
@@ -226,6 +227,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });
+  });
+  app.get('/tasks', (context) => {
+    const verdicts = verdictStore.loadAll();
+    const tasks = proposals.flatMap((proposal) =>
+      triageEffects(
+        proposal as Parameters<typeof triageEffects>[0],
+        verdicts.find((verdict) => verdict.messageId === proposal.messageId) as Parameters<typeof triageEffects>[1],
+      ).tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail })),
+    );
+    return context.json({ tasks });
   });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
