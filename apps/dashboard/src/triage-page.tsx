@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 interface TriageItem {
   messageId: string;
+  action: string;
   summary: string;
   reason: string;
   accountEmail: string;
@@ -55,6 +56,17 @@ function rejectVerdict(messageId: TriageItem['messageId']) {
   });
 }
 
+function correctToTask(item: TriageItem) {
+  void fetch('/verdicts', {
+    method: 'POST',
+    body: JSON.stringify({
+      messageId: item.messageId,
+      decision: 'rejected',
+      correction: { action: 'act', taskDraft: { title: item.summary } },
+    }),
+  });
+}
+
 const verdictKeys = new Set(['t', 'k', 'a']);
 
 function ActionCard({ item }: { item: TriageItem }) {
@@ -65,6 +77,8 @@ function ActionCard({ item }: { item: TriageItem }) {
       onKeyDown={(event) => {
         if (correcting) {
           rejectVerdict(item.messageId);
+        } else if (event.key === 't' && item.action === 'keep') {
+          correctToTask(item);
         } else if (event.key === 'r') {
           setCorrecting(true);
         } else if (verdictKeys.has(event.key)) {

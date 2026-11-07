@@ -533,4 +533,43 @@ describe('TriagePage', () => {
       }),
     );
   });
+  it('rejects a focused `keep` card with a correction to `act` and a task draft titled from its summary when `t` is pressed', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-26',
+          accountEmail: 'ana@example.com',
+          action: 'keep',
+          category: 'action',
+          summary: 'Marta asks to renew the domain',
+          extract: { asker: 'Marta Ruiz', ask: 'Renew the domain' },
+          reason: 'Looks informational',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-26',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(card);
+    await user.keyboard('t');
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          messageId: 'message-26',
+          decision: 'rejected',
+          correction: { action: 'act', taskDraft: { title: 'Marta asks to renew the domain' } },
+        }),
+      }),
+    );
+  });
 });
