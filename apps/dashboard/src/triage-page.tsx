@@ -43,27 +43,27 @@ export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
 
 function postJson(path: string, body: object) {
-  void fetch(path, { method: 'POST', body: JSON.stringify(body) });
+  return fetch(path, { method: 'POST', body: JSON.stringify(body) });
 }
 
 function postVerdict(verdict: object) {
-  postJson('/verdicts', verdict);
+  return postJson('/verdicts', verdict);
 }
 
 function confirmVerdict(messageId: TriageItem['messageId']) {
-  postVerdict({ messageId, decision: 'confirmed' });
+  return postVerdict({ messageId, decision: 'confirmed' });
 }
 
 function confirmGroup(category: TriageGroup['category']) {
-  postJson('/group-verdicts', { category, decision: 'confirmed' });
+  void postJson('/group-verdicts', { category, decision: 'confirmed' });
 }
 
 function correctToAction(messageId: TriageItem['messageId'], action: 'keep' | 'archive') {
-  postVerdict({ messageId, decision: 'rejected', correction: { action } });
+  void postVerdict({ messageId, decision: 'rejected', correction: { action } });
 }
 
 function correctToTask(item: TriageItem) {
-  postVerdict({
+  void postVerdict({
     messageId: item.messageId,
     decision: 'rejected',
     correction: { action: 'act', taskDraft: { title: item.summary } },
@@ -71,14 +71,14 @@ function correctToTask(item: TriageItem) {
 }
 
 function correctToCategory(messageId: TriageItem['messageId'], category: string, note: string) {
-  postVerdict({ messageId, decision: 'rejected', correction: { category, note } });
+  void postVerdict({ messageId, decision: 'rejected', correction: { category, note } });
 }
 
 const categories = ['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown'];
 
 const verdictKeys = new Set(['t', 'k', 'a']);
 
-function handleVerdictKey(item: TriageItem, key: string) {
+function handleVerdictKey(item: TriageItem, key: string): Promise<Response> | undefined {
   if (key === 't' && item.action === 'keep') {
     correctToTask(item);
   } else if (key === 'a' && item.action === 'act') {
@@ -86,11 +86,12 @@ function handleVerdictKey(item: TriageItem, key: string) {
   } else if (key === 'k' && item.action === 'act') {
     correctToAction(item.messageId, 'keep');
   } else if (verdictKeys.has(key)) {
-    confirmVerdict(item.messageId);
+    return confirmVerdict(item.messageId);
   }
+  return undefined;
 }
 
-function ActionCard({ item }: { item: TriageItem }) {
+function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => void }) {
   const [correcting, setCorrecting] = useState(false);
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
@@ -113,7 +114,9 @@ function ActionCard({ item }: { item: TriageItem }) {
         } else if (event.key === 'ArrowUp') {
           (event.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
         } else {
-          handleVerdictKey(item, event.key);
+          void handleVerdictKey(item, event.key)?.then((response) => {
+            if (response.ok) onAccepted();
+          });
         }
       }}
     >
@@ -217,7 +220,13 @@ export function TriagePage() {
     <>
       <section aria-label="Action">
         {queue.action.map((item) => (
-          <ActionCard key={item.messageId} item={item} />
+          <ActionCard
+            key={item.messageId}
+            item={item}
+            onAccepted={() => {
+              setQueue({ ...queue, action: queue.action.filter((other) => other.messageId !== item.messageId) });
+            }}
+          />
         ))}
       </section>
       {queue.groups

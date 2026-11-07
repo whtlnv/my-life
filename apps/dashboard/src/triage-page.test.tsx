@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -919,5 +919,60 @@ describe('TriagePage', () => {
       .mock.calls.filter(([input]) => input === '/group-verdicts')
       .map(([, init]) => init?.body);
     expect(groupVerdictBodies).toEqual([JSON.stringify({ category: 'expense', decision: 'confirmed' })]);
+  });
+
+  it('removes a card from the page once the backend accepts its verdict, and keeps the others', async () => {
+    const queue = {
+      action: [
+        {
+          messageId: 'message-39',
+          accountEmail: 'ana@example.com',
+          action: 'archive',
+          category: 'action',
+          summary: 'Luis forwards an old newsletter',
+          extract: { asker: 'Luis Gómez', ask: 'Read the newsletter' },
+          reason: 'Nothing to do here',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-39',
+        },
+        {
+          messageId: 'message-40',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Marta asks for the signed contract',
+          extract: { asker: 'Marta Gil', ask: 'Send the signed contract' },
+          reason: 'Marta asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-40',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          input === '/triage-queue'
+            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
+            : input === '/verdicts'
+              ? new Response(null, { status: 201 })
+              : new Response(null, { status: 404 }),
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [luisCard] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(luisCard);
+    await user.keyboard('a');
+
+    await waitFor(() => {
+      expect(within(actionBlock).queryByText('Luis forwards an old newsletter')).not.toBeInTheDocument();
+    });
+    expect(within(actionBlock).getByText('Marta asks for the signed contract')).toBeInTheDocument();
   });
 });
