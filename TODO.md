@@ -173,7 +173,7 @@
 - [x] Expanding a group lists its items
 - [x] A `system-update` group lists its items under their sending system, and a `significant` item is flagged
 - [x] An `expense` item shows vendor, amount, currency and date
-- [ ] A `sales` item shows company, solution and what it solves
+- [x] A `sales` item shows company, solution and what it solves
 - [ ] Pressing `t` on a focused card confirms it as a task
 - [ ] Pressing `k` on a focused card keeps it
 - [ ] Pressing `a` on a focused card archives it

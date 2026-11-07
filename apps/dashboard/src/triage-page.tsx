@@ -15,6 +15,9 @@ interface TriageItem {
     amount?: number;
     currency?: string;
     date?: string;
+    company?: string;
+    solution?: string;
+    problem?: string;
   };
 }
 
@@ -73,6 +76,9 @@ function GroupItem({ item }: { item: TriageItem }) {
       <p>{item.extract.amount}</p>
       <p>{item.extract.currency}</p>
       <p>{item.extract.date}</p>
+      <p>{item.extract.company}</p>
+      <p>{item.extract.solution}</p>
+      <p>{item.extract.problem}</p>
     </>
   );
 }

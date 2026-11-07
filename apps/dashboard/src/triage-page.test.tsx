@@ -357,4 +357,38 @@ describe('TriagePage', () => {
     expect(screen.getByText(/MXN/)).toBeInTheDocument();
     expect(screen.getByText(/2026-11-04/)).toBeInTheDocument();
   });
+  it('shows the company, solution and the problem it solves of each item in an expanded sales group', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'sales',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-16',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'sales',
+              summary: 'Pitch for a scheduling assistant',
+              extract: { company: 'Acme', solution: 'AI scheduling assistant', problem: 'Time lost coordinating meetings' },
+              reason: 'A cold sales pitch',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-16',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    await user.click(await screen.findByRole('button', { name: /sales.*1/ }));
+
+    expect(screen.getByText(/Acme/)).toBeInTheDocument();
+    expect(screen.getByText(/AI scheduling assistant/)).toBeInTheDocument();
+    expect(screen.getByText(/Time lost coordinating meetings/)).toBeInTheDocument();
+  });
 });
