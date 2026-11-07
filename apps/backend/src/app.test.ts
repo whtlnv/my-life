@@ -1971,6 +1971,30 @@ describe('backend app', () => {
     });
   });
 
+  it('labels at GET /commands an archive command issued automatically my-life/auto and one issued after a confirmation my-life/archived', async () => {
+    const automaticApp = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await switchCategory(automaticApp, 'cc-thread', 'automatic');
+    await proposeBudgetReview(automaticApp);
+    const confirmedApp = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await confirmBudgetReviewProposal(confirmedApp);
+
+    const automatic = await getCommands(automaticApp, 'ana@example.com');
+    const confirmed = await getCommands(confirmedApp, 'ana@example.com');
+
+    expect({ automatic: await automatic.json(), confirmed: await confirmed.json() }).toMatchObject({
+      automatic: { commands: [{ messageId: 'message-1', label: 'my-life/auto' }] },
+      confirmed: { commands: [{ messageId: 'message-1', label: 'my-life/archived' }] },
+    });
+  });
+
   it('keeps out of GET /triage-queue and out of the GET /now badge count an act proposal acted on automatically in a category switched to automatic', async () => {
     const triage = triageAnswering({
       action: 'act',

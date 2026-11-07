@@ -358,7 +358,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
       .filter((proposal) => isCleared(proposal, verdicts))
-      .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
+      .map(({ messageId, madeAutomatic }) => ({
+        id: `archive-${messageId}`,
+        messageId,
+        label: madeAutomatic ? 'my-life/auto' : 'my-life/archived',
+      }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });
   });

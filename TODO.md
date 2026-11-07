@@ -40,7 +40,7 @@
 - [x] An `archive` proposal made while its category was `advise` yields no command when the category is later switched to `automatic`; it waits for its confirmation (automatic applies to new proposals only)
 - [x] After a backend restart on the same database, an `archive` proposal made while its category was `automatic` still yields its archive command (and an `act` one its task) without a verdict: the automatic decision is persisted with the proposal, not kept in memory (supervisor keystone: `madeAutomatic` is an in-memory flag)
 - [x] A proposal acted on automatically no longer appears in `GET /triage-queue` and is not counted in the badge
-- [ ] An archive command issued automatically carries the label `my-life/auto`; one issued after a confirmation carries `my-life/archived`
+- [x] An archive command issued automatically carries the label `my-life/auto`; one issued after a confirmation carries `my-life/archived`
 - [ ] When the extension carries out an archive command labeled `my-life/auto`, the Gmail modify call adds the `my-life/auto` label (created if missing), not `my-life/archived`
 - [ ] `POST /categories/kill-switch` returns every `automatic` category to `advise`
 - [ ] After the kill switch, a new `archive` proposal in a category that was `automatic` yields no command until confirmed
