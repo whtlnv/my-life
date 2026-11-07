@@ -119,4 +119,10 @@ describe('startup settings', () => {
 
     expect(settings.triage).toEqual({ enabled: false, reason: expect.stringContaining('ANTHROPIC_API_KEY') });
   });
+
+  it('enables triage with no reason when ANTHROPIC_API_KEY is set', () => {
+    const settings = readStartupSettings({ ANTHROPIC_API_KEY: 'sk-ant-test-key' }, '/Users/ana');
+
+    expect(settings.triage).toEqual({ enabled: true });
+  });
 });
