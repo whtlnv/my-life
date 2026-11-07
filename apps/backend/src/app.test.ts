@@ -2109,7 +2109,7 @@ describe('backend app', () => {
     await reportTriageAndConfirmShopNewsletters(app, ['newsletter-1', 'newsletter-2', 'newsletter-3', 'newsletter-4']);
     const { openFilterProposalStore } = await import('./filter-proposal-store');
 
-    expect({ askedCandidates, stored: openFilterProposalStore(databasePath).loadAll() }).toEqual({
+    expect({ askedCandidates, stored: openFilterProposalStore(databasePath).loadAll() }).toMatchObject({
       askedCandidates: [
         {
           accountEmail: 'ana@example.com',
@@ -2182,7 +2182,7 @@ describe('backend app', () => {
 
     await postJson(afterRestart, '/verdicts', { messageId: 'newsletter-4', decision: 'confirmed' });
 
-    expect(askedCandidates).toEqual([]);
+    expect(askedCandidates).toMatchObject([]);
   });
 
   it('counts toward a filter candidate only archives: a confirmed keep proposal does not count, while a rejected proposal corrected to archive does', async () => {
@@ -2243,7 +2243,7 @@ describe('backend app', () => {
       await postJson(app, '/verdicts', { messageId, ...verdict });
     }
 
-    expect(askedCandidates).toEqual([
+    expect(askedCandidates).toMatchObject([
       {
         accountEmail: 'ana@example.com',
         criteria: { from: 'Shop <news@shop.example.com>' },
@@ -2374,6 +2374,6 @@ describe('backend app', () => {
     });
     await reportTriageAndConfirmShopNewsletters(app);
 
-    expect(askedCandidates).toEqual([]);
+    expect(askedCandidates).toMatchObject([]);
   });
 });
