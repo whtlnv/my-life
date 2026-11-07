@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { noDueTimeText, significantFlagText, TriagePage } from './triage-page';
+import { noDueTimeText, remainingMessagesText, significantFlagText, TriagePage } from './triage-page';
 
 const answerGetTriageQueueWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -1130,5 +1130,13 @@ describe('TriagePage', () => {
       expect(screen.queryByRole('button', { name: /expense.*1/ })).not.toBeInTheDocument();
     });
     expect(screen.getByRole('button', { name: /sales.*1/ })).toBeInTheDocument();
+  });
+
+  it('shows how many messages remain to be triaged', async () => {
+    answerGetTriageQueueWith({ action: [], groups: [], remaining: 7, paused: false });
+
+    render(<TriagePage />);
+
+    expect(await screen.findByText(remainingMessagesText(7))).toBeInTheDocument();
   });
 });
