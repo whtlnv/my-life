@@ -74,7 +74,7 @@
 
 - [x] The Gmail polling interval defaults to 60 seconds (backlog: apps/backend/src/app.ts Config gaps)
 - [x] An account's mail source that last reported 100 seconds ago is fresh, and one that last reported 130 seconds ago is stale, while its calendar source keeps its own 5-minute rule (backlog: apps/backend/src/app.ts Config gaps)
-- [ ] A Gmail polling interval set in the environment replaces the 60-second default (backlog: apps/backend/src/app.ts Config gaps)
+- [x] A Gmail polling interval set in the environment replaces the 60-second default (backlog: apps/backend/src/app.ts Config gaps)
 - [ ] The triage model defaults to `claude-opus-5-5`
 - [ ] A triage model set in the environment replaces the default
 - [ ] The daily spend ceiling defaults to USD 20

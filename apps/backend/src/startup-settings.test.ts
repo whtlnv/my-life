@@ -83,4 +83,10 @@ describe('startup settings', () => {
 
     expect(settings.gmailPollingIntervalInMilliseconds).toBe(60_000);
   });
+
+  it('polls Gmail every 90 seconds when MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS is 90', () => {
+    const settings = readStartupSettings({ MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS: '90' }, '/Users/ana');
+
+    expect(settings.gmailPollingIntervalInMilliseconds).toBe(90_000);
+  });
 });

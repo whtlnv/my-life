@@ -23,8 +23,17 @@ export function readStartupSettings(
     port: parsePort(environment.MY_LIFE_PORT),
     databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
     dashboardDirectory: environment.MY_LIFE_DASHBOARD_DIRECTORY ?? defaultDashboardDirectory,
-    gmailPollingIntervalInMilliseconds: defaultGmailPollingIntervalInMilliseconds,
+    gmailPollingIntervalInMilliseconds: parseGmailPollingInterval(
+      environment.MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS,
+    ),
   };
+}
+
+function parseGmailPollingInterval(intervalSecondsText: string | undefined): number {
+  if (intervalSecondsText === undefined) {
+    return defaultGmailPollingIntervalInMilliseconds;
+  }
+  return Number(intervalSecondsText) * 1000;
 }
 
 function parsePort(portText: string | undefined): number {
