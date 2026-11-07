@@ -6,19 +6,19 @@ import { isAddressedToUser } from '@my-life/domain';
 
 interface ClaudeResponse {
   content: { type: string; input?: unknown }[];
-  usage?: { input_tokens: number; output_tokens: number };
+  usage: { input_tokens: number; output_tokens: number };
 }
 
 interface ClaudeTriageDependencies {
   model: string;
-  promptPath?: string;
+  promptPath: string;
   profileDirectory?: string;
-  pricing?: { inputPerMillionTokensInUsd: number; outputPerMillionTokensInUsd: number };
+  pricing: { inputPerMillionTokensInUsd: number; outputPerMillionTokensInUsd: number };
   createMessage: (request: {
     model: string;
-    system?: string;
+    system: string;
     messages: { role: string; content: string }[];
-    tools?: { name: string; strict: boolean; input_schema: unknown }[];
+    tools: { name: string; strict: boolean; input_schema: unknown }[];
   }) => Promise<ClaudeResponse>;
 }
 
@@ -56,10 +56,10 @@ function describeMessage(message: TriageMessage, examples: unknown[] | undefined
 }
 
 interface TriageOutcome {
-  promptVersion?: string;
+  promptVersion: string;
   proposal?: unknown;
   failure?: { input: unknown };
-  costInUsd?: number;
+  costInUsd: number;
 }
 
 const proposeTriageTool = { name: 'propose_triage', strict: true, input_schema: triageProposal.toJSONSchema() };
@@ -68,10 +68,7 @@ function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
 
-function computeCostInUsd(
-  usage: NonNullable<ClaudeResponse['usage']>,
-  pricing: NonNullable<ClaudeTriageDependencies['pricing']>,
-): number {
+function computeCostInUsd(usage: ClaudeResponse['usage'], pricing: ClaudeTriageDependencies['pricing']): number {
   return (
     (usage.input_tokens * pricing.inputPerMillionTokensInUsd +
       usage.output_tokens * pricing.outputPerMillionTokensInUsd) /
@@ -86,36 +83,19 @@ export function createClaudeTriage({
   pricing,
   createMessage,
 }: ClaudeTriageDependencies) {
-  const costOf = (response: ClaudeResponse): number | undefined =>
-    pricing === undefined || response.usage === undefined ? undefined : computeCostInUsd(response.usage, pricing);
+  const promptVersion = basename(promptPath, extname(promptPath));
   return {
-    propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome | undefined> => {
-      const messages = [{ role: 'user', content: describeMessage(message, examples) }];
-      if (promptPath === undefined) {
-        const response = await createMessage({ model, messages });
-        const input = readToolUseInput(response);
-        if (!triageProposal.safeParse(input).success) {
-          const costInUsd = costOf(response);
-          if (costInUsd !== undefined) {
-            return { failure: { input }, costInUsd };
-          }
-          return { failure: { input } };
-        }
-        return { proposal: input };
-      }
+    propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome> => {
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
+      const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       const response = await createMessage({ model, system, messages, tools: [proposeTriageTool] });
-      const promptVersion = basename(promptPath, extname(promptPath));
-      const costInUsd = costOf(response);
+      const costInUsd = computeCostInUsd(response.usage, pricing);
       const input = readToolUseInput(response);
-      if (costInUsd === undefined) {
-        return { promptVersion };
-      }
-      if (!triageProposal.safeParse(input).success) {
-        return { promptVersion, failure: { input }, costInUsd };
-      }
-      return { promptVersion, proposal: input, costInUsd };
+      const parsed = triageProposal.safeParse(input);
+      return parsed.success
+        ? { promptVersion, proposal: parsed.data, costInUsd }
+        : { promptVersion, failure: { input }, costInUsd };
     },
   };
 }

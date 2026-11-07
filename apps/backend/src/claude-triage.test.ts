@@ -8,17 +8,39 @@ import { describe, expect, it } from 'vitest';
 import { createClaudeTriage } from './claude-triage';
 import { readStartupSettings } from './startup-settings';
 
+const defaultPricing = { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 };
+
+function promptFile(
+  contents = 'Classify this email and answer by calling propose_triage.',
+  fileName = 'triage-v1.md',
+): string {
+  const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
+  writeFileSync(promptPath, contents);
+  return promptPath;
+}
+
 interface SentRequest {
   model: string;
   system?: string;
   messages: { role: string; content: string }[];
 }
 
+function firstSentRequest(sentRequests: SentRequest[]): SentRequest {
+  const [first] = sentRequests;
+  if (first === undefined) throw new Error('no request was sent');
+  return first;
+}
+
+function firstUserContent(sentRequests: SentRequest[]): unknown {
+  const [firstMessage] = firstSentRequest(sentRequests).messages;
+  return JSON.parse(firstMessage?.content ?? '{}') as unknown;
+}
+
 function recordRequests() {
   const sentRequests: SentRequest[] = [];
-  const createMessage = async (request: SentRequest) => {
+  const createMessage = (request: SentRequest) => {
     sentRequests.push(request);
-    return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+    return Promise.resolve({ content: [], usage: { input_tokens: 0, output_tokens: 0 } });
   };
   return { sentRequests, createMessage };
 }
@@ -28,6 +50,8 @@ describe('Claude triage', () => {
     const settings = readStartupSettings({ MY_LIFE_TRIAGE_MODEL: 'claude-model-from-settings' }, '/Users/ana');
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      promptPath: promptFile(),
       model: settings.triageModel,
       createMessage,
     });
@@ -42,6 +66,7 @@ describe('Claude triage', () => {
     writeFileSync(promptPath, 'Classify this email for Ana.');
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
       model: 'claude-opus-5-5',
       promptPath,
       createMessage,
@@ -49,7 +74,7 @@ describe('Claude triage', () => {
 
     const result = await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z' });
 
-    expect({ system: sentRequests[0]?.system, promptVersion: result?.promptVersion }).toEqual({
+    expect({ system: firstSentRequest(sentRequests).system, promptVersion: result.promptVersion }).toEqual({
       system: 'Classify this email for Ana.',
       promptVersion: 'triage-v7',
     });
@@ -62,6 +87,7 @@ describe('Claude triage', () => {
     writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
       model: 'claude-opus-5-5',
       promptPath,
       profileDirectory,
@@ -70,12 +96,14 @@ describe('Claude triage', () => {
 
     await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@acme.com' });
 
-    expect(sentRequests[0]?.system).toContain('Ana runs the Acme sales team; invoices always matter.');
+    expect(firstSentRequest(sentRequests).system).toContain('Ana runs the Acme sales team; invoices always matter.');
   });
 
   it("sends the message's headers, snippet and whether it is addressed to the user", async () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      promptPath: promptFile(),
       model: 'claude-opus-5-5',
       createMessage,
     });
@@ -93,7 +121,7 @@ describe('Claude triage', () => {
       listId: 'quotes.supplier.com',
     });
 
-    expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toEqual({
+    expect(firstUserContent(sentRequests)).toEqual({
       from: 'Bruno <bruno@supplier.com>',
       to: 'Ana <Ana@acme.com>',
       cc: 'carla@acme.com',
@@ -108,6 +136,8 @@ describe('Claude triage', () => {
   it('says a message is not addressed to the user when the account is only in Cc', async () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      promptPath: promptFile(),
       model: 'claude-opus-5-5',
       createMessage,
     });
@@ -123,12 +153,14 @@ describe('Claude triage', () => {
       snippet: 'Carla, could you approve the attached quote by Friday?',
     });
 
-    expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toMatchObject({ addressedToUser: false });
+    expect(firstUserContent(sentRequests)).toMatchObject({ addressedToUser: false });
   });
 
   it('sends the chosen verdict examples with the message', async () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      promptPath: promptFile(),
       model: 'claude-opus-5-5',
       createMessage,
     });
@@ -152,7 +184,7 @@ describe('Claude triage', () => {
       examples,
     );
 
-    expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toMatchObject({ examples });
+    expect(firstUserContent(sentRequests)).toMatchObject({ examples });
   });
 
   it('turns a valid tool-use answer into a proposal', async () => {
@@ -165,11 +197,14 @@ describe('Claude triage', () => {
       taskDraft: { title: 'Approve the November quote from Bruno' },
     };
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      promptPath: promptFile(),
       model: 'claude-opus-5-5',
-      createMessage: async () => ({
-        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
-        usage: { input_tokens: 0, output_tokens: 0 },
-      }),
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
+          usage: { input_tokens: 0, output_tokens: 0 },
+        }),
     });
 
     const result = await triage.propose({
@@ -190,11 +225,14 @@ describe('Claude triage', () => {
       reason: 'A supplier asks Ana directly for an approval.',
     };
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      promptPath: promptFile(),
       model: 'claude-opus-5-5',
-      createMessage: async () => ({
-        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredInput }],
-        usage: { input_tokens: 0, output_tokens: 0 },
-      }),
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredInput }],
+          usage: { input_tokens: 0, output_tokens: 0 },
+        }),
     });
 
     const result = await triage.propose({
@@ -203,20 +241,26 @@ describe('Claude triage', () => {
       date: '2026-11-07T10:00:00Z',
     });
 
-    expect(result).toEqual({ failure: expect.objectContaining({ input: answeredInput }) });
+    expect(result).toMatchObject({ failure: { input: answeredInput } });
   });
 
   it('computes the cost of a call from the tokens the answer reports', async () => {
     const triage = createClaudeTriage({
+      promptPath: promptFile(),
       model: 'claude-opus-5-5',
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: async () => ({
-        content: [],
-        usage: { input_tokens: 1_000_000, output_tokens: 200_000 },
-      }),
+      createMessage: () =>
+        Promise.resolve({
+          content: [],
+          usage: { input_tokens: 1_000_000, output_tokens: 200_000 },
+        }),
     });
 
-    const result = await triage.propose({ id: 'message-7', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+    const result = await triage.propose({
+      id: 'message-7',
+      accountEmail: 'ana@acme.com',
+      date: '2026-11-07T10:00:00Z',
+    });
 
     expect(result).toMatchObject({ costInUsd: 10 });
   });
@@ -236,13 +280,18 @@ describe('Claude triage', () => {
       model: 'claude-opus-5-5',
       promptPath,
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: async () => ({
-        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
-        usage: { input_tokens: 3_000_000, output_tokens: 100_000 },
-      }),
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
+          usage: { input_tokens: 3_000_000, output_tokens: 100_000 },
+        }),
     });
 
-    const result = await triage.propose({ id: 'message-8', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+    const result = await triage.propose({
+      id: 'message-8',
+      accountEmail: 'ana@acme.com',
+      date: '2026-11-07T10:00:00Z',
+    });
 
     expect(result).toMatchObject({ proposal: answeredProposal, costInUsd: 17.5 });
   });
@@ -261,15 +310,20 @@ describe('Claude triage', () => {
       model: 'claude-opus-5-5',
       promptPath,
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: async () => ({
-        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredInput }],
-        usage: { input_tokens: 1_000_000, output_tokens: 40_000 },
-      }),
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredInput }],
+          usage: { input_tokens: 1_000_000, output_tokens: 40_000 },
+        }),
     });
 
-    const result = await triage.propose({ id: 'message-9', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+    const result = await triage.propose({
+      id: 'message-9',
+      accountEmail: 'ana@acme.com',
+      date: '2026-11-07T10:00:00Z',
+    });
 
-    expect(result?.proposal).toBeUndefined();
+    expect(result.proposal).toBeUndefined();
     expect(result).toMatchObject({ failure: { input: answeredInput }, costInUsd: 6 });
   });
 
@@ -278,11 +332,12 @@ describe('Claude triage', () => {
     writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
     const sentRequests: Record<string, unknown>[] = [];
     const triage = createClaudeTriage({
+      pricing: defaultPricing,
       model: 'claude-opus-5-5',
       promptPath,
-      createMessage: async (request: Record<string, unknown>) => {
+      createMessage: (request: Record<string, unknown>) => {
         sentRequests.push(request);
-        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+        return Promise.resolve({ content: [], usage: { input_tokens: 0, output_tokens: 0 } });
       },
     });
 
@@ -290,11 +345,17 @@ describe('Claude triage', () => {
 
     const request = sentRequests[0] as {
       system?: string;
-      tools?: { name: string; strict?: boolean; input_schema: { type: string; properties: Record<string, { enum?: string[] }>; required: string[] } }[];
+      tools?: {
+        name: string;
+        strict?: boolean;
+        input_schema: { type: string; properties: Record<string, { enum?: string[] }>; required: string[] };
+      }[];
       tool_choice?: { type: string };
     };
     expect(request.system).toBe('Classify this email and answer by calling propose_triage.');
-    expect(request.tools?.map((tool) => ({ name: tool.name, strict: tool.strict }))).toEqual([{ name: 'propose_triage', strict: true }]);
+    expect(request.tools?.map((tool) => ({ name: tool.name, strict: tool.strict }))).toEqual([
+      { name: 'propose_triage', strict: true },
+    ]);
     expect(Object.keys(request.tools?.[0]?.input_schema.properties ?? {})).toEqual(Object.keys(triageProposal.shape));
     expect(request.tools?.[0]?.input_schema).toMatchObject({
       type: 'object',
