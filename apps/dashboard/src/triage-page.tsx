@@ -64,6 +64,18 @@ function correctToTask(item: TriageItem) {
 
 const verdictKeys = new Set(['t', 'k', 'a']);
 
+function handleVerdictKey(item: TriageItem, key: string) {
+  if (key === 't' && item.action === 'keep') {
+    correctToTask(item);
+  } else if (key === 'a' && item.action === 'act') {
+    correctToAction(item.messageId, 'archive');
+  } else if (key === 'k' && item.action === 'act') {
+    correctToAction(item.messageId, 'keep');
+  } else if (verdictKeys.has(key)) {
+    confirmVerdict(item.messageId);
+  }
+}
+
 function ActionCard({ item }: { item: TriageItem }) {
   const [correcting, setCorrecting] = useState(false);
   return (
@@ -72,16 +84,10 @@ function ActionCard({ item }: { item: TriageItem }) {
       onKeyDown={(event) => {
         if (correcting) {
           correctToAction(item.messageId, 'keep');
-        } else if (event.key === 't' && item.action === 'keep') {
-          correctToTask(item);
-        } else if (event.key === 'a' && item.action === 'act') {
-          correctToAction(item.messageId, 'archive');
-        } else if (event.key === 'k' && item.action === 'act') {
-          correctToAction(item.messageId, 'keep');
         } else if (event.key === 'r') {
           setCorrecting(true);
-        } else if (verdictKeys.has(event.key)) {
-          confirmVerdict(item.messageId);
+        } else {
+          handleVerdictKey(item, event.key);
         }
       }}
     >
