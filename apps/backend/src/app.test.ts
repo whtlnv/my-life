@@ -349,4 +349,29 @@ describe('backend app', () => {
     expect(response.headers.get('content-type')).toContain('text/css');
     expect(await response.text()).toBe(stylesheet);
   });
+
+  it('accepts a mail report from an allow-listed account at POST /mail-report and counts its message as remaining in GET /triage-queue', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+
+    const posted = await postJson(app, '/mail-report', {
+      accountEmail: 'ana@example.com',
+      historyId: '1001',
+      messages: [
+        {
+          id: 'message-1',
+          threadId: 'thread-1',
+          from: 'Luis <luis@example.com>',
+          to: 'ana@example.com',
+          subject: 'Budget review',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+          snippet: 'Can you review the budget by Friday?',
+        },
+      ],
+    });
+    const queue = await app.request('/triage-queue');
+
+    expect(posted.status).toBe(200);
+    expect(queue.status).toBe(200);
+    expect(await queue.json()).toMatchObject({ remaining: 1 });
+  });
 });

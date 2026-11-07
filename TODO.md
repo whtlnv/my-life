@@ -109,7 +109,7 @@
 
 ### Backend — mail, triage, verdicts
 
-- [ ] A mail report posted to `POST /mail-report` (the path the extension already calls) from an allow-listed account is accepted and its messages become reported
+- [x] A mail report posted to `POST /mail-report` (the path the extension already calls) from an allow-listed account is accepted and its messages become reported
 - [ ] A mail report from an account outside the allow-list is refused and none of its messages are reported
 - [ ] A mail report that fails the shared contract is refused with a client error
 - [ ] A message reported twice is stored once

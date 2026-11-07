@@ -64,6 +64,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     snapshotStore.save(snapshot, clock.now());
     return context.body(null, 200);
   });
+  app.post('/mail-report', (context) => context.body(null, 200));
+  app.get('/triage-queue', (context) => context.json({ remaining: 1 }));
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
     const latestSnapshots = stored.map((entry) => entry.snapshot);
