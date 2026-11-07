@@ -100,4 +100,25 @@ describe('Claude filter', () => {
     expect(content).toContain('November catalogue');
     expect(content).toContain('Weekend discounts');
   });
+  it('reports the cost of the call in USD from the input and output tokens the answer reports at their configured prices', async () => {
+    const answeredProposal = { criteria: { from: 'news@supplier.com' }, labelName: 'Supplier', skipInbox: true };
+    const filter = createClaudeFilter({
+      model: 'claude-model',
+      promptPath: promptFile('Propose a Gmail filter.', 'filter-v1.md'),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_filter', input: answeredProposal }],
+          usage: { input_tokens: 2_000_000, output_tokens: 400_000 },
+        }),
+    });
+
+    const result = await filter.propose({
+      accountEmail: 'ana@acme.com',
+      criteria: { from: 'news@supplier.com' },
+      messageIds: ['message-1'],
+    });
+
+    expect(result).toMatchObject({ proposal: answeredProposal, costInUsd: 20 });
+  });
 });

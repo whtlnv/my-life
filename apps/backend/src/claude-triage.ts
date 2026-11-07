@@ -88,7 +88,7 @@ function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
 
-function computeCostInUsd(usage: ClaudeResponse['usage'], pricing: TriagePricing): number {
+export function computeCostInUsd(usage: ClaudeResponse['usage'], pricing: TriagePricing): number {
   return (
     (usage.input_tokens * pricing.inputPerMillionTokensInUsd +
       usage.output_tokens * pricing.outputPerMillionTokensInUsd) /

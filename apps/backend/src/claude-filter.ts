@@ -3,10 +3,11 @@ import { basename, extname } from 'node:path';
 
 import { filterProposal } from '@my-life/contracts';
 
-import type { TriagePricing } from './claude-triage';
+import { computeCostInUsd, type TriagePricing } from './claude-triage';
 
 interface ClaudeResponse {
   content: { type: string; input?: unknown }[];
+  usage: { input_tokens: number; output_tokens: number };
 }
 
 interface ClaudeFilterDependencies {
@@ -30,7 +31,7 @@ interface FilterCandidate {
 
 const proposeFilterTool = { name: 'propose_filter', strict: true, input_schema: filterProposal.toJSONSchema() };
 
-export function createClaudeFilter({ model, promptPath, createMessage }: ClaudeFilterDependencies) {
+export function createClaudeFilter({ model, promptPath, pricing, createMessage }: ClaudeFilterDependencies) {
   const promptVersion = basename(promptPath, extname(promptPath));
   return {
     propose: async (candidate: FilterCandidate) => {
@@ -42,7 +43,11 @@ export function createClaudeFilter({ model, promptPath, createMessage }: ClaudeF
         messages: [{ role: 'user', content: JSON.stringify(candidate) }],
       });
       const input = response.content.find((block) => block.type === 'tool_use')?.input;
-      return { promptVersion, proposal: filterProposal.parse(input) };
+      return {
+        promptVersion,
+        proposal: filterProposal.parse(input),
+        costInUsd: computeCostInUsd(response.usage, pricing),
+      };
     },
   };
 }
