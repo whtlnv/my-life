@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 14:39 · `apps/backend/src/app.test.ts::lists neither a command at GET /commands nor a task at GET /tasks for a new keep proposal in a category switched to automatic`
+- Behavior: In an `automatic` category, a new `keep` proposal yields neither a command nor a task
+- Predicted: passes on first run (read before predicting: `GET /commands` filters `action === 'archive'`; `triageEffects` gives a `keep` no tasks)
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: the behavior already holds from the automatic `archive` / `act` cycles; the test is not vacuous (the same setup with `ccThreadTriage('archive')` lists a command), so it stays as a pin and the item is a tick, not a green.
+
 ## 2026-11-07 14:34 · `apps/backend/src/app.test.ts::lists at GET /commands no archive command for a new archive proposal in a category set to advise until it is confirmed`
 - Behavior: In an `advise` category, a new `archive` proposal yields no archive command until it is confirmed
 - Predicted: passes on first run (read `isCleared` in `app.ts:103` first: only a standing confirmation or a current `automatic` mode yields a command)

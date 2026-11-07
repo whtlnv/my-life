@@ -1911,4 +1911,26 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('lists neither a command at GET /commands nor a task at GET /tasks for a new keep proposal in a category switched to automatic', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+    });
+    await app.request('/categories/cc-thread/mode', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'automatic' }),
+    });
+    await proposeBudgetReview(app);
+
+    const commands = await getCommands(app, 'ana@example.com');
+    const tasks = await app.request('/tasks');
+
+    expect({ commands: await commands.json(), tasks: await tasks.json() }).toEqual({
+      commands: { commands: [] },
+      tasks: { tasks: [] },
+    });
+  });
 });
