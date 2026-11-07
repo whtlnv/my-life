@@ -21,6 +21,7 @@ interface LaterTodayEvent {
   id: string;
   title: string;
   start: string;
+  allDay?: boolean;
 }
 
 interface AccountReport {
@@ -110,7 +111,7 @@ export function DashboardApp() {
         <ul>
           {laterToday.map((event) => (
             <li key={event.id}>
-              {timeInBusinessZone(event.start)} {event.title}
+              {event.allDay ? 'All day' : timeInBusinessZone(event.start)} {event.title}
             </li>
           ))}
         </ul>

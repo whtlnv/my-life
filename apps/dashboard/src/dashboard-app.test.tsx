@@ -263,6 +263,35 @@ describe('DashboardApp', () => {
     expect(items[1]).toHaveTextContent('14:30');
   });
 
+  it('shows an all-day later-today event as all day instead of a clock time', async () => {
+    answerGetNowWith({
+      current: [],
+      next: [],
+      laterToday: [
+        {
+          id: 'event-6',
+          iCalUID: 'home@google.com',
+          title: 'Home',
+          allDay: true,
+          start: '2026-11-03',
+          end: '2026-11-04',
+          attendees: [],
+          accounts: ['personal@example.com'],
+        },
+      ],
+      accounts: [],
+      badgeCount: 0,
+    });
+
+    render(<DashboardApp />);
+
+    const laterTodayBlock = await screen.findByRole('region', { name: 'Later today' });
+    const item = await within(laterTodayBlock).findByRole('listitem');
+    expect(item).toHaveTextContent('Home');
+    expect(item).toHaveTextContent(/all day/i);
+    expect(item).not.toHaveTextContent(/\d{2}:\d{2}/);
+  });
+
   it('shows each account with the time it last reported in America/Mexico_City', async () => {
     answerGetNowWith({
       current: [],
