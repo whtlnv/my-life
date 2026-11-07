@@ -1,5 +1,6 @@
 import { refreshBadge } from './badge-refresh';
 import { pollCalendarOnce } from './calendar-poll';
+import { pollGmailOnce } from './gmail-poll';
 import type { FetchFunction } from './fetch-function';
 
 const calendarPollIntervalMilliseconds = 5 * 60 * 1000;
@@ -37,5 +38,14 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     }
   };
   await poll();
+  await pollGmailOnce({
+    fetch: options.fetch,
+    accessToken: await options.accessToken(),
+    accountEmail,
+    backendUrl: options.backendUrl,
+    storedHistoryId: undefined,
+  }).catch((error: unknown) => {
+    console.error('Gmail poll failed', error);
+  });
   options.every?.(calendarPollIntervalMilliseconds, () => poll().catch(() => undefined));
 }
