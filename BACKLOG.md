@@ -18,6 +18,10 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/scripted-triage.ts:10] `createScriptedTriage` is shipped source that only its own test calls** (added: 2026-11-07)
+  Nothing in `apps/*` imports it (the backend tests stub `propose` inline), so it reads as a live Triage adapter while being dead.
+  Deferred because deleting it deletes `scripted-triage.test.ts`, and a refactor pass never deletes a test; it is a
+  `/test-quality` matter.
 - **[apps/backend/src/app.ts:147] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07)
   `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
   the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
