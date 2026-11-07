@@ -319,8 +319,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
+  const categoryModes: Record<string, string> = {};
+  app.put('/categories/:category/mode', async (context) => {
+    const { mode } = await context.req.json<{ mode: string }>();
+    categoryModes[context.req.param('category')] = mode;
+    return context.body(null, 200);
+  });
   app.get('/categories', (context) =>
-    context.json({ categories: triageCategories.map((category) => ({ category, mode: 'advise' })) }),
+    context.json({
+      categories: triageCategories.map((category) => ({ category, mode: categoryModes[category] ?? 'advise' })),
+    }),
   );
   app.get('/check-later', (context) => {
     return context.json({ checkLater: confirmedCheckLater(proposals, verdictStore.loadAll()) });

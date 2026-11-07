@@ -24,7 +24,7 @@
 ### Category modes
 
 - [x] `GET /categories` lists every triage category (`action`, `cc-thread`, `expense`, `system-update`, `sales`, `calendar-drive`, `unknown`) with mode `advise` when none has been switched
-- [ ] After `PUT /categories/:category/mode` with `automatic`, `GET /categories` shows that category `automatic` and every other category still `advise`
+- [x] After `PUT /categories/:category/mode` with `automatic`, `GET /categories` shows that category `automatic` and every other category still `advise`
 - [ ] After `PUT /categories/:category/mode` with `advise`, a category previously `automatic` shows `advise` again
 - [ ] `PUT /categories/:category/mode` with an unknown category or mode answers 400 and changes nothing
 - [ ] A category's mode survives a backend restart on the same database

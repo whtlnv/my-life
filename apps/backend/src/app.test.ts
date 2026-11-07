@@ -1700,4 +1700,22 @@ describe('backend app', () => {
       categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
     });
   });
+
+  it('shows at GET /categories a category switched to automatic through PUT /categories/:category/mode, and every other category still advise', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    await app.request('/categories/sales/mode', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'automatic' }),
+    });
+    const response = await app.request('/categories');
+
+    expect(await response.json()).toEqual({
+      categories: triageCategories.map((category) => ({
+        category,
+        mode: category === 'sales' ? 'automatic' : 'advise',
+      })),
+    });
+  });
 });
