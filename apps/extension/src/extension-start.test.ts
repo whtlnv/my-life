@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { startExtension } from './extension-start';
 
 const calendarApi = 'https://www.googleapis.com/calendar/v3';
+const gmailApi = 'https://gmail.googleapis.com/gmail/v1';
 
 describe('startExtension', () => {
   it('registers with the backend using the profile account email, then posts the first snapshot', async () => {
@@ -161,10 +162,10 @@ describe('startExtension', () => {
     const mailReports: unknown[] = [];
     const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === 'https://gmail.googleapis.com/gmail/v1/users/me/profile') {
+      if (url.href === `${gmailApi}/users/me/profile`) {
         return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
       }
-      if (url.href === 'https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX') {
+      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
         return Promise.resolve(Response.json({ messages: [] }));
       }
       if (url.href === `${calendarApi}/users/me/calendarList`) {
