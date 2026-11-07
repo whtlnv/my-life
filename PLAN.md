@@ -5,7 +5,7 @@
 Phases (locked decision 17):
 
 - **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton — code delivered 2026-11-02 (`DONE.md`); four profiles report since 2026-11-06; the three-day token check is due 2026-11-09 (`docs/phase-0-walkthrough.md`).
-- **Phase 1:** Gmail triage on `franciscoc@psmutuus.com`, _advise_ mode, category groups.
+- **Phase 1:** Gmail triage on `franciscoc@psmutuus.com`, _advise_ mode, category groups — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through (`docs/phase-1-walkthrough.md`) waits on the extension reload.
 - **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters.
 - **Phase 3:** tasks and the prioritizer: import, _now_ / _later today_, waiting-on.
 - **Phase 4:** Slack.
@@ -17,44 +17,20 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
-## Start here (handoff 2026-11-02, after Phase 0)
+## Start here (handoff 2026-11-07, after Phase 1)
 
-Read `CLAUDE.md` first. **Phase 0's code is delivered** (`DONE.md`, 85 items): contract, domain (merge, now/next/later today, freshness, badge), backend (allow-list, SQLite store, GET /now, dashboard serving, settings from `MY_LIFE_*`), extension (Calendar poll with retries, 5-minute alarm, badge, background glue), fake Calendar server integration suite, dashboard (Now, later today, accounts, loading and error states, live refresh), launchd agent. Nothing has run in a real Chrome profile yet: the walk-through in `docs/phase-0-walkthrough.md`, including the three-day `chrome.identity` spike (locked decision 2), waits on `PENDING_TASKS.md` § 1. When the OAuth client exists: fill `apps/extension/.env` and `.env`, build, `scripts/install-launchd.sh`, walk the checklist, write the spike's `docs/decisions/` record, then `/tdd-supervise` on Phase 1.
+Read `CLAUDE.md` first. **Phase 1's code is delivered** (`DONE.md`): the mail-report and triage-proposal contracts, the domain rules (addressed-to-user, displayed category, verdict effects, queue grouping and ordering, spend ceiling, verdict examples, badge), the backend (mail ingestion, triage runs on a 30-second schedule behind the `Triage` port, append-only proposals, verdicts, spend, archive commands, tasks, check-later, every store in SQLite and restart-safe), the Claude adapter (`prompts/triage-v1.md`, strict `propose_triage` tool from the contract, Opus 5.5, cost from usage), the extension's Gmail poll with history ids, bounded parallel metadata reads, retries, and archive commands carried out and acknowledged, the dashboard's `#/triage` page (action block, groups, keys `t` `k` `a` `r` `c`, removal on accepted verdicts), and the fake Gmail server suite. One live call through the real adapter succeeded. **Not yet seen over the real inbox**: the extension in the psmutuus profile still needs a reload to pick up the `gmail.modify` scope; `docs/phase-1-walkthrough.md` is the checklist and the screenshot item in `NOT_DONE.md` waits on it. Phase 0's three-day token check is due 2026-11-09.
 
 What the supervision showed — check these every cycle:
 
-- **Minimal greens ship the first clause and fake the rest.** Twelve keystone or triangulation items were inserted by hand after a green landed a constant (badge count 1, port 4321, fixed Calendar window, settings that ignored their variable, a badge refresh nothing called). Write the discriminating sibling into the plan before the first clause runs, not after.
-- **Items that bundle settings or steps get delivered one clause at a time and ticked whole.** Split per setting, per branch.
-- **Glue is wired by hand, verified by running it.** `apps/backend/src/main.ts` and `apps/extension/src/entrypoints/background.ts` were composed by the supervisor and smoke-checked (real server, real build), not by a cycle.
-- One sizing bail (retry before the pipeline existed) was resolved by inserting the prerequisite item rather than `/plan refine`.
-- Quality loops: refactor converged in 2 passes (13 applied), test-quality in 2 (1 applied), complexity in 1; the lint wall was clean after them.
+- **The same four fakes recur:** a constant where a lookup belongs, a list-order shortcut where a date order belongs, an input the green never reads (category, verdict, account email), and two code paths kept alive by test fakes that omit a dependency. Each cost one inserted item; the two-path case (the Claude adapter) was collapsed by hand with a test migration.
+- **A contract field or a route the other side already uses must be named in the item** (`/mail-report`, `/commands?accountEmail=…`, `/commands/:id/acknowledgement`, the `due` field): the planner cannot see what the sibling package expects.
+- **Persistence is never implied.** Every store started in memory; one restart keystone per store (messages, report times, proposals, spend, verdicts, acknowledgements) made them SQLite.
+- **Idle kills after a green commit are routine** (eight this phase): the work was on disk and green each time; commit by hand, tick, move on.
+- **The refactor loop needed nine passes** (23 applied) because each extraction exposed the next medium; the test-quality loop four (17 applied, all table folds); complexity one (0).
+- Three items were delivered one clause at a time and honestly left open or re-scoped (bundled items, including two of the supervisor's own).
 
 ---
-
-## Phase 1 — Gmail triage, psmutuus, advise
-
-Outcome: `franciscoc@psmutuus.com` reaches inbox zero from the dashboard, and mail addressed **to the user** that needs them to act is always visible first. Everything else arrives pre-sorted into compact groups the user clears with one key per group. Categories and treatments come from the user (2026-11-06, `profile/psmutuus.md`); the LLM proposes, the user confirms (locked decision 7) — `automatic` switches arrive in Phase 2.
-
-Categories, each with its own extract and default proposal:
-
-- `action` — sent to the user (in To, not only Cc) and asking them to do something. One card each: who, what is asked, by when. Default `act` (creates a task) or `keep`; never buried in a group.
-- `cc-thread` — the user is in Cc. One line per thread: what happened since the user's last message, no quoted scaffolding. Default `archive`.
-- `expense` — receipts, invoices, card charges. Extract vendor, amount, currency, date, and keep them for the weekly statement to accounting (the export itself is Phase 2). Default `archive`.
-- `system-update` — AWS, Sentry, monitoring and SaaS notifications. Grouped by the sending system; one line each with a severity; billing, outage, security and new-error items are flagged `significant`. Default `archive`.
-- `sales` — unsolicited pitches. Card: company, solution, what they solve. Default `archive`; `keep` puts it on a _check later_ list.
-- `calendar-drive` — Google Calendar and Drive notifications. One line: the event or document and what changed. Default `archive`; the first candidate for `automatic` in Phase 2.
-- `unknown` — the LLM could not place it; shown with the `action` block so nothing hides.
-
-Items:
-
-- Extension polls Gmail through `history.list` from the stored history id (full resync on 404), batches `messages.get` with `format=metadata` plus snippet, posts to `POST /sources/mail` with the account. Headers include To/Cc so the domain, not the prompt, decides "addressed to the user".
-- Backfill: the inbox's current contents are triaged too, newest first, inside the daily ceiling; the dashboard shows how many remain and says when the ceiling paused it.
-- Domain: a `Triage` port; the `TriageProposal` (`archive` / `keep` / `act`, category, one-line summary, the category's extract, reason, optional task draft) validated by zod; a `Verdict` (confirm / reject, with the user's correction) stored append-only; the rule that an `advise` category never archives on its own; grouping (by category, then by sending system or thread) and ordering (`action` and `unknown` first, then groups by size) as pure functions.
-- Claude adapter: versioned prompt files; the `profile/` context plus the N most recent verdicts for the same sender or category as examples; one Opus 5.5 call per message (model id from config); spend logged per call against the daily ceiling (default USD 20, config); a scripted fake in the unit and integration suites.
-- Dashboard triage page: the `action` block first (cards with who / what / when, keys `t` make task, `k` keep, `a` archive, `r` reject with a correction); then one collapsed group per category with its count, a one-key _confirm all_ per group, and expand to confirm or reject individually; every item shows its reason and a link to the message.
-- Confirmed `archive` → Gmail `messages.modify` removes `INBOX` and adds label `my-life/archived`; confirmed `act` → a task in the store (title, source link, account); confirmed `keep` on `sales` → the _check later_ list.
-- Badge adds the count of `action` cards waiting.
-- Gmail fake HTTP server with scenarios (`action-to-me`, `cc-thread`, `expense`, `system-update-burst`, `sales-pitch`, `calendar-notification`, `history-404`).
 
 ## Phase 2 — Every account, categories, Gmail filters
 

@@ -221,4 +221,7 @@
 - [x] The shipped backend reads the Anthropic key from `.env`, triages reported mail with the Claude adapter on a schedule and serves the triage queue
 - [x] The shipped extension polls Gmail every 60 seconds and carries out pending archive commands
 - [x] The shipped dashboard links to the triage page and the page runs against the shipped backend
-- [ ] Screenshot of the triage page over the real `franciscoc@psmutuus.com` inbox, with the action block, the groups and the remaining count
+- [!] Screenshot of the triage page over the real `franciscoc@psmutuus.com` inbox, with the action block, the groups and the remaining count
+  - bailed at: 2026-11-07, wiring and acceptance
+  - reason: the extension in the psmutuus profile must be reloaded by the user to obtain the `gmail.modify` scope before any mail reaches the backend; no real triage page exists to screenshot yet
+  - cascade: `docs/phase-1-walkthrough.md` extension and triage-page sections
