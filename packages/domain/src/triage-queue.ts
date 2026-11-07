@@ -5,6 +5,13 @@ interface Proposal {
   category?: string;
 }
 
-export const triageQueue: (proposals: Proposal[], verdicts: unknown[]) => { waiting: Proposal[] } = (proposals) => ({
-  waiting: proposals,
+interface Verdict {
+  messageId: string;
+}
+
+export const triageQueue: (proposals: Proposal[], verdicts: Verdict[]) => { waiting: Proposal[] } = (
+  proposals,
+  verdicts,
+) => ({
+  waiting: proposals.filter((proposal) => !verdicts.some((verdict) => verdict.messageId === proposal.messageId)),
 });

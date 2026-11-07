@@ -50,7 +50,7 @@
 - [x] When a message has two verdicts, the later one decides its current state
 - [x] When the later verdict is listed before the earlier one, the later one still decides the message's current state
 - [x] A message with a proposal and no verdict is waiting in the triage queue
-- [ ] A message with a verdict is no longer waiting in the triage queue
+- [x] A message with a verdict is no longer waiting in the triage queue
 - [ ] Waiting proposals are grouped by category
 - [ ] Waiting `system-update` proposals are grouped within their category by sending system
 - [ ] Two waiting `cc-thread` proposals from the same thread show as one line, the newest one

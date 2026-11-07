@@ -12,4 +12,27 @@ describe('triageQueue', () => {
     };
     expect(triageQueue([proposal], []).waiting).toEqual([proposal]);
   });
+
+  it('no longer lists a message as waiting once it has a verdict', () => {
+    const decidedProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'cc-thread',
+    };
+    const undecidedProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'action',
+    };
+    const verdict = {
+      messageId: 'message-1',
+      decision: 'confirmed',
+      decidedAt: '2026-11-06T09:00:00-06:00',
+    };
+    expect(triageQueue([decidedProposal, undecidedProposal], [verdict]).waiting).toEqual([
+      undecidedProposal,
+    ]);
+  });
 });
