@@ -18,6 +18,10 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/app.ts:147] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07)
+  `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
+  the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
+  same message id (the map keeps the last account, the store's `INSERT OR IGNORE` the first), so dropping either changes behavior.
 - **[apps/integration/.vitest/json/output.json:1] A Vitest JSON report from a failing run is tracked in git** (added: 2026-11-07)
   Committed by 56f1b6b; it fails the lint wall's Prettier check (`Code style issues found`) and is rewritten by any run that
   writes it. Deferred because the fix is repository hygiene, not a refactor: untrack it and ignore `**/.vitest/` in `.gitignore`
