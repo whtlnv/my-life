@@ -119,6 +119,24 @@ describe('Claude triage', () => {
     }).toEqual({ sendsOwnProfile: true, sendsOtherProfile: false });
   });
 
+  it("sends the shared accounts profile alongside the account's own profile", async () => {
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    writeFileSync(join(profileDirectory, 'accounts.md'), 'Ana has two accounts: Acme for sales, Gmail for family.');
+    writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
+    const { sentRequests, createMessage } = recordRequests();
+    const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('Classify this email.'),
+      profileDirectory,
+      createMessage,
+    });
+
+    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@acme.com' });
+
+    expect(firstSentRequest(sentRequests).system).toContain('Ana has two accounts: Acme for sales, Gmail for family.');
+  });
+
   it("sends the message's headers, snippet and whether it is addressed to the user", async () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
 import { triageProposal } from '@my-life/contracts';
@@ -33,7 +33,9 @@ function profileFileName(accountEmail: string): string {
 }
 
 function readProfile(profileDirectory: string, accountEmail: string): string {
-  return readFileSync(join(profileDirectory, profileFileName(accountEmail)), 'utf8');
+  const accountProfile = readFileSync(join(profileDirectory, profileFileName(accountEmail)), 'utf8');
+  const sharedProfilePath = join(profileDirectory, 'accounts.md');
+  return existsSync(sharedProfilePath) ? `${readFileSync(sharedProfilePath, 'utf8')}\n\n${accountProfile}` : accountProfile;
 }
 
 function composeSystemPrompt(promptPath: string, profileDirectory: string | undefined, accountEmail: string): string {
