@@ -97,9 +97,13 @@ const ccThreadTriage = (action: 'archive' | 'keep') => {
   return triageAnswering(proposal);
 };
 
-const confirmBudgetReviewProposal = async (app: App) => {
+const proposeBudgetReview = async (app: App) => {
   await postJson(app, '/mail-report', budgetReviewReport);
   await postTriageRun(app);
+};
+
+const confirmBudgetReviewProposal = async (app: App) => {
+  await proposeBudgetReview(app);
   await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 };
 
@@ -1207,44 +1211,34 @@ describe('backend app', () => {
     });
   });
 
-  it('lists at GET /commands no archive command for an account other than the one whose message was confirmed for archive', async () => {
+  it.each([
+    {
+      rule: 'for an account other than the one whose message was confirmed for archive',
+      action: 'archive',
+      decide: confirmBudgetReviewProposal,
+      accountEmail: 'bea@example.com',
+    },
+    {
+      rule: 'for an archive proposal that has no verdict yet',
+      action: 'archive',
+      decide: proposeBudgetReview,
+      accountEmail: 'ana@example.com',
+    },
+    {
+      rule: 'for a keep proposal the user confirmed',
+      action: 'keep',
+      decide: confirmBudgetReviewProposal,
+      accountEmail: 'ana@example.com',
+    },
+  ] as const)('lists at GET /commands no archive command $rule', async ({ action, decide, accountEmail }) => {
     const app = createApp({
       allowedEmails: ['ana@example.com', 'bea@example.com'],
       clock: clockAtTenPastThree,
-      triage: ccThreadTriage('archive'),
+      triage: ccThreadTriage(action),
     });
-    await confirmBudgetReviewProposal(app);
+    await decide(app);
 
-    const response = await getCommands(app, 'bea@example.com');
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ commands: [] });
-  });
-
-  it('lists at GET /commands no archive command for an archive proposal that has no verdict yet', async () => {
-    const app = createApp({
-      allowedEmails: ['ana@example.com'],
-      clock: clockAtTenPastThree,
-      triage: ccThreadTriage('archive'),
-    });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
-
-    const response = await getCommands(app, 'ana@example.com');
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ commands: [] });
-  });
-
-  it('lists at GET /commands no archive command for a keep proposal the user confirmed', async () => {
-    const app = createApp({
-      allowedEmails: ['ana@example.com'],
-      clock: clockAtTenPastThree,
-      triage: ccThreadTriage('keep'),
-    });
-    await confirmBudgetReviewProposal(app);
-
-    const response = await getCommands(app, 'ana@example.com');
+    const response = await getCommands(app, accountEmail);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ commands: [] });
