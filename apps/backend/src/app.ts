@@ -38,7 +38,11 @@ interface ReportedMessage {
 
 type Proposal = Parameters<typeof triageQueue>[0][number];
 
-function withDisplayedCategory(proposal: Proposal, message: ReportedMessage, accountEmail: string): Proposal {
+function withDisplayedCategory(
+  proposal: Proposal,
+  message: Pick<ReportedMessage, 'to' | 'cc'>,
+  accountEmail: string,
+): Proposal {
   const isAddressedToAccount = `${message.to ?? ''} ${message.cc ?? ''}`.toLowerCase().includes(accountEmail);
   return proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal;
 }
@@ -156,11 +160,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const verdictStore = openVerdictStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const accountEmailByMessageId = new Map<string, string>();
-  const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => ({
-    ...(proposal as Proposal),
-    messageId,
-    accountEmail: reportedMessageStore.accountEmailOf(messageId),
-  }));
+  const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => {
+    const accountEmail = reportedMessageStore.accountEmailOf(messageId);
+    return withDisplayedCategory(
+      { ...(proposal as Proposal), messageId, accountEmail },
+      reportedMessageStore.recipientsOf(messageId),
+      accountEmail,
+    );
+  });
   let spentInUsd = spentOnBusinessDateInUsd(spendStore.loadAll(), clock.now());
   const hasReachedDailySpendCeiling = (): boolean =>
     options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd;
@@ -208,7 +215,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, refusal);
     }
     report.messages.forEach((message) => {
-      reportedMessageStore.save(message.id, report.accountEmail);
+      reportedMessageStore.save(message.id, report.accountEmail, message);
     });
     reportedMessages.push(...report.messages);
     report.messages.forEach((message) => accountEmailByMessageId.set(message.id, report.accountEmail));

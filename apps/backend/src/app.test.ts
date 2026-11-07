@@ -1043,6 +1043,37 @@ describe('backend app', () => {
     });
   });
 
+  it('still groups in GET /triage-queue under cc-thread, after a backend restart on the same database file, an action proposal for a message whose to and cc do not contain the reporting account', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks the team for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks for a review',
+    });
+    const databasePath = temporaryDatabasePath();
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
+    const beforeRestart = createApp(options);
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(beforeRestart, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, to: 'team@example.com', cc: 'pedro@example.com' }],
+    });
+    await postTriageRun(beforeRestart);
+
+    const afterRestart = createApp(options);
+    const queue = await afterRestart.request('/triage-queue');
+
+    const { action, groups } = (await queue.json()) as {
+      action: { messageId: string }[];
+      groups: { category: string; items: { messageId: string }[] }[];
+    };
+    expect(action).toEqual([]);
+    expect(groups.find(({ category }) => category === 'cc-thread')).toMatchObject({
+      items: [{ messageId: 'message-1' }],
+    });
+  });
+
   it('keeps in the action block of GET /triage-queue an action proposal for a message whose To header names the reporting account with a display name and different letter case', async () => {
     const triage = triageAnswering({
       action: 'act',
