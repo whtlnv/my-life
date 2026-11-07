@@ -1975,4 +1975,22 @@ describe('backend app', () => {
 
     expect(await response.json()).toEqual({ commands: [] });
   });
+
+  it('lists no archive command at GET /commands for an archive proposal made while its category was advise, after the category is switched to automatic', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await proposeBudgetReview(app);
+    await app.request('/categories/cc-thread/mode', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'automatic' }),
+    });
+
+    const response = await getCommands(app, 'ana@example.com');
+
+    expect(await response.json()).toEqual({ commands: [] });
+  });
 });

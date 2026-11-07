@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 14:50 · `apps/backend/src/app.test.ts::lists no archive command at GET /commands for an archive proposal made while its category was advise, after the category is switched to automatic`
+- Behavior: An `archive` proposal made while its category was `advise` yields no command when the category is later switched to `automatic`; it waits for its confirmation
+- Predicted: passes on first run — `dea55db` already stamps `madeAutomatic` when the proposal is made and `isCleared` never reads the current mode
+- Actual: passed on first run (1 passed, 83 skipped)
+- Type: passed unexpectedly
+- Resolution: The behavior was delivered as a side effect of the `dea55db` keystone. The test is not vacuous: the code before `dea55db` read the mode at request time and would have listed the command. No variant can fail without driving a different behavior, so the test stays as a pin and the item needs no /green.
+
 ## 2026-11-07 14:39 · `apps/backend/src/app.test.ts::lists neither a command at GET /commands nor a task at GET /tasks for a new keep proposal in a category switched to automatic`
 - Behavior: In an `automatic` category, a new `keep` proposal yields neither a command nor a task
 - Predicted: passes on first run (read before predicting: `GET /commands` filters `action === 'archive'`; `triageEffects` gives a `keep` no tasks)
