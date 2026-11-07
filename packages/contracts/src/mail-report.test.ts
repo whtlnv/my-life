@@ -23,8 +23,15 @@ function reportWith(messages: unknown[]) {
 }
 
 describe('mailReport', () => {
-  it('accepts a report with the account email, the history id and a message with its headers and snippet', () => {
-    const report = reportWith([message]);
+  it.each([
+    {
+      rule: 'a report with the account email, the history id and a message with its headers and snippet',
+      reported: message,
+    },
+    { rule: 'a report whose message has no Cc header', reported: messageWithout('cc') },
+    { rule: 'a report whose message has no List-Id header', reported: messageWithout('listId') },
+  ])('accepts $rule', ({ reported }) => {
+    const report = reportWith([reported]);
 
     expect(mailReport.parse(report)).toEqual(report);
   });
@@ -33,17 +40,5 @@ describe('mailReport', () => {
     const report = reportWith([{ ...message, id: undefined }]);
 
     expect(mailReport.safeParse(report).success).toBe(false);
-  });
-
-  it('accepts a report whose message has no Cc header', () => {
-    const report = reportWith([messageWithout('cc')]);
-
-    expect(mailReport.parse(report)).toEqual(report);
-  });
-
-  it('accepts a report whose message has no List-Id header', () => {
-    const report = reportWith([messageWithout('listId')]);
-
-    expect(mailReport.parse(report)).toEqual(report);
   });
 });
