@@ -13,7 +13,7 @@ interface CreateFilterCommand {
   id: string;
   type: string;
   criteria: Record<string, string>;
-  label: string;
+  labelName: string;
 }
 
 export async function carryOutFilterCommands(options: CarryOutFilterCommandsOptions) {
@@ -35,7 +35,7 @@ async function createGmailFilter(
   authorization: { Authorization: string },
   command: CreateFilterCommand,
 ) {
-  const labelId = await findOrCreateLabelId(fetch, authorization, command.label);
+  const labelId = await findOrCreateLabelId(fetch, authorization, command.labelName);
   const response = await fetch(`${gmailApi}/settings/filters`, {
     method: 'POST',
     headers: authorization,
