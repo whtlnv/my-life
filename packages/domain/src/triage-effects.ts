@@ -3,7 +3,7 @@ export const triageEffects = (
   verdict: { decision: string } | undefined,
 ): { archives: { messageId: string; accountEmail: string }[] } => ({
   archives:
-    verdict === undefined
-      ? []
-      : [{ messageId: proposal.messageId, accountEmail: proposal.accountEmail }],
+    verdict?.decision === 'confirmed'
+      ? [{ messageId: proposal.messageId, accountEmail: proposal.accountEmail }]
+      : [],
 });

@@ -24,4 +24,14 @@ describe('triageEffects', () => {
       { messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' },
     ]);
   });
+
+  it('produces no archive for an archive proposal the user rejected', () => {
+    const proposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+    };
+
+    expect(triageEffects(proposal, { decision: 'rejected' }).archives).toEqual([]);
+  });
 });
