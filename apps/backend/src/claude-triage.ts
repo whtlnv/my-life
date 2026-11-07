@@ -18,31 +18,36 @@ function readProfile(profileDirectory: string): string {
     .join('\n\n');
 }
 
+interface TriageMessage {
+  id: string;
+  threadId?: string;
+  date: string;
+  accountEmail?: string;
+  from?: string;
+  to?: string;
+  cc?: string;
+  subject?: string;
+  snippet?: string;
+  listId?: string;
+}
+
+function describeMessage(message: TriageMessage): string {
+  return JSON.stringify({
+    from: message.from,
+    to: message.to,
+    cc: message.cc,
+    subject: message.subject,
+    date: message.date,
+    listId: message.listId,
+    snippet: message.snippet,
+    addressedToUser: true,
+  });
+}
+
 export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
   return {
-    propose: async (message: {
-      id: string;
-      threadId?: string;
-      date: string;
-      accountEmail?: string;
-      from?: string;
-      to?: string;
-      cc?: string;
-      subject?: string;
-      snippet?: string;
-      listId?: string;
-    }): Promise<{ promptVersion: string } | undefined> => {
-      const content = JSON.stringify({
-        from: message.from,
-        to: message.to,
-        cc: message.cc,
-        subject: message.subject,
-        date: message.date,
-        listId: message.listId,
-        snippet: message.snippet,
-        addressedToUser: true,
-      });
-      const messages = [{ role: 'user', content }];
+    propose: async (message: TriageMessage): Promise<{ promptVersion: string } | undefined> => {
+      const messages = [{ role: 'user', content: describeMessage(message) }];
       if (promptPath === undefined) {
         await createMessage({ model, messages });
         return undefined;
