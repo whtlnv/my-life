@@ -77,4 +77,16 @@ describe('triageEffects', () => {
       tasks: [],
     });
   });
+
+  it('puts the company on the check-later list for a sales keep proposal the user confirmed', () => {
+    const salesKeepProposal = {
+      ...archiveProposal,
+      action: 'keep',
+      category: 'sales',
+      extract: { company: 'Acme', solution: 'AI scheduling assistant', problem: 'Time lost coordinating meetings' },
+    };
+    expect(triageEffects(salesKeepProposal, { decision: 'confirmed' }).checkLater).toEqual([
+      { company: 'Acme', messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' },
+    ]);
+  });
 });
