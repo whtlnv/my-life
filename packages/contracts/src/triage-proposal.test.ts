@@ -96,4 +96,22 @@ describe('triageProposal', () => {
 
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
+
+  it('rejects an expense proposal whose extract has no amount, even when it carries an ask', () => {
+    const proposal = {
+      action: 'keep',
+      category: 'expense',
+      summary: 'AWS invoice for October',
+      extract: {
+        vendor: 'Amazon Web Services',
+        currency: 'USD',
+        date: '2026-11-03',
+        asker: 'AWS Billing',
+        ask: 'Pay the October invoice',
+      },
+      reason: 'An invoice the user files for expenses.',
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });

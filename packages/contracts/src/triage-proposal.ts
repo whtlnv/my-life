@@ -7,6 +7,7 @@ const expenseExtract = z.object({ vendor: z.string(), amount: z.number(), curren
 const extractForCategory: Record<string, z.ZodType | undefined> = {
   action: actionExtract,
   'cc-thread': ccThreadExtract,
+  expense: expenseExtract,
 };
 
 const extractMatchesCategory = (proposal: { category: string; extract: unknown }): boolean =>
