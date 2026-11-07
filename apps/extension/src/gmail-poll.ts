@@ -10,7 +10,7 @@ interface PollGmailOptions {
   accessToken: string;
   accountEmail: string;
   backendUrl: string;
-  storedHistoryId: string | undefined;
+  storedHistoryId?: string | undefined;
 }
 
 interface GmailProfile {

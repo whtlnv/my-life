@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '@my-life/backend/app';
+import { carryOutArchiveCommands } from '@my-life/extension/gmail-archive';
 import { pollGmailOnce } from '@my-life/extension/gmail-poll';
 
 import { startGmailFakeServer } from './gmail-fake-server';
@@ -227,5 +228,46 @@ describe('Gmail fake server', () => {
     expect(returnedHistoryId).not.toBe(expiredHistoryId);
     expect(messagesSeenByTriage).toHaveLength(1);
     expect(queue.action).toEqual([expect.objectContaining({ messageId: messagesSeenByTriage[0]?.id })]);
+  });
+  it('a confirmed archive carried out against the fake leaves the message out of the inbox with the label my-life/archived', async () => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => expenseProposal);
+    const gmail = await startGmailFakeServer('expense', accountEmail);
+    const gmailApi = `${gmail.url}/gmail/v1/users/me`;
+    const extensionFetch = async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin === 'https://gmail.googleapis.com') {
+        return fetch(new URL(url.pathname + url.search, gmail.url), init);
+      }
+      return backend.request(url.pathname + url.search, init);
+    };
+    const extensionOptions = { fetch: extensionFetch, accessToken: 'fake-token', accountEmail, backendUrl };
+    try {
+      await pollGmailOnce(extensionOptions);
+      await backend.request('/triage-run', { method: 'POST' });
+      const messageId = messagesSeenByTriage[0]?.id ?? '';
+      await backend.request('/verdicts', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messageId, decision: 'confirmed' }),
+      });
+
+      await carryOutArchiveCommands(extensionOptions);
+
+      const inbox = (await (await fetch(`${gmailApi}/messages?labelIds=INBOX`)).json()) as {
+        messages?: { id: string }[];
+      };
+      const { labels } = (await (await fetch(`${gmailApi}/labels`)).json()) as {
+        labels: { id: string; name: string }[];
+      };
+      const message = (await (await fetch(`${gmailApi}/messages/${messageId}`)).json()) as { labelIds?: string[] };
+      const labelNames = (message.labelIds ?? []).map((labelId) => labels.find(({ id }) => id === labelId)?.name);
+
+      expect(messagesSeenByTriage).toHaveLength(1);
+      expect((inbox.messages ?? []).map(({ id }) => id)).not.toContain(messageId);
+      expect(labelNames).toContain('my-life/archived');
+      expect(labelNames).not.toContain('INBOX');
+    } finally {
+      await gmail.close();
+    }
   });
 });

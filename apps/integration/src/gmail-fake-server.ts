@@ -164,6 +164,8 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
 
 export async function startGmailFakeServer(scenario: GmailScenario, accountEmail: string) {
   const messages = scenarioMessages(scenario, accountEmail);
+  const messageLabelIds = new Map(messages.map(({ id }) => [id, ['INBOX']]));
+  const labels: { id: string; name: string }[] = [];
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fake').pathname;
     const prefix = '/gmail/v1/users/me';
@@ -172,16 +174,40 @@ export async function startGmailFakeServer(scenario: GmailScenario, accountEmail
       response.end();
       return;
     }
-    let body: unknown;
-    if (path === `${prefix}/profile`) {
-      body = { historyId: '1' };
-    } else if (path === `${prefix}/messages`) {
-      body = { messages: messages.map(({ id, threadId }) => ({ id, threadId })) };
-    } else {
-      body = messages.find(({ id }) => path === `${prefix}/messages/${id}`);
-    }
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.end(JSON.stringify(body));
+    let requestBody = '';
+    request.on('data', (chunk: Buffer) => {
+      requestBody += chunk.toString();
+    });
+    request.on('end', () => {
+      let body: unknown;
+      if (path === `${prefix}/profile`) {
+        body = { historyId: '1' };
+      } else if (path === `${prefix}/labels` && request.method === 'POST') {
+        const { name } = JSON.parse(requestBody) as { name: string };
+        const label = { id: `label-${String(labels.length + 1)}`, name };
+        labels.push(label);
+        body = label;
+      } else if (path === `${prefix}/labels`) {
+        body = { labels };
+      } else if (path === `${prefix}/messages`) {
+        const inbox = messages.filter(({ id }) => messageLabelIds.get(id)?.includes('INBOX'));
+        body = { messages: inbox.map(({ id, threadId }) => ({ id, threadId })) };
+      } else if (path.endsWith('/modify')) {
+        const messageId = path.slice(`${prefix}/messages/`.length, -'/modify'.length);
+        const { addLabelIds, removeLabelIds } = JSON.parse(requestBody) as {
+          addLabelIds: string[];
+          removeLabelIds: string[];
+        };
+        const current = messageLabelIds.get(messageId) ?? [];
+        messageLabelIds.set(messageId, [...current.filter((id) => !removeLabelIds.includes(id)), ...addLabelIds]);
+        body = { id: messageId, labelIds: messageLabelIds.get(messageId) };
+      } else {
+        const message = messages.find(({ id }) => path === `${prefix}/messages/${id}`);
+        body = message && { ...message, labelIds: messageLabelIds.get(message.id) };
+      }
+      response.writeHead(200, { 'Content-Type': 'application/json' });
+      response.end(JSON.stringify(body));
+    });
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
