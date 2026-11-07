@@ -1,7 +1,17 @@
-type MessageSource = { messageId: string; accountEmail: string };
-type TaskDraft = { title: string };
-type CompanyExtract = { company: string };
-type Verdict = { decision: string; correction?: { action: string; taskDraft?: TaskDraft } };
+interface MessageSource {
+  messageId: string;
+  accountEmail: string;
+}
+interface TaskDraft {
+  title: string;
+}
+interface CompanyExtract {
+  company: string;
+}
+interface Verdict {
+  decision: string;
+  correction?: { action: string; taskDraft?: TaskDraft };
+}
 
 export const triageEffects = (
   proposal: MessageSource & {
