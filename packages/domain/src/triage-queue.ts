@@ -26,28 +26,32 @@ interface TriageQueue {
   groups: ProposalGroup[];
 }
 
-const groupByCategory = (proposals: Proposal[]): ProposalGroup[] => {
-  const groups: ProposalGroup[] = [];
+const groupBy = <Key>(
+  proposals: Proposal[],
+  keyOf: (proposal: Proposal) => Key,
+): { key: Key; proposals: Proposal[] }[] => {
+  const groups: { key: Key; proposals: Proposal[] }[] = [];
   for (const proposal of proposals) {
-    const group = groups.find((existing) => existing.category === proposal.category);
+    const key = keyOf(proposal);
+    const group = groups.find((existing) => existing.key === key);
     if (group) group.proposals.push(proposal);
-    else groups.push({ category: proposal.category, proposals: [proposal] });
-  }
-  for (const group of groups) {
-    if (group.category === 'system-update') group.systems = groupBySystem(group.proposals);
+    else groups.push({ key, proposals: [proposal] });
   }
   return groups;
 };
 
-const groupBySystem = (proposals: Proposal[]): SystemGroup[] => {
-  const systems: SystemGroup[] = [];
-  for (const proposal of proposals) {
-    const system = systems.find((existing) => existing.system === proposal.extract?.system);
-    if (system) system.proposals.push(proposal);
-    else systems.push({ system: proposal.extract?.system, proposals: [proposal] });
-  }
-  return systems;
-};
+const groupByCategory = (proposals: Proposal[]): ProposalGroup[] =>
+  groupBy(proposals, (proposal) => proposal.category).map(({ key, proposals }) =>
+    key === 'system-update'
+      ? { category: key, proposals, systems: groupBySystem(proposals) }
+      : { category: key, proposals },
+  );
+
+const groupBySystem = (proposals: Proposal[]): SystemGroup[] =>
+  groupBy(proposals, (proposal) => proposal.extract?.system).map(({ key, proposals }) => ({
+    system: key,
+    proposals,
+  }));
 
 const hasVerdict = (proposal: Proposal, verdicts: Verdict[]): boolean =>
   verdicts.some((verdict) => verdict.messageId === proposal.messageId);
