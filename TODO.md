@@ -68,6 +68,7 @@
 - [x] After a backend restart on the same database, a candidate that already has a stored filter proposal is not asked about again; the stored proposals are the memory, not an in-process set (supervisor keystone)
 - [x] The Claude filter adapter calls the model from config with a strict `propose_filter` tool built from the filter-proposal contract and a versioned prompt file, and returns the validated proposal
 - [ ] Each filter-adapter call is logged as spend and counts against the daily ceiling; at the ceiling no filter proposal is asked for
+- [ ] The filter port is asked with the candidate's account, its criteria (sender or List-Id) and, for each of its messages, the sender and subject, and the Claude filter adapter puts all of that in the user message of its request, so a proposal about sender X is asked with X's archived mail in front of the model (supervisor keystone: the adapter ignores the candidate it is given and sends no messages)
 - [ ] `GET /filter-proposals` lists pending proposals with criteria, label, account and the count of archives behind each
 - [ ] `POST /filter-proposals/:id/approval` stores the approval with its time, and `GET /commands?accountEmail=…` then lists a `create-filter` command for that account with the criteria and label
 - [ ] A filter proposal with no stored approval never yields a `create-filter` command
