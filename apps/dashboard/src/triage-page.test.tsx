@@ -163,4 +163,46 @@ describe('TriagePage', () => {
       'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-6',
     );
   });
+  it('shows each category group collapsed with its count', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'expense',
+          count: 2,
+          items: [
+            {
+              messageId: 'message-7',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'expense',
+              summary: 'Receipt from Acme',
+              extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+              reason: 'A receipt to file',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-7',
+            },
+            {
+              messageId: 'message-8',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'expense',
+              summary: 'Invoice from Globex',
+              extract: { vendor: 'Globex', amount: 900, currency: 'MXN', date: '2026-11-03' },
+              reason: 'An invoice to file',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-8',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const groupToggle = await screen.findByRole('button', { name: /expense.*2/ });
+    expect(groupToggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText(/Receipt from Acme/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Invoice from Globex/)).not.toBeInTheDocument();
+  });
 });

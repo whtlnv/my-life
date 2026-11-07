@@ -11,6 +11,7 @@ interface TriageItem {
 
 interface TriageGroup {
   category: string;
+  count: number;
   items: TriageItem[];
 }
 
@@ -49,10 +50,17 @@ export function TriagePage() {
   const unknownItems = queue.groups.find((group) => group.category === 'unknown')?.items ?? [];
 
   return (
-    <section aria-label="Action">
-      {[...queue.action, ...unknownItems].map((item) => (
-        <ActionCard key={item.messageId} item={item} />
+    <>
+      <section aria-label="Action">
+        {[...queue.action, ...unknownItems].map((item) => (
+          <ActionCard key={item.messageId} item={item} />
+        ))}
+      </section>
+      {queue.groups.map((group) => (
+        <button key={group.category} type="button" aria-expanded={false}>
+          {group.category} {group.count}
+        </button>
       ))}
-    </section>
+    </>
   );
 }
