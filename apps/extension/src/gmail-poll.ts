@@ -35,6 +35,11 @@ function toReportedMessage(message: GmailMessage) {
   return { id: message.id, threadId: message.threadId, subject };
 }
 
+async function fetchReportedMessage(options: PollGmailOptions, messageId: string) {
+  const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${messageId}`);
+  return toReportedMessage(message);
+}
+
 interface GmailHistoryList {
   history: { messagesAdded: { message: { id: string } }[] }[];
 }
@@ -44,8 +49,7 @@ async function fetchMessagesAddedSince(options: PollGmailOptions, startHistoryId
   const messages = [];
   for (const { messagesAdded } of list.history) {
     for (const { message: added } of messagesAdded) {
-      const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${added.id}`);
-      messages.push(toReportedMessage(message));
+      messages.push(await fetchReportedMessage(options, added.id));
     }
   }
   return messages;
@@ -58,8 +62,7 @@ async function fetchInboxMessages(options: PollGmailOptions) {
     const pageQuery = pageToken === undefined ? '' : `&pageToken=${pageToken}`;
     const list = await fetchGmailJson<GmailMessageList>(options, `${gmailApi}/messages?labelIds=INBOX${pageQuery}`);
     for (const { id } of list.messages) {
-      const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${id}`);
-      messages.push(toReportedMessage(message));
+      messages.push(await fetchReportedMessage(options, id));
     }
     pageToken = list.nextPageToken;
   } while (pageToken !== undefined);
