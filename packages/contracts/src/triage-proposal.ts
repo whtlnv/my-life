@@ -5,6 +5,8 @@ const actionExtract = z.object({ asker: z.string(), ask: z.string() });
 const expenseExtract = z.object({ vendor: z.string(), amount: z.number(), currency: z.string(), date: z.string() });
 const systemUpdateExtract = z.object({ system: z.string(), severity: z.string(), significant: z.boolean() });
 
+const salesExtract = z.object({ company: z.string(), solution: z.string(), problem: z.string() });
+
 const extractForCategory: Record<string, z.ZodType | undefined> = {
   action: actionExtract,
   'cc-thread': ccThreadExtract,
@@ -20,7 +22,7 @@ export const triageProposal = z.object({
   action: z.enum(['archive', 'keep', 'act']),
   category: z.enum(['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown']),
   summary: z.string(),
-  extract: z.union([ccThreadExtract, actionExtract, expenseExtract, systemUpdateExtract]),
+  extract: z.union([ccThreadExtract, actionExtract, expenseExtract, systemUpdateExtract, salesExtract]),
   reason: z.string(),
   taskDraft: z.object({ title: z.string() }).optional(),
 }).refine(extractMatchesCategory);

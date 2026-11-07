@@ -138,4 +138,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('accepts a sales proposal whose extract has the company, its solution and the problem it solves', () => {
+    const proposal = {
+      action: 'archive',
+      category: 'sales',
+      summary: 'Acme pitches an AI scheduling assistant',
+      extract: { company: 'Acme', solution: 'AI scheduling assistant', problem: 'Time lost coordinating meetings' },
+      reason: 'An unsolicited pitch from a vendor.',
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
 });
