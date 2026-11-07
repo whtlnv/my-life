@@ -77,4 +77,10 @@ describe('startup settings', () => {
 
     expect(settings.dashboardDirectory).toBe('/tmp/elsewhere-dist');
   });
+
+  it('polls Gmail every 60 seconds when MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.gmailPollingIntervalInMilliseconds).toBe(60_000);
+  });
 });

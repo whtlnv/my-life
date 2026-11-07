@@ -7,6 +7,7 @@ export interface StartupSettings {
   databasePath: string;
   dashboardDirectory: string;
   port: number;
+  gmailPollingIntervalInMilliseconds: number;
 }
 
 const defaultPort = 7777;
@@ -21,6 +22,7 @@ export function readStartupSettings(
     port: parsePort(environment.MY_LIFE_PORT),
     databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
     dashboardDirectory: environment.MY_LIFE_DASHBOARD_DIRECTORY ?? defaultDashboardDirectory,
+    gmailPollingIntervalInMilliseconds: 60_000,
   };
 }
 
