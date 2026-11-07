@@ -18,7 +18,7 @@ function groupConfirmedByFilterKey(decidedProposals: DecidedProposal[]): Decided
   const confirmedByFilterKey = new Map<string, DecidedProposal[]>();
   for (const proposal of decidedProposals) {
     if (proposal.verdict.decision === 'confirmed') {
-      const key = proposal.listId ?? proposal.from;
+      const key = JSON.stringify([proposal.accountEmail, proposal.listId ?? proposal.from]);
       confirmedByFilterKey.set(key, [...(confirmedByFilterKey.get(key) ?? []), proposal]);
     }
   }

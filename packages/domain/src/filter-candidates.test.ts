@@ -103,4 +103,19 @@ describe('filterCandidates', () => {
       },
     ]);
   });
+  it('counts confirmed archives from the same sender per account, so two in each of two accounts yield no candidate', () => {
+    const inOtherAccount = (messageId: string) => ({
+      ...confirmedArchive(messageId, 'sales'),
+      accountEmail: 'francisco@erlia.mx',
+    });
+
+    expect(
+      filterCandidates([
+        confirmedArchive('message-1', 'sales'),
+        confirmedArchive('message-2', 'sales'),
+        inOtherAccount('message-3'),
+        inOtherAccount('message-4'),
+      ]),
+    ).toEqual([]);
+  });
 });
