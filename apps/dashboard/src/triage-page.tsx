@@ -41,7 +41,7 @@ interface TriageQueueResponse {
 export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
 
-function confirmAsTask(messageId: TriageItem['messageId']) {
+function confirmVerdict(messageId: TriageItem['messageId']) {
   void fetch('/verdicts', {
     method: 'POST',
     body: JSON.stringify({ messageId, decision: 'confirmed' }),
@@ -54,7 +54,7 @@ function ActionCard({ item }: { item: TriageItem }) {
       tabIndex={0}
       onKeyDown={(event) => {
         if (event.key === 't' || event.key === 'k') {
-          confirmAsTask(item.messageId);
+          confirmVerdict(item.messageId);
         }
       }}
     >
