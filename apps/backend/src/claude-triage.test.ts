@@ -97,6 +97,28 @@ describe('Claude triage', () => {
     expect(firstSentRequest(sentRequests).system).toContain('Ana runs the Acme sales team; invoices always matter.');
   });
 
+  it("sends only the profile file named after the account's domain, not another account's", async () => {
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    writeFileSync(join(profileDirectory, 'psmutuus.md'), 'Francisco runs operations at Psmutuus; claims always matter.');
+    writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
+    const { sentRequests, createMessage } = recordRequests();
+    const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('Classify this email.'),
+      profileDirectory,
+      createMessage,
+    });
+
+    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'franciscoc@psmutuus.com' });
+
+    const { system } = firstSentRequest(sentRequests);
+    expect({
+      sendsOwnProfile: system?.includes('Francisco runs operations at Psmutuus; claims always matter.'),
+      sendsOtherProfile: system?.includes('Ana runs the Acme sales team; invoices always matter.'),
+    }).toEqual({ sendsOwnProfile: true, sendsOtherProfile: false });
+  });
+
   it("sends the message's headers, snippet and whether it is addressed to the user", async () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({

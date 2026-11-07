@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
 import { triageProposal } from '@my-life/contracts';
@@ -27,10 +27,9 @@ interface ClaudeTriageDependencies {
   }) => Promise<ClaudeResponse>;
 }
 
-function readProfile(profileDirectory: string): string {
-  return readdirSync(profileDirectory)
-    .map((fileName) => readFileSync(join(profileDirectory, fileName), 'utf8'))
-    .join('\n\n');
+function readProfile(profileDirectory: string, accountEmail: string): string {
+  const domainName = accountEmail.split('@')[1]?.split('.')[0] ?? '';
+  return readFileSync(join(profileDirectory, `${domainName}.md`), 'utf8');
 }
 
 interface TriageMessage {
@@ -93,7 +92,7 @@ export function createClaudeTriage({
   return {
     propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome> => {
       const prompt = readFileSync(promptPath, 'utf8');
-      const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
+      const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory, message.accountEmail ?? '')}`;
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       const response = await createMessage({ model, system, messages, tools: [proposeTriageTool] });
       const costInUsd = computeCostInUsd(response.usage, pricing);
