@@ -68,6 +68,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const reportedMessages: ReportedMessage[] = [];
   const proposals: Proposal[] = [];
   let spentInUsd = 0;
+  const hasReachedDailySpendCeiling = (): boolean =>
+    options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd;
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -107,7 +109,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/triage-run', async (context) => {
     for (const message of triageQueue(proposals, [], reportedMessages).remaining) {
-      if (options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd) {
+      if (hasReachedDailySpendCeiling()) {
         break;
       }
       const result = (await options.triage?.propose(message)) as { costInUsd?: number } | undefined;
