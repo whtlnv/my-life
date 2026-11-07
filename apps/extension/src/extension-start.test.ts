@@ -401,9 +401,7 @@ describe('startExtension', () => {
         return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
       }
       if (url.href === 'http://127.0.0.1:7777/commands?accountEmail=francisco%40example.com') {
-        return Promise.resolve(
-          Response.json({ commands: [{ id: 'command-1', kind: 'archive', messageId: 'message-7' }] }),
-        );
+        return Promise.resolve(Response.json({ commands: [{ id: 'command-1', messageId: 'message-7' }] }));
       }
       if (url.pathname.endsWith('/acknowledgement') && init?.method === 'POST') {
         acknowledgements.push(url.pathname);

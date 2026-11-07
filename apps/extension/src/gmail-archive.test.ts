@@ -23,9 +23,7 @@ function fakeBackendAndGmail(
       url.origin + url.pathname === 'http://127.0.0.1:7777/commands' &&
       url.searchParams.get('accountEmail') === 'francisco@example.com'
     ) {
-      return Promise.resolve(
-        Response.json({ commands: [{ id: 'command-1', kind: 'archive', messageId: 'message-to-archive' }] }),
-      );
+      return Promise.resolve(Response.json({ commands: [{ id: 'command-1', messageId: 'message-to-archive' }] }));
     }
     if (url.origin + url.pathname === `${gmailApi}/labels` && init?.method === 'POST') {
       gmailRequests.push({ request: 'create label', body: JSON.parse(init.body as string) });
@@ -88,7 +86,7 @@ describe('carryOutArchiveCommands', () => {
     const backendWithAcknowledgements: FetchFunction = (input, init) => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.origin + url.pathname === 'http://127.0.0.1:7777/commands') {
-        const pending = [{ id: 'command-1', kind: 'archive', messageId: 'message-to-archive' }].filter(
+        const pending = [{ id: 'command-1', messageId: 'message-to-archive' }].filter(
           (command) => !acknowledgedCommandIds.has(command.id),
         );
         return Promise.resolve(Response.json({ commands: pending }));
@@ -117,7 +115,7 @@ describe('carryOutArchiveCommands', () => {
     const backendAndFlakyGmail: FetchFunction = (input, init) => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
       if (url.origin + url.pathname === 'http://127.0.0.1:7777/commands') {
-        const pending = [{ id: 'command-1', kind: 'archive', messageId: 'message-to-archive' }].filter(
+        const pending = [{ id: 'command-1', messageId: 'message-to-archive' }].filter(
           (command) => !acknowledgedCommandIds.has(command.id),
         );
         return Promise.resolve(Response.json({ commands: pending }));
