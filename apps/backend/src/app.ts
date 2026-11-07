@@ -48,7 +48,7 @@ export interface AppOptions {
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
   triage?: {
-    propose: (message: ReportedMessage & { accountEmail: string }, examples?: unknown[]) => Promise<unknown>;
+    propose: (message: ReportedMessage & { accountEmail: string }, examples?: unknown[]) => Promise<TriageResult>;
   };
 }
 
@@ -211,8 +211,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }
       const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
       const examples = verdictExamplesFor(message);
-      const result = (await options.triage?.propose({ ...message, accountEmail }, examples)) as
-        TriageResult | undefined;
+      const result = await options.triage?.propose({ ...message, accountEmail }, examples);
       const costInUsd = result?.costInUsd ?? 0;
       const answeredAt = clock.now().toISOString();
       spentInUsd += costInUsd;

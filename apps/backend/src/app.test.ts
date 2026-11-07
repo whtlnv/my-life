@@ -522,11 +522,13 @@ describe('backend app', () => {
       propose: (message: { id: string }) => {
         askedMessageIds.push(message.id);
         return Promise.resolve({
-          action: 'keep',
-          category: 'unknown',
-          summary: 'A message',
-          extract: {},
-          reason: 'Not sure what it is',
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A message',
+            extract: {},
+            reason: 'Not sure what it is',
+          },
         });
       },
     };
@@ -680,11 +682,13 @@ describe('backend app', () => {
       propose: (message: { id: string }) => {
         askedMessageIds.push(message.id);
         return Promise.resolve({
-          action: 'keep',
-          category: 'unknown',
-          summary: 'A message',
-          extract: {},
-          reason: 'Not sure what it is',
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A message',
+            extract: {},
+            reason: 'Not sure what it is',
+          },
         });
       },
     };
@@ -791,7 +795,11 @@ describe('backend app', () => {
 
     await app.request('/triage-run', { method: 'POST' });
 
-    expect(openSpendStore(databasePath).loadAll().map((spend) => spend.model)).toEqual(['claude-model-from-settings']);
+    expect(
+      openSpendStore(databasePath)
+        .loadAll()
+        .map((spend) => spend.model),
+    ).toEqual(['claude-model-from-settings']);
   });
   it("neither triages again after a backend restart a message proposed before it, nor forgets the spend logged before it toward today's ceiling", async () => {
     const askedMessageIds: string[] = [];
