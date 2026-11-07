@@ -12,6 +12,7 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
     "@hono/node-server": "2.1.6",
     "@my-life/contracts": "workspace:*",
     "@my-life/domain": "workspace:*",
