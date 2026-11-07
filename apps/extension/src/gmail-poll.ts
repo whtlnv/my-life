@@ -72,7 +72,7 @@ async function fetchReportedMessage(options: PollGmailOptions, messageId: string
 }
 
 interface GmailHistoryList {
-  history: { messagesAdded: { message: { id: string } }[] }[];
+  history?: { messagesAdded: { message: { id: string } }[] }[];
 }
 
 async function fetchMessagesAddedSince(options: PollGmailOptions, startHistoryId: string) {
@@ -82,7 +82,7 @@ async function fetchMessagesAddedSince(options: PollGmailOptions, startHistoryId
   }
   const list = (await response.json()) as GmailHistoryList;
   const messages = [];
-  for (const { messagesAdded } of list.history) {
+  for (const { messagesAdded } of list.history ?? []) {
     for (const { message: added } of messagesAdded) {
       messages.push(await fetchReportedMessage(options, added.id));
     }
