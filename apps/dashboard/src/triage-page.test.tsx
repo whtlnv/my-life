@@ -24,6 +24,8 @@ const answerGetTriageQueueWith = (body: unknown, acceptedPostPath?: string) => {
   vi.stubGlobal('fetch', fetchStub);
 };
 
+const queueOfActionItems = (action: unknown[]) => ({ action, groups: [], remaining: 0, paused: false });
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -89,8 +91,8 @@ describe('TriagePage', () => {
 
   it('shows an unknown item in the action block', async () => {
     // The backend sends `unknown` items in the action list, next to `action` ones; there is no `unknown` group.
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-4',
           accountEmail: 'ana@example.com',
@@ -100,11 +102,8 @@ describe('TriagePage', () => {
           extract: {},
           reason: 'Nothing in the message fits a known category',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
 
     render(<TriagePage />);
 
@@ -139,8 +138,8 @@ describe('TriagePage', () => {
   });
 
   it('says an action card with no due time has none', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-5',
           accountEmail: 'ana@example.com',
@@ -150,11 +149,8 @@ describe('TriagePage', () => {
           extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
           reason: 'Luis asks the user directly',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
 
     render(<TriagePage />);
 
@@ -164,8 +160,8 @@ describe('TriagePage', () => {
   });
 
   it('shows each item with its reason, its account and a link to the message', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-6',
           accountEmail: 'franciscoc@psmutuus.com',
@@ -176,11 +172,8 @@ describe('TriagePage', () => {
           reason: 'Luis asks the user directly',
           link: 'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-6',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
 
     render(<TriagePage />);
 
@@ -405,8 +398,8 @@ describe('TriagePage', () => {
     expect(screen.getByText(/Time lost coordinating meetings/)).toBeInTheDocument();
   });
   it('confirms a focused action card as a task when `t` is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-17',
           accountEmail: 'ana@example.com',
@@ -417,11 +410,8 @@ describe('TriagePage', () => {
           reason: 'Luis asks the user directly',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-17',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -440,8 +430,8 @@ describe('TriagePage', () => {
     );
   });
   it('confirms a focused card whose proposal is `keep` when `k` is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-23',
           accountEmail: 'ana@example.com',
@@ -452,11 +442,8 @@ describe('TriagePage', () => {
           reason: 'Worth keeping for the board meeting',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-23',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -475,8 +462,8 @@ describe('TriagePage', () => {
     );
   });
   it('confirms a focused card whose proposal is `archive` when `a` is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-24',
           accountEmail: 'ana@example.com',
@@ -487,11 +474,8 @@ describe('TriagePage', () => {
           reason: 'Nothing to do here',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-24',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -510,8 +494,8 @@ describe('TriagePage', () => {
     );
   });
   it('asks for a correction when `r` is pressed on a focused card and rejects it with the chosen correction', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-25',
           accountEmail: 'ana@example.com',
@@ -522,11 +506,8 @@ describe('TriagePage', () => {
           reason: 'Looks like a document to file',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-25',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -547,8 +528,8 @@ describe('TriagePage', () => {
     );
   });
   it('rejects a focused `keep` card with a correction to `act` and a task draft titled from its summary when `t` is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-26',
           accountEmail: 'ana@example.com',
@@ -559,11 +540,8 @@ describe('TriagePage', () => {
           reason: 'Looks informational',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-26',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -586,8 +564,8 @@ describe('TriagePage', () => {
     );
   });
   it('rejects a focused `act` card with a correction to `archive` when `a` is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-27',
           accountEmail: 'ana@example.com',
@@ -598,11 +576,8 @@ describe('TriagePage', () => {
           reason: 'Asks for a read',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-27',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -621,8 +596,8 @@ describe('TriagePage', () => {
     );
   });
   it('rejects a focused `act` card with a correction to `keep` when `k` is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-28',
           accountEmail: 'ana@example.com',
@@ -633,11 +608,8 @@ describe('TriagePage', () => {
           reason: 'Asks for a review',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-28',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -656,8 +628,8 @@ describe('TriagePage', () => {
     );
   });
   it('rejects with the category picked and the note typed in the correction prompt when Enter is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-29',
           accountEmail: 'ana@example.com',
@@ -668,11 +640,8 @@ describe('TriagePage', () => {
           reason: 'Asks for a payment',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-29',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -699,8 +668,8 @@ describe('TriagePage', () => {
     );
   });
   it('closes the correction prompt and posts nothing when Escape is pressed after picking a category and typing a note', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-30',
           accountEmail: 'ana@example.com',
@@ -711,11 +680,8 @@ describe('TriagePage', () => {
           reason: 'Asks for a payment',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-30',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -734,8 +700,8 @@ describe('TriagePage', () => {
   });
 
   it('acts on the next card when ArrowDown moves focus there before a key is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-31',
           accountEmail: 'ana@example.com',
@@ -756,11 +722,8 @@ describe('TriagePage', () => {
           reason: 'Marta asks the user directly',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-32',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -782,8 +745,8 @@ describe('TriagePage', () => {
   });
 
   it('acts on the previous card when ArrowUp moves focus there, and stays on the first card when pressed again', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-33',
           accountEmail: 'ana@example.com',
@@ -804,11 +767,8 @@ describe('TriagePage', () => {
           reason: 'Marta asks the user directly',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-34',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -831,8 +791,8 @@ describe('TriagePage', () => {
   });
 
   it('keeps focus on the last card when ArrowDown is pressed there, so a key still acts on it', async () => {
-    answerGetTriageQueueWith({
-      action: [
+    answerGetTriageQueueWith(
+      queueOfActionItems([
         {
           messageId: 'message-35',
           accountEmail: 'ana@example.com',
@@ -853,11 +813,8 @@ describe('TriagePage', () => {
           reason: 'Marta asks the user directly',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-36',
         },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    });
+      ]),
+    );
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -931,33 +888,28 @@ describe('TriagePage', () => {
   });
 
   it('removes a card from the page once the backend accepts its verdict, and keeps the others', async () => {
-    const queue = {
-      action: [
-        {
-          messageId: 'message-39',
-          accountEmail: 'ana@example.com',
-          action: 'archive',
-          category: 'action',
-          summary: 'Luis forwards an old newsletter',
-          extract: { asker: 'Luis Gómez', ask: 'Read the newsletter' },
-          reason: 'Nothing to do here',
-          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-39',
-        },
-        {
-          messageId: 'message-40',
-          accountEmail: 'ana@example.com',
-          action: 'act',
-          category: 'action',
-          summary: 'Marta asks for the signed contract',
-          extract: { asker: 'Marta Gil', ask: 'Send the signed contract' },
-          reason: 'Marta asks the user directly',
-          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-40',
-        },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    };
+    const queue = queueOfActionItems([
+      {
+        messageId: 'message-39',
+        accountEmail: 'ana@example.com',
+        action: 'archive',
+        category: 'action',
+        summary: 'Luis forwards an old newsletter',
+        extract: { asker: 'Luis Gómez', ask: 'Read the newsletter' },
+        reason: 'Nothing to do here',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-39',
+      },
+      {
+        messageId: 'message-40',
+        accountEmail: 'ana@example.com',
+        action: 'act',
+        category: 'action',
+        summary: 'Marta asks for the signed contract',
+        extract: { asker: 'Marta Gil', ask: 'Send the signed contract' },
+        reason: 'Marta asks the user directly',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-40',
+      },
+    ]);
     answerGetTriageQueueWith(queue, '/verdicts');
     const user = userEvent.setup();
 
@@ -975,23 +927,18 @@ describe('TriagePage', () => {
   });
 
   it('removes a card from the page once the backend accepts the correction its key posts', async () => {
-    const queue = {
-      action: [
-        {
-          messageId: 'message-41',
-          accountEmail: 'ana@example.com',
-          action: 'act',
-          category: 'action',
-          summary: 'Pedro shares the lunch menu',
-          extract: { asker: 'Pedro Ruiz', ask: 'Pick a dish' },
-          reason: 'Pedro asks the user directly',
-          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-41',
-        },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    };
+    const queue = queueOfActionItems([
+      {
+        messageId: 'message-41',
+        accountEmail: 'ana@example.com',
+        action: 'act',
+        category: 'action',
+        summary: 'Pedro shares the lunch menu',
+        extract: { asker: 'Pedro Ruiz', ask: 'Pick a dish' },
+        reason: 'Pedro asks the user directly',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-41',
+      },
+    ]);
     answerGetTriageQueueWith(queue, '/verdicts');
     const user = userEvent.setup();
 
@@ -1007,23 +954,18 @@ describe('TriagePage', () => {
   });
 
   it('removes a card from the page once the backend accepts the rejection posted from the correction prompt', async () => {
-    const queue = {
-      action: [
-        {
-          messageId: 'message-42',
-          accountEmail: 'ana@example.com',
-          action: 'act',
-          category: 'action',
-          summary: 'Acme sends the January invoice',
-          extract: { asker: 'Acme billing', ask: 'Pay the invoice' },
-          reason: 'Asks for a payment',
-          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-42',
-        },
-      ],
-      groups: [],
-      remaining: 0,
-      paused: false,
-    };
+    const queue = queueOfActionItems([
+      {
+        messageId: 'message-42',
+        accountEmail: 'ana@example.com',
+        action: 'act',
+        category: 'action',
+        summary: 'Acme sends the January invoice',
+        extract: { asker: 'Acme billing', ask: 'Pay the invoice' },
+        reason: 'Asks for a payment',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-42',
+      },
+    ]);
     answerGetTriageQueueWith(queue, '/verdicts');
     const user = userEvent.setup();
 
