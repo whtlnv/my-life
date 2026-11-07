@@ -89,4 +89,17 @@ describe('triageEffects', () => {
       { company: 'Acme', messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' },
     ]);
   });
+
+  it('puts nothing on the check-later list for a keep proposal of another category the user confirmed', () => {
+    const expenseKeepProposal = {
+      ...archiveProposal,
+      action: 'keep',
+      category: 'expense',
+      extract: { company: 'Acme' },
+    };
+    expect(triageEffects(expenseKeepProposal, { decision: 'confirmed' })).toEqual({
+      archives: [],
+      tasks: [],
+    });
+  });
 });
