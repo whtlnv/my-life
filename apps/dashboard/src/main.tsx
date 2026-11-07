@@ -1,10 +1,10 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { AppShell, routes } from './app-shell';
 import { DashboardApp } from './dashboard-app';
+import './styles.css';
 import { TriagePage } from './triage-page';
-
-const triageRoute = '#/triage';
 
 // One local page, two views (CLAUDE.md locked decision 10): the now view at `/` and the triage queue at `#/triage`.
 function App() {
@@ -18,14 +18,7 @@ function App() {
       window.removeEventListener('hashchange', readRoute);
     };
   }, []);
-  return (
-    <>
-      <nav>
-        <a href="#/">Now</a> · <a href={triageRoute}>Triage</a>
-      </nav>
-      {route === triageRoute ? <TriagePage /> : <DashboardApp />}
-    </>
-  );
+  return <AppShell route={route}>{route === routes.triage ? <TriagePage /> : <DashboardApp />}</AppShell>;
 }
 
 const root = document.getElementById('root');

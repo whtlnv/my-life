@@ -22,7 +22,7 @@ describe('DashboardApp', () => {
   it('shows the app title', () => {
     render(<DashboardApp />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'my-life' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Now' })).toBeInTheDocument();
   });
 
   it("shows the current event's title, join link and attendees in the Now block", async () => {
@@ -325,7 +325,7 @@ describe('DashboardApp', () => {
     render(<DashboardApp />);
 
     const laterTodayBlock = await screen.findByRole('region', { name: 'Later today' });
-    const timedItem = await within(laterTodayBlock).findByText(/Standup/);
+    const timedItem = (await within(laterTodayBlock).findByText(/Standup/)).closest('li');
     expect(timedItem).toHaveTextContent('11:00');
     expect(timedItem).not.toHaveTextContent(/all day/i);
   });

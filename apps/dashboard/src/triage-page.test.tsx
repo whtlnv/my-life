@@ -76,7 +76,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     expect(screen.getAllByRole('region')[0]).toBe(actionBlock);
     const cards = within(actionBlock).getAllByRole('article');
     expect(cards).toHaveLength(2);
@@ -107,7 +107,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const cards = within(actionBlock).getAllByRole('article');
     expect(cards).toHaveLength(1);
     expect(within(actionBlock).getByText(/A note from an unfamiliar sender about a pallet/)).toBeInTheDocument();
@@ -132,9 +132,9 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     expect(within(actionBlock).getAllByRole('article')).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: /unknown/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Unknown/ })).not.toBeInTheDocument();
   });
 
   it('says an action card with no due time has none', async () => {
@@ -154,7 +154,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     expect(within(card).getByText(noDueTimeText)).toBeInTheDocument();
   });
@@ -177,7 +177,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     expect(within(card).getByText(/Luis asks the user directly/)).toBeInTheDocument();
     expect(within(card).getByText(/franciscoc@psmutuus\.com/)).toBeInTheDocument();
@@ -223,7 +223,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const groupToggle = await screen.findByRole('button', { name: /expense.*2/ });
+    const groupToggle = await screen.findByRole('button', { name: /Expenses.*2/ });
     expect(groupToggle).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText(/Receipt from Acme/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Invoice from Globex/)).not.toBeInTheDocument();
@@ -267,7 +267,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const groupToggle = await screen.findByRole('button', { name: /expense.*2/ });
+    const groupToggle = await screen.findByRole('button', { name: /Expenses.*2/ });
     await user.click(groupToggle);
 
     expect(groupToggle).toHaveAttribute('aria-expanded', 'true');
@@ -308,7 +308,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    await user.click(await screen.findByRole('button', { name: /system-update.*3/ }));
+    await user.click(await screen.findByRole('button', { name: /System updates.*3/ }));
 
     const gitHub = screen.getByRole('region', { name: 'GitHub' });
     const aws = screen.getByRole('region', { name: 'AWS' });
@@ -352,7 +352,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    await user.click(await screen.findByRole('button', { name: /expense.*1/ }));
+    await user.click(await screen.findByRole('button', { name: /Expenses.*1/ }));
 
     expect(screen.getByText(/Papelería Lumen/)).toBeInTheDocument();
     expect(screen.getByText(/345\.5/)).toBeInTheDocument();
@@ -391,7 +391,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    await user.click(await screen.findByRole('button', { name: /sales.*1/ }));
+    await user.click(await screen.findByRole('button', { name: /Sales pitches.*1/ }));
 
     expect(screen.getByText(/Acme/)).toBeInTheDocument();
     expect(screen.getByText(/AI scheduling assistant/)).toBeInTheDocument();
@@ -446,7 +446,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     await user.click(card);
     await user.keyboard(key);
@@ -478,7 +478,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     await user.click(card);
     await user.keyboard('r');
@@ -545,7 +545,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     await user.click(card);
     await user.keyboard(key);
@@ -577,7 +577,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     await user.click(card);
     await user.keyboard('r');
@@ -617,7 +617,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     await user.click(card);
     await user.keyboard('r');
@@ -683,7 +683,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const cards = within(actionBlock).getAllByRole('article') as [HTMLElement, HTMLElement];
     await user.click(cards[clicked]);
     for (const key of keys) {
@@ -746,7 +746,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const expenseToggle = await screen.findByRole('button', { name: /expense.*1/ });
+    const expenseToggle = await screen.findByRole('button', { name: /Expenses.*1/ });
     expenseToggle.focus();
     await user.keyboard('c');
 
@@ -785,7 +785,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     const [luisCard] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     await user.click(luisCard);
     await user.keyboard('a');
@@ -814,7 +814,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     await user.click(within(actionBlock).getByRole('article'));
     await user.keyboard('a');
 
@@ -841,7 +841,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
     await user.click(within(actionBlock).getByRole('article'));
     await user.keyboard('r');
     const prompt = screen.getByRole('dialog');
@@ -899,14 +899,14 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const expenseToggle = await screen.findByRole('button', { name: /expense.*1/ });
+    const expenseToggle = await screen.findByRole('button', { name: /Expenses.*1/ });
     expenseToggle.focus();
     await user.keyboard('c');
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /expense.*1/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Expenses.*1/ })).not.toBeInTheDocument();
     });
-    expect(screen.getByRole('button', { name: /sales.*1/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sales pitches.*1/ })).toBeInTheDocument();
   });
 
   it('shows how many messages remain to be triaged', async () => {
@@ -946,5 +946,218 @@ describe('TriagePage', () => {
     render(<TriagePage />);
 
     expect(await screen.findByText(fetchedAtText('2026-11-07T15:05:00.000Z'))).toBeInTheDocument();
+  });
+  it('rejects an `act` card with a correction to `archive` when its Archive button is clicked, and removes it once accepted', async () => {
+    answerGetTriageQueueWith(
+      queueOfActionItems([
+        {
+          messageId: 'message-1',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for a budget review',
+          extract: { asker: 'Luis Pérez', ask: 'Review the Q4 budget' },
+          reason: 'Luis asks the user directly',
+        },
+      ]),
+      '/verdicts',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(within(card).getByRole('button', { name: /archive/i }));
+
+    expect(fetch).toHaveBeenCalledWith('/verdicts', {
+      method: 'POST',
+      body: JSON.stringify({ messageId: 'message-1', decision: 'rejected', correction: { action: 'archive' } }),
+    });
+    await waitFor(() => {
+      expect(within(actionBlock).queryAllByRole('article')).toHaveLength(0);
+    });
+  });
+  it('opens the correction prompt when the Recategorize button is clicked', async () => {
+    answerGetTriageQueueWith(
+      queueOfActionItems([
+        {
+          messageId: 'message-1',
+          accountEmail: 'ana@example.com',
+          action: 'keep',
+          category: 'unknown',
+          summary: 'A note about a pallet',
+          extract: {},
+          reason: 'No context',
+        },
+      ]),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
+    await user.click(within(actionBlock).getByRole('button', { name: /recategorize/i }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+  it('lists an expanded calendar-drive group as one line per item with what changed, and a cc-thread group with what happened since the last message', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'calendar-drive',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-20',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'calendar-drive',
+              summary: 'Board prep moved',
+              extract: { item: 'Board prep with Marta', change: 'Moved 30 minutes later' },
+              reason: 'The calendar already shows it',
+            },
+          ],
+        },
+        {
+          category: 'cc-thread',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-21',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'cc-thread',
+              summary: 'Launch checklist thread',
+              extract: { sinceLastMessage: 'Legal cleared the copy; launch moved to the 14th' },
+              reason: 'Nobody asks you anything',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    await user.click(await screen.findByRole('button', { name: /Calendar & Drive.*1/ }));
+    await user.click(screen.getByRole('button', { name: /Cc threads.*1/ }));
+
+    expect(screen.getByText('Board prep with Marta')).toBeInTheDocument();
+    expect(screen.getByText('Moved 30 minutes later')).toBeInTheDocument();
+    expect(screen.getByText('Launch checklist thread')).toBeInTheDocument();
+    expect(screen.getByText(/Legal cleared the copy/)).toBeInTheDocument();
+  });
+  it('summarizes what a group proposes: all one action, or a count per action when they differ', async () => {
+    const systemUpdate = (messageId: string, action: string) => ({
+      messageId,
+      accountEmail: 'ana@example.com',
+      action,
+      category: 'system-update',
+      summary: `Update ${messageId}`,
+      extract: { system: 'AWS', severity: 'info', significant: false },
+      reason: 'Routine',
+    });
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'system-update',
+          count: 3,
+          items: [systemUpdate('m-1', 'keep'), systemUpdate('m-2', 'archive'), systemUpdate('m-3', 'archive')],
+        },
+        {
+          category: 'sales',
+          count: 1,
+          items: [
+            {
+              messageId: 'm-4',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'sales',
+              summary: 'A pitch',
+              extract: { company: 'Acme', solution: 'Thing', problem: 'Pain' },
+              reason: 'Cold outreach',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    expect(await screen.findByRole('button', { name: /System updates.*3.*1 keep · 2 archive/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sales pitches.*1.*all archive/ })).toBeInTheDocument();
+  });
+  it('says so when nothing needs the user and no group is waiting', async () => {
+    answerGetTriageQueueWith({ action: [], groups: [], remaining: 0, paused: false });
+
+    render(<TriagePage />);
+
+    expect(await screen.findByText(/Nothing needs you/)).toBeInTheDocument();
+    expect(screen.getByText(/No groups waiting/)).toBeInTheDocument();
+  });
+  it('rejects a `keep` card with a correction to a task when its Task button is clicked, and keeps an `act` card when its Keep button is clicked', async () => {
+    answerGetTriageQueueWith(
+      queueOfActionItems([
+        {
+          messageId: 'message-1',
+          accountEmail: 'ana@example.com',
+          action: 'keep',
+          category: 'unknown',
+          summary: 'A note about a pallet',
+          extract: {},
+          reason: 'No context',
+        },
+        {
+          messageId: 'message-2',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Marta asks for the signed contract',
+          extract: { asker: 'Marta Gil', ask: 'Send the signed contract' },
+          reason: 'Marta asks the user directly',
+        },
+      ]),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Needs you' });
+    const [palletCard, martaCard] = within(actionBlock).getAllByRole('article') as [HTMLElement, HTMLElement];
+    await user.click(within(palletCard).getByRole('button', { name: /task/i }));
+    await user.click(within(martaCard).getByRole('button', { name: /keep/i }));
+
+    expect(fetch).toHaveBeenCalledWith('/verdicts', {
+      method: 'POST',
+      body: JSON.stringify({
+        messageId: 'message-1',
+        decision: 'rejected',
+        correction: { action: 'act', taskDraft: { title: 'A note about a pallet' } },
+      }),
+    });
+    expect(fetch).toHaveBeenCalledWith('/verdicts', {
+      method: 'POST',
+      body: JSON.stringify({ messageId: 'message-2', decision: 'rejected', correction: { action: 'keep' } }),
+    });
+  });
+  it('renders nothing, without throwing, while the queue cannot be fetched', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new Error('connection refused'))),
+    );
+
+    const { container } = render(<TriagePage />);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/triage-queue');
+    });
+    expect(container).toBeEmptyDOMElement();
   });
 });

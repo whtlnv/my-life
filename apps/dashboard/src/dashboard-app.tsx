@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 interface NowEvent {
   id: string;
   title: string;
+  start?: string;
+  end?: string;
   meetLink?: string;
   attendees: { email: string; displayName: string }[];
 }
@@ -37,30 +39,68 @@ interface NowResponse {
   accounts: AccountReport[];
 }
 
+const businessTimeZone = 'America/Mexico_City';
+
 function timeInBusinessZone(isoTime: string): string {
+  return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: businessTimeZone }).format(
+    new Date(isoTime),
+  );
+}
+
+function todayInBusinessZone(): string {
   return new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'America/Mexico_City',
-  }).format(new Date(isoTime));
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: businessTimeZone,
+  }).format(new Date());
+}
+
+function initials(displayName: string): string {
+  return displayName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
 }
 
 function NextEventSummary({ event }: { event: NextEvent }) {
   const minutesUntilStart = minutesUntil(event.start);
   return (
-    <article>
-      <h2>{event.title}</h2>
-      <p>In {minutesUntilStart} min</p>
+    <article className="card card-hero">
+      <p className="event-time">
+        <span className="pill pill-accent">In {minutesUntilStart} min</span> {timeInBusinessZone(event.start)}
+      </p>
+      <h2 className="event-title">{event.title}</h2>
     </article>
   );
 }
 
 function CurrentEvent({ event }: { event: NowEvent }) {
   return (
-    <article>
-      <h2>{event.title}</h2>
-      {event.meetLink && <a href={event.meetLink}>Join</a>}
-      <p>{event.attendees.map((attendee) => attendee.displayName).join(', ')}</p>
+    <article className="card card-hero">
+      <p className="event-time">
+        <span className="pill pill-success">Now</span>
+        {event.start && event.end && ` ${timeInBusinessZone(event.start)} – ${timeInBusinessZone(event.end)}`}
+      </p>
+      <h2 className="event-title">{event.title}</h2>
+      {event.attendees.length > 0 && (
+        <ul className="event-people">
+          {event.attendees.map((attendee) => (
+            <li key={attendee.email} className="avatar">
+              <i aria-hidden="true">{initials(attendee.displayName)}</i>
+              <span>{attendee.displayName}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {event.meetLink && (
+        <p className="join">
+          <a className="button button-primary" href={event.meetLink}>
+            Join Meet
+          </a>
+        </p>
+      )}
     </article>
   );
 }
@@ -95,37 +135,68 @@ export function DashboardApp() {
 
   return (
     <main>
-      <h1>my-life</h1>
-      <section aria-label="Now">
-        {loading && <p>Loading</p>}
-        {backendUnreachable && <p>The backend cannot be reached</p>}
-        {nothingToShow && <p>Nothing now</p>}
-        {current.map((event) => (
-          <CurrentEvent key={event.id} event={event} />
-        ))}
-        {next.map((event) => (
-          <NextEventSummary key={event.id} event={event} />
-        ))}
-      </section>
-      <section aria-label="Later today">
-        <ul>
-          {laterToday.map((event) => (
-            <li key={event.id}>
-              {event.allDay ? 'All day' : timeInBusinessZone(event.start)} {event.title}
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section aria-label="Accounts">
-        <ul>
-          {accounts.map((account) => (
-            <li key={account.email}>
-              {account.email} {timeInBusinessZone(account.lastReportedAt)}
-              {account.stale && ' stale'}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <header className="page-header">
+        <h1 className="page-title">Now</h1>
+        <p className="page-meta">{todayInBusinessZone()}</p>
+      </header>
+      <div className="now-grid">
+        <div>
+          <section aria-label="Now">
+            <h2 className="section-title">Now</h2>
+            {loading && <p className="empty">Loading</p>}
+            {backendUnreachable && (
+              <p className="empty">
+                <strong>The backend cannot be reached</strong>
+                Is the launchd agent running?
+              </p>
+            )}
+            {nothingToShow && (
+              <p className="empty">
+                <strong>Nothing now</strong>
+                The next event appears here 15 minutes before it starts.
+              </p>
+            )}
+            {current.map((event) => (
+              <CurrentEvent key={event.id} event={event} />
+            ))}
+            {next.map((event) => (
+              <NextEventSummary key={event.id} event={event} />
+            ))}
+          </section>
+          <section aria-label="Later today" className="section">
+            <h2 className="section-title">Later today</h2>
+            {loaded && laterToday.length === 0 && <p className="empty">Nothing else today</p>}
+            {laterToday.length > 0 && (
+              <ul className="timeline">
+                {laterToday.map((event) => (
+                  <li key={event.id}>
+                    <span className={event.allDay ? 'time all-day' : 'time'}>
+                      {event.allDay ? 'All day' : timeInBusinessZone(event.start)}
+                    </span>
+                    <span>{event.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+        <aside>
+          <section aria-label="Accounts" className="card">
+            <h2 className="section-title">Calendars</h2>
+            <ul className="accounts">
+              {accounts.map((account) => (
+                <li key={account.email}>
+                  <span className="email" title={account.email}>
+                    {account.email}
+                  </span>
+                  <span className="time">{timeInBusinessZone(account.lastReportedAt)}</span>
+                  {account.stale ? <span className="pill pill-warning">stale</span> : <span className="dot" />}
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
+      </div>
     </main>
   );
 }

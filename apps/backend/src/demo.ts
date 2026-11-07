@@ -446,7 +446,20 @@ async function seed(): Promise<void> {
   await app.request('/triage-run', { method: 'POST' });
 }
 
+// Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).
+async function report(): Promise<void> {
+  for (const snapshot of calendarSnapshots) await postJson('/calendar-snapshot', snapshot);
+  for (const accountEmail of Object.values(accounts)) {
+    await postJson('/mail-report', { accountEmail, historyId: '2', messages: [] });
+  }
+}
+
 await seed();
+setInterval(() => {
+  report().catch((error: unknown) => {
+    console.error('demo report failed', error);
+  });
+}, 60_000);
 serve({ fetch: app.fetch, port, hostname: '127.0.0.1' }, (info) => {
   console.log(`my-life demo listening on http://127.0.0.1:${String(info.port)} · store ${databasePath}`);
 });

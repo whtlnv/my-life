@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 
 import { triageCategories } from '@my-life/contracts';
 
+import { accountName } from './account-name';
+
+type TriageCategory = (typeof triageCategories)[number];
+type TriageAction = 'archive' | 'keep' | 'act';
+
 interface TriageItem {
   messageId: string;
-  action: string;
+  action: TriageAction;
+  category?: TriageCategory;
   summary: string;
   reason: string;
   accountEmail: string;
@@ -13,6 +19,9 @@ interface TriageItem {
     asker?: string;
     ask?: string;
     due?: string;
+    sinceLastMessage?: string;
+    system?: string;
+    severity?: string;
     significant?: boolean;
     vendor?: string;
     amount?: number;
@@ -21,6 +30,8 @@ interface TriageItem {
     company?: string;
     solution?: string;
     problem?: string;
+    item?: string;
+    change?: string;
   };
 }
 
@@ -30,7 +41,7 @@ interface SystemGroup {
 }
 
 interface TriageGroup {
-  category: string;
+  category: TriageCategory;
   count: number;
   items: TriageItem[];
   systems?: SystemGroup[];
@@ -41,14 +52,54 @@ interface TriageQueueResponse {
   groups: TriageGroup[];
   remaining: number;
   paused?: boolean;
-  fetchedAt: string;
+  fetchedAt?: string;
 }
 
 export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
-export const remainingMessagesText = (count: number) => `${String(count)} messages remaining`;
+export const remainingMessagesText = (count: number) =>
+  count === 1 ? '1 message remaining' : `${String(count)} messages remaining`;
 export const pausedNoticeText = 'Triage is paused: the daily spend ceiling was reached';
-export const fetchedAtText = (fetchedAt: string) => `Fetched at ${fetchedAt}`;
+export const fetchedAtText = (fetchedAt: string) =>
+  `Fetched ${new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'America/Mexico_City',
+  }).format(new Date(fetchedAt))}`;
+
+const queueRefreshIntervalMilliseconds = 30_000;
+
+const categoryLabels: Record<TriageCategory, string> = {
+  action: 'Needs you',
+  'cc-thread': 'Cc threads',
+  expense: 'Expenses',
+  'system-update': 'System updates',
+  sales: 'Sales pitches',
+  'calendar-drive': 'Calendar & Drive',
+  unknown: 'Unknown',
+};
+
+const categorySwatches: Partial<Record<TriageCategory, string>> = {
+  'cc-thread': '#8b5cf6',
+  expense: '#10b981',
+  'system-update': '#f59e0b',
+  sales: '#ec4899',
+  'calendar-drive': '#06b6d4',
+};
+
+const actionLabels: Record<TriageAction, string> = { archive: 'archive', keep: 'keep', act: 'make a task' };
+
+function categoryLabel(category: TriageCategory): string {
+  return categoryLabels[category];
+}
+
+function formatAmount({ amount, currency }: TriageItem['extract']): string {
+  const formatted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+    amount ?? 0,
+  );
+  return `${formatted} ${currency ?? ''}`.trim();
+}
 
 function postJson(path: string, body: object) {
   return fetch(path, { method: 'POST', body: JSON.stringify(body) });
@@ -103,115 +154,328 @@ function whenAccepted(request: Promise<Response> | undefined, onAccepted: () => 
   });
 }
 
-function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => void }) {
+function Key({ children }: { children: ReactNode }) {
+  return <kbd>{children}</kbd>;
+}
+
+function CorrectionPanel({
+  category,
+  note,
+  onCategory,
+  onNote,
+}: {
+  category: string;
+  note: string;
+  onCategory: (category: string) => void;
+  onNote: (note: string) => void;
+}) {
+  return (
+    <div role="dialog" aria-label="Recategorize" className="correction">
+      <label htmlFor="correction-category">Category</label>
+      <select
+        id="correction-category"
+        value={category}
+        onChange={(event) => {
+          onCategory(event.target.value);
+        }}
+      >
+        {triageCategories.map((option) => (
+          <option key={option} value={option}>
+            {categoryLabel(option)}
+          </option>
+        ))}
+      </select>
+      <input
+        aria-label="Note"
+        placeholder="Why (optional)"
+        value={note}
+        onChange={(event) => {
+          onNote(event.target.value);
+        }}
+      />
+      <span className="hint">
+        <Key>Enter</Key> sends the correction · <Key>Esc</Key> cancels
+      </span>
+    </div>
+  );
+}
+
+function ActionCard({ item, autoFocus, onAccepted }: { item: TriageItem; autoFocus: boolean; onAccepted: () => void }) {
   const [correcting, setCorrecting] = useState(false);
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
+  const cardRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) cardRef.current?.focus();
+  }, [autoFocus]);
+
+  const act = (key: string) => {
+    whenAccepted(handleVerdictKey(item, key), onAccepted);
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (correcting) {
+      if (event.key === 'Enter') {
+        whenAccepted(correctToCategory(item.messageId, category, note), onAccepted);
+      } else if (event.key === 'Escape') {
+        setCorrecting(false);
+      } else if (event.target === event.currentTarget) {
+        void correctToAction(item.messageId, 'keep');
+      }
+    } else if (event.key === 'r') {
+      setCorrecting(true);
+    } else if (event.key === 'ArrowDown') {
+      (event.currentTarget.nextElementSibling as HTMLElement | null)?.focus();
+    } else if (event.key === 'ArrowUp') {
+      (event.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
+    } else {
+      act(event.key);
+    }
+  };
+
+  const unknown = item.category === 'unknown';
+  const ask = item.extract.ask;
   return (
-    <article
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (correcting) {
-          if (event.key === 'Enter') {
-            whenAccepted(correctToCategory(item.messageId, category, note), onAccepted);
-          } else if (event.key === 'Escape') {
-            setCorrecting(false);
-          } else if (event.target === event.currentTarget) {
-            void correctToAction(item.messageId, 'keep');
-          }
-        } else if (event.key === 'r') {
-          setCorrecting(true);
-        } else if (event.key === 'ArrowDown') {
-          (event.currentTarget.nextElementSibling as HTMLElement | null)?.focus();
-        } else if (event.key === 'ArrowUp') {
-          (event.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
-        } else {
-          whenAccepted(handleVerdictKey(item, event.key), onAccepted);
-        }
-      }}
-    >
-      {correcting && (
-        <div role="dialog">
-          <select
-            value={category}
-            onChange={(event) => {
-              setCategory(event.target.value);
-            }}
-          >
-            {triageCategories.map((option) => (
-              <option key={option}>{option}</option>
-            ))}
-          </select>
-          <input
-            value={note}
-            onChange={(event) => {
-              setNote(event.target.value);
-            }}
-          />
-        </div>
-      )}
-      <p>{item.summary}</p>
-      <p>{item.extract.asker}</p>
-      <p>{item.extract.ask}</p>
-      <p>{item.extract.due ?? noDueTimeText}</p>
-      <p>{item.reason}</p>
-      <p>{item.accountEmail}</p>
-      <a href={item.link}>Open in Gmail</a>
+    <article ref={cardRef} className="card card-hero" tabIndex={0} onKeyDown={onKeyDown}>
+      {correcting && <CorrectionPanel category={category} note={note} onCategory={setCategory} onNote={setNote} />}
+      <div className="card-head">
+        <span className="card-who">{item.extract.asker ?? 'Unfamiliar sender'}</span>
+        <span className={item.extract.due ? 'pill pill-warning' : 'pill pill-muted'}>
+          {item.extract.due ?? noDueTimeText}
+        </span>
+        <span className="pill" title={item.accountEmail}>
+          {item.accountEmail}
+        </span>
+        {unknown && <span className="pill pill-muted">Unknown</span>}
+      </div>
+      <p className="card-ask">{ask ?? item.summary}</p>
+      {ask && <p className="card-summary">{item.summary}</p>}
+      <p className="card-reason">{item.reason}</p>
+      <div className="card-foot">
+        <span className="pill pill-accent">Proposes: {actionLabels[item.action]}</span>
+        <a href={item.link} target="_blank" rel="noreferrer">
+          Open in Gmail ↗
+        </a>
+        <span className="spacer" />
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            act('t');
+          }}
+        >
+          Task <Key>t</Key>
+        </button>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            act('k');
+          }}
+        >
+          Keep <Key>k</Key>
+        </button>
+        <button
+          type="button"
+          className="button button-danger"
+          onClick={() => {
+            act('a');
+          }}
+        >
+          Archive <Key>a</Key>
+        </button>
+        <button
+          type="button"
+          className="button button-quiet"
+          onClick={() => {
+            setCorrecting(true);
+          }}
+        >
+          Recategorize <Key>r</Key>
+        </button>
+      </div>
     </article>
+  );
+}
+
+function Row({ title, detail, side }: { title: ReactNode; detail?: ReactNode; side?: ReactNode }) {
+  return (
+    <div className="row">
+      <div className="row-main">
+        <p className="row-title">{title}</p>
+        {detail && <p className="row-detail">{detail}</p>}
+      </div>
+      {side && <div className="row-side">{side}</div>}
+    </div>
   );
 }
 
 function SystemSection({ systemGroup }: { systemGroup: SystemGroup }) {
   return (
-    <section aria-label={systemGroup.system}>
+    <section aria-label={systemGroup.system} className="system">
+      <h3 className="system-title">{systemGroup.system}</h3>
       {systemGroup.items.map((item) => (
-        <article key={item.messageId}>
-          <p>{item.summary}</p>
-          {item.extract.significant && <p>{significantFlagText}</p>}
+        <article key={item.messageId} className="row">
+          <div className="row-main">
+            <p className="row-title">
+              {item.extract.significant && <span className="pill pill-danger">{significantFlagText}</span>}{' '}
+              {item.summary}
+            </p>
+          </div>
+          <div className="row-side">
+            <span>{accountName(item.accountEmail)}</span>
+          </div>
         </article>
       ))}
     </section>
   );
 }
 
-function GroupItem({ item }: { item: TriageItem }) {
+function ExpenseTable({ items }: { items: TriageItem[] }) {
   return (
-    <>
-      <p>{item.summary}</p>
-      <p>{item.extract.vendor}</p>
-      <p>{item.extract.amount}</p>
-      <p>{item.extract.currency}</p>
-      <p>{item.extract.date}</p>
-      <p>{item.extract.company}</p>
-      <p>{item.extract.solution}</p>
-      <p>{item.extract.problem}</p>
-    </>
+    <table className="table">
+      <thead>
+        <tr>
+          <th>Vendor</th>
+          <th className="amount">Amount</th>
+          <th>Date</th>
+          <th>Summary</th>
+          <th>Account</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item) => (
+          <tr key={item.messageId}>
+            <td>{item.extract.vendor}</td>
+            <td className="amount">{formatAmount(item.extract)}</td>
+            <td className="muted">{item.extract.date}</td>
+            <td>{item.summary}</td>
+            <td className="muted">{accountName(item.accountEmail)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
+}
+
+function GroupRows({ group }: { group: TriageGroup }) {
+  const side = (item: TriageItem) => <span>{accountName(item.accountEmail)}</span>;
+  switch (group.category) {
+    case 'expense':
+      return <ExpenseTable items={group.items} />;
+    case 'sales':
+      return (
+        <div className="rows">
+          {group.items.map((item) => (
+            <Row
+              key={item.messageId}
+              title={`${item.extract.company ?? ''} — ${item.extract.solution ?? ''}`}
+              detail={item.extract.problem}
+              side={side(item)}
+            />
+          ))}
+        </div>
+      );
+    case 'calendar-drive':
+      return (
+        <div className="rows">
+          {group.items.map((item) => (
+            <Row
+              key={item.messageId}
+              title={item.extract.item ?? item.summary}
+              detail={item.extract.change}
+              side={side(item)}
+            />
+          ))}
+        </div>
+      );
+    default:
+      return (
+        <div className="rows">
+          {group.items.map((item) => (
+            <Row key={item.messageId} title={item.summary} detail={item.extract.sinceLastMessage} side={side(item)} />
+          ))}
+        </div>
+      );
+  }
+}
+
+function proposalSummary(group: TriageGroup): string {
+  const counts = new Map<TriageAction, number>();
+  for (const item of group.items) counts.set(item.action, (counts.get(item.action) ?? 0) + 1);
+  const parts = [...counts.entries()].map(([action, count]) => `${String(count)} ${actionLabels[action]}`);
+  return parts.length === 1 ? parts.join('').replace(/^\d+ /, 'all ') : parts.join(' · ');
 }
 
 function CategoryGroup({ group, onAccepted }: { group: TriageGroup; onAccepted: () => void }) {
   const [expanded, setExpanded] = useState(false);
+  const confirmAll = () => {
+    whenAccepted(confirmGroup(group.category), onAccepted);
+  };
+  const style = { '--swatch': categorySwatches[group.category] } as CSSProperties;
   return (
-    <section>
-      <button
-        type="button"
-        aria-expanded={expanded}
-        onClick={() => {
-          setExpanded(true);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'c') {
-            whenAccepted(confirmGroup(group.category), onAccepted);
-          }
-        }}
-      >
-        {group.category} {group.count}
-      </button>
-      {expanded &&
-        (group.systems
-          ? group.systems.map((systemGroup) => <SystemSection key={systemGroup.system} systemGroup={systemGroup} />)
-          : group.items.map((item) => <GroupItem key={item.messageId} item={item} />))}
+    <section className="group" style={style}>
+      <div className="group-row">
+        <button
+          type="button"
+          className="group-toggle"
+          aria-expanded={expanded}
+          onClick={() => {
+            setExpanded((current) => !current);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'c') confirmAll();
+          }}
+        >
+          <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+            <path d="M6 3.5 10.5 8 6 12.5z" />
+          </svg>
+          <span className="group-swatch" aria-hidden="true" />
+          <span className="group-label">{categoryLabel(group.category)}</span>
+          <span className="count">{group.count}</span>
+          <span className="group-proposal">{proposalSummary(group)}</span>
+        </button>
+        <button type="button" className="button" onClick={confirmAll}>
+          Confirm all <Key>c</Key>
+        </button>
+      </div>
+      {expanded && (
+        <div className="group-body">
+          {group.systems ? (
+            group.systems.map((systemGroup) => <SystemSection key={systemGroup.system} systemGroup={systemGroup} />)
+          ) : (
+            <GroupRows group={group} />
+          )}
+        </div>
+      )}
     </section>
+  );
+}
+
+function Legend() {
+  return (
+    <p className="legend" aria-label="Keys">
+      <span>
+        <Key>t</Key> task
+      </span>
+      <span>
+        <Key>k</Key> keep
+      </span>
+      <span>
+        <Key>a</Key> archive
+      </span>
+      <span>
+        <Key>r</Key> recategorize
+      </span>
+      <span>
+        <Key>c</Key> confirm a whole group
+      </span>
+      <span>
+        <Key>↑</Key>
+        <Key>↓</Key> move
+      </span>
+    </p>
   );
 }
 
@@ -219,9 +483,16 @@ export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
 
   useEffect(() => {
-    void fetch('/triage-queue')
-      .then((response) => response.json() as Promise<TriageQueueResponse>)
-      .then(setQueue);
+    const loadQueue = () =>
+      void fetch('/triage-queue')
+        .then((response) => response.json() as Promise<TriageQueueResponse>)
+        .then(setQueue)
+        .catch(() => undefined);
+    loadQueue();
+    const interval = setInterval(loadQueue, queueRefreshIntervalMilliseconds);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   if (queue === null) return null;
@@ -238,25 +509,52 @@ export function TriagePage() {
     );
   }
 
+  const groups = queue.groups.filter((group) => group.category !== 'unknown');
   return (
-    <>
-      <p>{remainingMessagesText(queue.remaining)}</p>
-      {queue.paused && <p>{pausedNoticeText}</p>}
-      <p>{fetchedAtText(queue.fetchedAt)}</p>
-      <section aria-label="Action">
-        {queue.action.map((item) => (
+    <main>
+      <header className="page-header">
+        <h1 className="page-title">Triage</h1>
+        <p className="page-meta">
+          <span>{remainingMessagesText(queue.remaining)}</span>
+          {queue.fetchedAt !== undefined && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span title={queue.fetchedAt}>{fetchedAtText(queue.fetchedAt)}</span>
+            </>
+          )}
+        </p>
+      </header>
+      {queue.paused && (
+        <p className="banner" role="status">
+          {pausedNoticeText}
+        </p>
+      )}
+      <Legend />
+      <section aria-label="Needs you">
+        <h2 className="section-title">
+          Needs you <span className="count">{queue.action.length}</span>
+        </h2>
+        {queue.action.length === 0 && (
+          <p className="empty">
+            <strong>Nothing needs you</strong>
+            Mail addressed to you with an ask lands here first.
+          </p>
+        )}
+        {queue.action.map((item, index) => (
           <ActionCard
             key={item.messageId}
             item={item}
+            autoFocus={index === 0}
             onAccepted={() => {
               removeActionItem(item.messageId);
             }}
           />
         ))}
       </section>
-      {queue.groups
-        .filter((group) => group.category !== 'unknown')
-        .map((group) => (
+      <section aria-label="Everything else" className="section">
+        <h2 className="section-title">Everything else</h2>
+        {groups.length === 0 && <p className="empty">No groups waiting</p>}
+        {groups.map((group) => (
           <CategoryGroup
             key={group.category}
             group={group}
@@ -265,6 +563,7 @@ export function TriagePage() {
             }}
           />
         ))}
-    </>
+      </section>
+    </main>
   );
 }

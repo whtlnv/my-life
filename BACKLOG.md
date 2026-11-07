@@ -63,4 +63,3 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 - **Same-category verdict examples cannot be chosen at proposal time.** `chooseVerdictExamples` (`packages/domain/src/verdict-examples.ts`) falls back to verdicts of the message's category, but a message being triaged has no category yet, so the backend's run (`apps/backend/src/app.ts` `verdictExamplesFor`) can only ever supply same-sender examples (2026-11-07). A usable fallback needs a pre-classification key: the sender's domain or the List-Id. Phase 2 material.
 
 - **The triage prompt includes `profile/README.md`.** `apps/backend/src/claude-triage.ts` reads every file in `profile/`, so the folder's own README (instructions for humans) is sent to Claude on every call (2026-11-07, docs-sync). A filter on `README.md` and `*.example.md`, or a per-account selection (see the entry above), fixes both.
-
