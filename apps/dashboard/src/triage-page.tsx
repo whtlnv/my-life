@@ -216,6 +216,12 @@ export function TriagePage() {
 
   if (queue === null) return null;
 
+  function removeActionItem(messageId: TriageItem['messageId']) {
+    setQueue(
+      (current) => current && { ...current, action: current.action.filter((other) => other.messageId !== messageId) },
+    );
+  }
+
   return (
     <>
       <section aria-label="Action">
@@ -224,7 +230,7 @@ export function TriagePage() {
             key={item.messageId}
             item={item}
             onAccepted={() => {
-              setQueue({ ...queue, action: queue.action.filter((other) => other.messageId !== item.messageId) });
+              removeActionItem(item.messageId);
             }}
           />
         ))}
