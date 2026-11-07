@@ -11,12 +11,14 @@ import {
   TriagePage,
 } from './triage-page';
 
-const answerGetTriageQueueWith = (body: unknown) => {
+const answerGetTriageQueueWith = (body: unknown, acceptedPostPath?: string) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
     Promise.resolve(
       input === '/triage-queue'
         ? new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
-        : new Response(null, { status: 404 }),
+        : input === acceptedPostPath
+          ? new Response(null, { status: 201 })
+          : new Response(null, { status: 404 }),
     ),
   );
   vi.stubGlobal('fetch', fetchStub);
@@ -956,18 +958,7 @@ describe('TriagePage', () => {
       remaining: 0,
       paused: false,
     };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) =>
-        Promise.resolve(
-          input === '/triage-queue'
-            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
-            : input === '/verdicts'
-              ? new Response(null, { status: 201 })
-              : new Response(null, { status: 404 }),
-        ),
-      ),
-    );
+    answerGetTriageQueueWith(queue, '/verdicts');
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -1001,18 +992,7 @@ describe('TriagePage', () => {
       remaining: 0,
       paused: false,
     };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) =>
-        Promise.resolve(
-          input === '/triage-queue'
-            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
-            : input === '/verdicts'
-              ? new Response(null, { status: 201 })
-              : new Response(null, { status: 404 }),
-        ),
-      ),
-    );
+    answerGetTriageQueueWith(queue, '/verdicts');
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -1044,18 +1024,7 @@ describe('TriagePage', () => {
       remaining: 0,
       paused: false,
     };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) =>
-        Promise.resolve(
-          input === '/triage-queue'
-            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
-            : input === '/verdicts'
-              ? new Response(null, { status: 201 })
-              : new Response(null, { status: 404 }),
-        ),
-      ),
-    );
+    answerGetTriageQueueWith(queue, '/verdicts');
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -1113,18 +1082,7 @@ describe('TriagePage', () => {
       remaining: 0,
       paused: false,
     };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) =>
-        Promise.resolve(
-          input === '/triage-queue'
-            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
-            : input === '/group-verdicts'
-              ? new Response(null, { status: 201 })
-              : new Response(null, { status: 404 }),
-        ),
-      ),
-    );
+    answerGetTriageQueueWith(queue, '/group-verdicts');
     const user = userEvent.setup();
 
     render(<TriagePage />);
