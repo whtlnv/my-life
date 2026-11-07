@@ -9,7 +9,7 @@ const mailMessage = z.object({
   subject: z.string(),
   date: z.string(),
   snippet: z.string(),
-  listId: z.string(),
+  listId: z.string().optional(),
 });
 
 // What the extension in one Chrome profile posts to the backend after reading that account's Gmail history.

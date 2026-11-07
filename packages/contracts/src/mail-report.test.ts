@@ -37,4 +37,11 @@ describe('mailReport', () => {
 
     expect(mailReport.parse(report)).toEqual(report);
   });
+
+  it('accepts a report whose message has no List-Id header', () => {
+    const messageWithoutListId = Object.fromEntries(Object.entries(message).filter(([key]) => key !== 'listId'));
+    const report = reportWith([messageWithoutListId]);
+
+    expect(mailReport.parse(report)).toEqual(report);
+  });
 });
