@@ -3,8 +3,15 @@ import type { AddressInfo } from 'node:net';
 
 type GmailScenario = 'action-to-me';
 
-function scenarioMessages(scenario: GmailScenario, accountEmail: string) {
-  const messages: Record<GmailScenario, unknown[]> = {
+interface FakeGmailMessage {
+  id: string;
+  threadId: string;
+  snippet: string;
+  payload: { headers: { name: string; value: string }[] };
+}
+
+function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGmailMessage[] {
+  const messages: Record<GmailScenario, FakeGmailMessage[]> = {
     'action-to-me': [
       {
         id: 'budget-review',
@@ -25,7 +32,7 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string) {
 }
 
 export async function startGmailFakeServer(scenario: GmailScenario, accountEmail: string) {
-  const messages = scenarioMessages(scenario, accountEmail) as { id: string; threadId: string }[];
+  const messages = scenarioMessages(scenario, accountEmail);
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fake').pathname;
     const prefix = '/gmail/v1/users/me';
