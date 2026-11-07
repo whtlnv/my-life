@@ -904,6 +904,37 @@ describe('backend app', () => {
     expect(await queue.json()).toMatchObject({ paused: false });
   });
 
+  it('keeps triage paused at POST /triage-run and GET /triage-queue later the same business day after reaching the ceiling, even once the UTC date has changed', async () => {
+    const askedMessageIds: string[] = [];
+    const triage = triageRecordingAskedMessageIds(askedMessageIds, 12);
+    // 23:30Z on Nov 2 is 17:30 on Nov 2 in Mexico City.
+    let currentTime = new Date('2026-11-02T23:30:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      dailySpendCeilingInUsd: 20,
+      triage,
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-older', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
+        { ...budgetReview, id: 'message-newest', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-middle', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(app);
+    // 01:00Z on Nov 3 is 19:00 on Nov 2 in Mexico City: still the same business day.
+    currentTime = new Date('2026-11-03T01:00:00.000Z');
+
+    await postTriageRun(app);
+    const queue = await app.request('/triage-queue');
+
+    expect(askedMessageIds).toEqual(['message-newest', 'message-middle']);
+    expect(await queue.json()).toMatchObject({ paused: true });
+  });
+
   it('answers GET /triage-queue with the action block, the groups with their counts, the number of messages remaining and whether the ceiling paused triage', async () => {
     const proposalsInOrder = [
       {

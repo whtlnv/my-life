@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 13:56 · `apps/backend/src/app.test.ts::keeps triage paused at POST /triage-run and GET /triage-queue later the same business day after reaching the ceiling, even once the UTC date has changed`
+- Behavior: When the daily spend ceiling was reached earlier the same business day, `POST /triage-run` still proposes nothing and `GET /triage-queue` reports `paused: true`
+- Predicted: pass. 9969717 already sends `hasReachedDailySpendCeiling` through `isTriagePaused` with business-zone dates, so no right-reason failure was available
+- Actual: passed
+- Type: passed unexpectedly (relative to Red's contract; it matched the stated prediction)
+- Resolution: The behavior arrived with the previous item. I kept the test as a regression pin: the ceiling is hit at 17:30 Mexico City and the clock moves to 19:00, the same business day but the next UTC date. Switching `isTriagePaused` to `timeZone: "UTC"` makes it fail (`message-older` gets asked), so it isn't vacuous. Production was reverted. /green has nothing to implement.
+
 ## 2026-11-07 13:44 · `apps/backend/src/app.test.ts::lists at GET /commands the archive command once its rejected archive proposal is re-decided as confirmed through POST /verdicts`
 - Behavior: a rejected `archive` proposal that is re-decided as confirmed through `POST /verdicts` lists its archive command at `GET /commands`
 - Predicted: pass on first run, because `isStillConfirmed` (apps/backend/src/app.ts) already reads the latest verdict per message
