@@ -27,6 +27,7 @@ export async function carryOutArchiveCommands(options: CarryOutArchiveCommandsOp
   const archivedLabelId = await findArchivedLabelId(options.fetch, authorization);
   for (const command of commands) {
     await archiveMessage(options.fetch, authorization, command.messageId, archivedLabelId);
+    await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, { method: 'POST' });
   }
 }
 
