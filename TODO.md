@@ -77,6 +77,7 @@
 - [x] A `create-filter` command carries an id (`create-filter-<proposal id>`), and once it is acknowledged through `POST /commands/:id/acknowledgement` it is no longer listed by `GET /commands?accountEmail=…` (supervisor keystone: the command has no id, so the extension could never acknowledge it)
 - [x] `POST /filter-proposals/:id/rejection` removes the proposal from `GET /filter-proposals`, and the same sender or List-Id is not proposed again
 - [ ] Filter proposals, approvals and rejections survive a backend restart on the same database
+- [ ] An approved filter proposal is no longer listed by `GET /filter-proposals` (pending means neither approved nor rejected) (supervisor: no item said what approval does to the pending list)
 - [ ] The extension manifest requests the `gmail.settings.basic` scope
 - [ ] The fake Gmail server answers `users.settings.filters` create, list and delete, and the label calls the filter needs
 - [ ] When the extension receives a `create-filter` command, it creates the label if missing, calls `users.settings.filters.create` with the criteria, `addLabelIds` of that label and `removeLabelIds: ['INBOX']`, and acknowledges with the Gmail filter id
