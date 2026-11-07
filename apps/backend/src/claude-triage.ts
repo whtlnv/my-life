@@ -32,10 +32,15 @@ function profileFileName(accountEmail: string): string {
   return `${domainName}.md`;
 }
 
+function readSharedProfile(profileDirectory: string): string | undefined {
+  const sharedProfilePath = join(profileDirectory, 'accounts.md');
+  return existsSync(sharedProfilePath) ? readFileSync(sharedProfilePath, 'utf8') : undefined;
+}
+
 function readProfile(profileDirectory: string, accountEmail: string): string {
   const accountProfile = readFileSync(join(profileDirectory, profileFileName(accountEmail)), 'utf8');
-  const sharedProfilePath = join(profileDirectory, 'accounts.md');
-  return existsSync(sharedProfilePath) ? `${readFileSync(sharedProfilePath, 'utf8')}\n\n${accountProfile}` : accountProfile;
+  const sharedProfile = readSharedProfile(profileDirectory);
+  return sharedProfile === undefined ? accountProfile : `${sharedProfile}\n\n${accountProfile}`;
 }
 
 function composeSystemPrompt(promptPath: string, profileDirectory: string | undefined, accountEmail: string): string {
