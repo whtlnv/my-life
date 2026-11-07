@@ -397,21 +397,51 @@ describe('TriagePage', () => {
     expect(screen.getByText(/AI scheduling assistant/)).toBeInTheDocument();
     expect(screen.getByText(/Time lost coordinating meetings/)).toBeInTheDocument();
   });
-  it('confirms a focused action card as a task when `t` is pressed', async () => {
-    answerGetTriageQueueWith(
-      queueOfActionItems([
-        {
-          messageId: 'message-17',
-          accountEmail: 'ana@example.com',
-          action: 'act',
-          category: 'action',
-          summary: 'Luis asks for the slides',
-          extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
-          reason: 'Luis asks the user directly',
-          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-17',
-        },
-      ]),
-    );
+  it.each([
+    {
+      rule: 'action card as a task when `t` is pressed',
+      key: 't',
+      item: {
+        messageId: 'message-17',
+        accountEmail: 'ana@example.com',
+        action: 'act',
+        category: 'action',
+        summary: 'Luis asks for the slides',
+        extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
+        reason: 'Luis asks the user directly',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-17',
+      },
+    },
+    {
+      rule: 'card whose proposal is `keep` when `k` is pressed',
+      key: 'k',
+      item: {
+        messageId: 'message-23',
+        accountEmail: 'ana@example.com',
+        action: 'keep',
+        category: 'action',
+        summary: 'Marta shares the quarterly numbers',
+        extract: { asker: 'Marta Ruiz', ask: 'Review the quarterly numbers' },
+        reason: 'Worth keeping for the board meeting',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-23',
+      },
+    },
+    {
+      rule: 'card whose proposal is `archive` when `a` is pressed',
+      key: 'a',
+      item: {
+        messageId: 'message-24',
+        accountEmail: 'ana@example.com',
+        action: 'archive',
+        category: 'action',
+        summary: 'Luis forwards an old newsletter',
+        extract: { asker: 'Luis Gómez', ask: 'Read the newsletter' },
+        reason: 'Nothing to do here',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-24',
+      },
+    },
+  ])('confirms a focused $rule', async ({ key, item }) => {
+    answerGetTriageQueueWith(queueOfActionItems([item]));
     const user = userEvent.setup();
 
     render(<TriagePage />);
@@ -419,77 +449,13 @@ describe('TriagePage', () => {
     const actionBlock = await screen.findByRole('region', { name: 'Action' });
     const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
     await user.click(card);
-    await user.keyboard('t');
+    await user.keyboard(key);
 
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/verdicts',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ messageId: 'message-17', decision: 'confirmed' }),
-      }),
-    );
-  });
-  it('confirms a focused card whose proposal is `keep` when `k` is pressed', async () => {
-    answerGetTriageQueueWith(
-      queueOfActionItems([
-        {
-          messageId: 'message-23',
-          accountEmail: 'ana@example.com',
-          action: 'keep',
-          category: 'action',
-          summary: 'Marta shares the quarterly numbers',
-          extract: { asker: 'Marta Ruiz', ask: 'Review the quarterly numbers' },
-          reason: 'Worth keeping for the board meeting',
-          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-23',
-        },
-      ]),
-    );
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
-    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
-    await user.click(card);
-    await user.keyboard('k');
-
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      '/verdicts',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ messageId: 'message-23', decision: 'confirmed' }),
-      }),
-    );
-  });
-  it('confirms a focused card whose proposal is `archive` when `a` is pressed', async () => {
-    answerGetTriageQueueWith(
-      queueOfActionItems([
-        {
-          messageId: 'message-24',
-          accountEmail: 'ana@example.com',
-          action: 'archive',
-          category: 'action',
-          summary: 'Luis forwards an old newsletter',
-          extract: { asker: 'Luis Gómez', ask: 'Read the newsletter' },
-          reason: 'Nothing to do here',
-          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-24',
-        },
-      ]),
-    );
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    const actionBlock = await screen.findByRole('region', { name: 'Action' });
-    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
-    await user.click(card);
-    await user.keyboard('a');
-
-    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      '/verdicts',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ messageId: 'message-24', decision: 'confirmed' }),
+        body: JSON.stringify({ messageId: item.messageId, decision: 'confirmed' }),
       }),
     );
   });
