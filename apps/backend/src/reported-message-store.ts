@@ -9,7 +9,7 @@ export function openReportedMessageStore(databasePath: string) {
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL)',
   );
-  const saveMessageId = database.prepare(
+  const saveMessage = database.prepare(
     'INSERT OR IGNORE INTO reported_messages (message_id, account_email) VALUES (?, ?)',
   );
   const countMessages = database.prepare<[], { count: number }>('SELECT COUNT(*) AS count FROM reported_messages');
@@ -18,7 +18,7 @@ export function openReportedMessageStore(databasePath: string) {
   );
   return {
     save(messageId: string, accountEmail: string): void {
-      saveMessageId.run(messageId, accountEmail);
+      saveMessage.run(messageId, accountEmail);
     },
     accountEmailOf(messageId: string): string {
       return loadAccountEmail.get(messageId)?.account_email ?? '';
