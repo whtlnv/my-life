@@ -2659,6 +2659,34 @@ describe('backend app', () => {
     });
   });
 
+  it('yields after DELETE /filters/:id a delete-filter command with the Gmail filter id at GET /commands for that filter account only', async () => {
+    const app = appProposingShopNewslettersFilter();
+    await reportTriageAndConfirmShopNewsletters(app);
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const proposalId = listed.proposals[0]?.id ?? '';
+    await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
+    await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
+      method: 'POST',
+      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
+    });
+    const deleteFilterCommands = async (accountEmail: string) =>
+      ((await (await getCommands(app, accountEmail)).json()) as { commands: { type?: string }[] }).commands.filter(
+        ({ type }) => type === 'delete-filter',
+      );
+
+    const deletion = await app.request('/filters/gmail-filter-1', { method: 'DELETE' });
+
+    expect({
+      status: deletion.status,
+      filterAccount: await deleteFilterCommands('ana@example.com'),
+      otherAccount: await deleteFilterCommands('bruno@example.com'),
+    }).toEqual({
+      status: 200,
+      filterAccount: [expect.objectContaining({ type: 'delete-filter', gmailFilterId: 'gmail-filter-1' })],
+      otherAccount: [],
+    });
+  });
+
   it('no longer lists at GET /filter-proposals a filter proposal rejected through POST /filter-proposals/:id/rejection', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);

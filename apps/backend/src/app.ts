@@ -471,6 +471,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ),
     });
   });
+  const deletedGmailFilterIds: string[] = [];
+  app.delete('/filters/:id', (context) => {
+    deletedGmailFilterIds.push(context.req.param('id'));
+    return context.body(null, 200);
+  });
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
@@ -489,7 +494,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .loadAll()
       .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.includes(stored.id))
       .map((stored) => ({ id: createFilterCommandId(stored.id), type: 'create-filter', ...(stored.proposal as object) }));
-    const pendingCommands = [...archiveCommands, ...filterCommands].filter(
+    const createdFilters = createdFilterStore.loadAll();
+    const deleteFilterCommands = filterProposalStore
+      .loadAll()
+      .filter((stored) => stored.accountEmail === accountEmail)
+      .flatMap((stored) =>
+        createdFilters
+          .filter(({ commandId }) => commandId === createFilterCommandId(stored.id))
+          .filter(({ gmailFilterId }) => deletedGmailFilterIds.includes(gmailFilterId))
+          .map(({ gmailFilterId }) => ({ id: `delete-filter-${gmailFilterId}`, type: 'delete-filter', gmailFilterId })),
+      );
+    const pendingCommands = [...archiveCommands, ...filterCommands, ...deleteFilterCommands].filter(
       (command) => !acknowledgedCommandIds.includes(command.id),
     );
     return context.json({ commands: pendingCommands });
