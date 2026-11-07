@@ -42,13 +42,13 @@ const groupBy = <Key>(
 };
 
 const groupByCategory = (proposals: Proposal[]): ProposalGroup[] =>
-  groupBy(proposals, (proposal) => proposal.category).map(({ key, proposals }) =>
-    key === 'system-update'
-      ? { category: key, proposals, systems: groupBySystem(proposals) }
-      : key === 'cc-thread'
-        ? { category: key, proposals: newestPerThread(proposals) }
-        : { category: key, proposals },
-  );
+  groupBy(proposals, (proposal) => proposal.category).map(({ key, proposals }) => categoryGroup(key, proposals));
+
+const categoryGroup = (category: string | undefined, proposals: Proposal[]): ProposalGroup => {
+  if (category === 'system-update') return { category, proposals, systems: groupBySystem(proposals) };
+  if (category === 'cc-thread') return { category, proposals: newestPerThread(proposals) };
+  return { category, proposals };
+};
 
 const newestPerThread = (proposals: Proposal[]): Proposal[] =>
   groupBy(proposals, (proposal) => proposal.threadId).flatMap(({ proposals }) => proposals.slice(-1));
