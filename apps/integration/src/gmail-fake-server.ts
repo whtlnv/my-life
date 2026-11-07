@@ -158,6 +158,7 @@ export async function startGmailFakeServer(scenario: GmailScenario, accountEmail
   const messages = scenarioMessages(scenario, accountEmail);
   const messageLabelIds = new Map(messages.map(({ id }) => [id, ['INBOX']]));
   const labels: { id: string; name: string }[] = [];
+  const filters: { id: string }[] = [];
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fake').pathname;
     const prefix = '/gmail/v1/users/me';
@@ -183,6 +184,12 @@ export async function startGmailFakeServer(scenario: GmailScenario, accountEmail
         body = label;
       } else if (path === `${prefix}/labels`) {
         body = { labels };
+      } else if (path === `${prefix}/settings/filters` && request.method === 'POST') {
+        const filter = { id: `filter-${String(filters.length + 1)}`, ...(JSON.parse(requestBody) as object) };
+        filters.push(filter);
+        body = filter;
+      } else if (path === `${prefix}/settings/filters`) {
+        body = { filter: filters };
       } else if (path === `${prefix}/messages`) {
         const inbox = messages.filter(({ id }) => messageLabelIds.get(id)?.includes('INBOX'));
         body = { messages: inbox.map(({ id, threadId }) => ({ id, threadId })) };

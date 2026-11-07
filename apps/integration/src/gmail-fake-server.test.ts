@@ -297,4 +297,29 @@ describe('Gmail fake server', () => {
       await gmail.close();
     }
   });
+  it('a filter created through users.settings.filters.create is listed by users.settings.filters.list with its id, criteria and action', async () => {
+    const gmail = await startGmailFakeServer('expense', accountEmail);
+    const gmailApi = `${gmail.url}/gmail/v1/users/me`;
+    try {
+      const { id: labelId } = (await (
+        await fetch(`${gmailApi}/labels`, { method: 'POST', body: JSON.stringify({ name: 'my-life/expense' }) })
+      ).json()) as { id: string };
+      const filter = {
+        criteria: { from: 'recibos@papeleria.example.com' },
+        action: { addLabelIds: [labelId], removeLabelIds: ['INBOX'] },
+      };
+
+      const created = (await (
+        await fetch(`${gmailApi}/settings/filters`, { method: 'POST', body: JSON.stringify(filter) })
+      ).json()) as { id: string };
+      const { filter: listed } = (await (await fetch(`${gmailApi}/settings/filters`)).json()) as {
+        filter?: { id: string }[];
+      };
+
+      expect(created.id).toEqual(expect.any(String));
+      expect(listed).toEqual([{ id: created.id, ...filter }]);
+    } finally {
+      await gmail.close();
+    }
+  });
 });
