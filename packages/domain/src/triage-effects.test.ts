@@ -89,40 +89,26 @@ describe('triageEffects', () => {
     ]);
   });
 
-  it('puts nothing on the check-later list for a keep proposal of another category the user confirmed', () => {
-    const expenseKeepProposal = {
-      ...archiveProposal,
-      action: 'keep',
-      category: 'expense',
-      extract: { company: 'Acme' },
-    };
-    expect(triageEffects(expenseKeepProposal, { decision: 'confirmed' })).toEqual({
-      archives: [],
-      tasks: [],
-    });
-  });
-
-  it('puts nothing on the check-later list for a sales keep proposal the user rejected', () => {
-    const salesKeepProposal = {
-      ...archiveProposal,
-      action: 'keep',
-      category: 'sales',
-      extract: { company: 'Acme' },
-    };
-    expect(triageEffects(salesKeepProposal, { decision: 'rejected' })).toEqual({
-      archives: [],
-      tasks: [],
-    });
-  });
-  it('puts nothing on the check-later list for a sales archive proposal the user confirmed', () => {
-    const salesArchiveProposal = {
-      ...archiveProposal,
-      category: 'sales',
-      extract: { company: 'Acme' },
-    };
-    expect(triageEffects(salesArchiveProposal, { decision: 'confirmed' })).toEqual({
-      archives: [{ messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' }],
-      tasks: [],
-    });
+  it.each([
+    {
+      rule: 'a keep proposal of another category the user confirmed',
+      proposal: { ...archiveProposal, action: 'keep', category: 'expense', extract: { company: 'Acme' } },
+      verdict: { decision: 'confirmed' },
+      effects: { archives: [], tasks: [] },
+    },
+    {
+      rule: 'a sales keep proposal the user rejected',
+      proposal: { ...archiveProposal, action: 'keep', category: 'sales', extract: { company: 'Acme' } },
+      verdict: { decision: 'rejected' },
+      effects: { archives: [], tasks: [] },
+    },
+    {
+      rule: 'a sales archive proposal the user confirmed',
+      proposal: { ...archiveProposal, category: 'sales', extract: { company: 'Acme' } },
+      verdict: { decision: 'confirmed' },
+      effects: { archives: [{ messageId: 'message-1', accountEmail: 'franciscoc@psmutuus.com' }], tasks: [] },
+    },
+  ])('puts nothing on the check-later list for $rule', ({ proposal, verdict, effects }) => {
+    expect(triageEffects(proposal, verdict)).toEqual(effects);
   });
 });
