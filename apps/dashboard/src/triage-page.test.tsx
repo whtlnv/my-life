@@ -1153,4 +1153,13 @@ describe('TriagePage', () => {
 
     expect(await screen.findByText(pausedNoticeText)).toBeInTheDocument();
   });
+
+  it('shows no paused notice when triage is not paused', async () => {
+    answerGetTriageQueueWith({ action: [], groups: [], remaining: 3, paused: false });
+
+    render(<TriagePage />);
+
+    expect(await screen.findByText(remainingMessagesText(3))).toBeInTheDocument();
+    expect(screen.queryByText(pausedNoticeText)).not.toBeInTheDocument();
+  });
 });

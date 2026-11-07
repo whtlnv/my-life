@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 03:15 · `apps/dashboard/src/triage-page.test.tsx::shows no paused notice when triage is not paused`
+- Behavior: When triage is not paused, the page shows no paused notice
+- Predicted: passes on first run — `triage-page.tsx:242` already gates the notice on `queue.paused`, delivered by the previous item's green step
+- Actual: passed (as predicted)
+- Type: passed unexpectedly
+- Resolution: the behavior was already delivered as the negative half of "When the ceiling paused triage, the page says so"; the test is kept as a guard (it waits for the remaining count, so it would fail if the notice were rendered unconditionally), and no right-reason failure exists to drive, so /green has nothing to add
+
 ## 2026-11-07 01:48 · `apps/dashboard/src/triage-page.test.tsx::takes unknown items from the action list only and renders no unknown group button`
 - Behavior: An `unknown` item arrives in the payload's `action` list (as the backend sends it) and shows in the action block; the page renders no `unknown` group button
 - Predicted: passes on first run — the page already renders every `queue.action` item, and group buttons come only from `queue.groups`
