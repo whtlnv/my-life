@@ -3,9 +3,13 @@ import { z } from 'zod';
 const ccThreadExtract = z.strictObject({ sinceLastMessage: z.string() });
 const actionExtract = z.object({ asker: z.string(), ask: z.string() });
 
+const extractForCategory: Record<string, z.ZodType | undefined> = {
+  action: actionExtract,
+  'cc-thread': ccThreadExtract,
+};
+
 const extractMatchesCategory = (proposal: { category: string; extract: unknown }): boolean =>
-  (proposal.category !== 'action' || actionExtract.safeParse(proposal.extract).success) &&
-  (proposal.category !== 'cc-thread' || ccThreadExtract.safeParse(proposal.extract).success);
+  extractForCategory[proposal.category]?.safeParse(proposal.extract).success ?? true;
 
 // What Claude returns for one email: the proposed action, its category, a summary, the category's extract and why.
 export const triageProposal = z.object({
