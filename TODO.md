@@ -34,6 +34,7 @@
 - [x] A To entry with a display name and different letter case (`Francisco <FranciscoC@psmutuus.com>`) still counts as addressed to the user
 - [x] An `action` proposal on a message addressed to the user stays `action`
 - [ ] An `action` proposal on a message where the user is only in Cc is shown as `cc-thread`
+- [ ] A `sales` proposal keeps its category whether the message is addressed to the user or only copies them
 - [ ] An `archive` proposal with no verdict produces no archive
 - [ ] An `archive` proposal confirmed by the user produces an archive of that message on its account
 - [ ] An `archive` proposal rejected by the user produces no archive
