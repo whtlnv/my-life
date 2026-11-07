@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 03:29 · `apps/integration/src/gmail-fake-server.test.ts::polling the action-to-me scenario puts the message, addressed to the user, in the action block of GET /triage-queue`
+- Behavior: Against the fake Gmail server's `action-to-me` scenario, the message reaches the action block addressed to the user
+- Predicted: module resolution error — `./gmail-fake-server` (`startGmailFakeServer`) does not exist yet
+- Actual: module resolution error — `"./gmail-poll" is not exported` from `@my-life/extension` (its `exports` lists only `./calendar-poll`)
+- Type: right-reason mismatch
+- Resolution: The extension's Gmail poller was never wired for the integration package, and Vite resolves that package import before the missing local module; both are missing wiring this test drives, so the test stays as written and green has to add the `./gmail-poll` export and the fake server.
+
 ## 2026-11-07 03:25 · `apps/dashboard/src/dashboard-app.test.tsx::still shows the start time of a timed later-today event listed beside an all-day one`
 - Behavior: a timed event under _Later today_ still shows its start time when an all-day event is listed next to it
 - Predicted: test passes on first run (no failure). The behavior shipped in 1c05340 with the `allDay ? 'All day' : time` branch

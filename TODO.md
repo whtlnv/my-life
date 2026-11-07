@@ -199,7 +199,7 @@
 
 ### Gmail fake server and integration
 
-- [ ] Against the fake Gmail server's `action-to-me` scenario, the message reaches the action block addressed to the user
+- [x] Against the fake Gmail server's `action-to-me` scenario, the message reaches the action block addressed to the user
 - [ ] Against the `cc-thread` scenario, the thread shows as one line in its group
 - [ ] Against the `expense` scenario, the receipt shows in the expense group with its amount
 - [ ] Against the `system-update-burst` scenario, the notifications show grouped by sending system

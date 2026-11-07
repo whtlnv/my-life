@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./calendar-poll": "./src/calendar-poll.ts"
+    "./calendar-poll": "./src/calendar-poll.ts",
+    "./gmail-poll": "./src/gmail-poll.ts"
   },
   "version": "0.0.1",
   "scripts": {
