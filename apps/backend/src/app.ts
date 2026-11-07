@@ -42,6 +42,8 @@ interface ReportedMessage {
 }
 
 type Proposal = Parameters<typeof triageQueue>[0][number] & { summary?: string; madeAutomatic?: boolean };
+type TriageProposal = Parameters<typeof triageEffects>[0];
+type TriageVerdict = Parameters<typeof triageEffects>[1];
 
 function withDisplayedCategory(
   proposal: Proposal,
@@ -100,24 +102,21 @@ function isStillConfirmed(messageId: string, verdicts: StoredVerdict[]): boolean
   return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
 }
 
-function isAutomatic(proposal: Proposal): boolean {
-  return proposal.madeAutomatic === true;
-}
-
 function isCleared(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
-  return isStillConfirmed(proposal.messageId, verdicts) || isAutomatic(proposal);
+  return isStillConfirmed(proposal.messageId, verdicts) || proposal.madeAutomatic === true;
 }
 
 function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
   const verdict = latestVerdictFor(proposal.messageId, verdicts);
-  return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
+  return triageEffects(proposal as TriageProposal, verdict as TriageVerdict);
 }
 
 function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
   return proposals.flatMap((proposal) => {
-    const effects = isAutomatic(proposal)
-      ? triageEffects(proposal as Parameters<typeof triageEffects>[0], { decision: 'confirmed' })
-      : proposalEffects(proposal, verdicts);
+    const effects =
+      proposal.madeAutomatic === true
+        ? triageEffects(proposal as TriageProposal, { decision: 'confirmed' })
+        : proposalEffects(proposal, verdicts);
     return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
   });
 }
