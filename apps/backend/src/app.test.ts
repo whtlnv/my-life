@@ -478,4 +478,18 @@ describe('backend app', () => {
       sources: [{ email: 'ana@example.com', source: 'mail', lastReportedAt: '2026-11-02T15:10:00.000Z', stale: true }],
     });
   });
+
+  it("still shows in GET /now when an account's mail source last reported, after a backend restart on the same database file", async () => {
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath };
+    const beforeRestart = createApp(options);
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+
+    const afterRestart = createApp(options);
+    const now = await afterRestart.request('/now');
+
+    expect(await now.json()).toMatchObject({
+      sources: [{ email: 'ana@example.com', source: 'mail', lastReportedAt: '2026-11-02T15:10:00.000Z', stale: false }],
+    });
+  });
 });

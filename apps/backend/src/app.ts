@@ -12,10 +12,10 @@ import {
   mergeCalendarSnapshots,
   type CalendarSnapshot,
   type Clock,
-  type SourceReport,
 } from '@my-life/domain';
 
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
+import { openMailSourceStore } from './mail-source-store';
 import { openReportedMessageStore } from './reported-message-store';
 
 export interface AppOptions {
@@ -54,7 +54,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const databasePath = options.databasePath ?? ':memory:';
   const snapshotStore = openCalendarSnapshotStore(databasePath);
   const reportedMessageStore = openReportedMessageStore(databasePath);
-  const mailSources = new Map<string, SourceReport>();
+  const mailSourceStore = openMailSourceStore(databasePath);
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -88,11 +88,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, refusal);
     }
     report.messages.forEach((message) => reportedMessageStore.save(message.id));
-    mailSources.set(report.accountEmail, {
-      email: report.accountEmail,
-      source: 'mail',
-      lastReportedAt: clock.now().toISOString(),
-    });
+    mailSourceStore.save(report.accountEmail, clock.now());
     return context.body(null, 200);
   });
   app.get('/triage-queue', (context) => context.json({ remaining: reportedMessageStore.count() }));
@@ -104,7 +100,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
       badgeCount: badgeCount(events, clock),
-      sources: describeSourceFreshness([...mailSources.values()], configuredPollingIntervalsInMilliseconds, clock),
+      sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
     });
   });
   const dashboardDirectory = options.dashboardDirectory;
