@@ -202,6 +202,10 @@ function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock
   });
 }
 
+function createFilterCommandId(filterProposalId: string): string {
+  return `create-filter-${filterProposalId}`;
+}
+
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
@@ -455,7 +459,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       filters: filterProposalStore.loadAll().flatMap((stored) =>
         createdFilters
-          .filter(({ commandId }) => commandId === `create-filter-${stored.id}`)
+          .filter(({ commandId }) => commandId === createFilterCommandId(stored.id))
           .map(({ gmailFilterId }) => ({
             ...(stored.proposal as object),
             accountEmail: stored.accountEmail,
@@ -481,7 +485,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const filterCommands = filterProposalStore
       .loadAll()
       .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.includes(stored.id))
-      .map((stored) => ({ id: `create-filter-${stored.id}`, type: 'create-filter', ...(stored.proposal as object) }));
+      .map((stored) => ({ id: createFilterCommandId(stored.id), type: 'create-filter', ...(stored.proposal as object) }));
     const pendingCommands = [...archiveCommands, ...filterCommands].filter(
       (command) => !acknowledgedCommandIds.includes(command.id),
     );
