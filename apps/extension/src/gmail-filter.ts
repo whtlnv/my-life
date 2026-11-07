@@ -30,21 +30,30 @@ export async function carryOutFilterCommands(options: CarryOutFilterCommandsOpti
   };
   for (const command of commands) {
     if (command.type === 'delete-filter') {
-      await options.fetch(`${gmailApi}/settings/filters/${command.gmailFilterId}`, {
-        method: 'DELETE',
-        headers: authorization,
-      });
-      await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, { method: 'POST' });
+      await deleteGmailFilter(options.fetch, authorization, command);
+      await acknowledgeCommand(options, command.id);
       continue;
     }
     if (command.type !== 'create-filter') continue;
     const gmailFilterId = await createGmailFilter(options.fetch, authorization, command);
     if (gmailFilterId === undefined) continue;
-    await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, {
-      method: 'POST',
-      body: JSON.stringify({ gmailFilterId }),
-    });
+    await acknowledgeCommand(options, command.id, JSON.stringify({ gmailFilterId }));
   }
+}
+
+async function acknowledgeCommand(options: CarryOutFilterCommandsOptions, commandId: string, body?: string) {
+  await options.fetch(`${options.backendUrl}/commands/${commandId}/acknowledgement`, {
+    method: 'POST',
+    ...(body === undefined ? {} : { body }),
+  });
+}
+
+async function deleteGmailFilter(
+  fetch: FetchFunction,
+  authorization: { Authorization: string },
+  command: DeleteFilterCommand,
+) {
+  await fetch(`${gmailApi}/settings/filters/${command.gmailFilterId}`, { method: 'DELETE', headers: authorization });
 }
 
 async function createGmailFilter(
