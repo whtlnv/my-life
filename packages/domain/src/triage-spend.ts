@@ -10,6 +10,7 @@ interface SpendSettings {
   timeZone: string;
 }
 
-export function isTriagePaused(_spendLog: SpendEntry[], _settings: SpendSettings, _clock: Clock): boolean {
-  return true;
+export function isTriagePaused(spendLog: SpendEntry[], settings: SpendSettings, _clock: Clock): boolean {
+  const spentInUsd = spendLog.reduce((total, entry) => total + entry.costInUsd, 0);
+  return spentInUsd >= settings.dailyCeilingInUsd;
 }
