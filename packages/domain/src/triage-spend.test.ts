@@ -1,0 +1,16 @@
+import { describe, expect, it } from 'vitest';
+
+import type { Clock } from './clock';
+import { isTriagePaused } from './triage-spend';
+
+describe('isTriagePaused', () => {
+  it('pauses triage when the spend logged today in America/Mexico_City reaches the daily ceiling', () => {
+    const clock: Clock = { now: () => new Date('2026-11-06T18:00:00.000Z') };
+    const spendLog = [
+      { loggedAt: '2026-11-06T15:00:00.000Z', costInUsd: 12 },
+      { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 8 },
+    ];
+
+    expect(isTriagePaused(spendLog, { dailyCeilingInUsd: 20, timeZone: 'America/Mexico_City' }, clock)).toBe(true);
+  });
+});

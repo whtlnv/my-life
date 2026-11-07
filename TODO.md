@@ -59,7 +59,7 @@
 - [x] `action` and `unknown` proposals come before every group
 - [x] A larger group comes before a smaller one
 - [x] Messages reported but not yet proposed on are counted as remaining, newest first in the order they will be triaged
-- [ ] Spend logged today in America/Mexico_City at or above the daily ceiling pauses triage
+- [x] Spend logged today in America/Mexico_City at or above the daily ceiling pauses triage
 - [ ] Spend logged today below the daily ceiling does not pause triage
 - [ ] Spend logged before midnight in America/Mexico_City does not count toward today's ceiling
 - [ ] The examples for a new message are the most recent verdicts from the same sender
