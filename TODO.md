@@ -54,7 +54,7 @@
 - [x] Waiting proposals are grouped by category
 - [x] Waiting `system-update` proposals are grouped within their category by sending system
 - [x] Two waiting `cc-thread` proposals from the same thread show as one line, the newest one
-- [ ] Two waiting `cc-thread` proposals from different threads show as two lines
+- [x] Two waiting `cc-thread` proposals from different threads show as two lines
 - [ ] When the newer `cc-thread` proposal of a thread is listed before the older one, the newer one is still the line shown
 - [ ] `action` and `unknown` proposals come before every group
 - [ ] A larger group comes before a smaller one

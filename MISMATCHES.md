@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-06 20:14 · `packages/domain/src/triage-queue.test.ts::shows two waiting cc-thread proposals from different threads as two lines`
+- Behavior: Two waiting `cc-thread` proposals from different threads show as two lines
+- Predicted: pass on first run, because `newestPerThread` already groups by `threadId`
+- Actual: passed (1 passed, 5 skipped)
+- Type: passed unexpectedly
+- Resolution: the previous cycle's green (keying on `threadId`) already delivers this; any test that fails would assert a different behavior, so the test is kept as a pin against collapsing all threads into one line, and `/green` has nothing to add.
+
 ## 2026-11-06 19:06 · `packages/domain/src/addressed-to-user.test.ts::is false when only Cc lists the account address`
 - Behavior: A message that lists the account's address only in Cc is not addressed to the user
 - Predicted: pass on first run, because `isAddressedToUser` already reads only `to`

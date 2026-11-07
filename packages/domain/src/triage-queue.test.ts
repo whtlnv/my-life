@@ -114,4 +114,28 @@ describe('triageQueue', () => {
     const ccThreadGroup = groups.find((group) => group.category === 'cc-thread');
     expect(ccThreadGroup?.proposals).toEqual([newerProposal]);
   });
+
+  it('shows two waiting cc-thread proposals from different threads as two lines', () => {
+    const firstThreadProposal = {
+      messageId: 'message-1',
+      threadId: 'thread-1',
+      date: '2026-11-06T09:00:00-06:00',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'cc-thread',
+    };
+    const secondThreadProposal = {
+      messageId: 'message-2',
+      threadId: 'thread-2',
+      date: '2026-11-06T10:30:00-06:00',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'cc-thread',
+    };
+    const { groups } = triageQueue([firstThreadProposal, secondThreadProposal], []);
+    const ccThreadGroup = groups.find((group) => group.category === 'cc-thread');
+    expect(ccThreadGroup?.proposals).toHaveLength(2);
+    expect(ccThreadGroup?.proposals).toContainEqual(firstThreadProposal);
+    expect(ccThreadGroup?.proposals).toContainEqual(secondThreadProposal);
+  });
 });
