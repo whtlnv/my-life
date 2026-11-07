@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { triageCategories } from '@my-life/contracts';
+
 interface TriageItem {
   messageId: string;
   action: string;
@@ -80,8 +82,6 @@ function correctToCategory(messageId: TriageItem['messageId'], category: string,
   return postVerdict({ messageId, decision: 'rejected', correction: { category, note } });
 }
 
-const categories = ['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown'];
-
 const verdictKeys = new Set(['t', 'k', 'a']);
 
 function handleVerdictKey(item: TriageItem, key: string): Promise<Response> | undefined {
@@ -138,7 +138,7 @@ function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => 
               setCategory(event.target.value);
             }}
           >
-            {categories.map((option) => (
+            {triageCategories.map((option) => (
               <option key={option}>{option}</option>
             ))}
           </select>
