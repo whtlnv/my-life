@@ -44,4 +44,25 @@ describe('Claude triage', () => {
       promptVersion: 'triage-v7',
     });
   });
+
+  it("sends the account's profile text read from the profile directory", async () => {
+    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
+    writeFileSync(promptPath, 'Classify this email.');
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
+    const sentRequests: { model: string; system?: string }[] = [];
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      promptPath,
+      profileDirectory,
+      createMessage: async (request: { model: string; system?: string }) => {
+        sentRequests.push(request);
+        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+      },
+    });
+
+    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@acme.com' });
+
+    expect(sentRequests[0]?.system).toContain('Ana runs the Acme sales team; invoices always matter.');
+  });
 });

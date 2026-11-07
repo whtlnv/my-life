@@ -1,20 +1,33 @@
-import { readFileSync } from 'node:fs';
-import { basename, extname } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { basename, extname, join } from 'node:path';
 
 interface ClaudeTriageDependencies {
   model: string;
   promptPath?: string;
+  profileDirectory?: string;
   createMessage: (request: { model: string; system?: string }) => Promise<unknown>;
 }
 
-export function createClaudeTriage({ model, promptPath, createMessage }: ClaudeTriageDependencies) {
+function readProfile(profileDirectory: string): string {
+  return readdirSync(profileDirectory)
+    .map((fileName) => readFileSync(join(profileDirectory, fileName), 'utf8'))
+    .join('\n\n');
+}
+
+export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
   return {
-    propose: async (_message: { id: string; date: string }): Promise<{ promptVersion: string } | undefined> => {
+    propose: async (_message: {
+      id: string;
+      date: string;
+      accountEmail?: string;
+    }): Promise<{ promptVersion: string } | undefined> => {
       if (promptPath === undefined) {
         await createMessage({ model });
         return undefined;
       }
-      await createMessage({ model, system: readFileSync(promptPath, 'utf8') });
+      const prompt = readFileSync(promptPath, 'utf8');
+      const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
+      await createMessage({ model, system });
       return { promptVersion: basename(promptPath, extname(promptPath)) };
     },
   };
