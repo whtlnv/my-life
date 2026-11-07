@@ -7,16 +7,28 @@ import { describe, expect, it } from 'vitest';
 import { createClaudeTriage } from './claude-triage';
 import { readStartupSettings } from './startup-settings';
 
+interface SentRequest {
+  model: string;
+  system?: string;
+  messages: { role: string; content: string }[];
+}
+
+function recordRequests() {
+  const sentRequests: SentRequest[] = [];
+  const createMessage = async (request: SentRequest) => {
+    sentRequests.push(request);
+    return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+  };
+  return { sentRequests, createMessage };
+}
+
 describe('Claude triage', () => {
   it('sends a triage request with the model id from settings', async () => {
     const settings = readStartupSettings({ MY_LIFE_TRIAGE_MODEL: 'claude-model-from-settings' }, '/Users/ana');
-    const sentRequests: { model: string }[] = [];
+    const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       model: settings.triageModel,
-      createMessage: async (request: { model: string }) => {
-        sentRequests.push(request);
-        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
-      },
+      createMessage,
     });
 
     await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z' });
@@ -27,14 +39,11 @@ describe('Claude triage', () => {
   it('sends the prompt read from the versioned prompt file and reports that file\'s version', async () => {
     const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v7.md');
     writeFileSync(promptPath, 'Classify this email for Ana.');
-    const sentRequests: { model: string; system?: string }[] = [];
+    const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       model: 'claude-opus-5-5',
       promptPath,
-      createMessage: async (request: { model: string; system?: string }) => {
-        sentRequests.push(request);
-        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
-      },
+      createMessage,
     });
 
     const result = await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z' });
@@ -50,15 +59,12 @@ describe('Claude triage', () => {
     writeFileSync(promptPath, 'Classify this email.');
     const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
     writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
-    const sentRequests: { model: string; system?: string }[] = [];
+    const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       model: 'claude-opus-5-5',
       promptPath,
       profileDirectory,
-      createMessage: async (request: { model: string; system?: string }) => {
-        sentRequests.push(request);
-        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
-      },
+      createMessage,
     });
 
     await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@acme.com' });
@@ -67,13 +73,10 @@ describe('Claude triage', () => {
   });
 
   it("sends the message's headers, snippet and whether it is addressed to the user", async () => {
-    const sentRequests: { model: string; messages?: { role: string; content: string }[] }[] = [];
+    const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       model: 'claude-opus-5-5',
-      createMessage: async (request: { model: string; messages?: { role: string; content: string }[] }) => {
-        sentRequests.push(request);
-        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
-      },
+      createMessage,
     });
 
     await triage.propose({
@@ -102,13 +105,10 @@ describe('Claude triage', () => {
   });
 
   it('says a message is not addressed to the user when the account is only in Cc', async () => {
-    const sentRequests: { model: string; messages?: { role: string; content: string }[] }[] = [];
+    const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       model: 'claude-opus-5-5',
-      createMessage: async (request: { model: string; messages?: { role: string; content: string }[] }) => {
-        sentRequests.push(request);
-        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
-      },
+      createMessage,
     });
 
     await triage.propose({
