@@ -62,8 +62,7 @@ describe('Claude triage', () => {
   });
 
   it("sends the prompt read from the versioned prompt file and reports that file's version", async () => {
-    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v7.md');
-    writeFileSync(promptPath, 'Classify this email for Ana.');
+    const promptPath = promptFile('Classify this email for Ana.', 'triage-v7.md');
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
@@ -81,8 +80,7 @@ describe('Claude triage', () => {
   });
 
   it("sends the account's profile text read from the profile directory", async () => {
-    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
-    writeFileSync(promptPath, 'Classify this email.');
+    const promptPath = promptFile('Classify this email.');
     const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
     writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
     const { sentRequests, createMessage } = recordRequests();
@@ -266,8 +264,7 @@ describe('Claude triage', () => {
   });
 
   it('reports the cost of a valid tool-use answer to a prompted request from its input and output tokens at their separate prices', async () => {
-    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
-    writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
+    const promptPath = promptFile('Classify this email and answer by calling propose_triage.');
     const answeredProposal = {
       action: 'act',
       category: 'action',
@@ -297,8 +294,7 @@ describe('Claude triage', () => {
   });
 
   it('turns a tool-use answer to a prompted request that fails the shared contract into no proposal, records the failure and reports its cost', async () => {
-    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
-    writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
+    const promptPath = promptFile('Classify this email and answer by calling propose_triage.');
     const answeredInput = {
       action: 'delete',
       category: 'action',
@@ -328,8 +324,7 @@ describe('Claude triage', () => {
   });
 
   it('declares exactly one strict propose_triage tool built from the shared contract, leaves tool choice on auto and keeps the call instruction in the prompt file', async () => {
-    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
-    writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
+    const promptPath = promptFile('Classify this email and answer by calling propose_triage.');
     const sentRequests: Record<string, unknown>[] = [];
     const triage = createClaudeTriage({
       pricing: defaultPricing,
