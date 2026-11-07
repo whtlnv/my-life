@@ -278,3 +278,10 @@
 - [x] 2026-11-02 · Starting the backend creates the database folder when it is missing
 - [x] 2026-11-02 · Running the backend entry point serves the built dashboard at `/` and answers GET /now from the configured store
 - [x] 2026-11-02 · The launchd plist in `scripts/` validates with plutil and points at the backend's start command
+- [x] 2026-11-07 · Phase 2a (hand-built, screenshot-verified over `scripts/demo.sh`): one stylesheet of design tokens (light and dark, system font stack) in `apps/dashboard/src/styles.css`
+- [x] 2026-11-07 · Phase 2a: an app shell with the wordmark, `Now` / `Triage` tabs marking the current page, the badge count on the triage tab and one status chip per account (fresh/stale dot, stale sources named, report times in the tooltip)
+- [x] 2026-11-07 · Phase 2a: the now page as a hero card (time range, attendees, Join Meet), later today as a timeline with `All day` pinned, the calendars panel with report times, designed empty and unreachable states
+- [x] 2026-11-07 · Phase 2a: triage action cards with the asker, due pill, account chip, ask, summary, why, the proposed action, and mouse buttons mirroring the keys (`t` `k` `a` `r`); the first card is focused on load; the correction panel is inline with its own hint
+- [x] 2026-11-07 · Phase 2a: groups as rows with human labels, swatches, counts and a proposal summary; expanded views per category (expense table, system updates per system with `Significant`, sales and calendar-drive as one line each, cc threads with what happened since the last message); a key legend
+- [x] 2026-11-07 · Phase 2a: the triage page refreshes every 30 s and shows when it fetched; `GET /triage-queue` sends `fetchedAt` from the clock
+- [x] 2026-11-07 · Phase 2a: `scripts/demo.sh` serves a seeded second backend (four accounts, a meeting in progress, eighteen triaged messages, scripted triage) for screenshots; screenshots in `docs/screenshots/2026-11-07-phase-2a-*.jpg`

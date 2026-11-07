@@ -6,7 +6,7 @@ Phases (locked decision 17):
 
 - **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton — code delivered 2026-11-02 (`DONE.md`); four profiles report since 2026-11-06; the three-day token check is due 2026-11-09 (`docs/phase-0-walkthrough.md`).
 - **Phase 1:** Gmail triage on `franciscoc@psmutuus.com`, _advise_ mode, category groups — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through (`docs/phase-1-walkthrough.md`) waits on the extension reload.
-- **Phase 2a:** the dashboard becomes a product: design tokens, an app shell, the _now_ and triage pages redesigned, screenshot-verified (user ask 2026-11-07: "improve the UI dramatically"). Hand-built presentation work; behavior stays under test.
+- **Phase 2a:** the dashboard redesign (tokens, app shell, _now_ and triage pages) — delivered 2026-11-07 (`DONE.md`, `docs/screenshots/2026-11-07-phase-2a-*.jpg`); new pages reuse `apps/dashboard/src/styles.css` and are screenshot-verified over `scripts/demo.sh`.
 - **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters, the weekly expense statement.
 - **Phase 3:** tasks and the prioritizer: import, _now_ / _later today_, waiting-on.
 - **Phase 4:** Slack.
@@ -33,23 +33,12 @@ What the supervision showed — check these every cycle:
 
 ---
 
-## Phase 2a — The dashboard looks like a product
-
-Outcome: the same two pages, redesigned so the user can live in them. Delivered by hand (presentation items are not unit-TDD: `/tdd-supervise` playbook), verified by screenshots over a seeded demo backend, with every existing dashboard test kept green or migrated.
-
-- Design tokens in one stylesheet (`apps/dashboard/src/styles.css`): color (light and dark from `prefers-color-scheme`), type scale on the system font stack, spacing, radii, focus ring. No CSS framework, no web fonts, no network.
-- App shell: wordmark, `Now` / `Triage` tabs with the active one marked and the triage count on its tab, one status chip per account (fresh / stale dot, mail and calendar), a keyboard legend on the triage page.
-- _Now_ page: the current or next event as one prominent card (time, Join button, attendees), _later today_ as a timeline with a time column and `All day` pinned first, an empty state that reads as designed, the sources table with fetched times.
-- Triage page: action cards with the asker, the ask and the due pill first, the account chip, the proposed action, mouse buttons that do what the keys do (`t` `k` `a` `r`), a visible focus ring, and the correction panel inline. Groups as rows with human labels (`Cc threads`, `Expenses`, `System updates`, `Sales pitches`, `Calendar & Drive`), count badges, `Confirm all` (`c`), and category-specific expanded views: expenses as a table, system updates per system with `Significant` marked, sales and calendar-drive as one compact line each, cc threads with what happened since the last message.
-- The page refreshes itself (queue every 30 s, now every 60 s) and says how long ago it fetched; the backend sends `fetchedAt` on `/triage-queue` so the page never shows an undefined time.
-- A demo backend (`scripts/demo.sh`): a second instance on another port with a throwaway store, seeded with realistic calendar and mail scenarios through a scripted triage, so the UI can be screenshotted without the real inbox. Screenshots land in `docs/screenshots/` dated.
-- New pages added in Phase 2 (categories, filters, statement) are built from the same tokens and components.
-
 ## Phase 2 — Every account, categories, Gmail filters
 
 Outcome: all inboxes are triaged, trusted categories run automatically, and recurring trivial mail never reaches the inbox again.
 
 - Every profile's extension polls Gmail; the queue is merged and shows the account.
+- Every new page (categories, filters, statement) is a route in the app shell (`apps/dashboard/src/app-shell.tsx`), built from the existing tokens and component classes (`styles.css`: `.card`, `.group`, `.row`, `.table`, `.pill`, `.button`, `.banner`, `.empty`), with a `Now` / `Triage` / … tab; `scripts/demo.sh` seeds enough data to screenshot it.
 - Category settings page: each category's `advise` / `automatic` switch, with its recent proposals and the agreement rate (confirmed ÷ proposed) shown before the switch. Automatic actions are labeled `my-life/auto`.
 - Filter proposals: after K confirmed archives from the same sender or list-id, Claude proposes a Gmail filter (criteria + label + skip inbox); the user approves; the extension creates it through `users.settings.filters.create` (`gmail.settings.basic`). Approvals are stored before creation. A filter page lists what was created and lets the user delete one.
 - Kill switch: one toggle returns every category to `advise`.
