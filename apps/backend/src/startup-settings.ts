@@ -14,7 +14,7 @@ export interface StartupSettings {
 
 const defaultPort = 7777;
 const millisecondsPerSecond = 1000;
-const defaultGmailPollingIntervalInMilliseconds = 60_000;
+const defaultGmailPollingIntervalInSeconds = 60;
 const defaultTriageModel = 'claude-opus-5-5';
 const defaultDailySpendCeilingInUsd = 20;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
@@ -25,36 +25,29 @@ export function readStartupSettings(
 ): StartupSettings {
   return {
     allowedEmails: parseAllowedEmails(environment.MY_LIFE_ALLOWED_EMAILS),
-    port: parsePort(environment.MY_LIFE_PORT),
+    port: parseNumberOrDefault(environment.MY_LIFE_PORT, defaultPort),
     databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
     dashboardDirectory: environment.MY_LIFE_DASHBOARD_DIRECTORY ?? defaultDashboardDirectory,
-    gmailPollingIntervalInMilliseconds: parseGmailPollingInterval(
-      environment.MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS,
+    gmailPollingIntervalInMilliseconds: secondsToMilliseconds(
+      parseNumberOrDefault(environment.MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS, defaultGmailPollingIntervalInSeconds),
     ),
     triageModel: environment.MY_LIFE_TRIAGE_MODEL ?? defaultTriageModel,
-    dailySpendCeilingInUsd: parseDailySpendCeiling(environment.MY_LIFE_DAILY_SPEND_CEILING_USD),
+    dailySpendCeilingInUsd: parseNumberOrDefault(
+      environment.MY_LIFE_DAILY_SPEND_CEILING_USD,
+      defaultDailySpendCeilingInUsd,
+    ),
   };
 }
 
-function parseGmailPollingInterval(intervalSecondsText: string | undefined): number {
-  if (intervalSecondsText === undefined) {
-    return defaultGmailPollingIntervalInMilliseconds;
-  }
-  return Number(intervalSecondsText) * millisecondsPerSecond;
+function secondsToMilliseconds(seconds: number): number {
+  return seconds * millisecondsPerSecond;
 }
 
-function parseDailySpendCeiling(ceilingText: string | undefined): number {
-  if (ceilingText === undefined) {
-    return defaultDailySpendCeilingInUsd;
+function parseNumberOrDefault(numberText: string | undefined, defaultValue: number): number {
+  if (numberText === undefined) {
+    return defaultValue;
   }
-  return Number(ceilingText);
-}
-
-function parsePort(portText: string | undefined): number {
-  if (portText === undefined) {
-    return defaultPort;
-  }
-  return Number(portText);
+  return Number(numberText);
 }
 
 function parseAllowedEmails(commaSeparatedEmails: string | undefined): string[] {
