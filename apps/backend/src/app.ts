@@ -23,9 +23,9 @@ import {
 } from '@my-life/domain';
 
 import { openAcknowledgementStore } from './acknowledgement-store';
-import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
+import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
 import { openFilterProposalStore } from './filter-proposal-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
