@@ -4,33 +4,34 @@ import type { Clock } from './clock';
 import { isTriagePaused } from './triage-spend';
 
 describe('isTriagePaused', () => {
-  it('pauses triage when the spend logged today in America/Mexico_City reaches the daily ceiling', () => {
+  it.each([
+    {
+      rule: 'pauses triage when the spend logged today in America/Mexico_City reaches the daily ceiling',
+      spendLog: [
+        { loggedAt: '2026-11-06T15:00:00.000Z', costInUsd: 12 },
+        { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 8 },
+      ],
+      paused: true,
+    },
+    {
+      rule: 'does not pause triage when the spend logged today stays below the daily ceiling',
+      spendLog: [
+        { loggedAt: '2026-11-06T15:00:00.000Z', costInUsd: 12 },
+        { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 7.99 },
+      ],
+      paused: false,
+    },
+    {
+      rule: 'does not count spend logged before midnight in America/Mexico_City toward today’s ceiling',
+      spendLog: [
+        { loggedAt: '2026-11-06T05:30:00.000Z', costInUsd: 15 },
+        { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 8 },
+      ],
+      paused: false,
+    },
+  ])('$rule', ({ spendLog, paused }) => {
     const clock: Clock = { now: () => new Date('2026-11-06T18:00:00.000Z') };
-    const spendLog = [
-      { loggedAt: '2026-11-06T15:00:00.000Z', costInUsd: 12 },
-      { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 8 },
-    ];
 
-    expect(isTriagePaused(spendLog, { dailyCeilingInUsd: 20, timeZone: 'America/Mexico_City' }, clock)).toBe(true);
-  });
-
-  it('does not pause triage when the spend logged today stays below the daily ceiling', () => {
-    const clock: Clock = { now: () => new Date('2026-11-06T18:00:00.000Z') };
-    const spendLog = [
-      { loggedAt: '2026-11-06T15:00:00.000Z', costInUsd: 12 },
-      { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 7.99 },
-    ];
-
-    expect(isTriagePaused(spendLog, { dailyCeilingInUsd: 20, timeZone: 'America/Mexico_City' }, clock)).toBe(false);
-  });
-
-  it('does not count spend logged before midnight in America/Mexico_City toward today’s ceiling', () => {
-    const clock: Clock = { now: () => new Date('2026-11-06T18:00:00.000Z') };
-    const spendLog = [
-      { loggedAt: '2026-11-06T05:30:00.000Z', costInUsd: 15 },
-      { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 8 },
-    ];
-
-    expect(isTriagePaused(spendLog, { dailyCeilingInUsd: 20, timeZone: 'America/Mexico_City' }, clock)).toBe(false);
+    expect(isTriagePaused(spendLog, { dailyCeilingInUsd: 20, timeZone: 'America/Mexico_City' }, clock)).toBe(paused);
   });
 });
