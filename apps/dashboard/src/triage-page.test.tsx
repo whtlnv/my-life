@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  fetchedAtText,
   noDueTimeText,
   pausedNoticeText,
   remainingMessagesText,
@@ -1161,5 +1162,19 @@ describe('TriagePage', () => {
 
     expect(await screen.findByText(remainingMessagesText(3))).toBeInTheDocument();
     expect(screen.queryByText(pausedNoticeText)).not.toBeInTheDocument();
+  });
+
+  it('says when the queue was fetched', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      remaining: 0,
+      paused: false,
+      fetchedAt: '2026-11-07T15:05:00.000Z',
+    });
+
+    render(<TriagePage />);
+
+    expect(await screen.findByText(fetchedAtText('2026-11-07T15:05:00.000Z'))).toBeInTheDocument();
   });
 });
