@@ -25,8 +25,8 @@ export async function carryOutArchiveCommands(options: CarryOutArchiveCommandsOp
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const commands = await fetchPendingArchiveCommands(options);
   for (const command of commands) {
-    const archivedLabelId = await findLabelId(options.fetch, authorization, command.label ?? archivedLabelName);
-    const archiveResponse = await archiveMessage(options.fetch, authorization, command.messageId, archivedLabelId);
+    const labelId = await findOrCreateLabelId(options.fetch, authorization, command.label ?? archivedLabelName);
+    const archiveResponse = await archiveMessage(options.fetch, authorization, command.messageId, labelId);
     if (!archiveResponse.ok) {
       continue;
     }
@@ -42,12 +42,12 @@ async function archiveMessage(
   fetch: FetchFunction,
   authorization: { Authorization: string },
   messageId: string,
-  archivedLabelId: string,
+  labelId: string,
 ) {
   return fetch(`${gmailApi}/messages/${messageId}/modify`, {
     method: 'POST',
     headers: authorization,
-    body: JSON.stringify({ removeLabelIds: ['INBOX'], addLabelIds: [archivedLabelId] }),
+    body: JSON.stringify({ removeLabelIds: ['INBOX'], addLabelIds: [labelId] }),
   });
 }
 
@@ -57,7 +57,7 @@ async function fetchPendingArchiveCommands(options: CarryOutArchiveCommandsOptio
   return commands;
 }
 
-async function findLabelId(fetch: FetchFunction, authorization: { Authorization: string }, labelName: string) {
+async function findOrCreateLabelId(fetch: FetchFunction, authorization: { Authorization: string }, labelName: string) {
   const { labels } = (await (await fetch(`${gmailApi}/labels`, { headers: authorization })).json()) as {
     labels: GmailLabel[];
   };
