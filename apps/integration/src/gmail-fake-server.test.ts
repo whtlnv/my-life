@@ -140,12 +140,12 @@ describe('Gmail fake server', () => {
     }>(backend);
 
     expect(messagesSeenByTriage).toHaveLength(1);
-    expect(queue.groups.find(({ category }) => category === 'expense')?.items).toEqual([
-      expect.objectContaining({
-        messageId: messagesSeenByTriage[0]?.id,
-        extract: expect.objectContaining({ amount: expenseProposal.extract.amount }),
-      }),
-    ]);
+    const expenseItems = queue.groups.find(({ category }) => category === 'expense')?.items ?? [];
+    expect(expenseItems).toHaveLength(1);
+    expect(expenseItems[0]).toMatchObject({
+      messageId: messagesSeenByTriage[0]?.id,
+      extract: { amount: expenseProposal.extract.amount },
+    });
   });
   it('polling the system-update-burst scenario groups its notifications by sending system in the system-update group of GET /triage-queue', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(systemUpdateProposalFor);
