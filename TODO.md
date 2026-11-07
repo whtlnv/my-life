@@ -193,6 +193,7 @@
 
 ### Wiring and acceptance
 
+- [ ] (hand-written) `apps/backend/prompts/triage-v1.md` exists: it names the seven categories with the extract each one carries, the addressed-to-the-user rule, the advise-first stance, and asks for the tool call the contract validates; the shipped backend reads it
 - [ ] The shipped backend reads the Anthropic key from `.env`, triages reported mail with the Claude adapter on a schedule and serves the triage queue
 - [ ] The shipped extension polls Gmail every 60 seconds and carries out pending archive commands
 - [ ] The shipped dashboard links to the triage page and the page runs against the shipped backend
