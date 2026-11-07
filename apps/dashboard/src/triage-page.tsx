@@ -178,6 +178,14 @@ function CategoryGroup({ group }: { group: TriageGroup }) {
         onClick={() => {
           setExpanded(true);
         }}
+        onKeyDown={(event) => {
+          if (event.key === 'c') {
+            void fetch('/group-verdicts', {
+              method: 'POST',
+              body: JSON.stringify({ category: group.category, decision: 'confirmed' }),
+            });
+          }
+        }}
       >
         {group.category} {group.count}
       </button>

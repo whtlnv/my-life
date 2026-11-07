@@ -185,7 +185,7 @@
 - [x] Moving focus with the keyboard changes which card a key acts on
 - [x] ArrowUp moves focus to the previous card, and on the first card it stays there
 - [x] ArrowDown on the last card keeps focus there instead of throwing
-- [ ] The confirm-all key on a focused group confirms that group only
+- [x] The confirm-all key on a focused group confirms that group only
 - [ ] An item disappears from the page once its verdict is accepted
 - [ ] The page shows how many messages remain to be triaged
 - [ ] When the ceiling paused triage, the page says so

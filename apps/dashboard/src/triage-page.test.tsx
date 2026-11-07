@@ -865,4 +865,59 @@ describe('TriagePage', () => {
       expect.objectContaining({ body: JSON.stringify({ messageId: 'message-36', decision: 'confirmed' }) }),
     );
   });
+
+  it('confirms only the focused group when the confirm-all key `c` is pressed on it', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'expense',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-37',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'expense',
+              summary: 'Receipt from Acme',
+              extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+              reason: 'A receipt to file',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-37',
+            },
+          ],
+        },
+        {
+          category: 'sales',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-38',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'sales',
+              summary: 'Initech pitches a CRM',
+              extract: { company: 'Initech', solution: 'A CRM', problem: 'Lost leads' },
+              reason: 'A cold sales pitch',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-38',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const expenseToggle = await screen.findByRole('button', { name: /expense.*1/ });
+    expenseToggle.focus();
+    await user.keyboard('c');
+
+    const groupVerdictBodies = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/group-verdicts')
+      .map(([, init]) => init?.body);
+    expect(groupVerdictBodies).toEqual([JSON.stringify({ category: 'expense', decision: 'confirmed' })]);
+  });
 });
