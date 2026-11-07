@@ -84,7 +84,7 @@
 ### Extension — Gmail poll
 
 - [x] With the Anthropic key set in the environment, the backend's settings say triage is enabled and give no reason
-- [ ] On its first poll with no stored history id, the extension reports every inbox message, newest first, with the current history id
+- [x] On its first poll with no stored history id, the extension reports every inbox message, newest first, with the current history id
 - [ ] Inbox listing follows every page until the last
 - [ ] With a stored history id, the extension reports only the messages added since that id
 - [ ] When the history read answers 404, the extension falls back to a full inbox report
