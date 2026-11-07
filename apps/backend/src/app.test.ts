@@ -1755,4 +1755,28 @@ describe('backend app', () => {
       categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
     });
   });
+
+  it('still shows at GET /categories a category switched to automatic before a backend restart on the same database file', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    await beforeRestart.request('/categories/sales/mode', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'automatic' }),
+    });
+
+    const afterRestart = createApp(options);
+    const response = await afterRestart.request('/categories');
+
+    expect(await response.json()).toEqual({
+      categories: triageCategories.map((category) => ({
+        category,
+        mode: category === 'sales' ? 'automatic' : 'advise',
+      })),
+    });
+  });
 });

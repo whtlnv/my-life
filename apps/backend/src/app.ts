@@ -22,6 +22,7 @@ import {
 } from '@my-life/domain';
 
 import { openAcknowledgementStore } from './acknowledgement-store';
+import { openCategoryModeStore } from './category-mode-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
@@ -319,7 +320,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
-  const categoryModes: Record<string, string> = {};
+  const categoryModeStore = openCategoryModeStore(databasePath);
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
     const category = context.req.param('category');
@@ -328,14 +329,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (!isKnownCategory || !isKnownMode) {
       return context.body(null, 400);
     }
-    categoryModes[category] = mode;
+    categoryModeStore.save(category, mode);
     return context.body(null, 200);
   });
-  app.get('/categories', (context) =>
-    context.json({
+  app.get('/categories', (context) => {
+    const categoryModes = categoryModeStore.loadAll();
+    return context.json({
       categories: triageCategories.map((category) => ({ category, mode: categoryModes[category] ?? 'advise' })),
-    }),
-  );
+    });
+  });
   app.get('/check-later', (context) => {
     return context.json({ checkLater: confirmedCheckLater(proposals, verdictStore.loadAll()) });
   });
