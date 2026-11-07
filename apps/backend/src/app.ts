@@ -173,10 +173,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       accountEmail,
     );
   });
+  const loggedSpends = (): { loggedAt: string; costInUsd: number }[] =>
+    spendStore.loadAll().map(({ spentAt, costInUsd }) => ({ loggedAt: spentAt, costInUsd }));
   const hasReachedDailySpendCeiling = (): boolean =>
     options.dailySpendCeilingInUsd !== undefined &&
     isTriagePaused(
-      spendStore.loadAll().map(({ spentAt, costInUsd }) => ({ loggedAt: spentAt, costInUsd })),
+      loggedSpends(),
       { dailyCeilingInUsd: options.dailySpendCeilingInUsd, timeZone: businessTimeZone },
       clock,
     );
