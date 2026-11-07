@@ -808,4 +808,31 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('shows in GET /triage-queue the action, summary and extract of a proposal made in the current run, without a restart', async () => {
+    const proposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+    };
+    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+
+    const queue = await app.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({
+      action: [
+        {
+          messageId: 'message-1',
+          action: 'act',
+          summary: 'Luis asks for a budget review',
+          extract: { asker: 'Luis', ask: 'Review the budget' },
+        },
+      ],
+    });
+  });
 });

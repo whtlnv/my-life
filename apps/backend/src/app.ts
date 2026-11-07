@@ -171,12 +171,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         promptVersion: result?.promptVersion ?? '',
         proposal: result?.proposal,
       });
-      const proposal = result?.proposal as { category: string } | undefined;
       proposals.push({
+        action: '',
+        category: '',
+        ...(result?.proposal as Proposal | undefined),
         messageId: message.id,
         accountEmail: accountEmailByMessageId.get(message.id) ?? '',
-        action: '',
-        category: proposal?.category ?? '',
       });
     }
     return context.body(null, 200);
