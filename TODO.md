@@ -65,7 +65,7 @@
 - [x] The examples for a new message are the most recent verdicts from the same sender
 - [x] When there are fewer than N same-sender verdicts, the examples are filled with the most recent verdicts of the same category
 - [x] Verdicts from another sender in another category are never examples
-- [ ] At most N examples are chosen
+- [x] At most N examples are chosen
 - [ ] The badge count adds the `action` proposals waiting
 - [ ] An `action` proposal that has a verdict does not add to the badge count
 - [ ] A waiting proposal of another category does not add to the badge count
