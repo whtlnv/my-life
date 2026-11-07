@@ -114,7 +114,7 @@
 - [x] A mail report that fails the shared contract is refused with a client error
 - [x] A message reported twice is stored once
 - [x] A message reported before the backend restarts (a second app opened on the same database file) is still reported after it, and is not counted twice when reported again
-- [ ] Each mail report is stored with the time it was received, and the account's mail source shows when it last reported
+- [x] Each mail report is stored with the time it was received, and the account's mail source shows when it last reported
 - [ ] A triage run asks for a proposal on each reported message that has none, newest first
 - [ ] A message that already has a proposal is not sent to triage again
 - [ ] A triage run stops asking once today's spend reaches the ceiling

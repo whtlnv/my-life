@@ -448,4 +448,17 @@ describe('backend app', () => {
     expect(await queueAfterRestart.json()).toMatchObject({ remaining: 1 });
     expect(await queueAfterReportedAgain.json()).toMatchObject({ remaining: 1 });
   });
+
+  it("shows in GET /now when an account's mail source last reported, at the time its mail report was received", async () => {
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => currentTime } });
+
+    await postJson(app, '/mail-report', budgetReviewReport);
+    currentTime = new Date('2026-11-02T15:10:30.000Z');
+    const now = await app.request('/now');
+
+    expect(await now.json()).toMatchObject({
+      sources: [{ email: 'ana@example.com', source: 'mail', lastReportedAt: '2026-11-02T15:10:00.000Z', stale: false }],
+    });
+  });
 });

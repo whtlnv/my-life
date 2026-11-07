@@ -7,10 +7,12 @@ import { calendarSnapshot, mailReport, type HealthResponse } from '@my-life/cont
 import {
   badgeCount,
   buildNowView,
+  describeSourceFreshness,
   isAccountFresh,
   mergeCalendarSnapshots,
   type CalendarSnapshot,
   type Clock,
+  type SourceReport,
 } from '@my-life/domain';
 
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
@@ -26,6 +28,8 @@ export interface AppOptions {
 const systemClock: Clock = { now: () => new Date() };
 
 const calendarPollingIntervalInMilliseconds = 5 * 60 * 1000;
+
+const mailPollingIntervalInMilliseconds = 60 * 1000;
 
 const businessTimeZone = 'America/Mexico_City';
 
@@ -46,6 +50,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const databasePath = options.databasePath ?? ':memory:';
   const snapshotStore = openCalendarSnapshotStore(databasePath);
   const reportedMessageStore = openReportedMessageStore(databasePath);
+  const mailSources = new Map<string, SourceReport>();
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -79,6 +84,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, refusal);
     }
     report.messages.forEach((message) => reportedMessageStore.save(message.id));
+    mailSources.set(report.accountEmail, {
+      email: report.accountEmail,
+      source: 'mail',
+      lastReportedAt: clock.now().toISOString(),
+    });
     return context.body(null, 200);
   });
   app.get('/triage-queue', (context) => context.json({ remaining: reportedMessageStore.count() }));
@@ -90,6 +100,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
       badgeCount: badgeCount(events, clock),
+      sources: describeSourceFreshness(
+        [...mailSources.values()],
+        { mail: mailPollingIntervalInMilliseconds, calendar: calendarPollingIntervalInMilliseconds },
+        clock,
+      ),
     });
   });
   const dashboardDirectory = options.dashboardDirectory;
