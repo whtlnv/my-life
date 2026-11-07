@@ -86,6 +86,8 @@ export function createClaudeTriage({
   pricing,
   createMessage,
 }: ClaudeTriageDependencies) {
+  const costOf = (response: ClaudeResponse): number | undefined =>
+    pricing === undefined || response.usage === undefined ? undefined : computeCostInUsd(response.usage, pricing);
   return {
     propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome | undefined> => {
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
@@ -93,8 +95,9 @@ export function createClaudeTriage({
         const response = await createMessage({ model, messages });
         const input = readToolUseInput(response);
         if (!triageProposal.safeParse(input).success) {
-          if (pricing !== undefined && response.usage !== undefined) {
-            return { failure: { input }, costInUsd: computeCostInUsd(response.usage, pricing) };
+          const costInUsd = costOf(response);
+          if (costInUsd !== undefined) {
+            return { failure: { input }, costInUsd };
           }
           return { failure: { input } };
         }
@@ -104,8 +107,9 @@ export function createClaudeTriage({
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
       const response = await createMessage({ model, system, messages, tools: [proposeTriageTool] });
       const promptVersion = basename(promptPath, extname(promptPath));
-      if (pricing !== undefined && response.usage !== undefined) {
-        return { promptVersion, proposal: readToolUseInput(response), costInUsd: computeCostInUsd(response.usage, pricing) };
+      const costInUsd = costOf(response);
+      if (costInUsd !== undefined) {
+        return { promptVersion, proposal: readToolUseInput(response), costInUsd };
       }
       return { promptVersion };
     },
