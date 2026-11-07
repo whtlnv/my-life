@@ -1,12 +1,15 @@
-export function chooseVerdictExamples<V extends { from: string; category: string; decidedAt: string }>(
-  message: { from: string; category?: string },
-  verdicts: V[],
-  limit: number,
-): V[] {
+export function chooseVerdictExamples<
+  V extends { from: string; listId?: string | undefined; category: string; decidedAt: string },
+>(message: { from: string; listId?: string; category?: string }, verdicts: V[], limit: number): V[] {
   const messageDomain = senderDomain(message.from);
   const fromSender = newestFirst(verdicts.filter((verdict) => verdict.from === message.from));
   const fromSenderDomain = newestFirst(
-    verdicts.filter((verdict) => verdict.from !== message.from && senderDomain(verdict.from) === messageDomain),
+    verdicts.filter(
+      (verdict) =>
+        verdict.from !== message.from &&
+        senderDomain(verdict.from) === messageDomain &&
+        verdict.listId === message.listId,
+    ),
   );
   const ofSameCategory = newestFirst(
     verdicts.filter((verdict) => senderDomain(verdict.from) !== messageDomain && verdict.category === message.category),

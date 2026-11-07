@@ -36,6 +36,7 @@ interface ReportedMessage {
   date: string;
   to?: string;
   cc?: string;
+  listId?: string;
 }
 
 type Proposal = Parameters<typeof triageQueue>[0][number];
@@ -197,6 +198,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictStore.loadAll().map((verdict) => ({
         ...verdict,
         from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from ?? '',
+        listId: reportedMessages.find((reported) => reported.id === verdict.messageId)?.listId,
         category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ?? '',
       })),
       verdictExampleLimit,

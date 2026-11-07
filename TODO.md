@@ -19,7 +19,7 @@
 - [x] When the daily spend ceiling was reached yesterday (business time zone) and the process kept running past business midnight, `POST /triage-run` proposes again and `GET /triage-queue` reports `paused: false` (backlog: packages/domain/src/triage-spend.ts:16 `isTriagePaused` is tested but never called)
 - [x] When the daily spend ceiling was reached earlier the same business day, `POST /triage-run` still proposes nothing and `GET /triage-queue` reports `paused: true` (backlog: packages/domain/src/triage-spend.ts:16 `isTriagePaused` is tested but never called)
 - [x] When a message from a sender with no verdict history is triaged, the examples passed to the Triage port include verdicts on earlier messages from the same sender domain (backlog: Same-category verdict examples cannot be chosen at proposal time)
-- [ ] When a message is triaged, verdicts on messages from other sender domains (and other List-Ids) are not passed as domain-fallback examples (backlog: Same-category verdict examples cannot be chosen at proposal time)
+- [x] When a message is triaged, verdicts on messages from other sender domains (and other List-Ids) are not passed as domain-fallback examples (backlog: Same-category verdict examples cannot be chosen at proposal time)
 
 ### Category modes
 

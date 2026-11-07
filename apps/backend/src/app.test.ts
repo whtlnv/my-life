@@ -673,6 +673,48 @@ describe('backend app', () => {
     ]);
   });
 
+  it('does not hand triage at POST /triage-run the verdict on a same-domain message from another List-Id as an example', async () => {
+    const examplesByMessageId = new Map<string, unknown[] | undefined>();
+    const proposal = {
+      action: 'archive',
+      category: 'cc-thread',
+      summary: 'Luis shared the budget with the team',
+      extract: { sinceLastMessage: 'Luis shared the budget' },
+      reason: 'The user is only copied',
+    };
+    const triage = {
+      propose: (message: { id: string }, examples?: unknown[]) => {
+        examplesByMessageId.set(message.id, examples);
+        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, listId: '<finance.example.com>' }],
+    });
+    await postTriageRun(app);
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        {
+          ...budgetReview,
+          id: 'message-2',
+          threadId: 'thread-2',
+          from: 'Marta <marta@example.com>',
+          subject: 'Weekly newsletter',
+          listId: '<newsletter.example.com>',
+        },
+      ],
+    });
+
+    await postTriageRun(app);
+
+    expect(examplesByMessageId.get('message-2')).toEqual([]);
+  });
+
   it('hands triage at POST /triage-run the same-sender verdicts as examples newest first, as the domain chooses them', async () => {
     const examplesByMessageId = new Map<string, unknown[] | undefined>();
     const proposal = {
