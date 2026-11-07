@@ -98,6 +98,7 @@
 - [x] After a report the backend accepts, the next poll starts from the reported history id
 - [x] After a report the backend refuses, the next poll starts from the previous history id
 - [x] The extension polls Gmail every 60 seconds
+- [ ] A history response with no `history` field (nothing changed since the stored id) reports zero messages and the current history id
 - [ ] The second scheduled Gmail poll starts from the history id the first poll reported, not from an empty inbox read
 - [ ] A scheduled Gmail poll that fails is reported to the console and the next scheduled poll still runs
 - [ ] A pending archive command for the profile's account removes the message from the inbox and adds the label `my-life/archived`
