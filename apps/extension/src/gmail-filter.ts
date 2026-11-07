@@ -21,6 +21,7 @@ export async function carryOutFilterCommands(options: CarryOutFilterCommandsOpti
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: CreateFilterCommand[] };
   for (const command of commands) {
     const gmailFilterId = await createGmailFilter(options.fetch, authorization, command);
+    if (gmailFilterId === undefined) continue;
     await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, {
       method: 'POST',
       body: JSON.stringify({ gmailFilterId }),
@@ -34,15 +35,15 @@ async function createGmailFilter(
   command: CreateFilterCommand,
 ) {
   const labelId = await findOrCreateLabelId(fetch, authorization, command.label);
-  const createdFilter = (await (
-    await fetch(`${gmailApi}/settings/filters`, {
-      method: 'POST',
-      headers: authorization,
-      body: JSON.stringify({
-        criteria: command.criteria,
-        action: { addLabelIds: [labelId], removeLabelIds: ['INBOX'] },
-      }),
-    })
-  ).json()) as { id: string };
+  const response = await fetch(`${gmailApi}/settings/filters`, {
+    method: 'POST',
+    headers: authorization,
+    body: JSON.stringify({
+      criteria: command.criteria,
+      action: { addLabelIds: [labelId], removeLabelIds: ['INBOX'] },
+    }),
+  });
+  if (!response.ok) return undefined;
+  const createdFilter = (await response.json()) as { id: string };
   return createdFilter.id;
 }
