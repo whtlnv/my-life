@@ -109,13 +109,13 @@ export function createClaudeTriage({
       const promptVersion = basename(promptPath, extname(promptPath));
       const costInUsd = costOf(response);
       const input = readToolUseInput(response);
-      if (costInUsd !== undefined && !triageProposal.safeParse(input).success) {
+      if (costInUsd === undefined) {
+        return { promptVersion };
+      }
+      if (!triageProposal.safeParse(input).success) {
         return { promptVersion, failure: { input }, costInUsd };
       }
-      if (costInUsd !== undefined) {
-        return { promptVersion, proposal: readToolUseInput(response), costInUsd };
-      }
-      return { promptVersion };
+      return { promptVersion, proposal: input, costInUsd };
     },
   };
 }
