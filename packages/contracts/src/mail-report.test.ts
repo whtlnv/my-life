@@ -14,6 +14,10 @@ const message = {
   listId: '<finance.example.com>',
 };
 
+function messageWithout(header: keyof typeof message) {
+  return Object.fromEntries(Object.entries(message).filter(([key]) => key !== header));
+}
+
 function reportWith(messages: unknown[]) {
   return { accountEmail: 'francisco@example.com', historyId: '987654', messages };
 }
@@ -32,15 +36,13 @@ describe('mailReport', () => {
   });
 
   it('accepts a report whose message has no Cc header', () => {
-    const messageWithoutCc = Object.fromEntries(Object.entries(message).filter(([key]) => key !== 'cc'));
-    const report = reportWith([messageWithoutCc]);
+    const report = reportWith([messageWithout('cc')]);
 
     expect(mailReport.parse(report)).toEqual(report);
   });
 
   it('accepts a report whose message has no List-Id header', () => {
-    const messageWithoutListId = Object.fromEntries(Object.entries(message).filter(([key]) => key !== 'listId'));
-    const report = reportWith([messageWithoutListId]);
+    const report = reportWith([messageWithout('listId')]);
 
     expect(mailReport.parse(report)).toEqual(report);
   });
