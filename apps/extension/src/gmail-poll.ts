@@ -25,8 +25,12 @@ interface GmailMessage {
   payload: { headers: { name: string; value: string }[] };
 }
 
+function fetchGmail(options: PollGmailOptions, url: string) {
+  return options.fetch(url, { headers: { Authorization: `Bearer ${options.accessToken}` } });
+}
+
 async function fetchGmailJson<ResponseBody>(options: PollGmailOptions, url: string): Promise<ResponseBody> {
-  const response = await options.fetch(url, { headers: { Authorization: `Bearer ${options.accessToken}` } });
+  const response = await fetchGmail(options, url);
   return (await response.json()) as ResponseBody;
 }
 
@@ -45,9 +49,7 @@ interface GmailHistoryList {
 }
 
 async function fetchMessagesAddedSince(options: PollGmailOptions, startHistoryId: string) {
-  const response = await options.fetch(`${gmailApi}/history?startHistoryId=${startHistoryId}`, {
-    headers: { Authorization: `Bearer ${options.accessToken}` },
-  });
+  const response = await fetchGmail(options, `${gmailApi}/history?startHistoryId=${startHistoryId}`);
   if (response.status === 404) {
     return fetchInboxMessages(options);
   }
