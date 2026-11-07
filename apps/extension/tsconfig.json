@@ -14,5 +14,5 @@
     "noEmit": true,
     "types": ["chrome", "node"]
   },
-  "include": ["src", "wxt.config.ts", "vitest.config.ts"]
+  "include": ["src", "wxt.config.ts", "wxt.config.test.ts", "vitest.config.ts"]
 }

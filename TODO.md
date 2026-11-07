@@ -78,7 +78,7 @@
 - [x] `POST /filter-proposals/:id/rejection` removes the proposal from `GET /filter-proposals`, and the same sender or List-Id is not proposed again
 - [x] Filter proposals, approvals and rejections survive a backend restart on the same database
 - [x] An approved filter proposal is no longer listed by `GET /filter-proposals` (pending means neither approved nor rejected) (supervisor: no item said what approval does to the pending list)
-- [ ] The extension manifest requests the `gmail.settings.basic` scope
+- [x] The extension manifest requests the `gmail.settings.basic` scope
 - [ ] The fake Gmail server answers `users.settings.filters` create, list and delete, and the label calls the filter needs
 - [ ] When the extension receives a `create-filter` command, it creates the label if missing, calls `users.settings.filters.create` with the criteria, `addLabelIds` of that label and `removeLabelIds: ['INBOX']`, and acknowledges with the Gmail filter id
 - [ ] When `users.settings.filters.create` fails, the extension does not acknowledge the command, and it is offered again on the next poll
