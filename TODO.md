@@ -61,7 +61,7 @@
 - [x] Confirmed archives from the same sender in two different accounts are counted per account, so two in each yield no candidate
 - [x] The confirmed archives counted toward a candidate survive a backend restart on the same database (sender and List-Id of reported messages are persisted)
 - [x] The filter-proposal contract accepts criteria (`from`, `subject` or `listId`, at least one), a label name and `skipInbox`
-- [ ] The filter-proposal contract accepts a proposal whose criteria hold only `from`, and one whose criteria hold only `listId`, with the other criteria absent (supervisor triangulation: the green requires all three)
+- [x] The filter-proposal contract accepts a proposal whose criteria hold only `from`, and one whose criteria hold only `listId`, with the other criteria absent (supervisor triangulation: the green requires all three)
 - [ ] The filter-proposal contract rejects a proposal with no criteria
 - [ ] When a filter candidate appears, the backend asks the filter port once for a proposal and stores it with the account, the candidate's messages, the prompt version and the time; the same candidate is not asked about again
 - [ ] The Claude filter adapter calls the model from config with a strict `propose_filter` tool built from the filter-proposal contract and a versioned prompt file, and returns the validated proposal
