@@ -24,7 +24,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     body: JSON.stringify({ email: accountEmail }),
   });
   const currentTime = options.clock ?? (() => options.now);
-  const poll = async () => {
+  const pollCalendar = async () => {
     await pollCalendarOnce({
       fetch: options.fetch,
       accessToken: await options.accessToken(),
@@ -37,15 +37,17 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       await refreshBadge({ fetch: options.fetch, backendUrl: options.backendUrl, setBadgeText: options.setBadgeText });
     }
   };
-  await poll();
-  await pollGmailOnce({
-    fetch: options.fetch,
-    accessToken: await options.accessToken(),
-    accountEmail,
-    backendUrl: options.backendUrl,
-    storedHistoryId: undefined,
-  }).catch((error: unknown) => {
+  const pollGmail = async () =>
+    pollGmailOnce({
+      fetch: options.fetch,
+      accessToken: await options.accessToken(),
+      accountEmail,
+      backendUrl: options.backendUrl,
+      storedHistoryId: undefined,
+    });
+  await pollCalendar();
+  await pollGmail().catch((error: unknown) => {
     console.error('Gmail poll failed', error);
   });
-  options.every?.(calendarPollIntervalMilliseconds, () => poll().catch(() => undefined));
+  options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
 }
