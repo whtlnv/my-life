@@ -1,0 +1,66 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { filterProposal } from '@my-life/contracts';
+import { describe, expect, it } from 'vitest';
+
+import { createClaudeFilter } from './claude-filter';
+import { readStartupSettings } from './startup-settings';
+
+function promptFile(contents: string, fileName: string): string {
+  const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
+  writeFileSync(promptPath, contents);
+  return promptPath;
+}
+
+interface SentRequest {
+  model: string;
+  system?: string;
+  tools?: { name: string; strict?: boolean; input_schema: unknown }[];
+}
+
+describe('Claude filter', () => {
+  it('asks the configured model through a strict propose_filter tool with the versioned prompt and returns the validated proposal', async () => {
+    const settings = readStartupSettings({ MY_LIFE_TRIAGE_MODEL: 'claude-model-from-settings' }, '/Users/ana');
+    const answeredProposal = {
+      criteria: { from: 'news@supplier.com' },
+      labelName: 'Supplier newsletters',
+      skipInbox: true,
+    };
+    const sentRequests: SentRequest[] = [];
+    const filter = createClaudeFilter({
+      model: settings.triageModel,
+      promptPath: promptFile('Propose a Gmail filter by calling propose_filter.', 'filter-v3.md'),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: (request: SentRequest) => {
+        sentRequests.push(request);
+        return Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_filter', input: answeredProposal }],
+          usage: { input_tokens: 0, output_tokens: 0 },
+        });
+      },
+    });
+
+    const result = await filter.propose({
+      accountEmail: 'ana@acme.com',
+      criteria: { from: 'news@supplier.com' },
+      messageIds: ['message-1', 'message-2', 'message-3'],
+    });
+
+    expect(
+      sentRequests.map(({ model, system, tools }) => ({
+        model,
+        system,
+        tools: tools?.map(({ name, strict, input_schema }) => ({ name, strict, input_schema })),
+      })),
+    ).toEqual([
+      {
+        model: 'claude-model-from-settings',
+        system: 'Propose a Gmail filter by calling propose_filter.',
+        tools: [{ name: 'propose_filter', strict: true, input_schema: filterProposal.toJSONSchema() }],
+      },
+    ]);
+    expect(result).toMatchObject({ proposal: answeredProposal, promptVersion: 'filter-v3' });
+  });
+});
