@@ -156,8 +156,12 @@ function recentProposals(category: string, proposals: Proposal[]) {
     }));
 }
 
+function awaitingTheUser(proposals: Proposal[]): Proposal[] {
+  return proposals.filter((proposal) => proposal.madeAutomatic !== true);
+}
+
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
-  const { groups } = triageQueue(proposals, verdicts);
+  const { groups } = triageQueue(awaitingTheUser(proposals), verdicts);
   const withLink = (proposal: Proposal) => ({ ...proposal, link: gmailMessageLink(proposal) });
   const describeGroup = ({ category, proposals: grouped, systems }: (typeof groups)[number]) => ({
     category,
@@ -395,7 +399,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
-      badgeCount: badgeCount(events, clock, proposals, verdictStore.loadAll()),
+      badgeCount: badgeCount(events, clock, awaitingTheUser(proposals), verdictStore.loadAll()),
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
     });
   });

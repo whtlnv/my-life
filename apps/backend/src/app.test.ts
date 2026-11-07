@@ -1970,4 +1970,26 @@ describe('backend app', () => {
       commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
     });
   });
+
+  it('keeps out of GET /triage-queue and out of the GET /now badge count an act proposal acted on automatically in a category switched to automatic', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+      taskDraft: { title: 'Review the budget by Friday' },
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await switchCategory(app, 'action', 'automatic');
+    await proposeBudgetReview(app);
+
+    const queue = await app.request('/triage-queue');
+    const now = await app.request('/now');
+
+    expect({ queue: await queue.json(), now: await now.json() }).toMatchObject({
+      queue: { action: [] },
+      now: { badgeCount: 0 },
+    });
+  });
 });
