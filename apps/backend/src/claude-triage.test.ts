@@ -1,3 +1,7 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { createClaudeTriage } from './claude-triage';
@@ -18,5 +22,26 @@ describe('Claude triage', () => {
     await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z' });
 
     expect(sentRequests.map((request) => request.model)).toEqual(['claude-model-from-settings']);
+  });
+
+  it('sends the prompt read from the versioned prompt file and reports that file\'s version', async () => {
+    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v7.md');
+    writeFileSync(promptPath, 'Classify this email for Ana.');
+    const sentRequests: { model: string; system?: string }[] = [];
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      promptPath,
+      createMessage: async (request: { model: string; system?: string }) => {
+        sentRequests.push(request);
+        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+      },
+    });
+
+    const result = await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z' });
+
+    expect({ system: sentRequests[0]?.system, promptVersion: result?.promptVersion }).toEqual({
+      system: 'Classify this email for Ana.',
+      promptVersion: 'triage-v7',
+    });
   });
 });
