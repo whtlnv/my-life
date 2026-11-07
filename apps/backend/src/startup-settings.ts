@@ -11,6 +11,7 @@ export interface StartupSettings {
 }
 
 const defaultPort = 7777;
+const defaultGmailPollingIntervalInMilliseconds = 60_000;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
 
 export function readStartupSettings(
@@ -22,7 +23,7 @@ export function readStartupSettings(
     port: parsePort(environment.MY_LIFE_PORT),
     databasePath: resolveDatabasePath(environment.MY_LIFE_DATABASE_PATH, homeDirectory),
     dashboardDirectory: environment.MY_LIFE_DASHBOARD_DIRECTORY ?? defaultDashboardDirectory,
-    gmailPollingIntervalInMilliseconds: 60_000,
+    gmailPollingIntervalInMilliseconds: defaultGmailPollingIntervalInMilliseconds,
   };
 }
 
