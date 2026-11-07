@@ -3,9 +3,13 @@ interface ScriptedAnswer {
   costInUsd: number;
 }
 
-export function createScriptedTriage(answers: ScriptedAnswer[]) {
+interface ScriptedTriage {
+  propose: (message: { id: string; date: string }) => Promise<ScriptedAnswer | undefined>;
+}
+
+export function createScriptedTriage(answers: ScriptedAnswer[]): ScriptedTriage {
   let next = 0;
   return {
-    propose: async (_message: { id: string; date: string }): Promise<ScriptedAnswer> => answers[next++]!,
+    propose: () => Promise.resolve(answers[next++]),
   };
 }
