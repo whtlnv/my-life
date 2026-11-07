@@ -2,6 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { triageProposal } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { createClaudeTriage } from './claude-triage';
@@ -203,5 +204,38 @@ describe('Claude triage', () => {
     });
 
     expect(result).toEqual({ failure: expect.objectContaining({ input: answeredInput }) });
+  });
+
+  it('declares exactly one strict propose_triage tool built from the shared contract, leaves tool choice on auto and keeps the call instruction in the prompt file', async () => {
+    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
+    writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
+    const sentRequests: Record<string, unknown>[] = [];
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      promptPath,
+      createMessage: async (request: Record<string, unknown>) => {
+        sentRequests.push(request);
+        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+      },
+    });
+
+    await triage.propose({ id: 'message-6', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+
+    const request = sentRequests[0] as {
+      system?: string;
+      tools?: { name: string; strict?: boolean; input_schema: { type: string; properties: Record<string, { enum?: string[] }>; required: string[] } }[];
+      tool_choice?: { type: string };
+    };
+    expect(request.system).toBe('Classify this email and answer by calling propose_triage.');
+    expect(request.tools?.map((tool) => ({ name: tool.name, strict: tool.strict }))).toEqual([{ name: 'propose_triage', strict: true }]);
+    expect(Object.keys(request.tools?.[0]?.input_schema.properties ?? {})).toEqual(Object.keys(triageProposal.shape));
+    expect(request.tools?.[0]?.input_schema).toMatchObject({
+      type: 'object',
+      properties: {
+        action: { enum: triageProposal.shape.action.options },
+        category: { enum: triageProposal.shape.category.options },
+      },
+    });
+    expect(request.tool_choice ?? { type: 'auto' }).toEqual({ type: 'auto' });
   });
 });

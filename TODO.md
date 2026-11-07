@@ -153,7 +153,7 @@
 - [x] A triage request carries the chosen verdict examples
 - [x] A valid tool-use answer becomes a proposal
 - [x] A tool-use answer that fails the shared contract becomes no proposal and the failure is recorded
-- [ ] A triage request declares exactly one tool, `propose_triage`, whose input schema is the shared triage-proposal contract converted to JSON Schema, marked `strict`, with `tool_choice` left as `auto` (forced tool choice is rejected by the model); the instruction to call it lives in the versioned prompt file, not in code
+- [x] A triage request declares exactly one tool, `propose_triage`, whose input schema is the shared triage-proposal contract converted to JSON Schema, marked `strict`, with `tool_choice` left as `auto` (forced tool choice is rejected by the model); the instruction to call it lives in the versioned prompt file, not in code
 - [ ] The cost of a call is computed from the tokens the answer reports
 - [ ] A scripted fake triage answers the proposals it was scripted with, in order, and costs what it was scripted to cost
 

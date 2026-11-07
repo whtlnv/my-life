@@ -16,6 +16,7 @@ interface ClaudeTriageDependencies {
     model: string;
     system?: string;
     messages: { role: string; content: string }[];
+    tools?: { name: string; strict: boolean; input_schema: unknown }[];
   }) => Promise<ClaudeResponse>;
 }
 
@@ -76,7 +77,8 @@ export function createClaudeTriage({ model, promptPath, profileDirectory, create
       }
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
-      await createMessage({ model, system, messages });
+      const tools = [{ name: 'propose_triage', strict: true, input_schema: triageProposal.toJSONSchema() }];
+      await createMessage({ model, system, messages, tools });
       return { promptVersion: basename(promptPath, extname(promptPath)) };
     },
   };
