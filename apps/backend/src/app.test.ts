@@ -663,4 +663,37 @@ describe('backend app', () => {
 
     expect(askedMessageIds).toEqual(['message-middle']);
   });
+  it("counts toward today's ceiling after a backend restart only the spend logged today in America/Mexico_City, not yesterday's", async () => {
+    const askedMessageIds: string[] = [];
+    const triage = {
+      propose: (message: { id: string }) => {
+        askedMessageIds.push(message.id);
+        return Promise.resolve({ proposal: {}, costInUsd: 10, model: 'claude-opus-5-5', promptVersion: 'triage-v1' });
+      },
+    };
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const spendBeforeRestart = openSpendStore(databasePath);
+    // 05:00Z on Nov 2 is still 23:00 on Nov 1 in Mexico City: yesterday for a clock at 15:10Z on Nov 2.
+    spendBeforeRestart.save({ spentAt: '2026-11-02T05:00:00.000Z', model: 'claude-opus-5-5', costInUsd: 15 });
+    spendBeforeRestart.save({ spentAt: '2026-11-02T14:00:00.000Z', model: 'claude-opus-5-5', costInUsd: 10 });
+    const afterRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      databasePath,
+      triage,
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(afterRestart, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-older', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
+        { ...budgetReview, id: 'message-newest', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+      ],
+    });
+
+    await afterRestart.request('/triage-run', { method: 'POST' });
+
+    expect(askedMessageIds).toEqual(['message-newest']);
+  });
 });

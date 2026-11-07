@@ -80,7 +80,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const proposals: Proposal[] = proposalStore
     .loadAll()
     .map(({ messageId }) => ({ messageId, accountEmail: '', action: '' }));
-  let spentInUsd = spendStore.loadAll().reduce((total, { costInUsd }) => total + costInUsd, 0);
+  const businessDate = (instant: Date): string =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
+  let spentInUsd = spendStore
+    .loadAll()
+    .filter(({ spentAt }) => businessDate(new Date(spentAt)) === businessDate(clock.now()))
+    .reduce((total, { costInUsd }) => total + costInUsd, 0);
   const hasReachedDailySpendCeiling = (): boolean =>
     options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd;
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);

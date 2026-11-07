@@ -123,7 +123,7 @@
 - [x] Every proposal is stored append-only with the time it was made and the prompt version that made it
 - [x] Every triage call's spend is logged with its time, model and cost
 - [x] Proposals made and spend logged before the backend restarts (same database file) still exist after it: the message is not triaged again and the spend still counts toward today's ceiling
-- [ ] Spend logged yesterday in America/Mexico_City and reloaded after a backend restart does not count toward today's ceiling, while today's reloaded spend does
+- [x] Spend logged yesterday in America/Mexico_City and reloaded after a backend restart does not count toward today's ceiling, while today's reloaded spend does
 - [ ] The triage queue answers the action block, the groups with their counts, the number of messages remaining and whether the ceiling paused triage
 - [ ] Each queue item says which account it came from and links to the message in Gmail for that account
 - [ ] After a backend restart (same database file), a reloaded proposal keeps its account email, action, category, summary and extract in the queue
