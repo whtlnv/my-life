@@ -25,6 +25,7 @@ import {
 import { openAcknowledgementStore } from './acknowledgement-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
+import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
 import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
 import { openFilterProposalStore } from './filter-proposal-store';
 import { openMailSourceStore } from './mail-source-store';
@@ -428,9 +429,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     filterProposalRejectionStore.save(context.req.param('id'));
     return context.body(null, 200);
   });
-  const approvedFilterProposalIds = new Set<string>();
+  const filterProposalApprovalStore = openFilterProposalApprovalStore(databasePath);
   app.post('/filter-proposals/:id/approval', (context) => {
-    approvedFilterProposalIds.add(context.req.param('id'));
+    filterProposalApprovalStore.save(context.req.param('id'));
     return context.body(null, 200);
   });
   const acknowledgementStore = openAcknowledgementStore(databasePath);
@@ -442,6 +443,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
     const acknowledgedCommandIds = acknowledgementStore.loadAll();
+    const approvedFilterProposalIds = filterProposalApprovalStore.loadAll();
     const archiveCommands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
@@ -453,7 +455,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }));
     const filterCommands = filterProposalStore
       .loadAll()
-      .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.has(stored.id))
+      .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.includes(stored.id))
       .map((stored) => ({ id: `create-filter-${stored.id}`, type: 'create-filter', ...(stored.proposal as object) }));
     const pendingCommands = [...archiveCommands, ...filterCommands].filter(
       (command) => !acknowledgedCommandIds.includes(command.id),
