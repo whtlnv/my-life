@@ -33,7 +33,7 @@
 - [x] `GET /categories` lists each category's five most recent proposals, newest first, each with its summary, action, account and link
 - [x] In an `automatic` category, a new `archive` proposal yields an archive command in `GET /commands?accountEmail=…` with no verdict
 - [x] In an `advise` category, a new `archive` proposal yields no archive command until it is confirmed
-- [ ] In an `automatic` category, a new `act` proposal with a task draft appears in `GET /tasks` with no verdict
+- [x] In an `automatic` category, a new `act` proposal with a task draft appears in `GET /tasks` with no verdict
 - [ ] In an `automatic` category, a new `keep` proposal yields neither a command nor a task
 - [ ] An `archive` proposal made while its category was `automatic` still yields its archive command after the category is switched back to `advise`: the automatic decision is recorded when the proposal is made, as an append-only verdict-like event, not derived from the current mode (supervisor keystone: `GET /commands` reads the current mode at request time)
 - [ ] In an `automatic` category, an `archive` proposal the user then rejects through `POST /verdicts` yields no archive command: the user's later decision wins over the automatic one (supervisor keystone)

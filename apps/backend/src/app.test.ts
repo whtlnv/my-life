@@ -1881,4 +1881,34 @@ describe('backend app', () => {
       commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
     });
   });
+
+  it('lists at GET /tasks with no verdict the task of a new act proposal in a category switched to automatic', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+      taskDraft: { title: 'Review the budget by Friday' },
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await app.request('/categories/action/mode', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'automatic' }),
+    });
+    await proposeBudgetReview(app);
+
+    const response = await app.request('/tasks');
+
+    expect(await response.json()).toEqual({
+      tasks: [
+        {
+          title: 'Review the budget by Friday',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+          accountEmail: 'ana@example.com',
+        },
+      ],
+    });
+  });
 });

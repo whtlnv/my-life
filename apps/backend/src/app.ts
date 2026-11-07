@@ -109,9 +109,12 @@ function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
   return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
 }
 
-function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
+function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[], categoryModes: Record<string, string>) {
   return proposals.flatMap((proposal) => {
-    const effects = proposalEffects(proposal, verdicts);
+    const isAutomatic = categoryModes[proposal.category ?? ''] === 'automatic';
+    const effects = isAutomatic
+      ? triageEffects(proposal as Parameters<typeof triageEffects>[0], { decision: 'confirmed' })
+      : proposalEffects(proposal, verdicts);
     return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
   });
 }
@@ -346,7 +349,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ commands });
   });
   app.get('/tasks', (context) => {
-    return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
+    return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll(), categoryModeStore.loadAll()) });
   });
   const categoryModeStore = openCategoryModeStore(databasePath);
   app.put('/categories/:category/mode', async (context) => {
