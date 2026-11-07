@@ -198,4 +198,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
+
+  it('accepts a cc-thread proposal whose extract says what happened since the user\'s last message', () => {
+    const proposal = {
+      action: 'keep',
+      category: 'cc-thread',
+      summary: 'Marta moved the launch review to next week',
+      extract: { sinceLastMessage: 'Marta and Diego agreed to move the launch review to next Tuesday.' },
+      reason: 'The user is in Cc on a thread they follow; nothing is asked of them.',
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
 });
