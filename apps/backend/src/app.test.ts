@@ -1074,6 +1074,34 @@ describe('backend app', () => {
     });
   });
 
+  it('groups in GET /triage-queue under cc-thread an action proposal for a message where the reporting account is only in cc, not in to', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks the team for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks for a review',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, to: 'team@example.com', cc: 'ana@example.com' }],
+    });
+    await postTriageRun(app);
+
+    const queue = await app.request('/triage-queue');
+
+    const { action, groups } = (await queue.json()) as {
+      action: { messageId: string }[];
+      groups: { category: string; items: { messageId: string }[] }[];
+    };
+    expect(action).toEqual([]);
+    expect(groups.find(({ category }) => category === 'cc-thread')).toMatchObject({
+      items: [{ messageId: 'message-1' }],
+    });
+  });
+
   it('keeps in the action block of GET /triage-queue an action proposal for a message whose To header names the reporting account with a display name and different letter case', async () => {
     const triage = triageAnswering({
       action: 'act',

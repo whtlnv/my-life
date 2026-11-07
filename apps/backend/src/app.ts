@@ -43,7 +43,7 @@ function withDisplayedCategory(
   message: Pick<ReportedMessage, 'to' | 'cc'>,
   accountEmail: string,
 ): Proposal {
-  const isAddressedToAccount = `${message.to ?? ''} ${message.cc ?? ''}`.toLowerCase().includes(accountEmail);
+  const isAddressedToAccount = (message.to ?? '').toLowerCase().includes(accountEmail);
   return proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal;
 }
 
