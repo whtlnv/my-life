@@ -193,10 +193,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (hasReachedDailySpendCeiling()) {
         break;
       }
-      const result = (await options.triage?.propose({
-        ...message,
-        accountEmail: accountEmailByMessageId.get(message.id) ?? '',
-      })) as TriageResult | undefined;
+      const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
+      const result = (await options.triage?.propose({ ...message, accountEmail })) as TriageResult | undefined;
       const costInUsd = result?.costInUsd ?? 0;
       const answeredAt = clock.now().toISOString();
       spentInUsd += costInUsd;
@@ -212,7 +210,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         category: '',
         ...(result?.proposal as Proposal | undefined),
         messageId: message.id,
-        accountEmail: accountEmailByMessageId.get(message.id) ?? '',
+        accountEmail,
       });
     }
     return context.body(null, 200);
