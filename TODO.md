@@ -113,17 +113,20 @@
 - [x] A mail report from an account outside the allow-list is refused and none of its messages are reported
 - [x] A mail report that fails the shared contract is refused with a client error
 - [x] A message reported twice is stored once
+- [ ] A message reported before the backend restarts (a second app opened on the same database file) is still reported after it, and is not counted twice when reported again
 - [ ] Each mail report is stored with the time it was received, and the account's mail source shows when it last reported
 - [ ] A triage run asks for a proposal on each reported message that has none, newest first
 - [ ] A message that already has a proposal is not sent to triage again
 - [ ] A triage run stops asking once today's spend reaches the ceiling
 - [ ] Every proposal is stored append-only with the time it was made and the prompt version that made it
 - [ ] Every triage call's spend is logged with its time, model and cost
+- [ ] Proposals made and spend logged before the backend restarts (same database file) still exist after it: the message is not triaged again and the spend still counts toward today's ceiling
 - [ ] The triage queue answers the action block, the groups with their counts, the number of messages remaining and whether the ceiling paused triage
 - [ ] Each queue item says which account it came from and links to the message in Gmail for that account
 - [ ] A verdict posted for a waiting proposal is stored append-only and the item leaves the queue
 - [ ] A verdict posted for an unknown message is refused as not found
 - [ ] A rejection carrying a correction stores the correction with the verdict
+- [ ] A verdict posted before the backend restarts (same database file) still keeps its item out of the queue after it
 - [ ] Confirming a whole group stores one confirm verdict for every item in that group and none outside it
 - [ ] A confirmed archive queues an archive command for the message's account, listed by `GET /commands?accountEmail=…` (the path the extension already calls) with an `id` and `messageId` per command
 - [ ] The commands for one account do not include another account's commands
