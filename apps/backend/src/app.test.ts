@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { healthResponse } from '@my-life/contracts';
+import { healthResponse, triageCategories } from '@my-life/contracts';
 
 import { createApp } from './app';
 import { createClaudeTriage } from './claude-triage';
@@ -1688,5 +1688,16 @@ describe('backend app', () => {
     const now = await app.request('/now');
 
     expect(await now.json()).toMatchObject({ badgeCount: 1 });
+  });
+
+  it('lists at GET /categories every triage category with mode advise when none has been switched', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    const response = await app.request('/categories');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
+    });
   });
 });

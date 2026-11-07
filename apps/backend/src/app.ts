@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { Hono } from 'hono';
 
-import { calendarSnapshot, mailReport, type HealthResponse } from '@my-life/contracts';
+import { calendarSnapshot, mailReport, triageCategories, type HealthResponse } from '@my-life/contracts';
 import {
   badgeCount,
   buildNowView,
@@ -319,6 +319,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
+  app.get('/categories', (context) =>
+    context.json({ categories: triageCategories.map((category) => ({ category, mode: 'advise' })) }),
+  );
   app.get('/check-later', (context) => {
     return context.json({ checkLater: confirmedCheckLater(proposals, verdictStore.loadAll()) });
   });
