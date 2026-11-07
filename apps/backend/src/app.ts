@@ -34,13 +34,14 @@ import { openVerdictStore, type StoredVerdict } from './verdict-store';
 interface ReportedMessage {
   id: string;
   from: string;
+  subject: string;
   date: string;
   to?: string;
   cc?: string;
   listId?: string;
 }
 
-type Proposal = Parameters<typeof triageQueue>[0][number];
+type Proposal = Parameters<typeof triageQueue>[0][number] & { summary?: string };
 
 function withDisplayedCategory(
   proposal: Proposal,
@@ -127,6 +128,19 @@ function agreementRate(category: string, proposals: Proposal[], verdicts: Stored
   if (categoryProposals.length === 0) return undefined;
   const confirmedCount = categoryProposals.filter(({ messageId }) => isStillConfirmed(messageId, verdicts)).length;
   return confirmedCount / categoryProposals.length;
+}
+
+function recentProposals(category: string, proposals: Proposal[]) {
+  return proposals
+    .filter((proposal) => proposal.category === category)
+    .slice(-5)
+    .reverse()
+    .map((proposal) => ({
+      summary: proposal.summary,
+      action: proposal.action,
+      accountEmail: proposal.accountEmail,
+      link: gmailMessageLink(proposal),
+    }));
 }
 
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
@@ -347,6 +361,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         category,
         mode: categoryModes[category] ?? 'advise',
         agreementRate: agreementRate(category, proposals, verdicts),
+        recentProposals: recentProposals(category, proposals),
       })),
     });
   });

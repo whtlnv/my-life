@@ -1820,4 +1820,45 @@ describe('backend app', () => {
       agreementRate: 0.25,
     });
   });
+
+  it("lists at GET /categories a category's five most recent proposals, newest first, each with its summary, action, account and link", async () => {
+    const triage = {
+      propose: (message: { subject: string }) =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'sales',
+            summary: `${message.subject} pitches a CRM`,
+            extract: { company: message.subject, solution: 'A CRM', problem: 'Scattered customer notes' },
+            reason: 'A sales pitch',
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v1',
+        }),
+    };
+    let now = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => now }, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    for (const index of [1, 2, 3, 4, 5, 6]) {
+      const id = `pitch-${String(index)}`;
+      await postJson(app, '/mail-report', {
+        ...budgetReviewReport,
+        messages: [{ ...budgetReview, id, threadId: id, subject: `Vendor ${String(index)}` }],
+      });
+      await postTriageRun(app);
+      now = new Date(now.getTime() + 60 * 1000);
+    }
+
+    const response = await app.request('/categories');
+
+    const { categories } = (await response.json()) as { categories: { category: string }[] };
+    expect(categories.find(({ category }) => category === 'sales')).toMatchObject({
+      recentProposals: [6, 5, 4, 3, 2].map((index) => ({
+        summary: `Vendor ${String(index)} pitches a CRM`,
+        action: 'keep',
+        accountEmail: 'ana@example.com',
+        link: `https://mail.google.com/mail/?authuser=ana%40example.com#all/pitch-${String(index)}`,
+      })),
+    });
+  });
 });
