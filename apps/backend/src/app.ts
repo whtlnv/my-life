@@ -27,20 +27,19 @@ export interface AppOptions {
 
 const systemClock: Clock = { now: () => new Date() };
 
-const calendarPollingIntervalInMilliseconds = 5 * 60 * 1000;
-
-const mailPollingIntervalInMilliseconds = 60 * 1000;
+const pollingIntervalsInMilliseconds = {
+  mail: 60 * 1000,
+  calendar: 5 * 60 * 1000,
+};
 
 const businessTimeZone = 'America/Mexico_City';
 
 function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock) {
   return stored.map(({ accountEmail, reportedAt }) => {
-    const report = {
-      email: accountEmail,
-      lastReportedAt: reportedAt.toISOString(),
-      pollingIntervalInMilliseconds: calendarPollingIntervalInMilliseconds,
-    };
-    return { email: report.email, lastReportedAt: report.lastReportedAt, stale: !isAccountFresh(report, clock) };
+    const lastReportedAt = reportedAt.toISOString();
+    const pollingIntervalInMilliseconds = pollingIntervalsInMilliseconds.calendar;
+    const stale = !isAccountFresh({ email: accountEmail, lastReportedAt, pollingIntervalInMilliseconds }, clock);
+    return { email: accountEmail, lastReportedAt, stale };
   });
 }
 
@@ -100,11 +99,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
       badgeCount: badgeCount(events, clock),
-      sources: describeSourceFreshness(
-        [...mailSources.values()],
-        { mail: mailPollingIntervalInMilliseconds, calendar: calendarPollingIntervalInMilliseconds },
-        clock,
-      ),
+      sources: describeSourceFreshness([...mailSources.values()], pollingIntervalsInMilliseconds, clock),
     });
   });
   const dashboardDirectory = options.dashboardDirectory;
