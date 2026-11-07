@@ -771,4 +771,53 @@ describe('TriagePage', () => {
       expect.objectContaining({ body: JSON.stringify({ messageId: 'message-31', decision: 'confirmed' }) }),
     );
   });
+
+  it('acts on the previous card when ArrowUp moves focus there, and stays on the first card when pressed again', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-33',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for the slides',
+          extract: { asker: 'Luis Pérez', ask: 'Share the board slides' },
+          reason: 'Luis asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-33',
+        },
+        {
+          messageId: 'message-34',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Marta asks for the signed contract',
+          extract: { asker: 'Marta Gil', ask: 'Send the signed contract' },
+          reason: 'Marta asks the user directly',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-34',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [, secondCard] = within(actionBlock).getAllByRole('article') as [HTMLElement, HTMLElement];
+    await user.click(secondCard);
+    await user.keyboard('{ArrowUp}');
+    await user.keyboard('{ArrowUp}');
+    await user.keyboard('t');
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({ body: JSON.stringify({ messageId: 'message-33', decision: 'confirmed' }) }),
+    );
+    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({ body: JSON.stringify({ messageId: 'message-34', decision: 'confirmed' }) }),
+    );
+  });
 });

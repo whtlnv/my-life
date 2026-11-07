@@ -102,6 +102,8 @@ function ActionCard({ item }: { item: TriageItem }) {
           setCorrecting(true);
         } else if (event.key === 'ArrowDown') {
           (event.currentTarget.nextElementSibling as HTMLElement).focus();
+        } else if (event.key === 'ArrowUp') {
+          (event.currentTarget.previousElementSibling as HTMLElement | null)?.focus();
         } else {
           handleVerdictKey(item, event.key);
         }
