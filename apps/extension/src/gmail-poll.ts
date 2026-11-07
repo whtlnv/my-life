@@ -16,6 +16,7 @@ interface GmailProfile {
 
 interface GmailMessageList {
   messages: { id: string; threadId: string }[];
+  nextPageToken?: string;
 }
 
 interface GmailMessage {
@@ -36,12 +37,17 @@ function toReportedMessage(message: GmailMessage) {
 
 export async function pollGmailOnce(options: PollGmailOptions): Promise<void> {
   const profile = await fetchGmailJson<GmailProfile>(options, `${gmailApi}/profile`);
-  const list = await fetchGmailJson<GmailMessageList>(options, `${gmailApi}/messages?labelIds=INBOX`);
   const messages = [];
-  for (const { id } of list.messages) {
-    const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${id}`);
-    messages.push(toReportedMessage(message));
-  }
+  let pageToken: string | undefined;
+  do {
+    const pageQuery = pageToken === undefined ? '' : `&pageToken=${pageToken}`;
+    const list = await fetchGmailJson<GmailMessageList>(options, `${gmailApi}/messages?labelIds=INBOX${pageQuery}`);
+    for (const { id } of list.messages) {
+      const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${id}`);
+      messages.push(toReportedMessage(message));
+    }
+    pageToken = list.nextPageToken;
+  } while (pageToken !== undefined);
   await options.fetch(`${options.backendUrl}/mail-report`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, historyId: profile.historyId, messages }),
