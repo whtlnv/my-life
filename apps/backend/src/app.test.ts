@@ -1000,4 +1000,19 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ commands: [] });
   });
+
+  it('lists at GET /commands no archive command for an archive proposal that has no verdict yet', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: archiveCcThreadTriage(),
+    });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+
+    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ commands: [] });
+  });
 });
