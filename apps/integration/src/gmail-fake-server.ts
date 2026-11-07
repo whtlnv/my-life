@@ -1,7 +1,14 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense' | 'system-update-burst' | 'sales-pitch' | 'calendar-notification' | 'history-404';
+type GmailScenario =
+  | 'action-to-me'
+  | 'cc-thread'
+  | 'expense'
+  | 'system-update-burst'
+  | 'sales-pitch'
+  | 'calendar-notification'
+  | 'history-404';
 
 interface FakeGmailMessage {
   id: string;
