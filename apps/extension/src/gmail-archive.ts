@@ -30,8 +30,12 @@ export async function carryOutArchiveCommands(options: CarryOutArchiveCommandsOp
     if (!archiveResponse.ok) {
       continue;
     }
-    await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, { method: 'POST' });
+    await acknowledgeCommand(options, command.id);
   }
+}
+
+async function acknowledgeCommand(options: CarryOutArchiveCommandsOptions, commandId: string) {
+  await options.fetch(`${options.backendUrl}/commands/${commandId}/acknowledgement`, { method: 'POST' });
 }
 
 async function archiveMessage(
