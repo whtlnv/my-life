@@ -9,6 +9,7 @@ const extractForCategory: Record<string, z.ZodType | undefined> = {
   action: actionExtract,
   'cc-thread': ccThreadExtract,
   expense: expenseExtract,
+  'system-update': systemUpdateExtract,
 };
 
 const extractMatchesCategory = (proposal: { category: string; extract: unknown }): boolean =>

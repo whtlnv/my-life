@@ -126,4 +126,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
+
+  it('rejects a system-update proposal whose extract has no sending system, even when it carries an ask', () => {
+    const proposal = {
+      action: 'archive',
+      category: 'system-update',
+      summary: 'Sentry reports a new error in the checkout service',
+      extract: { severity: 'error', significant: true, asker: 'Sentry', ask: 'Triage the new error' },
+      reason: 'An automated notification from a monitoring system.',
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });
