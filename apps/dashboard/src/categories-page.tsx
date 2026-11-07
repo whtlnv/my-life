@@ -26,6 +26,19 @@ export const noProposalsYetText = 'no proposals yet';
 
 const rateText = (rate: number | undefined) => (rate === undefined ? noProposalsYetText : agreementRateText(rate));
 
+const RecentProposalList = ({ category, proposals }: { category: string; proposals: RecentProposal[] }) => (
+  <ul aria-label={`${category} proposals`}>
+    {proposals.map((proposal) => (
+      <li key={proposal.link}>
+        <span>{proposal.summary}</span>
+        <span>{proposal.action}</span>
+        <span>{accountName(proposal.accountEmail)}</span>
+        <a href={proposal.link}>Open</a>
+      </li>
+    ))}
+  </ul>
+);
+
 export const CategoriesPage = () => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [expanded, setExpanded] = useState<string | undefined>();
@@ -72,18 +85,7 @@ export const CategoriesPage = () => {
           >
             Recent proposals
           </button>
-          {expanded === row.category && (
-            <ul aria-label={`${row.category} proposals`}>
-              {row.recentProposals.map((proposal) => (
-                <li key={proposal.link}>
-                  <span>{proposal.summary}</span>
-                  <span>{proposal.action}</span>
-                  <span>{accountName(proposal.accountEmail)}</span>
-                  <a href={proposal.link}>Open</a>
-                </li>
-              ))}
-            </ul>
-          )}
+          {expanded === row.category && <RecentProposalList category={row.category} proposals={row.recentProposals} />}
         </li>
       ))}
     </ul>
