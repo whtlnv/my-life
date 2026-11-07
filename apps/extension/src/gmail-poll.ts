@@ -111,15 +111,15 @@ async function fetchInboxMessages(options: PollGmailOptions) {
   return messages;
 }
 
-export async function pollGmailOnce(options: PollGmailOptions): Promise<string> {
+export async function pollGmailOnce(options: PollGmailOptions): Promise<string | undefined> {
   const profile = await fetchGmailJson<GmailProfile>(options, `${gmailApi}/profile`);
   const messages =
     options.storedHistoryId === undefined
       ? await fetchInboxMessages(options)
       : await fetchMessagesAddedSince(options, options.storedHistoryId);
-  await options.fetch(`${options.backendUrl}/mail-report`, {
+  const report = await options.fetch(`${options.backendUrl}/mail-report`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, historyId: profile.historyId, messages }),
   });
-  return profile.historyId;
+  return report.ok ? profile.historyId : options.storedHistoryId;
 }

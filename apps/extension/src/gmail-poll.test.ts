@@ -564,4 +564,33 @@ describe('pollGmailOnce', () => {
 
     expect(historyReadsFrom).toEqual(['98765']);
   });
+
+  it('after a report the backend refuses, the next poll starts from the previous history id', async () => {
+    const historyReadsFrom: (string | null)[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/history`) {
+        historyReadsFrom.push(url.searchParams.get('startHistoryId'));
+        return Promise.resolve(Response.json({ history: [], historyId: '98765' }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ error: 'refused' }, { status: 400 }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const pollOptions = {
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+    };
+
+    const nextHistoryId = await pollGmailOnce({ ...pollOptions, storedHistoryId: '12345' });
+    await pollGmailOnce({ ...pollOptions, storedHistoryId: nextHistoryId });
+
+    expect(historyReadsFrom).toEqual(['12345', '12345']);
+  });
 });
