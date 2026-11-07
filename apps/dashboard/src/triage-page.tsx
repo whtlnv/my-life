@@ -42,28 +42,23 @@ interface TriageQueueResponse {
 export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
 
+function postVerdict(verdict: object) {
+  void fetch('/verdicts', { method: 'POST', body: JSON.stringify(verdict) });
+}
+
 function confirmVerdict(messageId: TriageItem['messageId']) {
-  void fetch('/verdicts', {
-    method: 'POST',
-    body: JSON.stringify({ messageId, decision: 'confirmed' }),
-  });
+  postVerdict({ messageId, decision: 'confirmed' });
 }
 
 function rejectVerdict(messageId: TriageItem['messageId']) {
-  void fetch('/verdicts', {
-    method: 'POST',
-    body: JSON.stringify({ messageId, decision: 'rejected', correction: { action: 'keep' } }),
-  });
+  postVerdict({ messageId, decision: 'rejected', correction: { action: 'keep' } });
 }
 
 function correctToTask(item: TriageItem) {
-  void fetch('/verdicts', {
-    method: 'POST',
-    body: JSON.stringify({
-      messageId: item.messageId,
-      decision: 'rejected',
-      correction: { action: 'act', taskDraft: { title: item.summary } },
-    }),
+  postVerdict({
+    messageId: item.messageId,
+    decision: 'rejected',
+    correction: { action: 'act', taskDraft: { title: item.summary } },
   });
 }
 
