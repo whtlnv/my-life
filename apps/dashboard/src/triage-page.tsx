@@ -76,6 +76,8 @@ function ActionCard({ item }: { item: TriageItem }) {
           correctToTask(item);
         } else if (event.key === 'a' && item.action === 'act') {
           correctToAction(item.messageId, 'archive');
+        } else if (event.key === 'k' && item.action === 'act') {
+          correctToAction(item.messageId, 'keep');
         } else if (event.key === 'r') {
           setCorrecting(true);
         } else if (verdictKeys.has(event.key)) {
