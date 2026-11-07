@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 17:00 · `apps/backend/src/app.test.ts::lists no create-filter command at GET /commands for a pending filter proposal that was never approved`
+- Behavior: A filter proposal with no stored approval never yields a `create-filter` command
+- Predicted: passes on first run (read `app.ts` first: `GET /commands` already filters filter proposals through `approvedFilterProposalIds`)
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: The previous green (approval → create-filter command) already gated on approval, so this TODO item had no missing behavior; kept the test as a guardrail pin after proving it non-vacuous (removing the approval check makes it fail with one create-filter command listed).
+
 ## 2026-11-07 16:53 · `apps/backend/src/app.test.ts::lists at GET /filter-proposals each pending filter proposal with its criteria, label, account and the count of archives behind it`
 - Behavior: `GET /filter-proposals` lists pending proposals with criteria, label, account and the count of archives behind each
 - Predicted: AssertionError — status 404 instead of 200, no such route

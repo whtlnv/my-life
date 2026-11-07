@@ -2513,4 +2513,32 @@ describe('backend app', () => {
       ]) as unknown,
     });
   });
+
+  it('lists no create-filter command at GET /commands for a pending filter proposal that was never approved', async () => {
+    const filter = {
+      propose: () =>
+        Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+          costInUsd: 0.05,
+          promptVersion: 'filter-v1',
+        }),
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
+    await reportTriageAndConfirmShopNewsletters(app);
+
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
+    const commands = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type?: string }[] };
+
+    expect({
+      pendingProposals: listed.proposals.length,
+      createFilterCommands: commands.commands.filter(({ type }) => type === 'create-filter'),
+    }).toEqual({ pendingProposals: 1, createFilterCommands: [] });
+  });
 });
