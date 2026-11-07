@@ -371,7 +371,11 @@ describe('TriagePage', () => {
               action: 'archive',
               category: 'sales',
               summary: 'Pitch for a scheduling assistant',
-              extract: { company: 'Acme', solution: 'AI scheduling assistant', problem: 'Time lost coordinating meetings' },
+              extract: {
+                company: 'Acme',
+                solution: 'AI scheduling assistant',
+                problem: 'Time lost coordinating meetings',
+              },
               reason: 'A cold sales pitch',
               link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-16',
             },
