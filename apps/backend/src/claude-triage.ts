@@ -5,7 +5,11 @@ interface ClaudeTriageDependencies {
   model: string;
   promptPath?: string;
   profileDirectory?: string;
-  createMessage: (request: { model: string; system?: string }) => Promise<unknown>;
+  createMessage: (request: {
+    model: string;
+    system?: string;
+    messages: { role: string; content: string }[];
+  }) => Promise<unknown>;
 }
 
 function readProfile(profileDirectory: string): string {
@@ -16,18 +20,36 @@ function readProfile(profileDirectory: string): string {
 
 export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
   return {
-    propose: async (_message: {
+    propose: async (message: {
       id: string;
+      threadId?: string;
       date: string;
       accountEmail?: string;
+      from?: string;
+      to?: string;
+      cc?: string;
+      subject?: string;
+      snippet?: string;
+      listId?: string;
     }): Promise<{ promptVersion: string } | undefined> => {
+      const content = JSON.stringify({
+        from: message.from,
+        to: message.to,
+        cc: message.cc,
+        subject: message.subject,
+        date: message.date,
+        listId: message.listId,
+        snippet: message.snippet,
+        addressedToUser: true,
+      });
+      const messages = [{ role: 'user', content }];
       if (promptPath === undefined) {
-        await createMessage({ model });
+        await createMessage({ model, messages });
         return undefined;
       }
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
-      await createMessage({ model, system });
+      await createMessage({ model, system, messages });
       return { promptVersion: basename(promptPath, extname(promptPath)) };
     },
   };

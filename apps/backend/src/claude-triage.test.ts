@@ -65,4 +65,39 @@ describe('Claude triage', () => {
 
     expect(sentRequests[0]?.system).toContain('Ana runs the Acme sales team; invoices always matter.');
   });
+
+  it("sends the message's headers, snippet and whether it is addressed to the user", async () => {
+    const sentRequests: { model: string; messages?: { role: string; content: string }[] }[] = [];
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      createMessage: async (request: { model: string; messages?: { role: string; content: string }[] }) => {
+        sentRequests.push(request);
+        return { content: [], usage: { input_tokens: 0, output_tokens: 0 } };
+      },
+    });
+
+    await triage.propose({
+      id: 'message-1',
+      threadId: 'thread-1',
+      accountEmail: 'ana@acme.com',
+      from: 'Bruno <bruno@supplier.com>',
+      to: 'Ana <Ana@acme.com>',
+      cc: 'carla@acme.com',
+      subject: 'Quote for November',
+      date: '2026-11-07T10:00:00Z',
+      snippet: 'Could you approve the attached quote by Friday?',
+      listId: 'quotes.supplier.com',
+    });
+
+    expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toEqual({
+      from: 'Bruno <bruno@supplier.com>',
+      to: 'Ana <Ana@acme.com>',
+      cc: 'carla@acme.com',
+      subject: 'Quote for November',
+      date: '2026-11-07T10:00:00Z',
+      listId: 'quotes.supplier.com',
+      snippet: 'Could you approve the attached quote by Friday?',
+      addressedToUser: true,
+    });
+  });
 });
