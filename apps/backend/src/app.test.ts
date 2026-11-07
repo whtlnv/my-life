@@ -2585,6 +2585,19 @@ describe('backend app', () => {
     expect({ status: rejection.status, proposals: afterRejection.proposals }).toEqual({ status: 200, proposals: [] });
   });
 
+  it('no longer lists at GET /filter-proposals a filter proposal approved through POST /filter-proposals/:id/approval', async () => {
+    const app = appProposingShopNewslettersFilter();
+    await reportTriageAndConfirmShopNewsletters(app);
+    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+
+    const approval = await app.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/approval`, {
+      method: 'POST',
+    });
+    const afterApproval = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
+
+    expect({ status: approval.status, proposals: afterApproval.proposals }).toEqual({ status: 200, proposals: [] });
+  });
+
   it('neither asks the filter port again nor lists a proposal at GET /filter-proposals for further confirmed archives from a sender whose filter proposal was rejected, also after a backend restart on the same database file', async () => {
     const askedCandidates: unknown[] = [];
     const filter = {
