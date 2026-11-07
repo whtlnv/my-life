@@ -18,5 +18,8 @@ export function openFilterProposalApprovalStore(databasePath: string) {
     loadAll(): { proposalId: string; approvedAt: string }[] {
       return loadApprovals.all().map((row) => ({ proposalId: row.proposal_id, approvedAt: row.approved_at }));
     },
+    loadApprovedProposalIds(): string[] {
+      return loadApprovals.all().map((row) => row.proposal_id);
+    },
   };
 }

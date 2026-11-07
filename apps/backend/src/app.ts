@@ -420,7 +420,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/filter-proposals', (context) => {
     const decidedFilterProposalIds = new Set([
       ...filterProposalRejectionStore.loadAll(),
-      ...filterProposalApprovalStore.loadAll().map(({ proposalId }) => proposalId),
+      ...filterProposalApprovalStore.loadApprovedProposalIds(),
     ]);
     return context.json({
       proposals: filterProposalStore
@@ -475,7 +475,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
     const acknowledgedCommandIds = acknowledgementStore.loadAll();
-    const approvedFilterProposalIds = filterProposalApprovalStore.loadAll().map(({ proposalId }) => proposalId);
+    const approvedFilterProposalIds = filterProposalApprovalStore.loadApprovedProposalIds();
     const archiveCommands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
