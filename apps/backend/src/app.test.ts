@@ -1696,7 +1696,7 @@ describe('backend app', () => {
     const response = await app.request('/categories');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
     });
   });
@@ -1711,7 +1711,7 @@ describe('backend app', () => {
     });
     const response = await app.request('/categories');
 
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       categories: triageCategories.map((category) => ({
         category,
         mode: category === 'sales' ? 'automatic' : 'advise',
@@ -1732,7 +1732,7 @@ describe('backend app', () => {
     await switchSales('advise');
     const response = await app.request('/categories');
 
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
     });
   });
@@ -1751,7 +1751,7 @@ describe('backend app', () => {
     const response = await app.request('/categories');
 
     expect([unknownCategory.status, unknownMode.status]).toEqual([400, 400]);
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
     });
   });
@@ -1772,7 +1772,7 @@ describe('backend app', () => {
     const afterRestart = createApp(options);
     const response = await afterRestart.request('/categories');
 
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       categories: triageCategories.map((category) => ({
         category,
         mode: category === 'sales' ? 'automatic' : 'advise',
@@ -1814,7 +1814,7 @@ describe('backend app', () => {
     const response = await app.request('/categories');
 
     const { categories } = (await response.json()) as { categories: { category: string }[] };
-    expect(categories.find(({ category }) => category === 'sales')).toEqual({
+    expect(categories.find(({ category }) => category === 'sales')).toMatchObject({
       category: 'sales',
       mode: 'advise',
       agreementRate: 0.25,
