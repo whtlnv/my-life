@@ -233,4 +233,49 @@ describe('startExtension', () => {
       consoleError.mockRestore();
     }
   });
+
+  it('polls Gmail again every 60 seconds and posts each mail report', async () => {
+    const mailReports: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${gmailApi}/users/me/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
+      }
+      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.href.startsWith(`${gmailApi}/users/me/history`)) {
+        return Promise.resolve(Response.json({ historyId: '4321' }));
+      }
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        mailReports.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const scheduledPolls = new Map<number, () => Promise<void>>();
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
+      accessToken: () => Promise.resolve('token-for-francisco'),
+      backendUrl: 'http://127.0.0.1:7777',
+      now: new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+      every: (milliseconds: number, poll: () => Promise<void>) => {
+        scheduledPolls.set(milliseconds, poll);
+      },
+    });
+    const gmailPoll = scheduledPolls.get(60 * 1000);
+    await gmailPoll?.();
+
+    expect(gmailPoll).toBeDefined();
+    expect(mailReports).toHaveLength(2);
+  });
 });

@@ -4,6 +4,7 @@ import { pollGmailOnce } from './gmail-poll';
 import type { FetchFunction } from './fetch-function';
 
 const calendarPollIntervalMilliseconds = 5 * 60 * 1000;
+const gmailPollIntervalMilliseconds = 60 * 1000;
 
 interface StartExtensionOptions {
   fetch: FetchFunction;
@@ -48,6 +49,9 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
   await pollCalendar();
   await pollGmail().catch((error: unknown) => {
     console.error('Gmail poll failed', error);
+  });
+  options.every?.(gmailPollIntervalMilliseconds, async () => {
+    await pollGmail();
   });
   options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
 }
