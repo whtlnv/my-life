@@ -221,6 +221,32 @@ describe('Claude triage', () => {
     expect(result).toMatchObject({ costInUsd: 10 });
   });
 
+  it('reports the cost of a valid tool-use answer to a prompted request from its input and output tokens at their separate prices', async () => {
+    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
+    writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
+    const answeredProposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Bruno asks Ana to approve the November quote.',
+      extract: { asker: 'Bruno', ask: 'Approve the November quote' },
+      reason: 'A supplier asks Ana directly for an approval.',
+      taskDraft: { title: 'Approve the November quote from Bruno' },
+    };
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      promptPath,
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: async () => ({
+        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
+        usage: { input_tokens: 3_000_000, output_tokens: 100_000 },
+      }),
+    });
+
+    const result = await triage.propose({ id: 'message-8', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+
+    expect(result).toMatchObject({ proposal: answeredProposal, costInUsd: 17.5 });
+  });
+
   it('declares exactly one strict propose_triage tool built from the shared contract, leaves tool choice on auto and keeps the call instruction in the prompt file', async () => {
     const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
     writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');

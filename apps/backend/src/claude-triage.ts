@@ -102,8 +102,12 @@ export function createClaudeTriage({
       }
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
-      await createMessage({ model, system, messages, tools: [proposeTriageTool] });
-      return { promptVersion: basename(promptPath, extname(promptPath)) };
+      const response = await createMessage({ model, system, messages, tools: [proposeTriageTool] });
+      const promptVersion = basename(promptPath, extname(promptPath));
+      if (pricing !== undefined && response.usage !== undefined) {
+        return { promptVersion, proposal: readToolUseInput(response), costInUsd: computeCostInUsd(response.usage, pricing) };
+      }
+      return { promptVersion };
     },
   };
 }
