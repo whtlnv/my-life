@@ -870,4 +870,26 @@ describe('backend app', () => {
     expect(response.status).toBe(404);
     expect(openVerdictStore(databasePath).loadAll()).toEqual([]);
   });
+
+  it('stores the correction of a rejection posted at POST /verdicts together with the verdict', async () => {
+    const proposal = {
+      action: 'keep',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+    };
+    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+    const correction = { action: 'act', taskDraft: { title: 'Review the budget for Luis' } };
+
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'rejected', correction });
+
+    expect(openVerdictStore(databasePath).loadAll()).toEqual([
+      { messageId: 'message-1', decision: 'rejected', correction, decidedAt: '2026-11-02T15:10:00.000Z' },
+    ]);
+  });
 });

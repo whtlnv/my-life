@@ -184,11 +184,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.post('/verdicts', async (context) => {
-    const { messageId, decision } = await context.req.json<{ messageId: string; decision: string }>();
+    const { messageId, decision, correction } = await context.req.json<{
+      messageId: string;
+      decision: string;
+      correction?: unknown;
+    }>();
     if (!proposals.some((proposal) => proposal.messageId === messageId)) {
       return context.body(null, 404);
     }
-    verdictStore.save({ messageId, decision, decidedAt: clock.now().toISOString() });
+    verdictStore.save({ messageId, decision, correction, decidedAt: clock.now().toISOString() });
     return context.body(null, 200);
   });
   app.get('/triage-queue', (context) => {
