@@ -160,4 +160,36 @@ describe('triageQueue', () => {
     const ccThreadGroup = groups.find((group) => group.category === 'cc-thread');
     expect(ccThreadGroup?.proposals).toEqual([newerProposal]);
   });
+
+  it('puts the action and unknown proposals before every other group', () => {
+    const salesProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'sales',
+    };
+    const expenseProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'expense',
+    };
+    const actionProposal = {
+      messageId: 'message-3',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'act',
+      category: 'action',
+    };
+    const unknownProposal = {
+      messageId: 'message-4',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'unknown',
+    };
+    const { groups } = triageQueue([salesProposal, expenseProposal, actionProposal, unknownProposal], []);
+    const leadingCategories = groups.slice(0, 2).map((group) => group.category);
+    expect(leadingCategories).toHaveLength(2);
+    expect(leadingCategories).toContain('action');
+    expect(leadingCategories).toContain('unknown');
+  });
 });

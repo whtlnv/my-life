@@ -43,7 +43,13 @@ const groupBy = <Key>(
 };
 
 const groupByCategory = (proposals: Proposal[]): ProposalGroup[] =>
-  groupBy(proposals, (proposal) => proposal.category).map(({ key, proposals }) => categoryGroup(key, proposals));
+  groupBy(proposals, (proposal) => proposal.category)
+    .map(({ key, proposals }) => categoryGroup(key, proposals))
+    .sort((first, second) => rankOf(first) - rankOf(second));
+
+const leadingCategories = ['action', 'unknown'];
+
+const rankOf = (group: ProposalGroup): number => (leadingCategories.includes(group.category ?? '') ? 0 : 1);
 
 const categoryGroup = (category: string | undefined, proposals: Proposal[]): ProposalGroup => {
   if (category === 'system-update') return { category, proposals, systems: groupBySystem(proposals) };
