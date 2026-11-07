@@ -15,6 +15,6 @@ export const triageEffects = (
   const taskDraft = verdict?.correction?.taskDraft ?? proposal.taskDraft;
   return {
     archives: decidedAction === 'archive' ? [source] : [],
-    tasks: taskDraft ? [{ title: taskDraft.title, ...source }] : [],
+    tasks: decidedAction === 'act' && taskDraft ? [{ title: taskDraft.title, ...source }] : [],
   };
 };

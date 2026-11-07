@@ -65,4 +65,16 @@ describe('triageEffects', () => {
       tasks: [],
     });
   });
+
+  it('produces no task and no archive for an act proposal the user rejected without a correction', () => {
+    const actProposal = {
+      ...archiveProposal,
+      action: 'act',
+      taskDraft: { title: 'Review the quarterly budget' },
+    };
+    expect(triageEffects(actProposal, { decision: 'rejected' })).toEqual({
+      archives: [],
+      tasks: [],
+    });
+  });
 });
