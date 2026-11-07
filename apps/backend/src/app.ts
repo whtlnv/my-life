@@ -100,6 +100,10 @@ function isStillConfirmed(messageId: string, verdicts: StoredVerdict[]): boolean
   return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
 }
 
+function isCleared(proposal: Proposal, verdicts: StoredVerdict[], categoryModes: Record<string, string>): boolean {
+  return isStillConfirmed(proposal.messageId, verdicts) || categoryModes[proposal.category ?? ''] === 'automatic';
+}
+
 function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
   const verdict = latestVerdictFor(proposal.messageId, verdicts);
   return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
@@ -336,9 +340,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
-      .filter(
-        ({ messageId, category }) => isStillConfirmed(messageId, verdicts) || categoryModes[category ?? ''] === 'automatic',
-      )
+      .filter((proposal) => isCleared(proposal, verdicts, categoryModes))
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });
