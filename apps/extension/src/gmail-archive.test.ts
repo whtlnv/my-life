@@ -108,4 +108,40 @@ describe('carryOutArchiveCommands', () => {
       { request: 'modify message-to-archive', body: { removeLabelIds: ['INBOX'], addLabelIds: ['Label_42'] } },
     ]);
   });
+  it('does not acknowledge an archive that Gmail refused and retries it on the next poll', async () => {
+    const gmailRequests: GmailRequest[] = [];
+    const gmail = fakeBackendAndGmail([inboxLabel, archivedLabel], gmailRequests);
+    const events: string[] = [];
+    const acknowledgedCommandIds = new Set<string>();
+    let gmailRefusesNextModify = true;
+    const backendAndFlakyGmail: FetchFunction = (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === 'http://127.0.0.1:7777/commands') {
+        const pending = [{ id: 'command-1', kind: 'archive', messageId: 'message-to-archive' }].filter(
+          (command) => !acknowledgedCommandIds.has(command.id),
+        );
+        return Promise.resolve(Response.json({ commands: pending }));
+      }
+      const acknowledgementPath = /^\/commands\/([^/]+)\/acknowledgement$/.exec(url.pathname);
+      if (url.origin === 'http://127.0.0.1:7777' && acknowledgementPath !== null && init?.method === 'POST') {
+        events.push(`acknowledge ${acknowledgementPath[1] ?? ''}`);
+        acknowledgedCommandIds.add(acknowledgementPath[1] ?? '');
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      if (url.pathname.endsWith('/modify') && gmailRefusesNextModify) {
+        gmailRefusesNextModify = false;
+        events.push('modify refused');
+        return Promise.resolve(Response.json({ error: { code: 500, message: 'Backend Error' } }, { status: 500 }));
+      }
+      if (url.pathname.endsWith('/modify')) {
+        events.push('modify carried out');
+      }
+      return gmail(input, init);
+    };
+
+    await runArchive(backendAndFlakyGmail);
+    await runArchive(backendAndFlakyGmail);
+
+    expect(events).toEqual(['modify refused', 'modify carried out', 'acknowledge command-1']);
+  });
 });

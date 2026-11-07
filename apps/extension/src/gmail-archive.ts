@@ -26,7 +26,10 @@ export async function carryOutArchiveCommands(options: CarryOutArchiveCommandsOp
   const commands = await fetchPendingArchiveCommands(options);
   const archivedLabelId = await findArchivedLabelId(options.fetch, authorization);
   for (const command of commands) {
-    await archiveMessage(options.fetch, authorization, command.messageId, archivedLabelId);
+    const archiveResponse = await archiveMessage(options.fetch, authorization, command.messageId, archivedLabelId);
+    if (!archiveResponse.ok) {
+      continue;
+    }
     await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, { method: 'POST' });
   }
 }
@@ -37,7 +40,7 @@ async function archiveMessage(
   messageId: string,
   archivedLabelId: string,
 ) {
-  await fetch(`${gmailApi}/messages/${messageId}/modify`, {
+  return fetch(`${gmailApi}/messages/${messageId}/modify`, {
     method: 'POST',
     headers: authorization,
     body: JSON.stringify({ removeLabelIds: ['INBOX'], addLabelIds: [archivedLabelId] }),
