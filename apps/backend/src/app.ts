@@ -432,7 +432,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
     const acknowledgedCommandIds = acknowledgementStore.loadAll();
-    const commands = proposals
+    const archiveCommands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
       .filter((proposal) => isCleared(proposal, verdicts))
@@ -440,14 +440,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         id: `archive-${messageId}`,
         messageId,
         label: madeAutomatic ? 'my-life/auto' : 'my-life/archived',
-      }))
-      .filter((command) => !acknowledgedCommandIds.includes(command.id));
+      }));
     const filterCommands = filterProposalStore
       .loadAll()
       .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.has(stored.id))
-      .map((stored) => ({ id: `create-filter-${stored.id}`, type: 'create-filter', ...(stored.proposal as object) }))
-      .filter((command) => !acknowledgedCommandIds.includes(command.id));
-    return context.json({ commands: [...commands, ...filterCommands] });
+      .map((stored) => ({ id: `create-filter-${stored.id}`, type: 'create-filter', ...(stored.proposal as object) }));
+    const pendingCommands = [...archiveCommands, ...filterCommands].filter(
+      (command) => !acknowledgedCommandIds.includes(command.id),
+    );
+    return context.json({ commands: pendingCommands });
   });
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
