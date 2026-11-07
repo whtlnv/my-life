@@ -54,6 +54,17 @@ const pollingIntervalsInMilliseconds = {
 
 const businessTimeZone = 'America/Mexico_City';
 
+function businessDate(instant: Date): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
+}
+
+function spentOnBusinessDateInUsd(spends: { spentAt: string; costInUsd: number }[], instant: Date): number {
+  const day = businessDate(instant);
+  return spends
+    .filter(({ spentAt }) => businessDate(new Date(spentAt)) === day)
+    .reduce((total, { costInUsd }) => total + costInUsd, 0);
+}
+
 function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock) {
   return stored.map(({ accountEmail, reportedAt }) => {
     const lastReportedAt = reportedAt.toISOString();
@@ -80,12 +91,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const proposals: Proposal[] = proposalStore
     .loadAll()
     .map(({ messageId }) => ({ messageId, accountEmail: '', action: '' }));
-  const businessDate = (instant: Date): string =>
-    new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
-  let spentInUsd = spendStore
-    .loadAll()
-    .filter(({ spentAt }) => businessDate(new Date(spentAt)) === businessDate(clock.now()))
-    .reduce((total, { costInUsd }) => total + costInUsd, 0);
+  let spentInUsd = spentOnBusinessDateInUsd(spendStore.loadAll(), clock.now());
   const hasReachedDailySpendCeiling = (): boolean =>
     options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd;
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
