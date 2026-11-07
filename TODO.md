@@ -101,7 +101,7 @@
 - [x] A history response with no `history` field (nothing changed since the stored id) reports zero messages and the current history id
 - [x] The second scheduled Gmail poll starts from the history id the first poll reported, not from an empty inbox read
 - [x] A scheduled Gmail poll that fails is reported to the console and the next scheduled poll still runs
-- [ ] A pending archive command for the profile's account removes the message from the inbox and adds the label `my-life/archived`
+- [x] A pending archive command for the profile's account removes the message from the inbox and adds the label `my-life/archived`
 - [ ] When the label `my-life/archived` does not exist yet, it is created before the first archive
 - [ ] When the label already exists, no second label is created
 - [ ] An archive the extension carried out is acknowledged to the backend and is not carried out again
