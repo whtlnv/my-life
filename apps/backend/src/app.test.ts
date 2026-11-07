@@ -1952,4 +1952,22 @@ describe('backend app', () => {
 
     expect(await response.json()).toEqual({ commands: [] });
   });
+
+  it('still lists at GET /commands with no verdict the archive command of a proposal made while its category was automatic, after a backend restart on the same database file', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage: ccThreadTriage('archive'),
+    };
+    const beforeRestart = createApp(options);
+    await switchCategory(beforeRestart, 'cc-thread', 'automatic');
+    await proposeBudgetReview(beforeRestart);
+
+    const response = await getCommands(createApp(options), 'ana@example.com');
+
+    expect(await response.json()).toEqual({
+      commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
+    });
+  });
 });

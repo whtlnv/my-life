@@ -201,13 +201,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const verdictStore = openVerdictStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const accountEmailByMessageId = new Map<string, string>();
+  const automaticMessageIds = proposalStore.loadAutomaticMessageIds();
   const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => {
     const accountEmail = reportedMessageStore.accountEmailOf(messageId);
-    return withDisplayedCategory(
-      { ...(proposal as Proposal), messageId, accountEmail },
-      reportedMessageStore.recipientsOf(messageId),
-      accountEmail,
-    );
+    return {
+      ...withDisplayedCategory(
+        { ...(proposal as Proposal), messageId, accountEmail },
+        reportedMessageStore.recipientsOf(messageId),
+        accountEmail,
+      ),
+      madeAutomatic: automaticMessageIds.includes(messageId),
+    };
   });
   const loggedSpends = (): { loggedAt: string; costInUsd: number }[] =>
     spendStore.loadAll().map(({ spentAt, costInUsd }) => ({ loggedAt: spentAt, costInUsd }));
@@ -288,12 +292,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const costInUsd = result.costInUsd;
       const answeredAt = clock.now().toISOString();
       spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });
-      proposalStore.save({
-        messageId: message.id,
-        madeAt: answeredAt,
-        promptVersion: result.promptVersion,
-        proposal: result.proposal,
-      });
       const proposal: Proposal = {
         action: '',
         category: '',
@@ -303,6 +301,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       };
       const displayedProposal = withDisplayedCategory(proposal, message, accountEmail);
       const madeAutomatic = categoryModeStore.loadAll()[displayedProposal.category ?? ''] === 'automatic';
+      proposalStore.save({
+        messageId: message.id,
+        madeAt: answeredAt,
+        promptVersion: result.promptVersion,
+        proposal: result.proposal,
+        madeAutomatic,
+      });
       proposals.push({ ...displayedProposal, madeAutomatic });
     }
     return context.body(null, 200);
