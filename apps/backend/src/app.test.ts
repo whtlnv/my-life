@@ -916,4 +916,43 @@ describe('backend app', () => {
 
     expect(await queue.json()).toMatchObject({ action: [], groups: [] });
   });
+  it('stores one confirm verdict for every item of a group confirmed whole at POST /group-verdicts, and none for items outside it', async () => {
+    const expense = {
+      action: 'archive',
+      category: 'expense',
+      summary: 'Receipt from Acme',
+      extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+      reason: 'A receipt to file',
+    };
+    const sales = {
+      action: 'keep',
+      category: 'sales',
+      summary: 'Globex pitches a CRM',
+      extract: { company: 'Globex', solution: 'A CRM', problem: 'Scattered customer notes' },
+      reason: 'A sales pitch',
+    };
+    const proposalsInOrder = [expense, sales, expense];
+    const triage = {
+      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
+    };
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'receipt-newest', threadId: 'thread-1', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'pitch', threadId: 'thread-2', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+        { ...budgetReview, id: 'receipt-older', threadId: 'thread-3', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
+      ],
+    });
+    await app.request('/triage-run', { method: 'POST' });
+
+    const response = await postJson(app, '/group-verdicts', { category: 'expense', decision: 'confirmed' });
+
+    expect(response.status).toBe(200);
+    const stored = openVerdictStore(databasePath).loadAll();
+    expect(stored.map(({ messageId }) => messageId).sort()).toEqual(['receipt-newest', 'receipt-older']);
+    expect(stored.every(({ decision }) => decision === 'confirmed')).toBe(true);
+  });
 });

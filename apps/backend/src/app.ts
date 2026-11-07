@@ -195,6 +195,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     verdictStore.save({ messageId, decision, correction, decidedAt: clock.now().toISOString() });
     return context.body(null, 200);
   });
+  app.post('/group-verdicts', async (context) => {
+    const { category, decision } = await context.req.json<{ category: string; decision: string }>();
+    proposals
+      .filter((proposal) => proposal.category === category)
+      .forEach(({ messageId }) => verdictStore.save({ messageId, decision, decidedAt: clock.now().toISOString() }));
+    return context.body(null, 200);
+  });
   app.get('/triage-queue', (context) => {
     return context.json({
       ...splitActionFromGroups(proposals, verdictStore.loadAll()),
