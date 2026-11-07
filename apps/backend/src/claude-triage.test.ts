@@ -206,6 +206,21 @@ describe('Claude triage', () => {
     expect(result).toEqual({ failure: expect.objectContaining({ input: answeredInput }) });
   });
 
+  it('computes the cost of a call from the tokens the answer reports', async () => {
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: async () => ({
+        content: [],
+        usage: { input_tokens: 1_000_000, output_tokens: 200_000 },
+      }),
+    });
+
+    const result = await triage.propose({ id: 'message-7', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+
+    expect(result).toMatchObject({ costInUsd: 10 });
+  });
+
   it('declares exactly one strict propose_triage tool built from the shared contract, leaves tool choice on auto and keeps the call instruction in the prompt file', async () => {
     const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
     writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');

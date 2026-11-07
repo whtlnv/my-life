@@ -6,12 +6,14 @@ import { isAddressedToUser } from '@my-life/domain';
 
 interface ClaudeResponse {
   content: { type: string; input?: unknown }[];
+  usage?: { input_tokens: number; output_tokens: number };
 }
 
 interface ClaudeTriageDependencies {
   model: string;
   promptPath?: string;
   profileDirectory?: string;
+  pricing?: { inputPerMillionTokensInUsd: number; outputPerMillionTokensInUsd: number };
   createMessage: (request: {
     model: string;
     system?: string;
@@ -57,6 +59,7 @@ interface TriageOutcome {
   promptVersion?: string;
   proposal?: unknown;
   failure?: { input: unknown };
+  costInUsd?: number;
 }
 
 const proposeTriageTool = { name: 'propose_triage', strict: true, input_schema: triageProposal.toJSONSchema() };
@@ -65,7 +68,7 @@ function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
 
-export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
+export function createClaudeTriage({ model, promptPath, profileDirectory, pricing, createMessage }: ClaudeTriageDependencies) {
   return {
     propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome | undefined> => {
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
@@ -73,6 +76,13 @@ export function createClaudeTriage({ model, promptPath, profileDirectory, create
         const response = await createMessage({ model, messages });
         const input = readToolUseInput(response);
         if (!triageProposal.safeParse(input).success) {
+          if (pricing !== undefined && response.usage !== undefined) {
+            const costInUsd =
+              (response.usage.input_tokens * pricing.inputPerMillionTokensInUsd +
+                response.usage.output_tokens * pricing.outputPerMillionTokensInUsd) /
+              1_000_000;
+            return { failure: { input }, costInUsd };
+          }
           return { failure: { input } };
         }
         return { proposal: input };
