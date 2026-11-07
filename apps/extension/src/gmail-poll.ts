@@ -1,6 +1,7 @@
 import type { FetchFunction } from './fetch-function';
 
 const gmailApi = 'https://gmail.googleapis.com/gmail/v1/users/me';
+const maximumRetries = 4;
 
 interface PollGmailOptions {
   fetch: FetchFunction;
@@ -34,7 +35,7 @@ function isRetryable(response: Response) {
 async function fetchGmail(options: PollGmailOptions, url: string) {
   const authorization = { headers: { Authorization: `Bearer ${options.accessToken}` } };
   let response = await options.fetch(url, authorization);
-  for (let attempt = 0; attempt < 4 && isRetryable(response); attempt++) {
+  for (let attempt = 0; attempt < maximumRetries && isRetryable(response); attempt++) {
     await options.wait?.(1000 * 2 ** attempt);
     response = await options.fetch(url, authorization);
   }
