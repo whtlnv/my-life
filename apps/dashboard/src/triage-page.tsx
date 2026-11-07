@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-interface ActionItem {
+interface TriageItem {
   messageId: string;
   summary: string;
   extract: { asker?: string; ask?: string; due?: string };
@@ -8,11 +8,11 @@ interface ActionItem {
 
 interface TriageGroup {
   category: string;
-  items: ActionItem[];
+  items: TriageItem[];
 }
 
 interface TriageQueueResponse {
-  action: ActionItem[];
+  action: TriageItem[];
   groups: TriageGroup[];
 }
 
