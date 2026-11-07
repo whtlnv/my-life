@@ -41,4 +41,19 @@ describe('triageEffects', () => {
       },
     ]);
   });
+
+  it('produces a task with the draft title, the message and its account for an act proposal the user confirmed', () => {
+    const actProposal = {
+      ...archiveProposal,
+      action: 'act',
+      taskDraft: { title: 'Review the quarterly budget' },
+    };
+    expect(triageEffects(actProposal, { decision: 'confirmed' }).tasks).toEqual([
+      {
+        title: 'Review the quarterly budget',
+        messageId: 'message-1',
+        accountEmail: 'franciscoc@psmutuus.com',
+      },
+    ]);
+  });
 });
