@@ -1,6 +1,6 @@
 import type { FetchFunction } from './fetch-function';
+import { gmailApi } from './gmail-api';
 
-const gmailApi = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const maximumRetries = 4;
 const messageReadsInFlight = 10;
 
