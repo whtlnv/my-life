@@ -59,6 +59,8 @@ interface TriageOutcome {
   failure?: { input: unknown };
 }
 
+const proposeTriageTool = { name: 'propose_triage', strict: true, input_schema: triageProposal.toJSONSchema() };
+
 function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
@@ -77,8 +79,7 @@ export function createClaudeTriage({ model, promptPath, profileDirectory, create
       }
       const prompt = readFileSync(promptPath, 'utf8');
       const system = profileDirectory === undefined ? prompt : `${prompt}\n\n${readProfile(profileDirectory)}`;
-      const tools = [{ name: 'propose_triage', strict: true, input_schema: triageProposal.toJSONSchema() }];
-      await createMessage({ model, system, messages, tools });
+      await createMessage({ model, system, messages, tools: [proposeTriageTool] });
       return { promptVersion: basename(promptPath, extname(promptPath)) };
     },
   };
