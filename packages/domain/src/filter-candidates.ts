@@ -13,24 +13,28 @@ export interface FilterCandidate {
   messageIds: string[];
 }
 
-const minimumConfirmedArchives = 3;
+const minimumDecidedArchives = 3;
 
-function groupConfirmedByFilterKey(decidedProposals: DecidedProposal[]): DecidedProposal[][] {
-  const confirmedByFilterKey = new Map<string, DecidedProposal[]>();
+function decidedActionOf(proposal: DecidedProposal): string | undefined {
+  return (
+    proposal.verdict.correction?.action ?? (proposal.verdict.decision === 'confirmed' ? proposal.action : undefined)
+  );
+}
+
+function groupArchivesByFilterKey(decidedProposals: DecidedProposal[]): DecidedProposal[][] {
+  const archivesByFilterKey = new Map<string, DecidedProposal[]>();
   for (const proposal of decidedProposals) {
-    const decidedAction =
-      proposal.verdict.correction?.action ?? (proposal.verdict.decision === 'confirmed' ? proposal.action : undefined);
-    if (decidedAction === 'archive') {
+    if (decidedActionOf(proposal) === 'archive') {
       const key = JSON.stringify([proposal.accountEmail, proposal.listId ?? proposal.from]);
-      confirmedByFilterKey.set(key, [...(confirmedByFilterKey.get(key) ?? []), proposal]);
+      archivesByFilterKey.set(key, [...(archivesByFilterKey.get(key) ?? []), proposal]);
     }
   }
-  return [...confirmedByFilterKey.values()];
+  return [...archivesByFilterKey.values()];
 }
 
 export function filterCandidates(decidedProposals: DecidedProposal[]): FilterCandidate[] {
-  return groupConfirmedByFilterKey(decidedProposals)
-    .filter((proposals) => proposals.length >= minimumConfirmedArchives)
+  return groupArchivesByFilterKey(decidedProposals)
+    .filter((proposals) => proposals.length >= minimumDecidedArchives)
     .map((proposals) => {
       const [first] = proposals as [DecidedProposal];
       return {
