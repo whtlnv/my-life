@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { serve } from '@hono/node-server';
 
 import { createApp } from './app';
-import { createClaudeTriage, type TriagePricing } from './claude-triage';
+import { createClaudeTriage, type ClaudePricing } from './claude-triage';
 import { readStartupSettings } from './startup-settings';
 
 // The shipped composition: settings from the environment (MY_LIFE_*), the SQLite store under Application Support,
@@ -19,7 +19,7 @@ const maximumAnswerTokens = 2048;
 
 // Anthropic list prices per million tokens (2026-11-07). The model id is config; a model missing here disables triage
 // loudly instead of logging a wrong spend.
-const pricingByModel: Record<string, TriagePricing> = {
+const pricingByModel: Record<string, ClaudePricing> = {
   'claude-opus-5-5': { inputPerMillionTokensInUsd: 4, outputPerMillionTokensInUsd: 20 },
   'claude-sonnet-5-5': { inputPerMillionTokensInUsd: 2, outputPerMillionTokensInUsd: 10 },
   'claude-haiku-5-5': { inputPerMillionTokensInUsd: 0.1, outputPerMillionTokensInUsd: 0.5 },

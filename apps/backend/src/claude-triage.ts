@@ -9,7 +9,7 @@ interface ClaudeResponse {
   usage: { input_tokens: number; output_tokens: number };
 }
 
-export interface TriagePricing {
+export interface ClaudePricing {
   inputPerMillionTokensInUsd: number;
   outputPerMillionTokensInUsd: number;
 }
@@ -18,7 +18,7 @@ interface ClaudeTriageDependencies {
   model: string;
   promptPath: string;
   profileDirectory?: string;
-  pricing: TriagePricing;
+  pricing: ClaudePricing;
   createMessage: (request: {
     model: string;
     system: string;
@@ -88,7 +88,7 @@ function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
 
-export function computeCostInUsd(usage: ClaudeResponse['usage'], pricing: TriagePricing): number {
+export function computeCostInUsd(usage: ClaudeResponse['usage'], pricing: ClaudePricing): number {
   return (
     (usage.input_tokens * pricing.inputPerMillionTokensInUsd +
       usage.output_tokens * pricing.outputPerMillionTokensInUsd) /
