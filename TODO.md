@@ -115,6 +115,8 @@
 - [x] A message reported twice is stored once
 - [x] A message reported before the backend restarts (a second app opened on the same database file) is still reported after it, and is not counted twice when reported again
 - [x] Each mail report is stored with the time it was received, and the account's mail source shows when it last reported
+- [ ] The mail source's staleness in `GET /now` uses the Gmail polling interval the app was created with: with a 30-second interval, a report received 70 seconds ago is stale
+- [ ] An account's last mail-report time survives a backend restart (same database file)
 - [ ] A triage run asks for a proposal on each reported message that has none, newest first
 - [ ] A message that already has a proposal is not sent to triage again
 - [ ] A triage run stops asking once today's spend reaches the ceiling
