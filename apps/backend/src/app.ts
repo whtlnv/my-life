@@ -38,6 +38,11 @@ interface ReportedMessage {
 
 type Proposal = Parameters<typeof triageQueue>[0][number];
 
+function withDisplayedCategory(proposal: Proposal, message: ReportedMessage, accountEmail: string): Proposal {
+  const isAddressedToAccount = `${message.to ?? ''} ${message.cc ?? ''}`.includes(accountEmail);
+  return proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal;
+}
+
 // What the Triage port answers for one message: the adapter always reports the cost and the prompt version; the
 // scripted fake may omit the model.
 interface TriageResult {
@@ -239,10 +244,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageId: message.id,
         accountEmail,
       };
-      const isAddressedToAccount = `${message.to ?? ''} ${message.cc ?? ''}`.includes(accountEmail);
-      proposals.push(
-        proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal,
-      );
+      proposals.push(withDisplayedCategory(proposal, message, accountEmail));
     }
     return context.body(null, 200);
   });
