@@ -124,15 +124,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         break;
       }
       const result = (await options.triage?.propose(message)) as TriageResult | undefined;
-      spentInUsd += result?.costInUsd ?? 0;
-      spendStore.save({
-        spentAt: clock.now().toISOString(),
-        model: result?.model ?? '',
-        costInUsd: result?.costInUsd ?? 0,
-      });
+      const costInUsd = result?.costInUsd ?? 0;
+      const answeredAt = clock.now().toISOString();
+      spentInUsd += costInUsd;
+      spendStore.save({ spentAt: answeredAt, model: result?.model ?? '', costInUsd });
       proposalStore.save({
         messageId: message.id,
-        madeAt: clock.now().toISOString(),
+        madeAt: answeredAt,
         promptVersion: result?.promptVersion ?? '',
         proposal: result?.proposal,
       });
