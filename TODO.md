@@ -32,7 +32,7 @@
 - [x] A message whose To lists the account's address is addressed to the user
 - [x] A message that lists the account's address only in Cc is not addressed to the user
 - [x] A To entry with a display name and different letter case (`Francisco <FranciscoC@psmutuus.com>`) still counts as addressed to the user
-- [ ] An `action` proposal on a message addressed to the user stays `action`
+- [x] An `action` proposal on a message addressed to the user stays `action`
 - [ ] An `action` proposal on a message where the user is only in Cc is shown as `cc-thread`
 - [ ] An `archive` proposal with no verdict produces no archive
 - [ ] An `archive` proposal confirmed by the user produces an archive of that message on its account
