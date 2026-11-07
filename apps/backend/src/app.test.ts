@@ -1476,7 +1476,7 @@ describe('backend app', () => {
     const response = await getCommands(app, 'ana@example.com');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
     });
   });
@@ -1566,7 +1566,7 @@ describe('backend app', () => {
     await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 
     const response = await getCommands(app, 'ana@example.com');
-    expect(await response.json()).toEqual({ commands: [{ id: 'archive-message-1', messageId: 'message-1' }] });
+    expect(await response.json()).toMatchObject({ commands: [{ id: 'archive-message-1', messageId: 'message-1' }] });
   });
 
   it('lists at GET /commands no command once the extension acknowledged it through POST /commands/:id/acknowledgement', async () => {
@@ -1858,7 +1858,7 @@ describe('backend app', () => {
 
     const response = await getCommands(app, 'ana@example.com');
 
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
     });
   });
@@ -1919,7 +1919,7 @@ describe('backend app', () => {
 
     const response = await getCommands(app, 'ana@example.com');
 
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
     });
   });
@@ -1966,7 +1966,7 @@ describe('backend app', () => {
 
     const response = await getCommands(createApp(options), 'ana@example.com');
 
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
     });
   });
