@@ -16,7 +16,7 @@
 - [x] An `action` proposal whose extract does not say what is asked fails the shared contract
 - [x] An `action` proposal whose extract is a `cc-thread` extract (what happened since the last message, no ask) fails the shared contract
 - [x] A `cc-thread` proposal whose extract is an `action` extract (asker and ask) fails the shared contract
-- [ ] An `expense` proposal whose extract has vendor, amount, currency and date passes the shared contract
+- [x] An `expense` proposal whose extract has vendor, amount, currency and date passes the shared contract
 - [ ] An `expense` proposal whose extract has no amount fails the shared contract
 - [ ] A `system-update` proposal whose extract has the sending system, a severity and a `significant` flag passes the shared contract
 - [ ] A `system-update` proposal whose extract has no sending system fails the shared contract

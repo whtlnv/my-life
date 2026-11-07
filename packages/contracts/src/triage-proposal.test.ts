@@ -84,4 +84,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('accepts an expense proposal whose extract has vendor, amount, currency and date', () => {
+    const proposal = {
+      action: 'keep',
+      category: 'expense',
+      summary: 'AWS invoice for October',
+      extract: { vendor: 'Amazon Web Services', amount: 1250.5, currency: 'USD', date: '2026-11-03' },
+      reason: 'An invoice the user files for expenses.',
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
 });
