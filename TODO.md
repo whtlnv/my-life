@@ -112,7 +112,7 @@
 - [x] A mail report posted to `POST /mail-report` (the path the extension already calls) from an allow-listed account is accepted and its messages become reported
 - [x] A mail report from an account outside the allow-list is refused and none of its messages are reported
 - [x] A mail report that fails the shared contract is refused with a client error
-- [ ] A message reported twice is stored once
+- [x] A message reported twice is stored once
 - [ ] Each mail report is stored with the time it was received, and the account's mail source shows when it last reported
 - [ ] A triage run asks for a proposal on each reported message that has none, newest first
 - [ ] A message that already has a proposal is not sent to triage again

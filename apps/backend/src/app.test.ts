@@ -420,4 +420,30 @@ describe('backend app', () => {
     expect(posted.status).toBe(400);
     expect(await queue.json()).toMatchObject({ remaining: 0 });
   });
+
+  it('counts a message reported twice at POST /mail-report once in GET /triage-queue', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const report = {
+      accountEmail: 'ana@example.com',
+      historyId: '1001',
+      messages: [
+        {
+          id: 'message-1',
+          threadId: 'thread-1',
+          from: 'Luis <luis@example.com>',
+          to: 'ana@example.com',
+          subject: 'Budget review',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+          snippet: 'Can you review the budget by Friday?',
+        },
+      ],
+    };
+
+    await postJson(app, '/mail-report', report);
+    const second = await postJson(app, '/mail-report', report);
+    const queue = await app.request('/triage-queue');
+
+    expect(second.status).toBe(200);
+    expect(await queue.json()).toMatchObject({ remaining: 1 });
+  });
 });
