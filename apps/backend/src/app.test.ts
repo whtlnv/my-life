@@ -776,4 +776,36 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('keeps in GET /triage-queue the account email, action, category, summary and extract of a proposal made before a backend restart on the same database file', async () => {
+    const proposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+    };
+    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
+    const beforeRestart = createApp(options);
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+    await beforeRestart.request('/triage-run', { method: 'POST' });
+
+    const afterRestart = createApp(options);
+    const queue = await afterRestart.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({
+      action: [
+        {
+          messageId: 'message-1',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Luis asks for a budget review',
+          extract: { asker: 'Luis', ask: 'Review the budget' },
+        },
+      ],
+    });
+  });
 });

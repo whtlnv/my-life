@@ -126,7 +126,7 @@
 - [x] Spend logged yesterday in America/Mexico_City and reloaded after a backend restart does not count toward today's ceiling, while today's reloaded spend does
 - [x] The triage queue answers the action block, the groups with their counts, the number of messages remaining and whether the ceiling paused triage
 - [x] Each queue item says which account it came from and links to the message in Gmail for that account
-- [ ] After a backend restart (same database file), a reloaded proposal keeps its account email, action, category, summary and extract in the queue
+- [x] After a backend restart (same database file), a reloaded proposal keeps its account email, action, category, summary and extract in the queue
 - [ ] A verdict posted for a waiting proposal is stored append-only and the item leaves the queue
 - [ ] A verdict posted for an unknown message is refused as not found
 - [ ] A rejection carrying a correction stores the correction with the verdict

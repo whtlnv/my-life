@@ -109,9 +109,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const spendStore = openSpendStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const accountEmailByMessageId = new Map<string, string>();
-  const proposals: Proposal[] = proposalStore
-    .loadAll()
-    .map(({ messageId }) => ({ messageId, accountEmail: '', action: '' }));
+  const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => ({
+    ...(proposal as Proposal),
+    messageId,
+    accountEmail: reportedMessageStore.accountEmailOf(messageId),
+  }));
   let spentInUsd = spentOnBusinessDateInUsd(spendStore.loadAll(), clock.now());
   const hasReachedDailySpendCeiling = (): boolean =>
     options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd;
@@ -147,7 +149,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (refusal !== undefined) {
       return context.body(null, refusal);
     }
-    report.messages.forEach((message) => reportedMessageStore.save(message.id));
+    report.messages.forEach((message) => reportedMessageStore.save(message.id, report.accountEmail));
     reportedMessages.push(...report.messages);
     report.messages.forEach((message) => accountEmailByMessageId.set(message.id, report.accountEmail));
     mailSourceStore.save(report.accountEmail, clock.now());
