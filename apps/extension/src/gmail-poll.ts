@@ -2,6 +2,7 @@ import type { FetchFunction } from './fetch-function';
 
 const gmailApi = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const maximumRetries = 4;
+const messageReadsInFlight = 10;
 
 interface PollGmailOptions {
   fetch: FetchFunction;
@@ -89,16 +90,22 @@ async function fetchMessagesAddedSince(options: PollGmailOptions, startHistoryId
   return messages;
 }
 
+async function fetchReportedMessagesInBatches(options: PollGmailOptions, listed: { id: string }[]) {
+  const messages = [];
+  for (let start = 0; start < listed.length; start += messageReadsInFlight) {
+    const batch = listed.slice(start, start + messageReadsInFlight);
+    messages.push(...(await Promise.all(batch.map(({ id }) => fetchReportedMessage(options, id)))));
+  }
+  return messages;
+}
+
 async function fetchInboxMessages(options: PollGmailOptions) {
   const messages = [];
   let pageToken: string | undefined;
   do {
     const pageQuery = pageToken === undefined ? '' : `&pageToken=${pageToken}`;
     const list = await fetchGmailJson<GmailMessageList>(options, `${gmailApi}/messages?labelIds=INBOX${pageQuery}`);
-    for (let start = 0; start < list.messages.length; start += 10) {
-      const batch = list.messages.slice(start, start + 10);
-      messages.push(...(await Promise.all(batch.map(({ id }) => fetchReportedMessage(options, id)))));
-    }
+    messages.push(...(await fetchReportedMessagesInBatches(options, list.messages)));
     pageToken = list.nextPageToken;
   } while (pageToken !== undefined);
   return messages;
