@@ -94,9 +94,8 @@ export function createClaudeTriage({
       const costInUsd = computeCostInUsd(response.usage, pricing);
       const input = readToolUseInput(response);
       const parsed = triageProposal.safeParse(input);
-      return parsed.success
-        ? { model, promptVersion, proposal: parsed.data, costInUsd }
-        : { model, promptVersion, failure: { input }, costInUsd };
+      const call = { model, promptVersion, costInUsd };
+      return parsed.success ? { ...call, proposal: parsed.data } : { ...call, failure: { input } };
     },
   };
 }
