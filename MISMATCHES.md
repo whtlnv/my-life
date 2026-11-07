@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-06 19:06 · `packages/domain/src/addressed-to-user.test.ts::is false when only Cc lists the account address`
+- Behavior: A message that lists the account's address only in Cc is not addressed to the user
+- Predicted: pass on first run, because `isAddressedToUser` already reads only `to`
+- Actual: passed (1 passed, 1 skipped)
+- Type: passed unexpectedly
+- Resolution: The previous green (1a034a3) already delivers this behavior because it checks only To. The test was kept as a guard so the next item (display name and letter case) cannot widen the match to Cc. It was not rewritten into a failing test, because that would drive a different behavior.
+
 ## 2026-11-06 19:01 · `packages/contracts/src/triage-proposal.test.ts::accepts a cc-thread proposal whose extract says what happened since the user's last message`
 - Behavior: A `cc-thread` proposal whose extract says what happened since the user's last message passes the shared contract
 - Predicted: passes on first run, because `ccThreadExtract` is already `{ sinceLastMessage: z.string() }` and the opening archive-cc-thread test already parses one

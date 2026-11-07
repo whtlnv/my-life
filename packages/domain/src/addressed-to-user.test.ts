@@ -11,4 +11,13 @@ describe('isAddressedToUser', () => {
 
     expect(isAddressedToUser(message, 'franciscoc@psmutuus.com')).toBe(true);
   });
+
+  it('is false when only Cc lists the account address', () => {
+    const message = {
+      to: 'ana@example.com',
+      cc: 'luis@example.com, franciscoc@psmutuus.com',
+    };
+
+    expect(isAddressedToUser(message, 'franciscoc@psmutuus.com')).toBe(false);
+  });
 });
