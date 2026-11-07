@@ -90,12 +90,14 @@ function ActionCard({ item }: { item: TriageItem }) {
     <article
       tabIndex={0}
       onKeyDown={(event) => {
-        if (correcting && event.key === 'Enter') {
-          correctToCategory(item.messageId, category, note);
-        } else if (correcting && event.key === 'Escape') {
-          setCorrecting(false);
-        } else if (correcting) {
-          if (event.target === event.currentTarget) correctToAction(item.messageId, 'keep');
+        if (correcting) {
+          if (event.key === 'Enter') {
+            correctToCategory(item.messageId, category, note);
+          } else if (event.key === 'Escape') {
+            setCorrecting(false);
+          } else if (event.target === event.currentTarget) {
+            correctToAction(item.messageId, 'keep');
+          }
         } else if (event.key === 'r') {
           setCorrecting(true);
         } else {
