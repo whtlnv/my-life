@@ -32,6 +32,8 @@ interface ReportedMessage {
   id: string;
   from: string;
   date: string;
+  to?: string;
+  cc?: string;
 }
 
 type Proposal = Parameters<typeof triageQueue>[0][number];
@@ -230,13 +232,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         promptVersion: result.promptVersion,
         proposal: result.proposal,
       });
-      proposals.push({
+      const proposal: Proposal = {
         action: '',
         category: '',
         ...(result.proposal as Proposal | undefined),
         messageId: message.id,
         accountEmail,
-      });
+      };
+      const isAddressedToAccount = `${message.to ?? ''} ${message.cc ?? ''}`.includes(accountEmail);
+      proposals.push(
+        proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal,
+      );
     }
     return context.body(null, 200);
   });

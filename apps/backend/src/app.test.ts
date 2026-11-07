@@ -1015,6 +1015,34 @@ describe('backend app', () => {
     });
   });
 
+  it('groups in GET /triage-queue under cc-thread, not in the action block, an action proposal for a message whose to and cc do not contain the reporting account', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks the team for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks for a review',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, to: 'team@example.com', cc: 'pedro@example.com' }],
+    });
+    await postTriageRun(app);
+
+    const queue = await app.request('/triage-queue');
+
+    const { action, groups } = (await queue.json()) as {
+      action: { messageId: string }[];
+      groups: { category: string; items: { messageId: string }[] }[];
+    };
+    expect(action).toEqual([]);
+    expect(groups.find(({ category }) => category === 'cc-thread')).toMatchObject({
+      items: [{ messageId: 'message-1' }],
+    });
+  });
+
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
     const triage = triageAnswering({
       action: 'act',
