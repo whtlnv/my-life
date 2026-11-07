@@ -80,6 +80,7 @@ describe('chooseVerdictExamples', () => {
 
     expect(examples).toEqual([newestFromSender, olderFromSender, newestOfSameCategory]);
   });
+
   it('never chooses a verdict from another sender in another category', () => {
     const fromSender = {
       messageId: 'message-1',
