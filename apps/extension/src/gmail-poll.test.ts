@@ -400,4 +400,47 @@ describe('pollGmailOnce', () => {
       },
     ]);
   });
+
+  it('does not retry a Gmail read that answers 403 and fails the poll without reporting', async () => {
+    let messageReads = 0;
+    const backendPosts: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages` && url.searchParams.get('labelIds') === 'INBOX') {
+        return Promise.resolve(Response.json({ messages: [{ id: 'contract', threadId: 'thread-contract' }] }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages/contract`) {
+        messageReads++;
+        return Promise.resolve(
+          Response.json({ error: { code: 403, message: 'Insufficient Permission' } }, { status: 403 }),
+        );
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        backendPosts.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const waitsInMilliseconds: number[] = [];
+
+    const poll = pollGmailOnce({
+      fetch: fakeFetch,
+      wait: (milliseconds: number) => {
+        waitsInMilliseconds.push(milliseconds);
+        return Promise.resolve();
+      },
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      storedHistoryId: undefined,
+    });
+
+    await expect(poll).rejects.toThrow(/403/);
+    expect(messageReads).toBe(1);
+    expect(waitsInMilliseconds).toEqual([]);
+    expect(backendPosts).toEqual([]);
+  });
 });

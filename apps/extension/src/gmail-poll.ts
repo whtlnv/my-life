@@ -43,6 +43,9 @@ async function fetchGmail(options: PollGmailOptions, url: string) {
 
 async function fetchGmailJson<ResponseBody>(options: PollGmailOptions, url: string): Promise<ResponseBody> {
   const response = await fetchGmail(options, url);
+  if (!response.ok) {
+    throw new Error(`Gmail read failed with ${response.status}`);
+  }
   return (await response.json()) as ResponseBody;
 }
 
