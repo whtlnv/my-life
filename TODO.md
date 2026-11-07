@@ -61,7 +61,7 @@
 - [x] Messages reported but not yet proposed on are counted as remaining, newest first in the order they will be triaged
 - [x] Spend logged today in America/Mexico_City at or above the daily ceiling pauses triage
 - [x] Spend logged today below the daily ceiling does not pause triage
-- [ ] Spend logged before midnight in America/Mexico_City does not count toward today's ceiling
+- [x] Spend logged before midnight in America/Mexico_City does not count toward today's ceiling
 - [ ] The examples for a new message are the most recent verdicts from the same sender
 - [ ] When there are fewer than N same-sender verdicts, the examples are filled with the most recent verdicts of the same category
 - [ ] Verdicts from another sender in another category are never examples

@@ -23,4 +23,14 @@ describe('isTriagePaused', () => {
 
     expect(isTriagePaused(spendLog, { dailyCeilingInUsd: 20, timeZone: 'America/Mexico_City' }, clock)).toBe(false);
   });
+
+  it('does not count spend logged before midnight in America/Mexico_City toward today’s ceiling', () => {
+    const clock: Clock = { now: () => new Date('2026-11-06T18:00:00.000Z') };
+    const spendLog = [
+      { loggedAt: '2026-11-06T05:30:00.000Z', costInUsd: 15 },
+      { loggedAt: '2026-11-06T17:00:00.000Z', costInUsd: 8 },
+    ];
+
+    expect(isTriagePaused(spendLog, { dailyCeilingInUsd: 20, timeZone: 'America/Mexico_City' }, clock)).toBe(false);
+  });
 });
