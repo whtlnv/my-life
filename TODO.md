@@ -87,7 +87,7 @@
 - [x] On its first poll with no stored history id, the extension reports every inbox message, newest first, with the current history id
 - [x] Inbox listing follows every page until the last
 - [x] With a stored history id, the extension reports only the messages added since that id
-- [ ] When the history read answers 404, the extension falls back to a full inbox report
+- [x] When the history read answers 404, the extension falls back to a full inbox report
 - [ ] Each reported message carries its From, To, Cc, Subject, Date and List-Id headers and its snippet, read in batches of metadata
 - [ ] A Gmail read answering 429 or 5xx is retried with backoff
 - [ ] A Gmail read answering 403 is not retried

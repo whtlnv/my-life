@@ -214,4 +214,69 @@ describe('pollGmailOnce', () => {
       },
     ]);
   });
+  it('when the history read answers 404, falls back to a full inbox report', async () => {
+    const messagesById: Record<string, ReturnType<typeof gmailMessage>> = {
+      newest: gmailMessage('newest', 'Contract review', 'Thu, 5 Nov 2026 10:00:00 -0600'),
+      older: gmailMessage('older', 'Invoice October', 'Wed, 4 Nov 2026 09:00:00 -0600'),
+    };
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/history`) {
+        return Promise.resolve(
+          Response.json(
+            { error: { code: 404, message: 'Requested entity was not found.', status: 'NOT_FOUND' } },
+            { status: 404 },
+          ),
+        );
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages` && url.searchParams.get('labelIds') === 'INBOX') {
+        return Promise.resolve(
+          Response.json({
+            messages: [
+              { id: 'newest', threadId: 'thread-newest' },
+              { id: 'older', threadId: 'thread-older' },
+            ],
+          }),
+        );
+      }
+      const messagePath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)$/.exec(url.pathname);
+      if (url.origin === 'https://gmail.googleapis.com' && messagePath !== null) {
+        const message = messagesById[messagePath[1] ?? ''];
+        return Promise.resolve(
+          message === undefined ? new Response('not found', { status: 404 }) : Response.json(message),
+        );
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await pollGmailOnce({
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      storedHistoryId: '12',
+    });
+
+    expect(backendPosts).toEqual([
+      {
+        url: 'http://127.0.0.1:7777/mail-report',
+        body: {
+          accountEmail: 'francisco@example.com',
+          historyId: '98765',
+          messages: [
+            expect.objectContaining({ id: 'newest', subject: 'Contract review' }),
+            expect.objectContaining({ id: 'older', subject: 'Invoice October' }),
+          ],
+        },
+      },
+    ]);
+  });
 });

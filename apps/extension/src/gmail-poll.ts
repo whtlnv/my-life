@@ -45,7 +45,13 @@ interface GmailHistoryList {
 }
 
 async function fetchMessagesAddedSince(options: PollGmailOptions, startHistoryId: string) {
-  const list = await fetchGmailJson<GmailHistoryList>(options, `${gmailApi}/history?startHistoryId=${startHistoryId}`);
+  const response = await options.fetch(`${gmailApi}/history?startHistoryId=${startHistoryId}`, {
+    headers: { Authorization: `Bearer ${options.accessToken}` },
+  });
+  if (response.status === 404) {
+    return fetchInboxMessages(options);
+  }
+  const list = (await response.json()) as GmailHistoryList;
   const messages = [];
   for (const { messagesAdded } of list.history) {
     for (const { message: added } of messagesAdded) {
