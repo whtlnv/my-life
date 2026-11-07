@@ -103,6 +103,31 @@ describe('TriagePage', () => {
     expect(cards).toHaveLength(1);
     expect(within(actionBlock).getByText(/A note from an unfamiliar sender about a pallet/)).toBeInTheDocument();
   });
+
+  it('takes unknown items from the action list only and renders no unknown group button', async () => {
+    const unknownItem = {
+      messageId: 'message-9',
+      accountEmail: 'ana@example.com',
+      action: 'keep',
+      category: 'unknown',
+      summary: 'A forwarded note with no context',
+      extract: {},
+      reason: 'Nothing in the message fits a known category',
+    };
+    answerGetTriageQueueWith({
+      action: [unknownItem],
+      groups: [{ category: 'unknown', count: 1, items: [unknownItem] }],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    expect(within(actionBlock).getAllByRole('article')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /unknown/ })).not.toBeInTheDocument();
+  });
+
   it('says an action card with no due time has none', async () => {
     answerGetTriageQueueWith({
       action: [

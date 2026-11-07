@@ -169,7 +169,7 @@
 - [x] An `action` card with no due time says it has none
 - [x] Every item shows its reason, its account and a link to the message
 - [x] Each category group shows collapsed with its count
-- [ ] An `unknown` item arrives in the payload's `action` list (as the backend sends it) and shows in the action block; the page renders no `unknown` group button
+- [x] An `unknown` item arrives in the payload's `action` list (as the backend sends it) and shows in the action block; the page renders no `unknown` group button
 - [ ] Expanding a group lists its items
 - [ ] A `system-update` group lists its items under their sending system, and a `significant` item is flagged
 - [ ] An `expense` item shows vendor, amount, currency and date

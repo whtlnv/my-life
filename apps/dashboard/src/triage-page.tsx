@@ -47,20 +47,20 @@ export function TriagePage() {
 
   if (queue === null) return null;
 
-  const unknownItems = queue.groups.find((group) => group.category === 'unknown')?.items ?? [];
-
   return (
     <>
       <section aria-label="Action">
-        {[...queue.action, ...unknownItems].map((item) => (
+        {queue.action.map((item) => (
           <ActionCard key={item.messageId} item={item} />
         ))}
       </section>
-      {queue.groups.map((group) => (
-        <button key={group.category} type="button" aria-expanded={false}>
-          {group.category} {group.count}
-        </button>
-      ))}
+      {queue.groups
+        .filter((group) => group.category !== 'unknown')
+        .map((group) => (
+          <button key={group.category} type="button" aria-expanded={false}>
+            {group.category} {group.count}
+          </button>
+        ))}
     </>
   );
 }
