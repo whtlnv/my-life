@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-06 22:23 · `apps/extension/src/gmail-archive.test.ts::creates no second label my-life/archived when the label already exists`
+- Behavior: When the label already exists, no second label is created
+- Predicted: pass on first run, because `findArchivedLabelId` already returns the existing label's id before any create request
+- Actual: passed (1 passed, 2 skipped)
+- Type: passed unexpectedly
+- Resolution: The previous green (b88ff09) delivered this through its early return. A temporary mutation (`existingLabel !== undefined && false`) made the test fail (`AssertionError`, one label creation instead of none), so it is not vacuous. The production file was restored and the test kept as the regression pin; /green has nothing to add.
+
 ## 2026-11-06 21:53 · `apps/extension/src/extension-start.test.ts::posts the Gmail report to the backend with the profile account email`
 - Behavior: The report is posted to the backend with the profile's account email
 - Predicted: pass (could not predict a right-reason failure: `extension-start.ts` already passes the profile's `accountEmail` to `pollGmailOnce`, which posts it in `/mail-report`)

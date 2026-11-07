@@ -86,4 +86,47 @@ describe('carryOutArchiveCommands', () => {
       { request: 'modify message-to-archive', body: { removeLabelIds: ['INBOX'], addLabelIds: ['Label_99'] } },
     ]);
   });
+
+  it('creates no second label my-life/archived when the label already exists', async () => {
+    const labelCreations: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (
+        url.origin + url.pathname === 'http://127.0.0.1:7777/commands' &&
+        url.searchParams.get('accountEmail') === 'francisco@example.com'
+      ) {
+        return Promise.resolve(
+          Response.json({ commands: [{ id: 'command-1', kind: 'archive', messageId: 'message-to-archive' }] }),
+        );
+      }
+      if (url.origin + url.pathname === `${gmailApi}/labels` && init?.method === 'POST') {
+        labelCreations.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ id: 'Label_99', name: 'my-life/archived', type: 'user' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/labels`) {
+        return Promise.resolve(
+          Response.json({
+            labels: [
+              { id: 'INBOX', name: 'INBOX', type: 'system' },
+              { id: 'Label_42', name: 'my-life/archived', type: 'user' },
+            ],
+          }),
+        );
+      }
+      const modifyPath = /^\/gmail\/v1\/users\/me\/messages\/([^/]+)\/modify$/.exec(url.pathname);
+      if (url.origin === 'https://gmail.googleapis.com' && modifyPath !== null && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ id: modifyPath[1], labelIds: ['Label_42'] }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await carryOutArchiveCommands({
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+    });
+
+    expect(labelCreations).toEqual([]);
+  });
 });
