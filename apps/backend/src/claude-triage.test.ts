@@ -142,7 +142,12 @@ describe('Claude triage', () => {
     ];
 
     await triage.propose(
-      { id: 'message-3', accountEmail: 'ana@acme.com', from: 'Bruno <bruno@supplier.com>', date: '2026-11-07T10:00:00Z' },
+      {
+        id: 'message-3',
+        accountEmail: 'ana@acme.com',
+        from: 'Bruno <bruno@supplier.com>',
+        date: '2026-11-07T10:00:00Z',
+      },
       examples,
     );
 
@@ -166,7 +171,11 @@ describe('Claude triage', () => {
       }),
     });
 
-    const result = await triage.propose({ id: 'message-4', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+    const result = await triage.propose({
+      id: 'message-4',
+      accountEmail: 'ana@acme.com',
+      date: '2026-11-07T10:00:00Z',
+    });
 
     expect(result).toMatchObject({ proposal: answeredProposal });
   });
@@ -187,7 +196,11 @@ describe('Claude triage', () => {
       }),
     });
 
-    const result = await triage.propose({ id: 'message-5', accountEmail: 'ana@acme.com', date: '2026-11-07T10:00:00Z' });
+    const result = await triage.propose({
+      id: 'message-5',
+      accountEmail: 'ana@acme.com',
+      date: '2026-11-07T10:00:00Z',
+    });
 
     expect(result).toEqual({ failure: expect.objectContaining({ input: answeredInput }) });
   });
