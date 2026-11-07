@@ -570,6 +570,17 @@ describe('backend app', () => {
     expect(askedMessageIds).toEqual(['message-newest', 'message-middle', 'message-older']);
   });
 
+  it('leaves every reported message untriaged and logs no spend at POST /triage-run when no triage port is configured', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const run = await postTriageRun(app);
+    const queue = await app.request('/triage-queue');
+
+    expect(run.status).toBe(200);
+    expect(await queue.json()).toMatchObject({ action: [], groups: [], remaining: 1, paused: false });
+  });
+
   it('hands triage at POST /triage-run each message with the email of the account that reported it', async () => {
     const askedMessages: unknown[] = [];
     const triage = {

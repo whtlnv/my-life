@@ -36,11 +36,13 @@ interface ReportedMessage {
 
 type Proposal = Parameters<typeof triageQueue>[0][number];
 
+// What the Triage port answers for one message: the adapter always reports the cost and the prompt version; the
+// scripted fake may omit the model.
 interface TriageResult {
-  costInUsd?: number;
+  costInUsd: number;
   model?: string;
   proposal?: unknown;
-  promptVersion?: string;
+  promptVersion: string;
 }
 
 export interface AppOptions {
@@ -207,27 +209,31 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.post('/triage-run', async (context) => {
+    const triage = options.triage;
+    if (triage === undefined) {
+      return context.body(null, 200);
+    }
     for (const message of triageQueue(proposals, [], reportedMessages).remaining) {
       if (hasReachedDailySpendCeiling()) {
         break;
       }
       const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
       const examples = verdictExamplesFor(message);
-      const result = await options.triage?.propose({ ...message, accountEmail }, examples);
-      const costInUsd = result?.costInUsd ?? 0;
+      const result = await triage.propose({ ...message, accountEmail }, examples);
+      const costInUsd = result.costInUsd;
       const answeredAt = clock.now().toISOString();
       spentInUsd += costInUsd;
-      spendStore.save({ spentAt: answeredAt, model: result?.model ?? '', costInUsd });
+      spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });
       proposalStore.save({
         messageId: message.id,
         madeAt: answeredAt,
-        promptVersion: result?.promptVersion ?? '',
-        proposal: result?.proposal,
+        promptVersion: result.promptVersion,
+        proposal: result.proposal,
       });
       proposals.push({
         action: '',
         category: '',
-        ...(result?.proposal as Proposal | undefined),
+        ...(result.proposal as Proposal | undefined),
         messageId: message.id,
         accountEmail,
       });
