@@ -5,7 +5,7 @@
 ### Contracts
 
 - [x] A mail report carrying the account email, the mailbox history id and messages with id, thread id, From, To, Cc, Subject, Date, snippet and optional List-Id passes the shared contract
-- [ ] A mail report whose message has no id fails the shared contract
+- [x] A mail report whose message has no id fails the shared contract
 - [ ] A mail report whose message has no Cc header passes the shared contract
 - [ ] A mail report whose message has no List-Id header passes the shared contract
 - [ ] A triage proposal with action `archive`, category `cc-thread`, a one-line summary, the category's extract and a reason passes the shared contract

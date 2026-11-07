@@ -24,4 +24,25 @@ describe('mailReport', () => {
 
     expect(mailReport.parse(report)).toEqual(report);
   });
+
+  it('rejects a report whose message has no id', () => {
+    const report = {
+      accountEmail: 'francisco@example.com',
+      historyId: '987654',
+      messages: [
+        {
+          threadId: 'thread-1',
+          from: 'Ana <ana@example.com>',
+          to: 'Francisco <francisco@example.com>',
+          cc: 'Luis <luis@example.com>',
+          subject: 'Quarterly numbers',
+          date: 'Fri, 06 Nov 2026 10:15:00 -0600',
+          snippet: 'Can you review the attached numbers before Monday?',
+          listId: '<finance.example.com>',
+        },
+      ],
+    };
+
+    expect(mailReport.safeParse(report).success).toBe(false);
+  });
 });
