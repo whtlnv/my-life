@@ -7,6 +7,7 @@ import { calendarSnapshot, mailReport, type HealthResponse } from '@my-life/cont
 import {
   badgeCount,
   buildNowView,
+  chooseVerdictExamples,
   describeSourceFreshness,
   isAccountFresh,
   mergeCalendarSnapshots,
@@ -162,16 +163,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const verdictExampleLimit = 8;
   const verdictExamplesFor = (message: ReportedMessage) =>
-    verdictStore
-      .loadAll()
-      .map((verdict) => ({
+    chooseVerdictExamples(
+      message,
+      verdictStore.loadAll().map((verdict) => ({
         ...verdict,
-        from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from,
-        category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category,
-      }))
-      .filter((verdict) => verdict.from === message.from)
-      .sort((first, second) => Date.parse(second.decidedAt) - Date.parse(first.decidedAt))
-      .slice(0, verdictExampleLimit);
+        from: reportedMessages.find((reported) => reported.id === verdict.messageId)?.from ?? '',
+        category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ?? '',
+      })),
+      verdictExampleLimit,
+    );
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
@@ -196,7 +196,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (refusal !== undefined) {
       return context.body(null, refusal);
     }
-    report.messages.forEach((message) => reportedMessageStore.save(message.id, report.accountEmail));
+    report.messages.forEach((message) => {
+      reportedMessageStore.save(message.id, report.accountEmail);
+    });
     reportedMessages.push(...report.messages);
     report.messages.forEach((message) => accountEmailByMessageId.set(message.id, report.accountEmail));
     mailSourceStore.save(report.accountEmail, clock.now());
@@ -247,7 +249,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { category, decision } = await context.req.json<{ category: string; decision: string }>();
     proposals
       .filter((proposal) => proposal.category === category)
-      .forEach(({ messageId }) => verdictStore.save({ messageId, decision, decidedAt: clock.now().toISOString() }));
+      .forEach(({ messageId }) => {
+        verdictStore.save({ messageId, decision, decidedAt: clock.now().toISOString() });
+      });
     return context.body(null, 200);
   });
   app.get('/triage-queue', (context) => {

@@ -7,3 +7,4 @@ export { badgeCount } from './badge-count';
 export { triageQueue } from './triage-queue';
 export { triageEffects } from './triage-effects';
 export { isAddressedToUser } from './addressed-to-user';
+export { chooseVerdictExamples } from './verdict-examples';
