@@ -33,6 +33,14 @@ const expenseProposal = {
   reason: 'A receipt for a purchase',
 };
 
+const salesProposal = {
+  action: 'keep',
+  category: 'sales',
+  summary: 'Nubeforma pitches invoice automation',
+  extract: { company: 'Nubeforma', solution: 'Invoice automation', problem: 'Manual invoice capture' },
+  reason: 'A vendor pitching a product',
+};
+
 type Backend = ReturnType<typeof createApp>;
 
 interface MessageSeenByTriage {
@@ -168,5 +176,20 @@ describe('Gmail fake server', () => {
       ]),
     );
     expect(systems).toHaveLength(2);
+  });
+  it('polling the sales-pitch scenario shows the pitch with its company in the sales group of GET /triage-queue', async () => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => salesProposal);
+    await pollScenarioIntoBackend('sales-pitch', backend);
+    const queue = await runTriageAndReadQueue<{
+      groups: { category: string; items: { messageId: string; extract: { company?: string } }[] }[];
+    }>(backend);
+
+    expect(messagesSeenByTriage).toHaveLength(1);
+    const salesItems = queue.groups.find(({ category }) => category === 'sales')?.items ?? [];
+    expect(salesItems).toHaveLength(1);
+    expect(salesItems[0]).toMatchObject({
+      messageId: messagesSeenByTriage[0]?.id,
+      extract: { company: salesProposal.extract.company },
+    });
   });
 });
