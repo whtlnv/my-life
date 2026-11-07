@@ -42,12 +42,20 @@ interface TriageQueueResponse {
 export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
 
+function postJson(path: string, body: object) {
+  void fetch(path, { method: 'POST', body: JSON.stringify(body) });
+}
+
 function postVerdict(verdict: object) {
-  void fetch('/verdicts', { method: 'POST', body: JSON.stringify(verdict) });
+  postJson('/verdicts', verdict);
 }
 
 function confirmVerdict(messageId: TriageItem['messageId']) {
   postVerdict({ messageId, decision: 'confirmed' });
+}
+
+function confirmGroup(category: TriageGroup['category']) {
+  postJson('/group-verdicts', { category, decision: 'confirmed' });
 }
 
 function correctToAction(messageId: TriageItem['messageId'], action: 'keep' | 'archive') {
@@ -180,10 +188,7 @@ function CategoryGroup({ group }: { group: TriageGroup }) {
         }}
         onKeyDown={(event) => {
           if (event.key === 'c') {
-            void fetch('/group-verdicts', {
-              method: 'POST',
-              body: JSON.stringify({ category: group.category, decision: 'confirmed' }),
-            });
+            confirmGroup(group.category);
           }
         }}
       >
