@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-06 23:52 · `apps/backend/src/app.test.ts::keeps out of GET /triage-queue after a backend restart on the same database file an item whose verdict was posted before it`
+- Behavior: A verdict posted before the backend restarts (same database file) still keeps its item out of the queue after it
+- Predicted: passes on first run — `GET /triage-queue` already reads `verdictStore.loadAll()` from SQLite on every request, so no right-reason failure was available
+- Actual: passed on first run, as predicted
+- Type: passed unexpectedly (relative to the TODO item, which assumed the behavior was missing)
+- Resolution: The first verdict item (1046f55) already made verdicts durable by reading them from the store per request; the test is kept as a regression pin (it would fail if verdicts were held in memory), and no rewrite was made because any failing variant would drive a different behavior.
+
 ## 2026-11-06 22:23 · `apps/extension/src/gmail-archive.test.ts::creates no second label my-life/archived when the label already exists`
 - Behavior: When the label already exists, no second label is created
 - Predicted: pass on first run, because `findArchivedLabelId` already returns the existing label's id before any create request

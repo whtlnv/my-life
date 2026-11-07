@@ -131,7 +131,7 @@
 - [x] A verdict posted for a waiting proposal is stored append-only and the item leaves the queue
 - [x] A verdict posted for an unknown message is refused as not found
 - [x] A rejection carrying a correction stores the correction with the verdict
-- [ ] A verdict posted before the backend restarts (same database file) still keeps its item out of the queue after it
+- [x] A verdict posted before the backend restarts (same database file) still keeps its item out of the queue after it
 - [ ] Confirming a whole group stores one confirm verdict for every item in that group and none outside it
 - [ ] A confirmed archive queues an archive command for the message's account, listed by `GET /commands?accountEmail=…` (the path the extension already calls) with an `id` and `messageId` per command
 - [ ] The commands for one account do not include another account's commands

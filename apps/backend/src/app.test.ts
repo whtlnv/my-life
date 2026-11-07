@@ -892,4 +892,26 @@ describe('backend app', () => {
       { messageId: 'message-1', decision: 'rejected', correction, decidedAt: '2026-11-02T15:10:00.000Z' },
     ]);
   });
+
+  it('keeps out of GET /triage-queue after a backend restart on the same database file an item whose verdict was posted before it', async () => {
+    const proposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+    };
+    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
+    const beforeRestart = createApp(options);
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+    await beforeRestart.request('/triage-run', { method: 'POST' });
+    await postJson(beforeRestart, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+
+    const afterRestart = createApp(options);
+    const queue = await afterRestart.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({ action: [], groups: [] });
+  });
 });
