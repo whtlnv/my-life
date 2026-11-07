@@ -35,6 +35,22 @@ function toReportedMessage(message: GmailMessage) {
   return { id: message.id, threadId: message.threadId, subject };
 }
 
+interface GmailHistoryList {
+  history: { messagesAdded: { message: { id: string } }[] }[];
+}
+
+async function fetchMessagesAddedSince(options: PollGmailOptions, startHistoryId: string) {
+  const list = await fetchGmailJson<GmailHistoryList>(options, `${gmailApi}/history?startHistoryId=${startHistoryId}`);
+  const messages = [];
+  for (const { messagesAdded } of list.history) {
+    for (const { message: added } of messagesAdded) {
+      const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${added.id}`);
+      messages.push(toReportedMessage(message));
+    }
+  }
+  return messages;
+}
+
 async function fetchInboxMessages(options: PollGmailOptions) {
   const messages = [];
   let pageToken: string | undefined;
@@ -52,7 +68,10 @@ async function fetchInboxMessages(options: PollGmailOptions) {
 
 export async function pollGmailOnce(options: PollGmailOptions): Promise<void> {
   const profile = await fetchGmailJson<GmailProfile>(options, `${gmailApi}/profile`);
-  const messages = await fetchInboxMessages(options);
+  const messages =
+    options.storedHistoryId === undefined
+      ? await fetchInboxMessages(options)
+      : await fetchMessagesAddedSince(options, options.storedHistoryId);
   await options.fetch(`${options.backendUrl}/mail-report`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, historyId: profile.historyId, messages }),
