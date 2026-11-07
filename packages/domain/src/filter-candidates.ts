@@ -2,12 +2,13 @@ export interface DecidedProposal {
   messageId: string;
   accountEmail: string;
   from: string;
+  listId?: string;
   verdict: { decision: string };
 }
 
 export interface FilterCandidate {
   accountEmail: string;
-  criteria: { from: string };
+  criteria: { from: string } | { listId: string };
   messageIds: string[];
 }
 
@@ -17,7 +18,8 @@ function groupConfirmedBySender(decidedProposals: DecidedProposal[]): DecidedPro
   const confirmedBySender = new Map<string, DecidedProposal[]>();
   for (const proposal of decidedProposals) {
     if (proposal.verdict.decision === 'confirmed') {
-      confirmedBySender.set(proposal.from, [...(confirmedBySender.get(proposal.from) ?? []), proposal]);
+      const key = proposal.listId ?? proposal.from;
+      confirmedBySender.set(key, [...(confirmedBySender.get(key) ?? []), proposal]);
     }
   }
   return [...confirmedBySender.values()];
@@ -30,7 +32,7 @@ export function filterCandidates(decidedProposals: DecidedProposal[]): FilterCan
       const [first] = proposals as [DecidedProposal];
       return {
         accountEmail: first.accountEmail,
-        criteria: { from: first.from },
+        criteria: first.listId === undefined ? { from: first.from } : { listId: first.listId },
         messageIds: proposals.map((proposal) => proposal.messageId),
       };
     });

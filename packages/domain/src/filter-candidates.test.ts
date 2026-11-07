@@ -81,4 +81,26 @@ describe('filterCandidates', () => {
       },
     ]);
   });
+
+  it('proposes a candidate on the List-Id, not the sender, after three confirmed archives carrying that List-Id', () => {
+    const onList = (messageId: string, from: string) => ({
+      ...confirmedArchive(messageId, 'sales'),
+      from,
+      listId: 'announcements.vendor.example',
+    });
+
+    expect(
+      filterCandidates([
+        onList('message-1', 'ana@vendor.example'),
+        onList('message-2', 'luis@vendor.example'),
+        onList('message-3', 'marta@vendor.example'),
+      ]),
+    ).toEqual([
+      {
+        accountEmail: 'franciscoc@psmutuus.com',
+        criteria: { listId: 'announcements.vendor.example' },
+        messageIds: ['message-1', 'message-2', 'message-3'],
+      },
+    ]);
+  });
 });
