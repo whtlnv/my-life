@@ -178,6 +178,9 @@
 - [ ] Pressing `k` on a focused card keeps it
 - [ ] Pressing `a` on a focused card archives it
 - [ ] Pressing `r` on a focused card asks for a correction and rejects with it
+- [ ] Pressing `t` on a card whose proposal is `keep` or `archive` posts a rejection with a correction to `act` and a task draft titled from the card's summary, not a confirmation
+- [ ] Pressing `a` on a card whose proposal is `act` or `keep` posts a rejection with a correction to `archive`, not a confirmation
+- [ ] Pressing `k` on a card whose proposal is `archive` or `act` posts a rejection with a correction to `keep`, not a confirmation
 - [ ] Moving focus with the keyboard changes which card a key acts on
 - [ ] The confirm-all key on a focused group confirms that group only
 - [ ] An item disappears from the page once its verdict is accepted
