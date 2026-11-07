@@ -57,7 +57,7 @@ async function fetchPendingArchiveCommands(options: CarryOutArchiveCommandsOptio
   return commands;
 }
 
-async function findOrCreateLabelId(fetch: FetchFunction, authorization: { Authorization: string }, labelName: string) {
+export async function findOrCreateLabelId(fetch: FetchFunction, authorization: { Authorization: string }, labelName: string) {
   const { labels } = (await (await fetch(`${gmailApi}/labels`, { headers: authorization })).json()) as {
     labels: GmailLabel[];
   };
