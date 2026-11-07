@@ -36,9 +36,26 @@ function ActionCard({ item }: { item: TriageItem }) {
   );
 }
 
+function CategoryGroup({ group }: { group: TriageGroup }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <section>
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => {
+          setExpanded(true);
+        }}
+      >
+        {group.category} {group.count}
+      </button>
+      {expanded && group.items.map((item) => <p key={item.messageId}>{item.summary}</p>)}
+    </section>
+  );
+}
+
 export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     void fetch('/triage-queue')
@@ -57,23 +74,9 @@ export function TriagePage() {
       </section>
       {queue.groups
         .filter((group) => group.category !== 'unknown')
-        .map((group) => {
-          const expanded = expandedCategories.includes(group.category);
-          return (
-            <section key={group.category}>
-              <button
-                type="button"
-                aria-expanded={expanded}
-                onClick={() => {
-                  setExpandedCategories([...expandedCategories, group.category]);
-                }}
-              >
-                {group.category} {group.count}
-              </button>
-              {expanded && group.items.map((item) => <p key={item.messageId}>{item.summary}</p>)}
-            </section>
-          );
-        })}
+        .map((group) => (
+          <CategoryGroup key={group.category} group={group} />
+        ))}
     </>
   );
 }
