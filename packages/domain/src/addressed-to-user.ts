@@ -3,4 +3,4 @@ export interface AddressedMessage {
 }
 
 export const isAddressedToUser = (message: AddressedMessage, accountAddress: string): boolean =>
-  message.to.includes(accountAddress);
+  message.to.toLowerCase().includes(accountAddress);

@@ -20,4 +20,13 @@ describe('isAddressedToUser', () => {
 
     expect(isAddressedToUser(message, 'franciscoc@psmutuus.com')).toBe(false);
   });
+
+  it('is true when To lists the account address with a display name and different letter case', () => {
+    const message = {
+      to: 'ana@example.com, Francisco <FranciscoC@psmutuus.com>',
+      cc: 'luis@example.com',
+    };
+
+    expect(isAddressedToUser(message, 'franciscoc@psmutuus.com')).toBe(true);
+  });
 });
