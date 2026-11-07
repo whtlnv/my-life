@@ -28,6 +28,9 @@ const postRegistration = (app: App, email: string) => postJson(app, '/register',
 
 const postTriageRun = (app: App) => app.request('/triage-run', { method: 'POST' });
 
+const getCommands = (app: App, accountEmail: string) =>
+  app.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`);
+
 const temporaryDatabasePath = () => join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
 
 const clockAtTenPastThree = { now: () => new Date('2026-11-02T15:10:00.000Z') };
@@ -1236,7 +1239,7 @@ describe('backend app', () => {
     });
     await confirmBudgetReviewProposal(app);
 
-    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const response = await getCommands(app, 'ana@example.com');
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -1252,7 +1255,7 @@ describe('backend app', () => {
     });
     await confirmBudgetReviewProposal(app);
 
-    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('bea@example.com')}`);
+    const response = await getCommands(app, 'bea@example.com');
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ commands: [] });
@@ -1267,7 +1270,7 @@ describe('backend app', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
 
-    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const response = await getCommands(app, 'ana@example.com');
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ commands: [] });
@@ -1281,7 +1284,7 @@ describe('backend app', () => {
     });
     await confirmBudgetReviewProposal(app);
 
-    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const response = await getCommands(app, 'ana@example.com');
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ commands: [] });
@@ -1302,7 +1305,7 @@ describe('backend app', () => {
     await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
     await postJson(app, '/verdicts', { messageId: 'message-2', decision: 'confirmed' });
 
-    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const response = await getCommands(app, 'ana@example.com');
 
     const { commands } = (await response.json()) as { commands: { id: string; messageId: string }[] };
     expect(commands.map(({ messageId }) => messageId).sort()).toEqual(['message-1', 'message-2']);
@@ -1316,14 +1319,14 @@ describe('backend app', () => {
       triage: ccThreadTriage('archive'),
     });
     await confirmBudgetReviewProposal(app);
-    const pendingResponse = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const pendingResponse = await getCommands(app, 'ana@example.com');
     const {
       commands: [command],
     } = (await pendingResponse.json()) as { commands: { id: string; messageId: string }[] };
 
     await app.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
 
-    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const response = await getCommands(app, 'ana@example.com');
     expect(await response.json()).toEqual({ commands: [] });
   });
 
@@ -1336,16 +1339,14 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await confirmBudgetReviewProposal(beforeRestart);
-    const pendingResponse = await beforeRestart.request(
-      `/commands?accountEmail=${encodeURIComponent('ana@example.com')}`,
-    );
+    const pendingResponse = await getCommands(beforeRestart, 'ana@example.com');
     const {
       commands: [command],
     } = (await pendingResponse.json()) as { commands: { id: string; messageId: string }[] };
     await beforeRestart.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
 
     const afterRestart = createApp(options);
-    const response = await afterRestart.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+    const response = await getCommands(afterRestart, 'ana@example.com');
 
     expect(await response.json()).toEqual({ commands: [] });
   });
