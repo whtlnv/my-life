@@ -65,6 +65,23 @@ const triageAnswering = (proposal: unknown) => ({
   propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }),
 });
 
+const triageRecordingAskedMessageIds = (askedMessageIds: string[], costInUsd = 0) => ({
+  propose: (message: { id: string }) => {
+    askedMessageIds.push(message.id);
+    return Promise.resolve({
+      proposal: {
+        action: 'keep',
+        category: 'unknown',
+        summary: 'A message',
+        extract: {},
+        reason: 'Not sure what it is',
+      },
+      costInUsd,
+      promptVersion: 'triage-v1',
+    });
+  },
+});
+
 const ccThreadTriage = (action: 'archive' | 'keep') => {
   const proposal = {
     action,
@@ -527,20 +544,7 @@ describe('backend app', () => {
 
   it('asks triage at POST /triage-run for a proposal on each reported message that has none, newest first', async () => {
     const askedMessageIds: string[] = [];
-    const triage = {
-      propose: (message: { id: string }) => {
-        askedMessageIds.push(message.id);
-        return Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A message',
-            extract: {},
-            reason: 'Not sure what it is',
-          },
-        });
-      },
-    };
+    const triage = triageRecordingAskedMessageIds(askedMessageIds);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
@@ -687,20 +691,7 @@ describe('backend app', () => {
 
   it('does not ask triage again at POST /triage-run for a message that already has a proposal', async () => {
     const askedMessageIds: string[] = [];
-    const triage = {
-      propose: (message: { id: string }) => {
-        askedMessageIds.push(message.id);
-        return Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A message',
-            extract: {},
-            reason: 'Not sure what it is',
-          },
-        });
-      },
-    };
+    const triage = triageRecordingAskedMessageIds(askedMessageIds);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [{ ...budgetReview, id: 'message-once' }] });
@@ -714,21 +705,7 @@ describe('backend app', () => {
 
   it("stops asking triage at POST /triage-run once today's spend reaches the daily ceiling", async () => {
     const askedMessageIds: string[] = [];
-    const triage = {
-      propose: (message: { id: string }) => {
-        askedMessageIds.push(message.id);
-        return Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A message',
-            extract: {},
-            reason: 'Not sure what it is',
-          },
-          costInUsd: 12,
-        });
-      },
-    };
+    const triage = triageRecordingAskedMessageIds(askedMessageIds, 12);
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -812,12 +789,7 @@ describe('backend app', () => {
   });
   it("neither triages again after a backend restart a message proposed before it, nor forgets the spend logged before it toward today's ceiling", async () => {
     const askedMessageIds: string[] = [];
-    const triage = {
-      propose: (message: { id: string }) => {
-        askedMessageIds.push(message.id);
-        return Promise.resolve({ proposal: {}, costInUsd: 12, model: 'claude-opus-5-5', promptVersion: 'triage-v1' });
-      },
-    };
+    const triage = triageRecordingAskedMessageIds(askedMessageIds, 12);
     const databasePath = temporaryDatabasePath();
     const options = {
       allowedEmails: ['ana@example.com'],
@@ -848,12 +820,7 @@ describe('backend app', () => {
   });
   it("counts toward today's ceiling after a backend restart only the spend logged today in America/Mexico_City, not yesterday's", async () => {
     const askedMessageIds: string[] = [];
-    const triage = {
-      propose: (message: { id: string }) => {
-        askedMessageIds.push(message.id);
-        return Promise.resolve({ proposal: {}, costInUsd: 10, model: 'claude-opus-5-5', promptVersion: 'triage-v1' });
-      },
-    };
+    const triage = triageRecordingAskedMessageIds(askedMessageIds, 10);
     const databasePath = temporaryDatabasePath();
     const spendBeforeRestart = openSpendStore(databasePath);
     // 05:00Z on Nov 2 is still 23:00 on Nov 1 in Mexico City: yesterday for a clock at 15:10Z on Nov 2.
