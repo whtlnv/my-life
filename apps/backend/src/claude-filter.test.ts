@@ -21,6 +21,16 @@ interface SentRequest {
   messages?: { role: string; content: string }[];
 }
 
+function recordingCreateMessage(sentRequests: SentRequest[], answeredProposal: unknown) {
+  return (request: SentRequest) => {
+    sentRequests.push(request);
+    return Promise.resolve({
+      content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_filter', input: answeredProposal }],
+      usage: { input_tokens: 0, output_tokens: 0 },
+    });
+  };
+}
+
 describe('Claude filter', () => {
   it('asks the configured model through a strict propose_filter tool with the versioned prompt and returns the validated proposal', async () => {
     const settings = readStartupSettings({ MY_LIFE_TRIAGE_MODEL: 'claude-model-from-settings' }, '/Users/ana');
@@ -34,13 +44,7 @@ describe('Claude filter', () => {
       model: settings.triageModel,
       promptPath: promptFile('Propose a Gmail filter by calling propose_filter.', 'filter-v3.md'),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: (request: SentRequest) => {
-        sentRequests.push(request);
-        return Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_filter', input: answeredProposal }],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        });
-      },
+      createMessage: recordingCreateMessage(sentRequests, answeredProposal),
     });
 
     const result = await filter.propose({
@@ -70,20 +74,11 @@ describe('Claude filter', () => {
       model: 'claude-model',
       promptPath: promptFile('Propose a Gmail filter.', 'filter-v1.md'),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: (request: SentRequest) => {
-        sentRequests.push(request);
-        return Promise.resolve({
-          content: [
-            {
-              type: 'tool_use',
-              id: 'tool-use-1',
-              name: 'propose_filter',
-              input: { criteria: { from: 'news@supplier.com' }, labelName: 'Supplier', skipInbox: true },
-            },
-          ],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        });
-      },
+      createMessage: recordingCreateMessage(sentRequests, {
+        criteria: { from: 'news@supplier.com' },
+        labelName: 'Supplier',
+        skipInbox: true,
+      }),
     });
 
     await filter.propose({
