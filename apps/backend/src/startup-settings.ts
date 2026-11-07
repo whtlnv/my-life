@@ -11,6 +11,7 @@ export interface StartupSettings {
 }
 
 const defaultPort = 7777;
+const millisecondsPerSecond = 1000;
 const defaultGmailPollingIntervalInMilliseconds = 60_000;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
 
@@ -33,7 +34,7 @@ function parseGmailPollingInterval(intervalSecondsText: string | undefined): num
   if (intervalSecondsText === undefined) {
     return defaultGmailPollingIntervalInMilliseconds;
   }
-  return Number(intervalSecondsText) * 1000;
+  return Number(intervalSecondsText) * millisecondsPerSecond;
 }
 
 function parsePort(portText: string | undefined): number {
