@@ -24,6 +24,8 @@ interface ReportedMessage {
   date: string;
 }
 
+type Proposal = Parameters<typeof triageQueue>[0][number];
+
 export interface AppOptions {
   allowedEmails: string[];
   clock?: Clock;
@@ -63,7 +65,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
-  const proposals: Parameters<typeof triageQueue>[0] = [];
+  const proposals: Proposal[] = [];
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
