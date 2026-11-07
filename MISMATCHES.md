@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-06 20:41 · `packages/domain/src/verdict-examples.test.ts::chooses at most the limit of examples even when sender and category verdicts together exceed it`
+- Behavior: At most N examples are chosen
+- Predicted: passes on first run (`.slice(0, limit)` already caps the combined list)
+- Actual: passed (1 passed, 3 skipped)
+- Type: passed unexpectedly
+- Resolution: The green step for "filled with the most recent verdicts of the same category" already added the cap, so this item is done. The test is kept as a regression pin for the cap across both pools, not rewritten to drive some other behavior.
+
 ## 2026-11-06 20:37 · `packages/domain/src/verdict-examples.test.ts::never chooses a verdict from another sender in another category`
 - Behavior: Verdicts from another sender in another category are never examples
 - Predicted: pass on first run, because `chooseVerdictExamples` already keeps only same-sender verdicts and other-sender verdicts of the same category
