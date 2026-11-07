@@ -3,7 +3,8 @@ export interface DecidedProposal {
   accountEmail: string;
   from: string;
   listId?: string;
-  verdict: { decision: string };
+  action: string;
+  verdict: { decision: string; correction?: { action: string } };
 }
 
 export interface FilterCandidate {
@@ -17,7 +18,9 @@ const minimumConfirmedArchives = 3;
 function groupConfirmedByFilterKey(decidedProposals: DecidedProposal[]): DecidedProposal[][] {
   const confirmedByFilterKey = new Map<string, DecidedProposal[]>();
   for (const proposal of decidedProposals) {
-    if (proposal.verdict.decision === 'confirmed') {
+    const decidedAction =
+      proposal.verdict.correction?.action ?? (proposal.verdict.decision === 'confirmed' ? proposal.action : undefined);
+    if (decidedAction === 'archive') {
       const key = JSON.stringify([proposal.accountEmail, proposal.listId ?? proposal.from]);
       confirmedByFilterKey.set(key, [...(confirmedByFilterKey.get(key) ?? []), proposal]);
     }

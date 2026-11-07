@@ -2121,4 +2121,71 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('counts toward a filter candidate only archives: a confirmed keep proposal does not count, while a rejected proposal corrected to archive does', async () => {
+    const askedCandidates: unknown[] = [];
+    const filter = {
+      propose: (candidate: unknown) => {
+        askedCandidates.push(candidate);
+        return Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop', skipInbox: true },
+          costInUsd: 0.05,
+          promptVersion: 'filter-v1',
+        });
+      },
+    };
+    const proposalWith = (action: string) => ({
+      action,
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const decisions = [
+      { messageId: 'newsletter-1', action: 'archive', verdict: { decision: 'confirmed' } },
+      { messageId: 'newsletter-2', action: 'keep', verdict: { decision: 'confirmed' } },
+      { messageId: 'newsletter-3', action: 'archive', verdict: { decision: 'confirmed' } },
+      {
+        messageId: 'newsletter-4',
+        action: 'keep',
+        verdict: { decision: 'rejected', correction: { action: 'archive' } },
+      },
+    ];
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: triageAnsweringInOrder(
+        decisions.map(({ action }) => proposalWith(action)),
+        0,
+      ),
+      filter,
+    });
+    for (const { messageId, verdict } of decisions) {
+      await postJson(app, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Shop <news@shop.example.com>',
+            to: 'ana@example.com',
+            subject: 'This week at the shop',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'New arrivals',
+          },
+        ],
+      });
+      await postTriageRun(app);
+      await postJson(app, '/verdicts', { messageId, ...verdict });
+    }
+
+    expect(askedCandidates).toEqual([
+      {
+        accountEmail: 'ana@example.com',
+        criteria: { from: 'Shop <news@shop.example.com>' },
+        messageIds: ['newsletter-1', 'newsletter-3', 'newsletter-4'],
+      },
+    ]);
+  });
 });

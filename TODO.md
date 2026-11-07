@@ -64,7 +64,7 @@
 - [x] The filter-proposal contract accepts a proposal whose criteria hold only `from`, and one whose criteria hold only `listId`, with the other criteria absent (supervisor triangulation: the green requires all three)
 - [x] The filter-proposal contract rejects a proposal with no criteria
 - [x] When a filter candidate appears, the backend asks the filter port once for a proposal and stores it with the account, the candidate's messages, the prompt version and the time; the same candidate is not asked about again
-- [ ] Only archives count toward a filter candidate: three confirmed `keep` (or `act`) proposals from the same sender yield no candidate, while a rejected proposal corrected to `archive` counts as one (supervisor triangulation: the backend feeds every decided message, whatever its action, to the candidate rule)
+- [x] Only archives count toward a filter candidate: three confirmed `keep` (or `act`) proposals from the same sender yield no candidate, while a rejected proposal corrected to `archive` counts as one (supervisor triangulation: the backend feeds every decided message, whatever its action, to the candidate rule)
 - [ ] After a backend restart on the same database, a candidate that already has a stored filter proposal is not asked about again; the stored proposals are the memory, not an in-process set (supervisor keystone)
 - [ ] The Claude filter adapter calls the model from config with a strict `propose_filter` tool built from the filter-proposal contract and a versioned prompt file, and returns the validated proposal
 - [ ] Each filter-adapter call is logged as spend and counts against the daily ceiling; at the ceiling no filter proposal is asked for

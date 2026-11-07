@@ -81,6 +81,7 @@ export interface AppOptions {
 }
 
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
+type DecidedProposal = Parameters<typeof filterCandidates>[0][number];
 
 const systemClock: Clock = { now: () => new Date() };
 
@@ -216,7 +217,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const verdicts = verdictStore.loadAll();
     return reportedMessageStore.loadAll().flatMap(({ messageId, accountEmail, from, listId }) => {
       const verdict = latestVerdictFor(messageId, verdicts);
-      return verdict === undefined ? [] : [{ messageId, accountEmail, from, ...(listId === null ? {} : { listId }), verdict }];
+      const action = proposals.find((proposal) => proposal.messageId === messageId)?.action ?? '';
+      return verdict === undefined
+        ? []
+        : [
+            {
+              messageId,
+              accountEmail,
+              from,
+              ...(listId === null ? {} : { listId }),
+              action,
+              verdict: verdict as DecidedProposal['verdict'],
+            },
+          ];
     });
   };
   const proposeNewFilterCandidates = async (): Promise<void> => {
