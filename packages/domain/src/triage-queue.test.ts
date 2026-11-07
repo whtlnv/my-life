@@ -215,4 +215,18 @@ describe('triageQueue', () => {
     const { groups } = triageQueue([expenseProposal, firstSalesProposal, secondSalesProposal], []);
     expect(groups.map((group) => group.category)).toEqual(['sales', 'expense']);
   });
+
+  it('counts the reported messages with no proposal as remaining, newest first', () => {
+    const proposedMessage = { id: 'message-1', date: '2026-11-06T11:00:00-06:00' };
+    const olderMessage = { id: 'message-2', date: '2026-11-06T08:00:00-06:00' };
+    const newerMessage = { id: 'message-3', date: '2026-11-06T10:00:00-06:00' };
+    const proposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'expense',
+    };
+    const { remaining } = triageQueue([proposal], [], [olderMessage, proposedMessage, newerMessage]);
+    expect(remaining).toEqual([newerMessage, olderMessage]);
+  });
 });

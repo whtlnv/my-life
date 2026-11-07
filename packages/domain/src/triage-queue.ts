@@ -23,9 +23,15 @@ interface ProposalGroup {
   systems?: SystemGroup[];
 }
 
+interface ReportedMessage {
+  id: string;
+  date: string;
+}
+
 interface TriageQueue {
   waiting: Proposal[];
   groups: ProposalGroup[];
+  remaining: ReportedMessage[];
 }
 
 const groupBy = <Key>(
@@ -74,7 +80,16 @@ const groupBySystem = (proposals: Proposal[]): SystemGroup[] =>
 const hasVerdict = (proposal: Proposal, verdicts: Verdict[]): boolean =>
   verdicts.some((verdict) => verdict.messageId === proposal.messageId);
 
-export const triageQueue = (proposals: Proposal[], verdicts: Verdict[]): TriageQueue => {
+const unproposed = (messages: ReportedMessage[], proposals: Proposal[]): ReportedMessage[] =>
+  messages
+    .filter((message) => !proposals.some((proposal) => proposal.messageId === message.id))
+    .sort((first, second) => Date.parse(second.date) - Date.parse(first.date));
+
+export const triageQueue = (
+  proposals: Proposal[],
+  verdicts: Verdict[],
+  messages: ReportedMessage[] = [],
+): TriageQueue => {
   const waiting = proposals.filter((proposal) => !hasVerdict(proposal, verdicts));
-  return { waiting, groups: groupByCategory(waiting) };
+  return { waiting, groups: groupByCategory(waiting), remaining: unproposed(messages, proposals) };
 };
