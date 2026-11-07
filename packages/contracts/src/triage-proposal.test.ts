@@ -20,4 +20,10 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('rejects a proposal whose action is not archive, keep or act', () => {
+    const proposal = { ...archiveCcThreadProposal, action: 'snooze' };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });
