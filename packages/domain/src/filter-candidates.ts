@@ -10,8 +10,10 @@ export interface FilterCandidate {
   messageIds: string[];
 }
 
+const minimumConfirmedArchives = 3;
+
 export function filterCandidates(decidedProposals: DecidedProposal[]): FilterCandidate[] {
-  if (decidedProposals.length < 3) {
+  if (decidedProposals.length < minimumConfirmedArchives) {
     return [];
   }
   const [first] = decidedProposals as [DecidedProposal];
