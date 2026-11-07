@@ -162,4 +162,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
+
+  it('accepts a calendar-drive proposal whose extract names the event or document and what changed', () => {
+    const proposal = {
+      action: 'archive',
+      category: 'calendar-drive',
+      summary: 'Weekly sync moved to Thursday',
+      extract: { item: 'Weekly product sync', change: 'Moved from Wednesday 10:00 to Thursday 11:00' },
+      reason: 'An automated calendar update with nothing to do.',
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
 });
