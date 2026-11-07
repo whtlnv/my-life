@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 interface TriageItem {
   messageId: string;
@@ -6,7 +6,16 @@ interface TriageItem {
   reason: string;
   accountEmail: string;
   link: string;
-  extract: { asker?: string; ask?: string; due?: string; significant?: boolean };
+  extract: {
+    asker?: string;
+    ask?: string;
+    due?: string;
+    significant?: boolean;
+    vendor?: string;
+    amount?: number;
+    currency?: string;
+    date?: string;
+  };
 }
 
 interface SystemGroup {
@@ -72,7 +81,15 @@ function CategoryGroup({ group }: { group: TriageGroup }) {
       {expanded &&
         (group.systems
           ? group.systems.map((systemGroup) => <SystemSection key={systemGroup.system} systemGroup={systemGroup} />)
-          : group.items.map((item) => <p key={item.messageId}>{item.summary}</p>))}
+          : group.items.map((item) => (
+              <Fragment key={item.messageId}>
+                <p>{item.summary}</p>
+                <p>{item.extract.vendor}</p>
+                <p>{item.extract.amount}</p>
+                <p>{item.extract.currency}</p>
+                <p>{item.extract.date}</p>
+              </Fragment>
+            )))}
     </section>
   );
 }

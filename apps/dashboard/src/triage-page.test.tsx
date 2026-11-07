@@ -322,4 +322,39 @@ describe('TriagePage', () => {
     expect(within(aws).getAllByRole('article')).toHaveLength(1);
     expect(within(aws).getByText(/Monthly bill is ready/)).toBeInTheDocument();
   });
+  it('shows the vendor, amount, currency and date of each item in an expanded expense group', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'expense',
+          count: 1,
+          items: [
+            {
+              messageId: 'message-15',
+              accountEmail: 'ana@example.com',
+              action: 'archive',
+              category: 'expense',
+              summary: 'Receipt for office supplies',
+              extract: { vendor: 'Papelería Lumen', amount: 345.5, currency: 'MXN', date: '2026-11-04' },
+              reason: 'A receipt to file',
+              link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-15',
+            },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    await user.click(await screen.findByRole('button', { name: /expense.*1/ }));
+
+    expect(screen.getByText(/Papelería Lumen/)).toBeInTheDocument();
+    expect(screen.getByText(/345\.5/)).toBeInTheDocument();
+    expect(screen.getByText(/MXN/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-11-04/)).toBeInTheDocument();
+  });
 });
