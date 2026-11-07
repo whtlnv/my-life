@@ -31,6 +31,13 @@ const postTriageRun = (app: App) => app.request('/triage-run', { method: 'POST' 
 const getCommands = (app: App, accountEmail: string) =>
   app.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`);
 
+const switchCategory = (app: App, category: string, mode: string) =>
+  app.request(`/categories/${category}/mode`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  });
+
 const temporaryDatabasePath = () => join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
 
 const clockAtTenPastThree = { now: () => new Date('2026-11-02T15:10:00.000Z') };
@@ -1704,11 +1711,7 @@ describe('backend app', () => {
   it('shows at GET /categories a category switched to automatic through PUT /categories/:category/mode, and every other category still advise', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 
-    await app.request('/categories/sales/mode', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'automatic' }),
-    });
+    await switchCategory(app, 'sales', 'automatic');
     const response = await app.request('/categories');
 
     expect(await response.json()).toMatchObject({
@@ -1721,15 +1724,8 @@ describe('backend app', () => {
 
   it('shows at GET /categories a category switched back to advise through PUT /categories/:category/mode after being automatic', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
-    const switchSales = (mode: string) =>
-      app.request('/categories/sales/mode', {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ mode }),
-      });
-
-    await switchSales('automatic');
-    await switchSales('advise');
+    await switchCategory(app, 'sales', 'automatic');
+    await switchCategory(app, 'sales', 'advise');
     const response = await app.request('/categories');
 
     expect(await response.json()).toMatchObject({
@@ -1739,15 +1735,8 @@ describe('backend app', () => {
 
   it('answers 400 to PUT /categories/:category/mode with an unknown category or an unknown mode, and GET /categories still shows every category advise', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
-    const switchMode = (category: string, mode: string) =>
-      app.request(`/categories/${category}/mode`, {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ mode }),
-      });
-
-    const unknownCategory = await switchMode('newsletters', 'automatic');
-    const unknownMode = await switchMode('sales', 'sometimes');
+    const unknownCategory = await switchCategory(app, 'newsletters', 'automatic');
+    const unknownMode = await switchCategory(app, 'sales', 'sometimes');
     const response = await app.request('/categories');
 
     expect([unknownCategory.status, unknownMode.status]).toEqual([400, 400]);
@@ -1763,11 +1752,7 @@ describe('backend app', () => {
       databasePath: temporaryDatabasePath(),
     };
     const beforeRestart = createApp(options);
-    await beforeRestart.request('/categories/sales/mode', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'automatic' }),
-    });
+    await switchCategory(beforeRestart, 'sales', 'automatic');
 
     const afterRestart = createApp(options);
     const response = await afterRestart.request('/categories');
@@ -1868,11 +1853,7 @@ describe('backend app', () => {
       clock: clockAtTenPastThree,
       triage: ccThreadTriage('archive'),
     });
-    await app.request('/categories/cc-thread/mode', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'automatic' }),
-    });
+    await switchCategory(app, 'cc-thread', 'automatic');
     await proposeBudgetReview(app);
 
     const response = await getCommands(app, 'ana@example.com');
@@ -1892,11 +1873,7 @@ describe('backend app', () => {
       taskDraft: { title: 'Review the budget by Friday' },
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await app.request('/categories/action/mode', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'automatic' }),
-    });
+    await switchCategory(app, 'action', 'automatic');
     await proposeBudgetReview(app);
 
     const response = await app.request('/tasks');
@@ -1918,11 +1895,7 @@ describe('backend app', () => {
       clock: clockAtTenPastThree,
       triage: ccThreadTriage('keep'),
     });
-    await app.request('/categories/cc-thread/mode', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'automatic' }),
-    });
+    await switchCategory(app, 'cc-thread', 'automatic');
     await proposeBudgetReview(app);
 
     const commands = await getCommands(app, 'ana@example.com');
@@ -1940,15 +1913,9 @@ describe('backend app', () => {
       clock: clockAtTenPastThree,
       triage: ccThreadTriage('archive'),
     });
-    const switchCcThread = (mode: string) =>
-      app.request('/categories/cc-thread/mode', {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ mode }),
-      });
-    await switchCcThread('automatic');
+    await switchCategory(app, 'cc-thread', 'automatic');
     await proposeBudgetReview(app);
-    await switchCcThread('advise');
+    await switchCategory(app, 'cc-thread', 'advise');
 
     const response = await getCommands(app, 'ana@example.com');
 
@@ -1963,11 +1930,7 @@ describe('backend app', () => {
       clock: clockAtTenPastThree,
       triage: ccThreadTriage('archive'),
     });
-    await app.request('/categories/cc-thread/mode', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'automatic' }),
-    });
+    await switchCategory(app, 'cc-thread', 'automatic');
     await proposeBudgetReview(app);
     await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'rejected' });
 
@@ -1983,11 +1946,7 @@ describe('backend app', () => {
       triage: ccThreadTriage('archive'),
     });
     await proposeBudgetReview(app);
-    await app.request('/categories/cc-thread/mode', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mode: 'automatic' }),
-    });
+    await switchCategory(app, 'cc-thread', 'automatic');
 
     const response = await getCommands(app, 'ana@example.com');
 
