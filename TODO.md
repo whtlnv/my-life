@@ -49,7 +49,7 @@
 - [x] A confirmed `archive` on a `sales` proposal puts nothing on the check-later list
 - [x] When a message has two verdicts, the later one decides its current state
 - [x] When the later verdict is listed before the earlier one, the later one still decides the message's current state
-- [ ] A message with a proposal and no verdict is waiting in the triage queue
+- [x] A message with a proposal and no verdict is waiting in the triage queue
 - [ ] A message with a verdict is no longer waiting in the triage queue
 - [ ] Waiting proposals are grouped by category
 - [ ] Waiting `system-update` proposals are grouped within their category by sending system
