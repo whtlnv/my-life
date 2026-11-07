@@ -26,6 +26,8 @@ Repository map:
 - **Continuous delivery / XP:** walking skeleton first, then one source at a time, end to end, in thin slices. Small commits; no item takes more than a couple of hours.
 - **Measure and control:** test count, suite time, lint state and LLM spend are reported, not guessed. A number in a doc carries a date.
 - **Documentation is lean and purged every phase.**
+- **Push `main` to `origin` after each phase** (user, 2026-11-07). Never force-push; never push a red tree.
+- **The dashboard has one design system:** tokens and component classes in `apps/dashboard/src/styles.css` (Phase 2a). New pages reuse them; a new page never ships unstyled. Presentation work is hand-built and screenshot-verified against `scripts/demo.sh`; its behavior (what a key or button does, what a row shows) stays under test.
 - **Tooling comes first.** A dependency must run headless in tests or sit behind an adapter that can. Otherwise reject it.
 - **Fastest value wins over enterprise grade.** The user chose local-only, Chrome-only, macOS-only on purpose. Do not add deploy pipelines, multi-user auth or hardening the plan does not ask for.
 
