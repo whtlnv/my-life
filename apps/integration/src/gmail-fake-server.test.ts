@@ -25,41 +25,69 @@ const ccThreadProposal = {
   reason: 'The user is only copied',
 };
 
+type Backend = ReturnType<typeof createApp>;
+
+interface MessageSeenByTriage {
+  id: string;
+  to?: string;
+  threadId?: string;
+  date?: string;
+}
+
+function createBackendProposing(proposal: object): {
+  backend: Backend;
+  messagesSeenByTriage: MessageSeenByTriage[];
+} {
+  const messagesSeenByTriage: MessageSeenByTriage[] = [];
+  const backend = createApp({
+    allowedEmails: [accountEmail],
+    clock: { now: () => triageTime },
+    triage: {
+      propose: (message) => {
+        messagesSeenByTriage.push(message);
+        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
+      },
+    },
+  });
+  return { backend, messagesSeenByTriage };
+}
+
+async function pollScenarioIntoBackend(
+  scenario: Parameters<typeof startGmailFakeServer>[0],
+  backend: Backend,
+): Promise<void> {
+  const gmail = await startGmailFakeServer(scenario, accountEmail);
+  try {
+    await pollGmailOnce({
+      fetch: async (input, init) => {
+        const url = new URL(input instanceof Request ? input.url : input.toString());
+        if (url.origin === 'https://gmail.googleapis.com') {
+          return fetch(new URL(url.pathname + url.search, gmail.url), init);
+        }
+        return backend.request(url.pathname, init);
+      },
+      accessToken: 'fake-token',
+      accountEmail,
+      backendUrl,
+      storedHistoryId: undefined,
+    });
+  } finally {
+    await gmail.close();
+  }
+}
+
+async function runTriageAndReadQueue<Queue>(backend: Backend): Promise<Queue> {
+  await backend.request('/triage-run', { method: 'POST' });
+  return (await (await backend.request('/triage-queue')).json()) as Queue;
+}
+
 describe('Gmail fake server', () => {
   it('polling the action-to-me scenario puts the message, addressed to the user, in the action block of GET /triage-queue', async () => {
-    const messagesSeenByTriage: { id: string; to?: string }[] = [];
-    const backend = createApp({
-      allowedEmails: [accountEmail],
-      clock: { now: () => triageTime },
-      triage: {
-        propose: (message) => {
-          messagesSeenByTriage.push(message);
-          return Promise.resolve({ proposal: actionProposal, costInUsd: 0, promptVersion: 'triage-v1' });
-        },
-      },
-    });
-    const gmail = await startGmailFakeServer('action-to-me', accountEmail);
-    try {
-      await pollGmailOnce({
-        fetch: async (input, init) => {
-          const url = new URL(input instanceof Request ? input.url : input.toString());
-          if (url.origin === 'https://gmail.googleapis.com') {
-            return fetch(new URL(url.pathname + url.search, gmail.url), init);
-          }
-          return backend.request(url.pathname, init);
-        },
-        accessToken: 'fake-token',
-        accountEmail,
-        backendUrl,
-        storedHistoryId: undefined,
-      });
-    } finally {
-      await gmail.close();
-    }
-    await backend.request('/triage-run', { method: 'POST' });
-    const queue = (await (await backend.request('/triage-queue')).json()) as {
+    const { backend, messagesSeenByTriage } = createBackendProposing(actionProposal);
+    await pollScenarioIntoBackend('action-to-me', backend);
+    const queue = await runTriageAndReadQueue<{
       action: { messageId: string; category: string; accountEmail: string }[];
-    };
+    }>(backend);
 
     expect(messagesSeenByTriage).toHaveLength(1);
     expect(messagesSeenByTriage[0]?.to).toContain(accountEmail);
@@ -68,39 +96,11 @@ describe('Gmail fake server', () => {
     ]);
   });
   it('polling the cc-thread scenario shows its two messages as one line, the newest, in the cc-thread group of GET /triage-queue', async () => {
-    const messagesSeenByTriage: { id: string; threadId?: string; date?: string }[] = [];
-    const backend = createApp({
-      allowedEmails: [accountEmail],
-      clock: { now: () => triageTime },
-      triage: {
-        propose: (message) => {
-          messagesSeenByTriage.push(message);
-          return Promise.resolve({ proposal: ccThreadProposal, costInUsd: 0, promptVersion: 'triage-v1' });
-        },
-      },
-    });
-    const gmail = await startGmailFakeServer('cc-thread', accountEmail);
-    try {
-      await pollGmailOnce({
-        fetch: async (input, init) => {
-          const url = new URL(input instanceof Request ? input.url : input.toString());
-          if (url.origin === 'https://gmail.googleapis.com') {
-            return fetch(new URL(url.pathname + url.search, gmail.url), init);
-          }
-          return backend.request(url.pathname, init);
-        },
-        accessToken: 'fake-token',
-        accountEmail,
-        backendUrl,
-        storedHistoryId: undefined,
-      });
-    } finally {
-      await gmail.close();
-    }
-    await backend.request('/triage-run', { method: 'POST' });
-    const queue = (await (await backend.request('/triage-queue')).json()) as {
+    const { backend, messagesSeenByTriage } = createBackendProposing(ccThreadProposal);
+    await pollScenarioIntoBackend('cc-thread', backend);
+    const queue = await runTriageAndReadQueue<{
       groups: { category: string; count: number; items: { messageId: string }[] }[];
-    };
+    }>(backend);
     const [newest, older] = [...messagesSeenByTriage].sort(
       (first, second) => Date.parse(second.date ?? '') - Date.parse(first.date ?? ''),
     );
