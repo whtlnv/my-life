@@ -92,6 +92,11 @@ function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
 
+function isStillConfirmed(messageId: string, verdicts: { messageId: string; decision: string }[]): boolean {
+  const latestVerdict = verdicts.filter((verdict) => verdict.messageId === messageId).at(-1);
+  return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
+}
+
 function proposalEffects(proposal: Proposal, verdicts: { messageId: string }[]) {
   const verdict = verdicts.find((candidate) => candidate.messageId === proposal.messageId);
   return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
@@ -296,10 +301,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
-      .filter(({ messageId }) => {
-        const latestVerdict = verdicts.filter((verdict) => verdict.messageId === messageId).at(-1);
-        return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
-      })
+      .filter(({ messageId }) => isStillConfirmed(messageId, verdicts))
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });
