@@ -95,4 +95,10 @@ describe('startup settings', () => {
 
     expect(settings.triageModel).toBe('claude-opus-5-5');
   });
+
+  it('triages with claude-sonnet-5-5 when MY_LIFE_TRIAGE_MODEL is claude-sonnet-5-5', () => {
+    const settings = readStartupSettings({ MY_LIFE_TRIAGE_MODEL: 'claude-sonnet-5-5' }, '/Users/ana');
+
+    expect(settings.triageModel).toBe('claude-sonnet-5-5');
+  });
 });

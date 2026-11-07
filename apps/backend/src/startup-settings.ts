@@ -29,7 +29,7 @@ export function readStartupSettings(
     gmailPollingIntervalInMilliseconds: parseGmailPollingInterval(
       environment.MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS,
     ),
-    triageModel: defaultTriageModel,
+    triageModel: environment.MY_LIFE_TRIAGE_MODEL ?? defaultTriageModel,
   };
 }
 
