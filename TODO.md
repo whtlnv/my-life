@@ -183,6 +183,7 @@
 - [x] Pressing `k` on a card whose proposal is `archive` or `act` posts a rejection with a correction to `keep`, not a confirmation
 - [x] In the correction prompt opened by `r`, picking a category from the seven and typing a note, then Enter, posts a rejection whose correction carries that category and the note; Escape closes the prompt and posts nothing
 - [x] Moving focus with the keyboard changes which card a key acts on
+- [ ] ArrowUp moves focus to the previous card, and on the first card it stays there
 - [ ] The confirm-all key on a focused group confirms that group only
 - [ ] An item disappears from the page once its verdict is accepted
 - [ ] The page shows how many messages remain to be triaged
