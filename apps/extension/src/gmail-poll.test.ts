@@ -515,7 +515,7 @@ describe('pollGmailOnce', () => {
         return Response.json(gmailMessage(id, `Subject of ${id}`, 'Thu, 5 Nov 2026 10:00:00 -0600'));
       }
       if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
-        backendPosts.push(JSON.parse(init.body as string));
+        backendPosts.push(JSON.parse(init.body as string) as { messages: { id: string }[] });
         return Response.json({ ok: true });
       }
       return new Response('unexpected request', { status: 404 });

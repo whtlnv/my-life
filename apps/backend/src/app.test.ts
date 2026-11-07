@@ -674,7 +674,7 @@ describe('backend app', () => {
       earlierIds
         .slice(2)
         .reverse()
-        .map((messageId) => expect.objectContaining({ messageId })),
+        .map((messageId) => expect.objectContaining({ messageId }) as unknown),
     );
   });
 
@@ -1239,7 +1239,9 @@ describe('backend app', () => {
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ commands: [{ id: expect.any(String), messageId: 'message-1' }] });
+    expect(await response.json()).toEqual({
+      commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
+    });
   });
 
   it('lists at GET /commands no archive command for an account other than the one whose message was confirmed for archive', async () => {

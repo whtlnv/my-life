@@ -117,7 +117,10 @@ describe('startup settings', () => {
   it('refuses to start triage and names ANTHROPIC_API_KEY as the reason when the key is unset', () => {
     const settings = readStartupSettings({}, '/Users/ana');
 
-    expect(settings.triage).toEqual({ enabled: false, reason: expect.stringContaining('ANTHROPIC_API_KEY') });
+    expect(settings.triage).toEqual({
+      enabled: false,
+      reason: expect.stringContaining('ANTHROPIC_API_KEY') as unknown,
+    });
   });
 
   it('enables triage with no reason when ANTHROPIC_API_KEY is set', () => {
