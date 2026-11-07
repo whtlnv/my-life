@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { healthResponse } from '@my-life/contracts';
 
 import { createApp } from './app';
+import { openProposalStore } from './proposal-store';
 
 type App = ReturnType<typeof createApp>;
 
@@ -586,5 +587,27 @@ describe('backend app', () => {
 
     expect(run.status).toBe(200);
     expect(askedMessageIds).toEqual(['message-newest', 'message-middle']);
+  });
+
+  it('stores each proposal made at POST /triage-run with the time it was made and the prompt version that made it', async () => {
+    const proposal = {
+      action: 'keep',
+      category: 'unknown',
+      summary: 'A message',
+      extract: {},
+      reason: 'Not sure what it is',
+    };
+    const triage = {
+      propose: () => Promise.resolve({ proposal, costInUsd: 0.05, promptVersion: 'triage-v1' }),
+    };
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    await app.request('/triage-run', { method: 'POST' });
+
+    expect(openProposalStore(databasePath).loadAll()).toEqual([
+      { messageId: 'message-1', madeAt: '2026-11-02T15:10:00.000Z', promptVersion: 'triage-v1', proposal },
+    ]);
   });
 });

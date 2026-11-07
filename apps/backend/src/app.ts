@@ -17,6 +17,7 @@ import {
 
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 import { openMailSourceStore } from './mail-source-store';
+import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore } from './reported-message-store';
 
 interface ReportedMessage {
@@ -65,6 +66,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const snapshotStore = openCalendarSnapshotStore(databasePath);
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
+  const proposalStore = openProposalStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const proposals: Proposal[] = [];
   let spentInUsd = 0;
@@ -112,8 +114,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (hasReachedDailySpendCeiling()) {
         break;
       }
-      const result = (await options.triage?.propose(message)) as { costInUsd?: number } | undefined;
+      const result = (await options.triage?.propose(message)) as
+        | { costInUsd?: number; proposal?: unknown; promptVersion?: string }
+        | undefined;
       spentInUsd += result?.costInUsd ?? 0;
+      proposalStore.save({
+        messageId: message.id,
+        madeAt: clock.now().toISOString(),
+        promptVersion: result?.promptVersion ?? '',
+        proposal: result?.proposal,
+      });
       proposals.push({ messageId: message.id, accountEmail: '', action: '' });
     }
     return context.body(null, 200);
