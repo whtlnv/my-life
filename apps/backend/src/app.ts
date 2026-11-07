@@ -11,6 +11,7 @@ import {
   describeSourceFreshness,
   hasVerdict,
   isAccountFresh,
+  isAddressedToUser,
   isLeadingCategory,
   mergeCalendarSnapshots,
   triageEffects,
@@ -40,10 +41,10 @@ type Proposal = Parameters<typeof triageQueue>[0][number];
 
 function withDisplayedCategory(
   proposal: Proposal,
-  message: Pick<ReportedMessage, 'to' | 'cc'>,
+  message: Pick<ReportedMessage, 'to'>,
   accountEmail: string,
 ): Proposal {
-  const isAddressedToAccount = (message.to ?? '').toLowerCase().includes(accountEmail);
+  const isAddressedToAccount = isAddressedToUser({ to: message.to ?? '' }, accountEmail);
   return proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal;
 }
 
