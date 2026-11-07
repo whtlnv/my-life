@@ -18,6 +18,7 @@ export interface StartupSettings {
 const defaultPort = 7777;
 const millisecondsPerSecond = 1000;
 const defaultGmailPollingIntervalInSeconds = 60;
+export const defaultGmailPollingIntervalInMilliseconds = secondsToMilliseconds(defaultGmailPollingIntervalInSeconds);
 const defaultTriageModel = 'claude-opus-5-5';
 const defaultDailySpendCeilingInUsd = 20;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
