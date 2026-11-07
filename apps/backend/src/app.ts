@@ -185,6 +185,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/verdicts', async (context) => {
     const { messageId, decision } = await context.req.json<{ messageId: string; decision: string }>();
+    if (!proposals.some((proposal) => proposal.messageId === messageId)) {
+      return context.body(null, 404);
+    }
     verdictStore.save({ messageId, decision, decidedAt: clock.now().toISOString() });
     return context.body(null, 200);
   });

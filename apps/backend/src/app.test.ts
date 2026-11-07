@@ -860,4 +860,14 @@ describe('backend app', () => {
     const queue = await app.request('/triage-queue');
     expect(await queue.json()).toMatchObject({ action: [] });
   });
+
+  it('refuses a verdict posted at POST /verdicts for a message that has no proposal as not found, and stores nothing', async () => {
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+
+    const response = await postJson(app, '/verdicts', { messageId: 'unknown-message', decision: 'confirmed' });
+
+    expect(response.status).toBe(404);
+    expect(openVerdictStore(databasePath).loadAll()).toEqual([]);
+  });
 });
