@@ -546,6 +546,28 @@ describe('backend app', () => {
     expect(askedMessageIds).toEqual(['message-newest', 'message-middle', 'message-older']);
   });
 
+  it('hands triage at POST /triage-run each message with the email of the account that reported it', async () => {
+    const askedMessages: unknown[] = [];
+    const triage = {
+      propose: (message: unknown) => {
+        askedMessages.push(message);
+        return Promise.resolve({ proposal: undefined, costInUsd: 0, promptVersion: 'triage-v1' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, to: 'team@example.com', cc: 'ana@example.com' }],
+    });
+
+    await app.request('/triage-run', { method: 'POST' });
+
+    expect(askedMessages).toEqual([
+      expect.objectContaining({ id: 'message-1', cc: 'ana@example.com', accountEmail: 'ana@example.com' }),
+    ]);
+  });
+
   it('does not ask triage again at POST /triage-run for a message that already has a proposal', async () => {
     const askedMessageIds: string[] = [];
     const triage = {
