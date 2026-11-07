@@ -90,4 +90,22 @@ describe('badgeCount', () => {
       badgeCount([weeklySync], clock, [decidedActionProposal, waitingActionProposal], [verdict]),
     ).toBe(2);
   });
+
+  it('does not count a waiting proposal of another category', () => {
+    const clock: Clock = { now: () => new Date('2026-11-02T14:50:00.000Z') };
+    const actionProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'act',
+      category: 'action',
+    };
+    const salesProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'sales',
+    };
+
+    expect(badgeCount([weeklySync], clock, [actionProposal, salesProposal], [])).toBe(2);
+  });
 });

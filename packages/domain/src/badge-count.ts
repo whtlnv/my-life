@@ -4,6 +4,7 @@ import { buildNowView } from './now-view';
 
 interface Proposal {
   messageId: string;
+  category: string;
 }
 
 interface Verdict {
@@ -17,7 +18,9 @@ export const badgeCount = (
   verdicts: Verdict[] = [],
 ): number => {
   const waitingProposals = proposals.filter(
-    (proposal) => !verdicts.some((verdict) => verdict.messageId === proposal.messageId),
+    (proposal) =>
+      proposal.category === 'action' &&
+      !verdicts.some((verdict) => verdict.messageId === proposal.messageId),
   );
   return buildNowView(events, clock).next.length + waitingProposals.length;
 };
