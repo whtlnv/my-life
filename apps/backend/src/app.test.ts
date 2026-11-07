@@ -55,9 +55,9 @@ const weeklySync = {
   attendees: [{ email: 'luis@example.com', displayName: 'Luis' }],
 };
 
-const archiveCcThreadTriage = () => {
+const ccThreadTriage = (action: 'archive' | 'keep') => {
   const proposal = {
-    action: 'archive',
+    action,
     category: 'cc-thread',
     summary: 'Luis shared the budget with the team',
     extract: { sinceLastMessage: 'Luis shared the budget' },
@@ -66,7 +66,7 @@ const archiveCcThreadTriage = () => {
   return { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
 };
 
-const confirmArchiveOfBudgetReview = async (app: App) => {
+const confirmBudgetReviewProposal = async (app: App) => {
   await postJson(app, '/mail-report', budgetReviewReport);
   await app.request('/triage-run', { method: 'POST' });
   await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
@@ -977,9 +977,9 @@ describe('backend app', () => {
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
-      triage: archiveCcThreadTriage(),
+      triage: ccThreadTriage('archive'),
     });
-    await confirmArchiveOfBudgetReview(app);
+    await confirmBudgetReviewProposal(app);
 
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
 
@@ -991,9 +991,9 @@ describe('backend app', () => {
     const app = createApp({
       allowedEmails: ['ana@example.com', 'bea@example.com'],
       clock: clockAtTenPastThree,
-      triage: archiveCcThreadTriage(),
+      triage: ccThreadTriage('archive'),
     });
-    await confirmArchiveOfBudgetReview(app);
+    await confirmBudgetReviewProposal(app);
 
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('bea@example.com')}`);
 
@@ -1005,7 +1005,7 @@ describe('backend app', () => {
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
-      triage: archiveCcThreadTriage(),
+      triage: ccThreadTriage('archive'),
     });
     await postJson(app, '/mail-report', budgetReviewReport);
     await app.request('/triage-run', { method: 'POST' });
@@ -1017,18 +1017,12 @@ describe('backend app', () => {
   });
 
   it('lists at GET /commands no archive command for a keep proposal the user confirmed', async () => {
-    const proposal = {
-      action: 'keep',
-      category: 'cc-thread',
-      summary: 'Luis shared the budget with the team',
-      extract: { sinceLastMessage: 'Luis shared the budget' },
-      reason: 'The budget is worth rereading',
-    };
-    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await app.request('/triage-run', { method: 'POST' });
-    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+    });
+    await confirmBudgetReviewProposal(app);
 
     const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
 
