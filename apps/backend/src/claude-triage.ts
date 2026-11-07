@@ -52,16 +52,19 @@ function describeMessage(message: TriageMessage, examples: unknown[] | undefined
   });
 }
 
+interface TriageOutcome {
+  promptVersion?: string;
+  proposal?: unknown;
+  failure?: { input: unknown };
+}
+
 function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
 
 export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
   return {
-    propose: async (
-      message: TriageMessage,
-      examples?: unknown[],
-    ): Promise<{ promptVersion?: string; proposal?: unknown; failure?: { input: unknown } } | undefined> => {
+    propose: async (message: TriageMessage, examples?: unknown[]): Promise<TriageOutcome | undefined> => {
       const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       if (promptPath === undefined) {
         const response = await createMessage({ model, messages });
