@@ -19,13 +19,18 @@ import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calend
 import { openMailSourceStore } from './mail-source-store';
 import { openReportedMessageStore } from './reported-message-store';
 
+interface ReportedMessage {
+  id: string;
+  date: string;
+}
+
 export interface AppOptions {
   allowedEmails: string[];
   clock?: Clock;
   databasePath?: string;
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
-  triage?: { propose: (message: { id: string; date: string }) => Promise<unknown> };
+  triage?: { propose: (message: ReportedMessage) => Promise<unknown> };
 }
 
 const systemClock: Clock = { now: () => new Date() };
@@ -57,7 +62,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const snapshotStore = openCalendarSnapshotStore(databasePath);
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
-  const reportedMessages: { id: string; date: string }[] = [];
+  const reportedMessages: ReportedMessage[] = [];
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
@@ -85,7 +90,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.post('/mail-report', async (context) => {
-    const report = await context.req.json<{ accountEmail: string; messages: { id: string; date: string }[] }>();
+    const report = await context.req.json<{ accountEmail: string; messages: ReportedMessage[] }>();
     const refusal = refusalStatus(report.accountEmail, () => mailReport.safeParse(report).success);
     if (refusal !== undefined) {
       return context.body(null, refusal);
