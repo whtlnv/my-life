@@ -332,10 +332,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
     const acknowledgedCommandIds = acknowledgementStore.loadAll();
+    const categoryModes = categoryModeStore.loadAll();
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
-      .filter(({ messageId }) => isStillConfirmed(messageId, verdicts))
+      .filter(
+        ({ messageId, category }) => isStillConfirmed(messageId, verdicts) || categoryModes[category ?? ''] === 'automatic',
+      )
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });

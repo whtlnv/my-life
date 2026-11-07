@@ -31,7 +31,7 @@
 - [x] `GET /categories` shows each category's agreement rate as confirmed verdicts ÷ proposals in that category (a rejection or a correction counts as not confirmed)
 - [x] `GET /categories` shows no agreement rate for a category with no proposals
 - [x] `GET /categories` lists each category's five most recent proposals, newest first, each with its summary, action, account and link
-- [ ] In an `automatic` category, a new `archive` proposal yields an archive command in `GET /commands?accountEmail=…` with no verdict
+- [x] In an `automatic` category, a new `archive` proposal yields an archive command in `GET /commands?accountEmail=…` with no verdict
 - [ ] In an `advise` category, a new `archive` proposal yields no archive command until it is confirmed
 - [ ] In an `automatic` category, a new `act` proposal with a task draft appears in `GET /tasks` with no verdict
 - [ ] In an `automatic` category, a new `keep` proposal yields neither a command nor a task

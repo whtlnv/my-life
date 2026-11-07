@@ -1861,4 +1861,24 @@ describe('backend app', () => {
       })),
     });
   });
+
+  it('lists at GET /commands an archive command with no verdict for a new archive proposal in a category switched to automatic', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await app.request('/categories/cc-thread/mode', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'automatic' }),
+    });
+    await proposeBudgetReview(app);
+
+    const response = await getCommands(app, 'ana@example.com');
+
+    expect(await response.json()).toEqual({
+      commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
+    });
+  });
 });
