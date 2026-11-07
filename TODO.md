@@ -157,7 +157,7 @@
 - [x] The cost of a call is computed from the tokens the answer reports
 - [x] A valid tool-use answer, with a prompt file set, also reports its cost from the answer's input and output tokens at their separate prices
 - [x] With a prompt file set, an answer that fails the shared contract becomes no proposal with the failure recorded and its cost reported, exactly as without a prompt file (one code path, not two)
-- [ ] A scripted fake triage answers the proposals it was scripted with, in order, and costs what it was scripted to cost
+- [x] A scripted fake triage answers the proposals it was scripted with, in order, and costs what it was scripted to cost
 
 ### Dashboard — triage page
 
