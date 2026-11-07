@@ -156,6 +156,7 @@
 - [x] A triage request declares exactly one tool, `propose_triage`, whose input schema is the shared triage-proposal contract converted to JSON Schema, marked `strict`, with `tool_choice` left as `auto` (forced tool choice is rejected by the model); the instruction to call it lives in the versioned prompt file, not in code
 - [x] The cost of a call is computed from the tokens the answer reports
 - [x] A valid tool-use answer, with a prompt file set, also reports its cost from the answer's input and output tokens at their separate prices
+- [ ] With a prompt file set, an answer that fails the shared contract becomes no proposal with the failure recorded and its cost reported, exactly as without a prompt file (one code path, not two)
 - [ ] A scripted fake triage answers the proposals it was scripted with, in order, and costs what it was scripted to cost
 
 ### Dashboard — triage page
