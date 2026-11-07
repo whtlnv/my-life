@@ -44,7 +44,7 @@
 - [x] When the extension carries out an archive command labeled `my-life/auto`, the Gmail modify call adds the `my-life/auto` label (created if missing), not `my-life/archived`
 - [x] `POST /categories/kill-switch` returns every `automatic` category to `advise`
 - [x] After the kill switch, a new `archive` proposal in a category that was `automatic` yields no command until confirmed
-- [ ] The dashboard app shell has a `Categories` tab linking to `#/categories`, marked current on that route
+- [x] The dashboard app shell has a `Categories` tab linking to `#/categories`, marked current on that route
 - [ ] The `#/categories` page shows one row per category from `GET /categories` with its agreement rate placed before its `advise` / `automatic` switch
 - [ ] The `#/categories` page shows "no proposals yet" in place of the rate for a category without proposals
 - [ ] Flipping a category's switch on `#/categories` sends `PUT /categories/:category/mode` with the new mode and shows the mode the backend returns

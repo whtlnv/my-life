@@ -61,6 +61,16 @@ describe('AppShell', () => {
     expect(triageTab).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
+  it('has a Categories tab linking to the categories page, marked current on that route', async () => {
+    answerGetNowWith({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0, sources: [] });
+
+    render(<AppShell route="#/categories">{null}</AppShell>);
+
+    const categoriesTab = await screen.findByRole('link', { name: 'Categories' });
+    expect(categoriesTab).toHaveAttribute('href', '#/categories');
+    expect(categoriesTab).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
+  });
   it('still renders the tabs and the page when the backend cannot be reached', async () => {
     vi.stubGlobal(
       'fetch',

@@ -30,7 +30,7 @@ interface AccountStatus {
 const statusRefreshIntervalMilliseconds = 60_000;
 const emptyStatus: ShellStatus = { badgeCount: 0, accounts: [], sources: [] };
 
-export const routes = { now: '#/', triage: '#/triage' } as const;
+export const routes = { now: '#/', triage: '#/triage', categories: '#/categories' } as const;
 
 function timeInBusinessZone(isoTime: string): string {
   return new Intl.DateTimeFormat('en-GB', {
@@ -102,6 +102,7 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
   }, []);
 
   const onTriage = route === routes.triage;
+  const onCategories = route === routes.categories;
   return (
     <div className="shell">
       <header className="topbar">
@@ -110,12 +111,15 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             my-life
           </a>
           <nav className="tabs" aria-label="Pages">
-            <Tab href={routes.now} current={!onTriage}>
+            <Tab href={routes.now} current={!onTriage && !onCategories}>
               Now
             </Tab>
             <Tab href={routes.triage} current={onTriage}>
               Triage
               {status.badgeCount > 0 && <span className="count">{status.badgeCount}</span>}
+            </Tab>
+            <Tab href={routes.categories} current={onCategories}>
+              Categories
             </Tab>
           </nav>
           <ul className="sources" aria-label="Sources">
