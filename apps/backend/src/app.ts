@@ -65,6 +65,10 @@ function spentOnBusinessDateInUsd(spends: { spentAt: string; costInUsd: number }
     .reduce((total, { costInUsd }) => total + costInUsd, 0);
 }
 
+function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
+  return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
+}
+
 function splitActionFromGroups(proposals: Proposal[]) {
   const { groups } = triageQueue(proposals, []);
   return {
@@ -73,7 +77,7 @@ function splitActionFromGroups(proposals: Proposal[]) {
       .flatMap((group) => group.proposals)
       .map((proposal) => ({
         ...proposal,
-        link: `https://mail.google.com/mail/?authuser=${encodeURIComponent(proposal.accountEmail)}#all/${proposal.messageId}`,
+        link: gmailMessageLink(proposal),
       })),
     groups: groups
       .filter(({ category }) => category !== 'action')
