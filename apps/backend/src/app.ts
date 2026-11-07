@@ -206,6 +206,10 @@ function createFilterCommandId(filterProposalId: string): string {
   return `create-filter-${filterProposalId}`;
 }
 
+function deleteFilterCommandId(gmailFilterId: string): string {
+  return `delete-filter-${gmailFilterId}`;
+}
+
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
@@ -470,14 +474,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const acknowledgedCommandIds = acknowledgementStore.loadAll();
     return context.json({
       filters: loadCreatedFilters()
-        .filter(({ gmailFilterId }) => !acknowledgedCommandIds.includes(`delete-filter-${gmailFilterId}`))
+        .filter(({ gmailFilterId }) => !acknowledgedCommandIds.includes(deleteFilterCommandId(gmailFilterId)))
         .map(({ stored, gmailFilterId, acknowledgedAt }) => ({
-        ...(stored.proposal as object),
-        accountEmail: stored.accountEmail,
-        gmailFilterId,
-        approvedAt: approvals.find(({ proposalId }) => proposalId === stored.id)?.approvedAt,
-        acknowledgedAt,
-      })),
+          ...(stored.proposal as object),
+          accountEmail: stored.accountEmail,
+          gmailFilterId,
+          approvedAt: approvals.find(({ proposalId }) => proposalId === stored.id)?.approvedAt,
+          acknowledgedAt,
+        })),
     });
   });
   const deletedGmailFilterIds: string[] = [];
@@ -510,7 +514,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const deleteFilterCommands = loadCreatedFilters()
       .filter(({ stored }) => stored.accountEmail === accountEmail)
       .filter(({ gmailFilterId }) => deletedGmailFilterIds.includes(gmailFilterId))
-      .map(({ gmailFilterId }) => ({ id: `delete-filter-${gmailFilterId}`, type: 'delete-filter', gmailFilterId }));
+      .map(({ gmailFilterId }) => ({ id: deleteFilterCommandId(gmailFilterId), type: 'delete-filter', gmailFilterId }));
     const pendingCommands = [...archiveCommands, ...filterCommands, ...deleteFilterCommands].filter(
       (command) => !acknowledgedCommandIds.includes(command.id),
     );
