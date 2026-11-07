@@ -23,6 +23,7 @@ export interface AppOptions {
   clock?: Clock;
   databasePath?: string;
   dashboardDirectory?: string;
+  gmailPollingIntervalInMilliseconds?: number;
 }
 
 const systemClock: Clock = { now: () => new Date() };
@@ -99,7 +100,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
       badgeCount: badgeCount(events, clock),
-      sources: describeSourceFreshness([...mailSources.values()], pollingIntervalsInMilliseconds, clock),
+      sources: describeSourceFreshness(
+        [...mailSources.values()],
+        { ...pollingIntervalsInMilliseconds, mail: options.gmailPollingIntervalInMilliseconds ?? pollingIntervalsInMilliseconds.mail },
+        clock,
+      ),
     });
   });
   const dashboardDirectory = options.dashboardDirectory;

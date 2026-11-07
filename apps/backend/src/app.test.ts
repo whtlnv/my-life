@@ -461,4 +461,21 @@ describe('backend app', () => {
       sources: [{ email: 'ana@example.com', source: 'mail', lastReportedAt: '2026-11-02T15:10:00.000Z', stale: false }],
     });
   });
+
+  it("marks the mail source stale in GET /now by the Gmail polling interval the app was created with: with 30 seconds, a report received 70 seconds ago is stale", async () => {
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      gmailPollingIntervalInMilliseconds: 30 * 1000,
+    });
+
+    await postJson(app, '/mail-report', budgetReviewReport);
+    currentTime = new Date('2026-11-02T15:11:10.000Z');
+    const now = await app.request('/now');
+
+    expect(await now.json()).toMatchObject({
+      sources: [{ email: 'ana@example.com', source: 'mail', lastReportedAt: '2026-11-02T15:10:00.000Z', stale: true }],
+    });
+  });
 });
