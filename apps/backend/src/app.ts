@@ -97,18 +97,23 @@ function confirmedCheckLater(proposals: Proposal[], verdicts: { messageId: strin
 
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(proposals, verdicts);
-  const inActionBlock = (category: string | undefined) => category === 'action' || category === 'unknown';
+  const withLink = (proposal: Proposal) => ({ ...proposal, link: gmailMessageLink(proposal) });
+  const inActionBlock =(category: string | undefined) => category === 'action' || category === 'unknown';
   return {
     action: groups
       .filter(({ category }) => inActionBlock(category))
       .flatMap((group) => group.proposals)
-      .map((proposal) => ({
-        ...proposal,
-        link: gmailMessageLink(proposal),
-      })),
+      .map(withLink),
     groups: groups
       .filter(({ category }) => !inActionBlock(category))
-      .map(({ category, proposals: grouped }) => ({ category, count: grouped.length })),
+      .map(({ category, proposals: grouped, systems }) => ({
+        category,
+        count: grouped.length,
+        items: grouped.map(withLink),
+        ...(systems && {
+          systems: systems.map(({ system, proposals: inSystem }) => ({ system, items: inSystem.map(withLink) })),
+        }),
+      })),
   };
 }
 

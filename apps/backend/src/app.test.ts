@@ -806,6 +806,64 @@ describe('backend app', () => {
     expect(groups.map(({ category }) => category)).not.toContain('unknown');
   });
 
+  it('carries in each GET /triage-queue group its items, and in a system-update group its sending-system sub-groups with their items', async () => {
+    const expenseProposal = {
+      action: 'archive',
+      category: 'expense',
+      summary: 'Receipt from Acme',
+      extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+      reason: 'A receipt to file',
+    };
+    const systemUpdateProposal = {
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'info', significant: false },
+      reason: 'A routine notification',
+    };
+    const proposalsInOrder = [expenseProposal, systemUpdateProposal];
+    const triage = {
+      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-expense', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-system', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    });
+    await app.request('/triage-run', { method: 'POST' });
+
+    const queue = await app.request('/triage-queue');
+
+    const { groups } = (await queue.json()) as { groups: { category: string }[] };
+    const expenseItem = {
+      messageId: 'message-expense',
+      category: 'expense',
+      summary: expenseProposal.summary,
+      extract: expenseProposal.extract,
+      reason: expenseProposal.reason,
+      accountEmail: 'ana@example.com',
+      link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-expense',
+    };
+    const systemItem = {
+      messageId: 'message-system',
+      category: 'system-update',
+      summary: systemUpdateProposal.summary,
+      extract: systemUpdateProposal.extract,
+      reason: systemUpdateProposal.reason,
+      accountEmail: 'ana@example.com',
+      link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-system',
+    };
+    expect(groups.find(({ category }) => category === 'expense')).toMatchObject({ items: [expenseItem] });
+    expect(groups.find(({ category }) => category === 'system-update')).toMatchObject({
+      items: [systemItem],
+      systems: [{ system: 'GitHub', items: [systemItem] }],
+    });
+  });
+
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
     const triage = {
       propose: () =>
