@@ -175,7 +175,7 @@
 - [x] An `expense` item shows vendor, amount, currency and date
 - [x] A `sales` item shows company, solution and what it solves
 - [x] Pressing `t` on a focused card confirms it as a task
-- [ ] Pressing `k` on a focused card keeps it
+- [x] Pressing `k` on a focused card keeps it
 - [ ] Pressing `a` on a focused card archives it
 - [ ] Pressing `r` on a focused card asks for a correction and rejects with it
 - [ ] Pressing `t` on a card whose proposal is `keep` or `archive` posts a rejection with a correction to `act` and a task draft titled from the card's summary, not a confirmation

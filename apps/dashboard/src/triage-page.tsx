@@ -53,7 +53,7 @@ function ActionCard({ item }: { item: TriageItem }) {
     <article
       tabIndex={0}
       onKeyDown={(event) => {
-        if (event.key === 't') {
+        if (event.key === 't' || event.key === 'k') {
           confirmAsTask(item.messageId);
         }
       }}

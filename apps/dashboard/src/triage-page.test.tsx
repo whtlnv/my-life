@@ -426,4 +426,39 @@ describe('TriagePage', () => {
       }),
     );
   });
+  it('confirms a focused card whose proposal is `keep` when `k` is pressed', async () => {
+    answerGetTriageQueueWith({
+      action: [
+        {
+          messageId: 'message-23',
+          accountEmail: 'ana@example.com',
+          action: 'keep',
+          category: 'action',
+          summary: 'Marta shares the quarterly numbers',
+          extract: { asker: 'Marta Ruiz', ask: 'Review the quarterly numbers' },
+          reason: 'Worth keeping for the board meeting',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-23',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    const [card] = within(actionBlock).getAllByRole('article') as [HTMLElement];
+    await user.click(card);
+    await user.keyboard('k');
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/verdicts',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ messageId: 'message-23', decision: 'confirmed' }),
+      }),
+    );
+  });
 });
