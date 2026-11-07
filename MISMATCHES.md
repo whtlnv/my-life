@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 16:53 · `apps/backend/src/app.test.ts::lists at GET /filter-proposals each pending filter proposal with its criteria, label, account and the count of archives behind it`
+- Behavior: `GET /filter-proposals` lists pending proposals with criteria, label, account and the count of archives behind each
+- Predicted: AssertionError — status 404 instead of 200, no such route
+- Actual: SyntaxError — `response.json()` throws on Hono's plain-text `404 Not Found` body before the assertion runs
+- Type: right-reason mismatch
+- Resolution: the route is indeed missing; the unrouted 404 is not JSON, so the failure surfaces at body parsing. Accepted as is: once the route exists it answers JSON and the assertion decides.
+
 ## 2026-11-07 15:18 · `apps/backend/src/app.test.ts::lists no archive command at GET /commands for a new archive proposal in a category that was automatic before POST /categories/kill-switch, until it is confirmed`
 - Behavior: After the kill switch, a new `archive` proposal in a category that was `automatic` yields no command until confirmed
 - Predicted: pass on first run. The kill switch writes `advise` to the same mode store that is read when a proposal is made, so the behavior falls out of the previous item.

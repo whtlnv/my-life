@@ -2440,4 +2440,40 @@ describe('backend app', () => {
 
     expect(askedCandidates).toMatchObject([]);
   });
+
+  it('lists at GET /filter-proposals each pending filter proposal with its criteria, label, account and the count of archives behind it', async () => {
+    const filter = {
+      propose: () =>
+        Promise.resolve({
+          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+          costInUsd: 0.05,
+          promptVersion: 'filter-v1',
+        }),
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'sales',
+      summary: 'A shop newsletter',
+      extract: {},
+      reason: 'Promotional mail',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
+    await reportTriageAndConfirmShopNewsletters(app, ['newsletter-1', 'newsletter-2', 'newsletter-3']);
+
+    const response = await app.request('/filter-proposals');
+
+    expect({ status: response.status, body: await response.json() }).toMatchObject({
+      status: 200,
+      body: {
+        proposals: [
+          {
+            criteria: { from: 'news@shop.example.com' },
+            labelName: 'Shop newsletters',
+            accountEmail: 'ana@example.com',
+            archiveCount: 3,
+          },
+        ],
+      },
+    });
+  });
 });

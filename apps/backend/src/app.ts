@@ -408,6 +408,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       fetchedAt: clock.now().toISOString(),
     });
   });
+  app.get('/filter-proposals', (context) => {
+    return context.json({
+      proposals: filterProposalStore.loadAll().map((stored) => ({
+        ...(stored.proposal as object),
+        accountEmail: stored.accountEmail,
+        archiveCount: stored.messageIds.length,
+      })),
+    });
+  });
   const acknowledgementStore = openAcknowledgementStore(databasePath);
   app.post('/commands/:id/acknowledgement', (context) => {
     acknowledgementStore.save(context.req.param('id'));
