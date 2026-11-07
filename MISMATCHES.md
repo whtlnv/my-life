@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-07 14:34 · `apps/backend/src/app.test.ts::lists at GET /commands no archive command for a new archive proposal in a category set to advise until it is confirmed`
+- Behavior: In an `advise` category, a new `archive` proposal yields no archive command until it is confirmed
+- Predicted: passes on first run (read `isCleared` in `app.ts:103` first: only a standing confirmation or a current `automatic` mode yields a command)
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: the behavior was already delivered; the `it.each` row "for an archive proposal that has no verdict yet" (default `advise`) and the confirmed-archive test already pin both halves, and no rewrite can fail without driving a different item, so the duplicate test was removed and nothing was added.
+
 ## 2026-11-07 14:22 · `apps/backend/src/app.test.ts::shows at GET /categories no agreement rate for a category with no proposals while another category has some`
 - Behavior: `GET /categories` shows no agreement rate for a category with no proposals
 - Predicted: passes on first run — `agreementRate` already returns `undefined` for an empty category (`app.ts:127`, added by the previous green), and JSON drops the key
