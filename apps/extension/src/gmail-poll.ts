@@ -4,6 +4,7 @@ const gmailApi = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
 interface PollGmailOptions {
   fetch: FetchFunction;
+  wait?: (milliseconds: number) => Promise<void>;
   accessToken: string;
   accountEmail: string;
   backendUrl: string;
@@ -26,8 +27,14 @@ interface GmailMessage {
   payload: { headers: { name: string; value: string }[] };
 }
 
-function fetchGmail(options: PollGmailOptions, url: string) {
-  return options.fetch(url, { headers: { Authorization: `Bearer ${options.accessToken}` } });
+async function fetchGmail(options: PollGmailOptions, url: string) {
+  const authorization = { headers: { Authorization: `Bearer ${options.accessToken}` } };
+  let response = await options.fetch(url, authorization);
+  for (let attempt = 0; response.status === 429 || response.status >= 500; attempt++) {
+    await options.wait?.(1000 * 2 ** attempt);
+    response = await options.fetch(url, authorization);
+  }
+  return response;
 }
 
 async function fetchGmailJson<ResponseBody>(options: PollGmailOptions, url: string): Promise<ResponseBody> {

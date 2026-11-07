@@ -348,4 +348,56 @@ describe('pollGmailOnce', () => {
       },
     ]);
   });
+
+  it('retries a Gmail read that answers 429 or 5xx, waiting longer before each retry, and reports the message once it is read', async () => {
+    const failuresBeforeSuccess = [
+      new Response('rate limited', { status: 429 }),
+      new Response('backend error', { status: 503 }),
+    ];
+    const backendPosts: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages` && url.searchParams.get('labelIds') === 'INBOX') {
+        return Promise.resolve(Response.json({ messages: [{ id: 'contract', threadId: 'thread-contract' }] }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/messages/contract`) {
+        return Promise.resolve(
+          failuresBeforeSuccess.shift() ??
+            Response.json(gmailMessage('contract', 'Contract review', 'Thu, 5 Nov 2026 10:00:00 -0600')),
+        );
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        backendPosts.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const waitsInMilliseconds: number[] = [];
+
+    await pollGmailOnce({
+      fetch: fakeFetch,
+      wait: (milliseconds: number) => {
+        waitsInMilliseconds.push(milliseconds);
+        return Promise.resolve();
+      },
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      storedHistoryId: undefined,
+    });
+
+    expect(waitsInMilliseconds).toHaveLength(2);
+    expect(waitsInMilliseconds[0]).toBeGreaterThan(0);
+    expect(waitsInMilliseconds[1]).toBeGreaterThan(waitsInMilliseconds[0] ?? 0);
+    expect(backendPosts).toEqual([
+      {
+        accountEmail: 'francisco@example.com',
+        historyId: '98765',
+        messages: [expect.objectContaining({ id: 'contract', subject: 'Contract review' })],
+      },
+    ]);
+  });
 });
