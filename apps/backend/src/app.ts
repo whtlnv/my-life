@@ -103,7 +103,8 @@ function isStillConfirmed(messageId: string, verdicts: StoredVerdict[]): boolean
 }
 
 function isCleared(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
-  return isStillConfirmed(proposal.messageId, verdicts) || proposal.madeAutomatic === true;
+  if (latestVerdictFor(proposal.messageId, verdicts) !== undefined) return isStillConfirmed(proposal.messageId, verdicts);
+  return proposal.madeAutomatic === true;
 }
 
 function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {

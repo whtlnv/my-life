@@ -36,7 +36,7 @@
 - [x] In an `automatic` category, a new `act` proposal with a task draft appears in `GET /tasks` with no verdict
 - [x] In an `automatic` category, a new `keep` proposal yields neither a command nor a task
 - [x] An `archive` proposal made while its category was `automatic` still yields its archive command after the category is switched back to `advise`: the automatic decision is recorded when the proposal is made, as an append-only verdict-like event, not derived from the current mode (supervisor keystone: `GET /commands` reads the current mode at request time)
-- [ ] In an `automatic` category, an `archive` proposal the user then rejects through `POST /verdicts` yields no archive command: the user's later decision wins over the automatic one (supervisor keystone)
+- [x] In an `automatic` category, an `archive` proposal the user then rejects through `POST /verdicts` yields no archive command: the user's later decision wins over the automatic one (supervisor keystone)
 - [ ] An `archive` proposal made while its category was `advise` yields no command when the category is later switched to `automatic`; it waits for its confirmation (automatic applies to new proposals only)
 - [ ] After a backend restart on the same database, an `archive` proposal made while its category was `automatic` still yields its archive command (and an `act` one its task) without a verdict: the automatic decision is persisted with the proposal, not kept in memory (supervisor keystone: `madeAutomatic` is an in-memory flag)
 - [ ] A proposal acted on automatically no longer appears in `GET /triage-queue` and is not counted in the badge

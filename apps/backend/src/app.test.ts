@@ -1956,4 +1956,23 @@ describe('backend app', () => {
       commands: [{ id: expect.any(String) as unknown, messageId: 'message-1' }],
     });
   });
+
+  it('lists no archive command at GET /commands for an archive proposal made while its category was automatic that the user then rejects at POST /verdicts', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await app.request('/categories/cc-thread/mode', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ mode: 'automatic' }),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'rejected' });
+
+    const response = await getCommands(app, 'ana@example.com');
+
+    expect(await response.json()).toEqual({ commands: [] });
+  });
 });
