@@ -454,21 +454,27 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.body(null, 200);
   });
-  app.get('/filters', (context) => {
+  // Each filter whose creation was acknowledged, paired with the proposal it was created from.
+  const loadCreatedFilters = () => {
     const createdFilters = createdFilterStore.loadAll();
-    const approvals = filterProposalApprovalStore.loadAll();
-    return context.json({
-      filters: filterProposalStore.loadAll().flatMap((stored) =>
+    return filterProposalStore
+      .loadAll()
+      .flatMap((stored) =>
         createdFilters
           .filter(({ commandId }) => commandId === createFilterCommandId(stored.id))
-          .map(({ gmailFilterId, acknowledgedAt }) => ({
-            ...(stored.proposal as object),
-            accountEmail: stored.accountEmail,
-            gmailFilterId,
-            approvedAt: approvals.find(({ proposalId }) => proposalId === stored.id)?.approvedAt,
-            acknowledgedAt,
-          })),
-      ),
+          .map(({ gmailFilterId, acknowledgedAt }) => ({ stored, gmailFilterId, acknowledgedAt })),
+      );
+  };
+  app.get('/filters', (context) => {
+    const approvals = filterProposalApprovalStore.loadAll();
+    return context.json({
+      filters: loadCreatedFilters().map(({ stored, gmailFilterId, acknowledgedAt }) => ({
+        ...(stored.proposal as object),
+        accountEmail: stored.accountEmail,
+        gmailFilterId,
+        approvedAt: approvals.find(({ proposalId }) => proposalId === stored.id)?.approvedAt,
+        acknowledgedAt,
+      })),
     });
   });
   const deletedGmailFilterIds: string[] = [];
@@ -493,17 +499,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const filterCommands = filterProposalStore
       .loadAll()
       .filter((stored) => stored.accountEmail === accountEmail && approvedFilterProposalIds.includes(stored.id))
-      .map((stored) => ({ id: createFilterCommandId(stored.id), type: 'create-filter', ...(stored.proposal as object) }));
-    const createdFilters = createdFilterStore.loadAll();
-    const deleteFilterCommands = filterProposalStore
-      .loadAll()
-      .filter((stored) => stored.accountEmail === accountEmail)
-      .flatMap((stored) =>
-        createdFilters
-          .filter(({ commandId }) => commandId === createFilterCommandId(stored.id))
-          .filter(({ gmailFilterId }) => deletedGmailFilterIds.includes(gmailFilterId))
-          .map(({ gmailFilterId }) => ({ id: `delete-filter-${gmailFilterId}`, type: 'delete-filter', gmailFilterId })),
-      );
+      .map((stored) => ({
+        id: createFilterCommandId(stored.id),
+        type: 'create-filter',
+        ...(stored.proposal as object),
+      }));
+    const deleteFilterCommands = loadCreatedFilters()
+      .filter(({ stored }) => stored.accountEmail === accountEmail)
+      .filter(({ gmailFilterId }) => deletedGmailFilterIds.includes(gmailFilterId))
+      .map(({ gmailFilterId }) => ({ id: `delete-filter-${gmailFilterId}`, type: 'delete-filter', gmailFilterId }));
     const pendingCommands = [...archiveCommands, ...filterCommands, ...deleteFilterCommands].filter(
       (command) => !acknowledgedCommandIds.includes(command.id),
     );
