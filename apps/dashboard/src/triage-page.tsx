@@ -71,7 +71,7 @@ function correctToTask(item: TriageItem) {
 }
 
 function correctToCategory(messageId: TriageItem['messageId'], category: string, note: string) {
-  void postVerdict({ messageId, decision: 'rejected', correction: { category, note } });
+  return postVerdict({ messageId, decision: 'rejected', correction: { category, note } });
 }
 
 const categories = ['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown'];
@@ -101,7 +101,9 @@ function ActionCard({ item, onAccepted }: { item: TriageItem; onAccepted: () => 
       onKeyDown={(event) => {
         if (correcting) {
           if (event.key === 'Enter') {
-            correctToCategory(item.messageId, category, note);
+            void correctToCategory(item.messageId, category, note).then((response) => {
+              if (response.ok) onAccepted();
+            });
           } else if (event.key === 'Escape') {
             setCorrecting(false);
           } else if (event.target === event.currentTarget) {

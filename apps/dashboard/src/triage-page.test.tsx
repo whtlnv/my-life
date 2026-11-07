@@ -1018,4 +1018,51 @@ describe('TriagePage', () => {
       expect(within(actionBlock).queryByText('Pedro shares the lunch menu')).not.toBeInTheDocument();
     });
   });
+
+  it('removes a card from the page once the backend accepts the rejection posted from the correction prompt', async () => {
+    const queue = {
+      action: [
+        {
+          messageId: 'message-42',
+          accountEmail: 'ana@example.com',
+          action: 'act',
+          category: 'action',
+          summary: 'Acme sends the January invoice',
+          extract: { asker: 'Acme billing', ask: 'Pay the invoice' },
+          reason: 'Asks for a payment',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-42',
+        },
+      ],
+      groups: [],
+      remaining: 0,
+      paused: false,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          input === '/triage-queue'
+            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
+            : input === '/verdicts'
+              ? new Response(null, { status: 201 })
+              : new Response(null, { status: 404 }),
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const actionBlock = await screen.findByRole('region', { name: 'Action' });
+    await user.click(within(actionBlock).getByRole('article'));
+    await user.keyboard('r');
+    const prompt = screen.getByRole('dialog');
+    await user.selectOptions(within(prompt).getByRole('combobox'), 'expense');
+    await user.type(within(prompt).getByRole('textbox'), 'Invoices are expenses, not asks');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(within(actionBlock).queryByText('Acme sends the January invoice')).not.toBeInTheDocument();
+    });
+  });
 });

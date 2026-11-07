@@ -188,7 +188,7 @@
 - [x] The confirm-all key on a focused group confirms that group only
 - [x] An item disappears from the page once its verdict is accepted
 - [x] A card disappears once the backend accepts the correction its key posts
-- [ ] A card disappears once the backend accepts the rejection posted from the `r` prompt
+- [x] A card disappears once the backend accepts the rejection posted from the `r` prompt
 - [ ] A group disappears once the backend accepts its confirm-all
 - [ ] The page shows how many messages remain to be triaged
 - [ ] When the ceiling paused triage, the page says so
