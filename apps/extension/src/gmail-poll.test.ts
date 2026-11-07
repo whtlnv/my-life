@@ -493,7 +493,7 @@ describe('pollGmailOnce', () => {
   });
 
   it('reads message metadata up to 10 at a time in parallel, never more than 10 in flight, and keeps the inbox order', async () => {
-    const inboxIds = Array.from({ length: 25 }, (_, index) => `message-${index + 1}`);
+    const inboxIds = Array.from({ length: 25 }, (_, index) => `message-${String(index + 1)}`);
     let readsInFlight = 0;
     let mostReadsInFlight = 0;
     const backendPosts: { messages: { id: string }[] }[] = [];

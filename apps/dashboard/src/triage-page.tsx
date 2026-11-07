@@ -46,7 +46,7 @@ interface TriageQueueResponse {
 
 export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
-export const remainingMessagesText = (count: number) => `${count} messages remaining`;
+export const remainingMessagesText = (count: number) => `${String(count)} messages remaining`;
 export const pausedNoticeText = 'Triage is paused: the daily spend ceiling was reached';
 export const fetchedAtText = (fetchedAt: string) => `Fetched at ${fetchedAt}`;
 

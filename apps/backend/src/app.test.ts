@@ -659,7 +659,7 @@ describe('backend app', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => now }, triage });
     const [budgetReview] = budgetReviewReport.messages;
     const fromLuis = (id: string) => ({ ...budgetReview, id, threadId: `thread-${id}`, subject: `Budget ${id}` });
-    const earlierIds = Array.from({ length: 10 }, (_, index) => `message-${index + 1}`);
+    const earlierIds = Array.from({ length: 10 }, (_, index) => `message-${String(index + 1)}`);
     await postJson(app, '/mail-report', { ...budgetReviewReport, messages: earlierIds.map(fromLuis) });
     await postTriageRun(app);
     for (const [index, messageId] of earlierIds.entries()) {
