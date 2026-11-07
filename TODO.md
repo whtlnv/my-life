@@ -122,7 +122,7 @@
 - [x] A triage run stops asking once today's spend reaches the ceiling
 - [x] Every proposal is stored append-only with the time it was made and the prompt version that made it
 - [x] Every triage call's spend is logged with its time, model and cost
-- [ ] Proposals made and spend logged before the backend restarts (same database file) still exist after it: the message is not triaged again and the spend still counts toward today's ceiling
+- [x] Proposals made and spend logged before the backend restarts (same database file) still exist after it: the message is not triaged again and the spend still counts toward today's ceiling
 - [ ] The triage queue answers the action block, the groups with their counts, the number of messages remaining and whether the ceiling paused triage
 - [ ] Each queue item says which account it came from and links to the message in Gmail for that account
 - [ ] A verdict posted for a waiting proposal is stored append-only and the item leaves the queue

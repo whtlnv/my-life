@@ -77,8 +77,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const proposalStore = openProposalStore(databasePath);
   const spendStore = openSpendStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
-  const proposals: Proposal[] = [];
-  let spentInUsd = 0;
+  const proposals: Proposal[] = proposalStore
+    .loadAll()
+    .map(({ messageId }) => ({ messageId, accountEmail: '', action: '' }));
+  let spentInUsd = spendStore.loadAll().reduce((total, { costInUsd }) => total + costInUsd, 0);
   const hasReachedDailySpendCeiling = (): boolean =>
     options.dailySpendCeilingInUsd !== undefined && spentInUsd >= options.dailySpendCeilingInUsd;
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
