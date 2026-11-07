@@ -43,6 +43,7 @@ function describeAccountFreshness(stored: StoredCalendarSnapshot[], clock: Clock
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
   const snapshotStore = openCalendarSnapshotStore(options.databasePath ?? ':memory:');
+  let remainingMessages = 0;
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
@@ -64,7 +65,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     snapshotStore.save(snapshot, clock.now());
     return context.body(null, 200);
   });
-  let remainingMessages = 0;
   app.post('/mail-report', async (context) => {
     const report = await context.req.json<{ accountEmail: string; messages: unknown[] }>();
     if (!isAllowed(report.accountEmail)) {
