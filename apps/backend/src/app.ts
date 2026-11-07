@@ -212,15 +212,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const verdictStore = openVerdictStore(databasePath);
   const filterProposalStore = openFilterProposalStore(databasePath);
   const proposedCandidateKeys = new Set<string>();
-  const proposeNewFilterCandidates = async (): Promise<void> => {
-    const filter = options.filter;
-    if (filter === undefined) return;
+  const loadDecidedMessages = () => {
     const verdicts = verdictStore.loadAll();
-    const decidedProposals = reportedMessageStore.loadAll().flatMap(({ messageId, accountEmail, from, listId }) => {
+    return reportedMessageStore.loadAll().flatMap(({ messageId, accountEmail, from, listId }) => {
       const verdict = latestVerdictFor(messageId, verdicts);
       return verdict === undefined ? [] : [{ messageId, accountEmail, from, ...(listId === null ? {} : { listId }), verdict }];
     });
-    for (const candidate of filterCandidates(decidedProposals)) {
+  };
+  const proposeNewFilterCandidates = async (): Promise<void> => {
+    const filter = options.filter;
+    if (filter === undefined) return;
+    for (const candidate of filterCandidates(loadDecidedMessages())) {
       const key = JSON.stringify([candidate.accountEmail, candidate.criteria]);
       if (proposedCandidateKeys.has(key)) continue;
       proposedCandidateKeys.add(key);
