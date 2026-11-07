@@ -1,9 +1,19 @@
 import { useEffect, useState } from 'react';
 
+import { accountName } from './account-name';
+
+interface RecentProposal {
+  summary: string;
+  action: string;
+  accountEmail: string;
+  link: string;
+}
+
 interface CategoryRow {
   category: string;
   mode: 'advise' | 'automatic';
   agreementRate?: number;
+  recentProposals: RecentProposal[];
 }
 
 interface CategoriesResponse {
@@ -18,6 +28,7 @@ const rateText = (rate: number | undefined) => (rate === undefined ? noProposals
 
 export const CategoriesPage = () => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [expanded, setExpanded] = useState<string | undefined>();
 
   const loadCategories = () =>
     fetch('/categories')
@@ -52,6 +63,27 @@ export const CategoriesPage = () => {
           >
             {row.category}
           </button>
+          <button
+            type="button"
+            aria-expanded={expanded === row.category}
+            onClick={() => {
+              setExpanded(row.category);
+            }}
+          >
+            Recent proposals
+          </button>
+          {expanded === row.category && (
+            <ul aria-label={`${row.category} proposals`}>
+              {row.recentProposals.map((proposal) => (
+                <li key={proposal.link}>
+                  <span>{proposal.summary}</span>
+                  <span>{proposal.action}</span>
+                  <span>{accountName(proposal.accountEmail)}</span>
+                  <a href={proposal.link}>Open</a>
+                </li>
+              ))}
+            </ul>
+          )}
         </li>
       ))}
     </ul>

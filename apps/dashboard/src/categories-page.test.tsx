@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { accountName } from './account-name';
 import { agreementRateText, CategoriesPage, noProposalsYetText } from './categories-page';
 
 const answerGetCategoriesWith = (body: unknown) => {
@@ -93,5 +94,30 @@ describe('CategoriesPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('switch', { name: 'sales' })).toHaveAttribute('aria-checked', 'true');
     });
+  });
+  it('lists the recent proposals of a category with summary, action, account name and a link to the message once it is expanded', async () => {
+    const proposal = {
+      summary: 'Vendor pitches a CRM',
+      action: 'archive',
+      accountEmail: 'franciscoc@psmutuus.com',
+      link: 'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/pitch-1',
+    };
+    answerGetCategoriesWith({
+      categories: [{ category: 'sales', mode: 'advise', agreementRate: 0.5, recentProposals: [proposal] }],
+    });
+
+    render(<CategoriesPage />);
+
+    const list = await screen.findByRole('list', { name: 'Categories' });
+    const row = within(list).getByRole('listitem');
+    expect(within(row).queryByText(proposal.summary)).toBeNull();
+    await userEvent.click(within(row).getByRole('button', { expanded: false }));
+
+    const proposals = within(row).getByRole('list', { name: 'sales proposals' });
+    const item = within(proposals).getByRole('listitem');
+    expect(within(item).getByText(proposal.summary)).toBeInTheDocument();
+    expect(within(item).getByText(proposal.action)).toBeInTheDocument();
+    expect(within(item).getByText(accountName(proposal.accountEmail))).toBeInTheDocument();
+    expect(within(item).getByRole('link')).toHaveAttribute('href', proposal.link);
   });
 });
