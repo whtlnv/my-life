@@ -43,6 +43,19 @@ function ActionCard({ item }: { item: TriageItem }) {
   );
 }
 
+function SystemSection({ systemGroup }: { systemGroup: SystemGroup }) {
+  return (
+    <section aria-label={systemGroup.system}>
+      {systemGroup.items.map((item) => (
+        <article key={item.messageId}>
+          <p>{item.summary}</p>
+          {item.extract.significant && <p>{significantFlagText}</p>}
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function CategoryGroup({ group }: { group: TriageGroup }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -58,16 +71,7 @@ function CategoryGroup({ group }: { group: TriageGroup }) {
       </button>
       {expanded &&
         (group.systems
-          ? group.systems.map((systemGroup) => (
-              <section key={systemGroup.system} aria-label={systemGroup.system}>
-                {systemGroup.items.map((item) => (
-                  <article key={item.messageId}>
-                    <p>{item.summary}</p>
-                    {item.extract.significant && <p>{significantFlagText}</p>}
-                  </article>
-                ))}
-              </section>
-            ))
+          ? group.systems.map((systemGroup) => <SystemSection key={systemGroup.system} systemGroup={systemGroup} />)
           : group.items.map((item) => <p key={item.messageId}>{item.summary}</p>))}
     </section>
   );
