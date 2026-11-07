@@ -41,6 +41,14 @@ const salesProposal = {
   reason: 'A vendor pitching a product',
 };
 
+const calendarDriveProposal = {
+  action: 'archive',
+  category: 'calendar-drive',
+  summary: 'Launch review moved to Tuesday',
+  extract: { item: 'Launch review', change: 'Moved to Tuesday 10:00' },
+  reason: 'A calendar notification',
+};
+
 type Backend = ReturnType<typeof createApp>;
 
 interface MessageSeenByTriage {
@@ -190,6 +198,21 @@ describe('Gmail fake server', () => {
     expect(salesItems[0]).toMatchObject({
       messageId: messagesSeenByTriage[0]?.id,
       extract: { company: salesProposal.extract.company },
+    });
+  });
+  it('polling the calendar-notification scenario shows the notification with its item in the calendar-drive group of GET /triage-queue', async () => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => calendarDriveProposal);
+    await pollScenarioIntoBackend('calendar-notification', backend);
+    const queue = await runTriageAndReadQueue<{
+      groups: { category: string; items: { messageId: string; extract: { item?: string } }[] }[];
+    }>(backend);
+
+    expect(messagesSeenByTriage).toHaveLength(1);
+    const calendarDriveItems = queue.groups.find(({ category }) => category === 'calendar-drive')?.items ?? [];
+    expect(calendarDriveItems).toHaveLength(1);
+    expect(calendarDriveItems[0]).toMatchObject({
+      messageId: messagesSeenByTriage[0]?.id,
+      extract: { item: calendarDriveProposal.extract.item },
     });
   });
 });

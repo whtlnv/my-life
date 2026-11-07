@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense' | 'system-update-burst' | 'sales-pitch';
+type GmailScenario = 'action-to-me' | 'cc-thread' | 'expense' | 'system-update-burst' | 'sales-pitch' | 'calendar-notification';
 
 interface FakeGmailMessage {
   id: string;
@@ -124,6 +124,21 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
             { name: 'To', value: accountEmail },
             { name: 'Subject', value: 'Invoice automation for your team' },
             { name: 'Date', value: 'Mon, 2 Nov 2026 14:00:00 -0600' },
+          ],
+        },
+      },
+    ],
+    'calendar-notification': [
+      {
+        id: 'launch-review-moved',
+        threadId: 'launch-review-moved',
+        snippet: 'Launch review has been updated',
+        payload: {
+          headers: [
+            { name: 'From', value: 'Google Calendar <calendar-notification@google.com>' },
+            { name: 'To', value: accountEmail },
+            { name: 'Subject', value: 'Updated invitation: Launch review' },
+            { name: 'Date', value: 'Mon, 2 Nov 2026 15:00:00 -0600' },
           ],
         },
       },

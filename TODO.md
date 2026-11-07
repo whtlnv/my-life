@@ -204,7 +204,7 @@
 - [x] Against the `expense` scenario, the receipt shows in the expense group with its amount
 - [x] Against the `system-update-burst` scenario, the notifications show grouped by sending system
 - [x] Against the `sales-pitch` scenario, the pitch shows in the sales group
-- [ ] Against the `calendar-notification` scenario, the notification shows in the calendar-drive group
+- [x] Against the `calendar-notification` scenario, the notification shows in the calendar-drive group
 - [ ] Against the `history-404` scenario, the extension recovers with a full inbox report
 - [ ] Against the fake Gmail server, a confirmed archive leaves the message out of the inbox with the label `my-life/archived`
 
