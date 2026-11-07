@@ -22,4 +22,13 @@ describe('displayedCategory', () => {
 
     expect(displayedCategory(proposal, message, 'franciscoc@psmutuus.com')).toBe('cc-thread');
   });
+
+  it('keeps a sales proposal as sales whether the message is addressed to the user or only copies them', () => {
+    const proposal = { category: 'sales' };
+    const addressed = { to: 'franciscoc@psmutuus.com', cc: '' };
+    const copied = { to: 'luis@example.com', cc: 'franciscoc@psmutuus.com' };
+
+    expect(displayedCategory(proposal, addressed, 'franciscoc@psmutuus.com')).toBe('sales');
+    expect(displayedCategory(proposal, copied, 'franciscoc@psmutuus.com')).toBe('sales');
+  });
 });
