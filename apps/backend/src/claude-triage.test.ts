@@ -124,4 +124,28 @@ describe('Claude triage', () => {
 
     expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toMatchObject({ addressedToUser: false });
   });
+
+  it('sends the chosen verdict examples with the message', async () => {
+    const { sentRequests, createMessage } = recordRequests();
+    const triage = createClaudeTriage({
+      model: 'claude-opus-5-5',
+      createMessage,
+    });
+    const examples = [
+      {
+        messageId: 'message-0',
+        from: 'Bruno <bruno@supplier.com>',
+        category: 'expense',
+        decision: 'confirmed',
+        decidedAt: '2026-11-05T09:00:00-06:00',
+      },
+    ];
+
+    await triage.propose(
+      { id: 'message-3', accountEmail: 'ana@acme.com', from: 'Bruno <bruno@supplier.com>', date: '2026-11-07T10:00:00Z' },
+      examples,
+    );
+
+    expect(JSON.parse(sentRequests[0]?.messages?.[0]?.content ?? '{}')).toMatchObject({ examples });
+  });
 });

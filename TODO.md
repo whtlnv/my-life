@@ -150,7 +150,7 @@
 - [x] A triage request carries the account's profile text from `profile/`
 - [x] A triage request carries the message's headers, snippet and whether it is addressed to the user
 - [x] A triage request for a message where the account is only in Cc says it is not addressed to the user, using the domain's address check
-- [ ] A triage request carries the chosen verdict examples
+- [x] A triage request carries the chosen verdict examples
 - [ ] A valid tool-use answer becomes a proposal
 - [ ] A tool-use answer that fails the shared contract becomes no proposal and the failure is recorded
 - [ ] The cost of a call is computed from the tokens the answer reports

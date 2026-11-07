@@ -33,7 +33,7 @@ interface TriageMessage {
   listId?: string;
 }
 
-function describeMessage(message: TriageMessage): string {
+function describeMessage(message: TriageMessage, examples: unknown[] | undefined): string {
   return JSON.stringify({
     from: message.from,
     to: message.to,
@@ -43,13 +43,14 @@ function describeMessage(message: TriageMessage): string {
     listId: message.listId,
     snippet: message.snippet,
     addressedToUser: isAddressedToUser({ to: message.to ?? '' }, message.accountEmail ?? ''),
+    examples,
   });
 }
 
 export function createClaudeTriage({ model, promptPath, profileDirectory, createMessage }: ClaudeTriageDependencies) {
   return {
-    propose: async (message: TriageMessage): Promise<{ promptVersion: string } | undefined> => {
-      const messages = [{ role: 'user', content: describeMessage(message) }];
+    propose: async (message: TriageMessage, examples?: unknown[]): Promise<{ promptVersion: string } | undefined> => {
+      const messages = [{ role: 'user', content: describeMessage(message, examples) }];
       if (promptPath === undefined) {
         await createMessage({ model, messages });
         return undefined;
