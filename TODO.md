@@ -21,7 +21,7 @@
 - [x] A `system-update` proposal whose extract has the sending system, a severity and a `significant` flag passes the shared contract
 - [x] A `system-update` proposal whose extract has no sending system fails the shared contract
 - [x] A `sales` proposal whose extract has company, solution and the problem it solves passes the shared contract
-- [ ] A `sales` proposal whose extract has no company fails the shared contract
+- [x] A `sales` proposal whose extract has no company fails the shared contract
 - [ ] A `calendar-drive` proposal whose extract names the event or document and what changed passes the shared contract
 - [ ] A `cc-thread` proposal whose extract says what happened since the user's last message passes the shared contract
 

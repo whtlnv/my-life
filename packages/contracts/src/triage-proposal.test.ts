@@ -150,4 +150,16 @@ describe('triageProposal', () => {
 
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
+
+  it('rejects a sales proposal whose extract has no company, even when it carries an ask', () => {
+    const proposal = {
+      action: 'archive',
+      category: 'sales',
+      summary: 'Acme pitches an AI scheduling assistant',
+      extract: { solution: 'AI scheduling assistant', problem: 'Time lost coordinating meetings', asker: 'Acme', ask: 'Book a demo' },
+      reason: 'An unsolicited pitch from a vendor.',
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
 });
