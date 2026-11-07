@@ -187,7 +187,9 @@
 - [x] ArrowDown on the last card keeps focus there instead of throwing
 - [x] The confirm-all key on a focused group confirms that group only
 - [x] An item disappears from the page once its verdict is accepted
-- [ ] A card also disappears once a rejection or a correction the backend accepts is posted for it, and a group disappears once its confirm-all is accepted
+- [x] A card disappears once the backend accepts the correction its key posts
+- [ ] A card disappears once the backend accepts the rejection posted from the `r` prompt
+- [ ] A group disappears once the backend accepts its confirm-all
 - [ ] The page shows how many messages remain to be triaged
 - [ ] When the ceiling paused triage, the page says so
 - [ ] When triage is not paused, the page shows no paused notice
