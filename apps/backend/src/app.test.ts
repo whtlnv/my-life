@@ -1736,4 +1736,23 @@ describe('backend app', () => {
       categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
     });
   });
+
+  it('answers 400 to PUT /categories/:category/mode with an unknown category or an unknown mode, and GET /categories still shows every category advise', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const switchMode = (category: string, mode: string) =>
+      app.request(`/categories/${category}/mode`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+
+    const unknownCategory = await switchMode('newsletters', 'automatic');
+    const unknownMode = await switchMode('sales', 'sometimes');
+    const response = await app.request('/categories');
+
+    expect([unknownCategory.status, unknownMode.status]).toEqual([400, 400]);
+    expect(await response.json()).toEqual({
+      categories: triageCategories.map((category) => ({ category, mode: 'advise' })),
+    });
+  });
 });

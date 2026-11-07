@@ -26,7 +26,7 @@
 - [x] `GET /categories` lists every triage category (`action`, `cc-thread`, `expense`, `system-update`, `sales`, `calendar-drive`, `unknown`) with mode `advise` when none has been switched
 - [x] After `PUT /categories/:category/mode` with `automatic`, `GET /categories` shows that category `automatic` and every other category still `advise`
 - [x] After `PUT /categories/:category/mode` with `advise`, a category previously `automatic` shows `advise` again
-- [ ] `PUT /categories/:category/mode` with an unknown category or mode answers 400 and changes nothing
+- [x] `PUT /categories/:category/mode` with an unknown category or mode answers 400 and changes nothing
 - [ ] A category's mode survives a backend restart on the same database
 - [ ] `GET /categories` shows each category's agreement rate as confirmed verdicts ÷ proposals in that category (a rejection or a correction counts as not confirmed)
 - [ ] `GET /categories` shows no agreement rate for a category with no proposals
