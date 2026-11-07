@@ -39,7 +39,7 @@ interface ReportedMessage {
 type Proposal = Parameters<typeof triageQueue>[0][number];
 
 function withDisplayedCategory(proposal: Proposal, message: ReportedMessage, accountEmail: string): Proposal {
-  const isAddressedToAccount = `${message.to ?? ''} ${message.cc ?? ''}`.includes(accountEmail);
+  const isAddressedToAccount = `${message.to ?? ''} ${message.cc ?? ''}`.toLowerCase().includes(accountEmail);
   return proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal;
 }
 

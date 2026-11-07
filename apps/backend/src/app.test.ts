@@ -1043,6 +1043,28 @@ describe('backend app', () => {
     });
   });
 
+  it('keeps in the action block of GET /triage-queue an action proposal for a message whose To header names the reporting account with a display name and different letter case', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks Ana for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks Ana for a review',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, to: 'Ana López <Ana@Example.com>' }],
+    });
+    await postTriageRun(app);
+
+    const queue = await app.request('/triage-queue');
+
+    const { action } = (await queue.json()) as { action: { messageId: string }[] };
+    expect(action).toMatchObject([{ messageId: 'message-1' }]);
+  });
+
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
     const triage = triageAnswering({
       action: 'act',
