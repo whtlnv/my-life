@@ -11,11 +11,11 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 
 ## 2. Anthropic API key (Phase 1)
 
-- [ ] Your own key → local `.env` as `ANTHROPIC_API_KEY`. Never in git.
+- [x] Your own key → local `.env` as `ANTHROPIC_API_KEY`. Never in git. (2026-11-06)
 
 ## 3. Profile (Phase 1)
 
-- [ ] Fill `profile/` from the template Claude writes in Phase 0: each account's purpose, the people whose messages always matter, the people whose messages never do, what you are working on this month, and anything that should always become a task (invoices, contracts, approvals...).
+- [ ] (`profile/psmutuus.md` started 2026-11-06 from the user's description; the other three accounts and the people lists are still open) Fill `profile/`: each account's purpose, the people whose messages always matter, the people whose messages never do, what you are working on this month, and anything that should always become a task (invoices, contracts, approvals...).
 
 ## 4. Todo list (Phase 3)
 
@@ -35,7 +35,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 
 - [x] **Daily LLM spend ceiling and model.** Decided 2026-11-06: Opus 5.5 for classification and prioritization, ceiling USD 20 per day (raise it in config for the first-day backfill if needed); triage pauses and the dashboard says so when reached.
 - [ ] **Which calendars per account.** Default: every calendar the account can see, except declined events and calendars named _Holidays_ / _Birthdays_.
-- [ ] **Triage categories to start with.** Default: `newsletter`, `receipt`, `notification`, `calendar-invite`, `personal`, `work-thread`, `unknown`. All start in `advise`.
+- [x] **Triage categories to start with.** Decided 2026-11-06 with the user: `action`, `cc-thread`, `expense`, `system-update`, `sales`, `calendar-drive`, `unknown` (`PLAN.md` Phase 1). All start in `advise`.
 - [ ] **How many confirmed archives from the same sender before a filter is proposed.** Default: 3.
 - [ ] **Which profile keeps `web.whatsapp.com` open.** Default: the first one you install the extension in.
 - [ ] **Business time zone.** Default: `America/Mexico_City`.

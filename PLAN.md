@@ -4,8 +4,8 @@
 
 Phases (locked decision 17):
 
-- **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton — code delivered 2026-11-02 (`DONE.md`); the manual walk-through and the auth spike (`docs/phase-0-walkthrough.md`) wait on `PENDING_TASKS.md` § 1.
-- **Phase 1:** Gmail triage on one account, _advise_ mode.
+- **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton — code delivered 2026-11-02 (`DONE.md`); four profiles report since 2026-11-06; the three-day token check is due 2026-11-09 (`docs/phase-0-walkthrough.md`).
+- **Phase 1:** Gmail triage on `franciscoc@psmutuus.com`, _advise_ mode, category groups.
 - **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters.
 - **Phase 3:** tasks and the prioritizer: import, _now_ / _later today_, waiting-on.
 - **Phase 4:** Slack.
@@ -13,7 +13,7 @@ Phases (locked decision 17):
 - **Phase 6:** Gemini meeting notes from Drive.
 - **Phase 7:** cloud.
 
-Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Before Phase 1: § 2 (Anthropic key) and § 3 (profile). Before Phase 4: § 5 (Slack app). Before Phase 5: § 6 (Telegram credentials).
+Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Phase 1's inputs arrived 2026-11-06 (key in `.env`, `profile/psmutuus.md`). Before Phase 4: § 5 (Slack app). Before Phase 5: § 6 (Telegram credentials).
 
 ---
 
@@ -31,16 +31,30 @@ What the supervision showed — check these every cycle:
 
 ---
 
-## Phase 1 — Gmail triage, one account, advise
+## Phase 1 — Gmail triage, psmutuus, advise
 
-Outcome: the oldest-pain inbox is triaged by Claude into `archive` / `keep` / `act` proposals that the user confirms with one key; `act` creates a task.
+Outcome: `franciscoc@psmutuus.com` reaches inbox zero from the dashboard, and mail addressed **to the user** that needs them to act is always visible first. Everything else arrives pre-sorted into compact groups the user clears with one key per group. Categories and treatments come from the user (2026-11-06, `profile/psmutuus.md`); the LLM proposes, the user confirms (locked decision 7) — `automatic` switches arrive in Phase 2.
 
-- Extension polls Gmail through `history.list` from the stored history id (full resync on 404), batches `messages.get` with `format=metadata` plus snippet, posts to `POST /sources/mail`.
-- Domain: a `Triage` port; the `TriageProposal` (`archive` / `keep` / `act`, category, reason, optional task draft) validated by zod; a `Verdict` (confirm / reject, with the user's correction) stored append-only; the rule that an `advise` category never archives on its own.
+Categories, each with its own extract and default proposal:
+
+- `action` — sent to the user (in To, not only Cc) and asking them to do something. One card each: who, what is asked, by when. Default `act` (creates a task) or `keep`; never buried in a group.
+- `cc-thread` — the user is in Cc. One line per thread: what happened since the user's last message, no quoted scaffolding. Default `archive`.
+- `expense` — receipts, invoices, card charges. Extract vendor, amount, currency, date, and keep them for the weekly statement to accounting (the export itself is Phase 2). Default `archive`.
+- `system-update` — AWS, Sentry, monitoring and SaaS notifications. Grouped by the sending system; one line each with a severity; billing, outage, security and new-error items are flagged `significant`. Default `archive`.
+- `sales` — unsolicited pitches. Card: company, solution, what they solve. Default `archive`; `keep` puts it on a _check later_ list.
+- `calendar-drive` — Google Calendar and Drive notifications. One line: the event or document and what changed. Default `archive`; the first candidate for `automatic` in Phase 2.
+- `unknown` — the LLM could not place it; shown with the `action` block so nothing hides.
+
+Items:
+
+- Extension polls Gmail through `history.list` from the stored history id (full resync on 404), batches `messages.get` with `format=metadata` plus snippet, posts to `POST /sources/mail` with the account. Headers include To/Cc so the domain, not the prompt, decides "addressed to the user".
+- Backfill: the inbox's current contents are triaged too, newest first, inside the daily ceiling; the dashboard shows how many remain and says when the ceiling paused it.
+- Domain: a `Triage` port; the `TriageProposal` (`archive` / `keep` / `act`, category, one-line summary, the category's extract, reason, optional task draft) validated by zod; a `Verdict` (confirm / reject, with the user's correction) stored append-only; the rule that an `advise` category never archives on its own; grouping (by category, then by sending system or thread) and ordering (`action` and `unknown` first, then groups by size) as pure functions.
 - Claude adapter: versioned prompt files; the `profile/` context plus the N most recent verdicts for the same sender or category as examples; one Opus 5.5 call per message (model id from config); spend logged per call against the daily ceiling (default USD 20, config); a scripted fake in the unit and integration suites.
-- Dashboard triage queue: one proposal at a time, keys `a` archive, `k` keep, `t` make task, `r` reject with a correction; shows the reason and the source link.
-- Confirmed archive → Gmail `messages.modify` removes `INBOX` and adds label `my-life/archived`; confirmed `act` → a task in the store (title, source link, account).
-- Gmail fake HTTP server with scenarios (`newsletter`, `receipt`, `thread-needs-reply`, `history-404`).
+- Dashboard triage page: the `action` block first (cards with who / what / when, keys `t` make task, `k` keep, `a` archive, `r` reject with a correction); then one collapsed group per category with its count, a one-key _confirm all_ per group, and expand to confirm or reject individually; every item shows its reason and a link to the message.
+- Confirmed `archive` → Gmail `messages.modify` removes `INBOX` and adds label `my-life/archived`; confirmed `act` → a task in the store (title, source link, account); confirmed `keep` on `sales` → the _check later_ list.
+- Badge adds the count of `action` cards waiting.
+- Gmail fake HTTP server with scenarios (`action-to-me`, `cc-thread`, `expense`, `system-update-burst`, `sales-pitch`, `calendar-notification`, `history-404`).
 
 ## Phase 2 — Every account, categories, Gmail filters
 
@@ -50,6 +64,7 @@ Outcome: all inboxes are triaged, trusted categories run automatically, and recu
 - Category settings page: each category's `advise` / `automatic` switch, with its recent proposals and the agreement rate (confirmed ÷ proposed) shown before the switch. Automatic actions are labeled `my-life/auto`.
 - Filter proposals: after K confirmed archives from the same sender or list-id, Claude proposes a Gmail filter (criteria + label + skip inbox); the user approves; the extension creates it through `users.settings.filters.create` (`gmail.settings.basic`). Approvals are stored before creation. A filter page lists what was created and lets the user delete one.
 - Kill switch: one toggle returns every category to `advise`.
+- Weekly expense statement: every `expense` extract of the week (vendor, amount, currency, date, link to the message) as one file the user sends to accounting.
 
 ## Phase 3 — Tasks and the prioritizer
 
