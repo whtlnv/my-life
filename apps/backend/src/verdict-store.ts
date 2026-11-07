@@ -25,7 +25,12 @@ export function openVerdictStore(databasePath: string) {
   >('SELECT message_id, decision, correction, decided_at FROM verdicts ORDER BY rowid');
   return {
     save(stored: StoredVerdict): void {
-      saveVerdict.run(stored.messageId, stored.decision, JSON.stringify(stored.correction) ?? null, stored.decidedAt);
+      saveVerdict.run(
+        stored.messageId,
+        stored.decision,
+        stored.correction === undefined ? null : JSON.stringify(stored.correction),
+        stored.decidedAt,
+      );
     },
     loadAll(): StoredVerdict[] {
       return loadVerdicts.all().map((row) => ({
