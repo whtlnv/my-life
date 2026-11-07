@@ -48,10 +48,12 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       storedHistoryId,
     });
   };
+  const pollGmailAndLogFailure = () =>
+    pollGmail().catch((error: unknown) => {
+      console.error('Gmail poll failed', error);
+    });
   await pollCalendar();
-  await pollGmail().catch((error: unknown) => {
-    console.error('Gmail poll failed', error);
-  });
-  options.every?.(gmailPollIntervalMilliseconds, pollGmail);
+  await pollGmailAndLogFailure();
+  options.every?.(gmailPollIntervalMilliseconds, pollGmailAndLogFailure);
   options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
 }
