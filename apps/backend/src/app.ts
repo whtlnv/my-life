@@ -8,6 +8,7 @@ import {
   badgeCount,
   buildNowView,
   chooseVerdictExamples,
+  currentVerdict,
   describeSourceFreshness,
   isAccountFresh,
   isAddressedToUser,
@@ -26,7 +27,7 @@ import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore } from './reported-message-store';
 import { openSpendStore } from './spend-store';
 import { defaultGmailPollingIntervalInMilliseconds } from './startup-settings';
-import { openVerdictStore } from './verdict-store';
+import { openVerdictStore, type StoredVerdict } from './verdict-store';
 
 interface ReportedMessage {
   id: string;
@@ -92,28 +93,33 @@ function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
 
-function latestVerdictFor<V extends { messageId: string }>(messageId: string, verdicts: V[]): V | undefined {
-  return verdicts.filter((verdict) => verdict.messageId === messageId).at(-1);
+// The latest verdict by decision time decides every effect (the domain rule), never the first or last stored row.
+function latestVerdictFor<V extends { messageId: string; decidedAt: string }>(
+  messageId: string,
+  verdicts: V[],
+): V | undefined {
+  const own = verdicts.filter((verdict) => verdict.messageId === messageId);
+  return own.length === 0 ? undefined : currentVerdict(own);
 }
 
-function isStillConfirmed(messageId: string, verdicts: { messageId: string; decision: string }[]): boolean {
+function isStillConfirmed(messageId: string, verdicts: StoredVerdict[]): boolean {
   const latestVerdict = latestVerdictFor(messageId, verdicts);
   return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
 }
 
-function proposalEffects(proposal: Proposal, verdicts: { messageId: string }[]) {
+function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
   const verdict = latestVerdictFor(proposal.messageId, verdicts);
   return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
 }
 
-function confirmedTasks(proposals: Proposal[], verdicts: { messageId: string }[]) {
+function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
   return proposals.flatMap((proposal) => {
     const effects = proposalEffects(proposal, verdicts);
     return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
   });
 }
 
-function confirmedCheckLater(proposals: Proposal[], verdicts: { messageId: string }[]) {
+function confirmedCheckLater(proposals: Proposal[], verdicts: StoredVerdict[]) {
   return proposals.flatMap((proposal) => {
     const effects = proposalEffects(proposal, verdicts);
     return (effects.checkLater ?? []).map(({ company, accountEmail }) => ({

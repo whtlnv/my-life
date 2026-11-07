@@ -1,6 +1,6 @@
 import { openDatabase } from './open-database';
 
-interface StoredVerdict {
+export interface StoredVerdict {
   messageId: string;
   decision: string;
   correction?: unknown;

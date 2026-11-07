@@ -99,7 +99,10 @@ describe('Claude triage', () => {
 
   it("sends only the profile file named after the account's domain, not another account's", async () => {
     const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(join(profileDirectory, 'psmutuus.md'), 'Francisco runs operations at Psmutuus; claims always matter.');
+    writeFileSync(
+      join(profileDirectory, 'psmutuus.md'),
+      'Francisco runs operations at Psmutuus; claims always matter.',
+    );
     writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
