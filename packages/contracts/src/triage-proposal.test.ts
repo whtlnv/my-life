@@ -55,7 +55,11 @@ describe('triageProposal', () => {
       action: 'act',
       category: 'action',
       summary: 'Ana asks for the Q3 budget review by Friday noon',
-      extract: { asker: 'Ana Ruiz', ask: 'Review the Q3 budget spreadsheet and send comments', due: '2026-11-13T12:00:00-06:00' },
+      extract: {
+        asker: 'Ana Ruiz',
+        ask: 'Review the Q3 budget spreadsheet and send comments',
+        due: '2026-11-13T12:00:00-06:00',
+      },
       reason: 'Sent to the user and asks them to review a document by a deadline.',
       taskDraft: { title: 'Review the Q3 budget for Ana' },
     };
@@ -169,7 +173,12 @@ describe('triageProposal', () => {
       action: 'archive',
       category: 'sales',
       summary: 'Acme pitches an AI scheduling assistant',
-      extract: { solution: 'AI scheduling assistant', problem: 'Time lost coordinating meetings', asker: 'Acme', ask: 'Book a demo' },
+      extract: {
+        solution: 'AI scheduling assistant',
+        problem: 'Time lost coordinating meetings',
+        asker: 'Acme',
+        ask: 'Book a demo',
+      },
       reason: 'An unsolicited pitch from a vendor.',
     };
 
@@ -212,7 +221,7 @@ describe('triageProposal', () => {
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
 
-  it('accepts a cc-thread proposal whose extract says what happened since the user\'s last message', () => {
+  it("accepts a cc-thread proposal whose extract says what happened since the user's last message", () => {
     const proposal = {
       action: 'keep',
       category: 'cc-thread',

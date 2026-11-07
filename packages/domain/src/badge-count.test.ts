@@ -86,9 +86,7 @@ describe('badgeCount', () => {
       decidedAt: '2026-11-02T14:40:00.000Z',
     };
 
-    expect(
-      badgeCount([weeklySync], clock, [decidedActionProposal, waitingActionProposal], [verdict]),
-    ).toBe(2);
+    expect(badgeCount([weeklySync], clock, [decidedActionProposal, waitingActionProposal], [verdict])).toBe(2);
   });
 
   it('does not count a waiting proposal of another category', () => {

@@ -31,9 +31,7 @@ describe('triageQueue', () => {
       decision: 'confirmed',
       decidedAt: '2026-11-06T09:00:00-06:00',
     };
-    expect(triageQueue([decidedProposal, undecidedProposal], [verdict]).waiting).toEqual([
-      undecidedProposal,
-    ]);
+    expect(triageQueue([decidedProposal, undecidedProposal], [verdict]).waiting).toEqual([undecidedProposal]);
   });
 
   it('groups the waiting proposals by category', () => {
