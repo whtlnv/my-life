@@ -9,6 +9,7 @@ import {
   buildNowView,
   chooseVerdictExamples,
   describeSourceFreshness,
+  hasVerdict,
   isAccountFresh,
   mergeCalendarSnapshots,
   triageEffects,
@@ -273,7 +274,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
-      .filter((proposal) => verdicts.some((verdict) => verdict.messageId === proposal.messageId))
+      .filter((proposal) => hasVerdict(proposal, verdicts))
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });

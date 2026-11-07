@@ -77,7 +77,7 @@ const groupBySystem = (proposals: Proposal[]): SystemGroup[] =>
     proposals,
   }));
 
-const hasVerdict = (proposal: Proposal, verdicts: Verdict[]): boolean =>
+export const hasVerdict = (proposal: { messageId: string }, verdicts: Verdict[]): boolean =>
   verdicts.some((verdict) => verdict.messageId === proposal.messageId);
 
 const hasProposal = (message: ReportedMessage, proposals: Proposal[]): boolean =>

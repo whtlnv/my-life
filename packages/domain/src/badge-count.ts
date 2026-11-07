@@ -1,6 +1,7 @@
 import type { Clock } from './clock';
 import type { MergedCalendarEvent } from './merge-calendar-snapshots';
 import { buildNowView } from './now-view';
+import { hasVerdict } from './triage-queue';
 
 interface Proposal {
   messageId: string;
@@ -12,7 +13,7 @@ interface Verdict {
 }
 
 const isWaitingAction = (proposal: Proposal, verdicts: Verdict[]): boolean =>
-  proposal.category === 'action' && !verdicts.some((verdict) => verdict.messageId === proposal.messageId);
+  proposal.category === 'action' && !hasVerdict(proposal, verdicts);
 
 export const badgeCount = (
   events: MergedCalendarEvent[],
