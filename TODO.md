@@ -190,7 +190,7 @@
 - [x] A card disappears once the backend accepts the correction its key posts
 - [x] A card disappears once the backend accepts the rejection posted from the `r` prompt
 - [x] A group disappears once the backend accepts its confirm-all
-- [ ] The page shows how many messages remain to be triaged
+- [x] The page shows how many messages remain to be triaged
 - [ ] When the ceiling paused triage, the page says so
 - [ ] When triage is not paused, the page shows no paused notice
 - [ ] The triage page says when the queue was fetched
