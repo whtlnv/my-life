@@ -28,3 +28,4 @@ profile/*
 
 # The settings template is tracked; real .env files are not
 !.env.example
+.vitest/

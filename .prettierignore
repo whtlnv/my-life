@@ -13,3 +13,4 @@ TEST_DELETIONS.md
 **/.wxt/
 # Local metrics written by the TDD tooling
 .tdd-metrics/
+**/.vitest/
