@@ -14,6 +14,11 @@ interface ProposalGroup {
   proposals: Proposal[];
 }
 
+interface TriageQueue {
+  waiting: Proposal[];
+  groups: ProposalGroup[];
+}
+
 const groupByCategory = (proposals: Proposal[]): ProposalGroup[] => {
   const groups: ProposalGroup[] = [];
   for (const proposal of proposals) {
@@ -24,10 +29,10 @@ const groupByCategory = (proposals: Proposal[]): ProposalGroup[] => {
   return groups;
 };
 
-export const triageQueue: (
-  proposals: Proposal[],
-  verdicts: Verdict[],
-) => { waiting: Proposal[]; groups: ProposalGroup[] } = (proposals, verdicts) => {
-  const waiting = proposals.filter((proposal) => !verdicts.some((verdict) => verdict.messageId === proposal.messageId));
+const hasVerdict = (proposal: Proposal, verdicts: Verdict[]): boolean =>
+  verdicts.some((verdict) => verdict.messageId === proposal.messageId);
+
+export const triageQueue = (proposals: Proposal[], verdicts: Verdict[]): TriageQueue => {
+  const waiting = proposals.filter((proposal) => !hasVerdict(proposal, verdicts));
   return { waiting, groups: groupByCategory(waiting) };
 };
