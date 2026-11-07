@@ -27,4 +27,18 @@ describe('triageEffects', () => {
     const keepProposal = { ...archiveProposal, action: 'keep' };
     expect(triageEffects(keepProposal, { decision: 'confirmed' }).archives).toEqual([]);
   });
+
+  it('produces a task from the correction for a proposal the user rejected and corrected to act', () => {
+    const verdict = {
+      decision: 'rejected',
+      correction: { action: 'act', taskDraft: { title: 'Send the signed contract to Ana' } },
+    };
+    expect(triageEffects(archiveProposal, verdict).tasks).toEqual([
+      {
+        title: 'Send the signed contract to Ana',
+        messageId: 'message-1',
+        accountEmail: 'franciscoc@psmutuus.com',
+      },
+    ]);
+  });
 });
