@@ -36,7 +36,7 @@
 - [x] An `action` proposal on a message where the user is only in Cc is shown as `cc-thread`
 - [x] A `sales` proposal keeps its category whether the message is addressed to the user or only copies them
 - [x] An `archive` proposal with no verdict produces no archive
-- [ ] An `archive` proposal confirmed by the user produces an archive of that message on its account
+- [x] An `archive` proposal confirmed by the user produces an archive of that message on its account
 - [ ] An `archive` proposal rejected by the user produces no archive
 - [ ] A rejected proposal corrected to `act` produces a task from the correction instead
 - [ ] A confirmed `act` proposal produces a task with the draft's title, a link to the message and the account it came from
