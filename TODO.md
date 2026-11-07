@@ -53,7 +53,7 @@
 - [x] A message with a verdict is no longer waiting in the triage queue
 - [x] Waiting proposals are grouped by category
 - [x] Waiting `system-update` proposals are grouped within their category by sending system
-- [ ] Two waiting `cc-thread` proposals from the same thread show as one line, the newest one
+- [x] Two waiting `cc-thread` proposals from the same thread show as one line, the newest one
 - [ ] Two waiting `cc-thread` proposals from different threads show as two lines
 - [ ] `action` and `unknown` proposals come before every group
 - [ ] A larger group comes before a smaller one

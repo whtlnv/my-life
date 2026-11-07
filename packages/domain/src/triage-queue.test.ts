@@ -92,4 +92,26 @@ describe('triageQueue', () => {
     });
     expect(systemUpdateGroup?.systems).toContainEqual({ system: 'AWS', proposals: [awsProposal] });
   });
+
+  it('shows two waiting cc-thread proposals from the same thread as one line, the newest one', () => {
+    const olderProposal = {
+      messageId: 'message-1',
+      threadId: 'thread-1',
+      date: '2026-11-06T09:00:00-06:00',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'cc-thread',
+    };
+    const newerProposal = {
+      messageId: 'message-2',
+      threadId: 'thread-1',
+      date: '2026-11-06T10:30:00-06:00',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'cc-thread',
+    };
+    const { groups } = triageQueue([olderProposal, newerProposal], []);
+    const ccThreadGroup = groups.find((group) => group.category === 'cc-thread');
+    expect(ccThreadGroup?.proposals).toEqual([newerProposal]);
+  });
 });

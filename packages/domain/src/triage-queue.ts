@@ -1,5 +1,6 @@
 interface Proposal {
   messageId: string;
+  threadId?: string;
   accountEmail: string;
   action: string;
   category?: string;
@@ -44,8 +45,13 @@ const groupByCategory = (proposals: Proposal[]): ProposalGroup[] =>
   groupBy(proposals, (proposal) => proposal.category).map(({ key, proposals }) =>
     key === 'system-update'
       ? { category: key, proposals, systems: groupBySystem(proposals) }
-      : { category: key, proposals },
+      : key === 'cc-thread'
+        ? { category: key, proposals: newestPerThread(proposals) }
+        : { category: key, proposals },
   );
+
+const newestPerThread = (proposals: Proposal[]): Proposal[] =>
+  groupBy(proposals, (proposal) => proposal.threadId).flatMap(({ proposals }) => proposals.slice(-1));
 
 const groupBySystem = (proposals: Proposal[]): SystemGroup[] =>
   groupBy(proposals, (proposal) => proposal.extract?.system).map(({ key, proposals }) => ({
