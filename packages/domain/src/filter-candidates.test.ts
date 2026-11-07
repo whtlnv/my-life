@@ -50,4 +50,35 @@ describe('filterCandidates', () => {
 
     expect(filterCandidates(decidedProposals)).toEqual([]);
   });
+
+  it('counts confirmed archives per sender, so only a sender with three of its own gets a candidate', () => {
+    const fromOtherSender = (messageId: string) => ({
+      ...confirmedArchive(messageId, 'sales'),
+      from: 'alerts@other.example',
+    });
+
+    expect(
+      filterCandidates([
+        confirmedArchive('message-1', 'sales'),
+        confirmedArchive('message-2', 'sales'),
+        fromOtherSender('message-3'),
+        fromOtherSender('message-4'),
+      ]),
+    ).toEqual([]);
+
+    expect(
+      filterCandidates([
+        confirmedArchive('message-1', 'sales'),
+        fromOtherSender('message-2'),
+        confirmedArchive('message-3', 'sales'),
+        confirmedArchive('message-4', 'sales'),
+      ]),
+    ).toEqual([
+      {
+        accountEmail: 'franciscoc@psmutuus.com',
+        criteria: { from: 'news@vendor.example' },
+        messageIds: ['message-1', 'message-3', 'message-4'],
+      },
+    ]);
+  });
 });
