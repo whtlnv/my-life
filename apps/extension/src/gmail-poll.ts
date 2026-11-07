@@ -35,8 +35,7 @@ function toReportedMessage(message: GmailMessage) {
   return { id: message.id, threadId: message.threadId, subject };
 }
 
-export async function pollGmailOnce(options: PollGmailOptions): Promise<void> {
-  const profile = await fetchGmailJson<GmailProfile>(options, `${gmailApi}/profile`);
+async function fetchInboxMessages(options: PollGmailOptions) {
   const messages = [];
   let pageToken: string | undefined;
   do {
@@ -48,6 +47,12 @@ export async function pollGmailOnce(options: PollGmailOptions): Promise<void> {
     }
     pageToken = list.nextPageToken;
   } while (pageToken !== undefined);
+  return messages;
+}
+
+export async function pollGmailOnce(options: PollGmailOptions): Promise<void> {
+  const profile = await fetchGmailJson<GmailProfile>(options, `${gmailApi}/profile`);
+  const messages = await fetchInboxMessages(options);
   await options.fetch(`${options.backendUrl}/mail-report`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, historyId: profile.historyId, messages }),
