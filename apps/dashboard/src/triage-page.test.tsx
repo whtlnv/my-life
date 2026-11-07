@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { noDueTimeText, TriagePage } from './triage-page';
+import { noDueTimeText, significantFlagText, TriagePage } from './triage-page';
 
 const answerGetTriageQueueWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -271,5 +271,55 @@ describe('TriagePage', () => {
     expect(groupToggle).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText(/Receipt from Acme/)).toBeInTheDocument();
     expect(screen.getByText(/Invoice from Globex/)).toBeInTheDocument();
+  });
+  it('lists the items of an expanded system-update group under their sending system and flags a significant one', async () => {
+    const systemUpdateItem = (messageId: string, summary: string, system: string, significant: boolean) => ({
+      messageId,
+      accountEmail: 'ana@example.com',
+      action: 'archive',
+      category: 'system-update',
+      summary,
+      extract: { system, severity: significant ? 'error' : 'info', significant },
+      reason: 'An automated notification',
+      link: `https://mail.google.com/mail/?authuser=ana%40example.com#all/${messageId}`,
+    });
+    const failedDeploy = systemUpdateItem('message-12', 'Deploy failed on main', 'GitHub', true);
+    const mergedPullRequest = systemUpdateItem('message-13', 'Pull request merged', 'GitHub', false);
+    const billingNotice = systemUpdateItem('message-14', 'Monthly bill is ready', 'AWS', false);
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [
+        {
+          category: 'system-update',
+          count: 3,
+          items: [failedDeploy, mergedPullRequest, billingNotice],
+          systems: [
+            { system: 'GitHub', items: [failedDeploy, mergedPullRequest] },
+            { system: 'AWS', items: [billingNotice] },
+          ],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    await user.click(await screen.findByRole('button', { name: /system-update.*3/ }));
+
+    const gitHub = screen.getByRole('region', { name: 'GitHub' });
+    const aws = screen.getByRole('region', { name: 'AWS' });
+    const [failedDeployCard, mergedPullRequestCard] = within(gitHub).getAllByRole('article') as [
+      HTMLElement,
+      HTMLElement,
+    ];
+    expect(within(gitHub).getAllByRole('article')).toHaveLength(2);
+    expect(within(failedDeployCard).getByText(/Deploy failed on main/)).toBeInTheDocument();
+    expect(within(failedDeployCard).getByText(significantFlagText)).toBeInTheDocument();
+    expect(within(mergedPullRequestCard).getByText(/Pull request merged/)).toBeInTheDocument();
+    expect(within(mergedPullRequestCard).queryByText(significantFlagText)).not.toBeInTheDocument();
+    expect(within(aws).getAllByRole('article')).toHaveLength(1);
+    expect(within(aws).getByText(/Monthly bill is ready/)).toBeInTheDocument();
   });
 });

@@ -171,7 +171,7 @@
 - [x] Each category group shows collapsed with its count
 - [x] An `unknown` item arrives in the payload's `action` list (as the backend sends it) and shows in the action block; the page renders no `unknown` group button
 - [x] Expanding a group lists its items
-- [ ] A `system-update` group lists its items under their sending system, and a `significant` item is flagged
+- [x] A `system-update` group lists its items under their sending system, and a `significant` item is flagged
 - [ ] An `expense` item shows vendor, amount, currency and date
 - [ ] A `sales` item shows company, solution and what it solves
 - [ ] Pressing `t` on a focused card confirms it as a task

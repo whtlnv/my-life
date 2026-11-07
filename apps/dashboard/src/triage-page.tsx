@@ -6,13 +6,19 @@ interface TriageItem {
   reason: string;
   accountEmail: string;
   link: string;
-  extract: { asker?: string; ask?: string; due?: string };
+  extract: { asker?: string; ask?: string; due?: string; significant?: boolean };
+}
+
+interface SystemGroup {
+  system: string;
+  items: TriageItem[];
 }
 
 interface TriageGroup {
   category: string;
   count: number;
   items: TriageItem[];
+  systems?: SystemGroup[];
 }
 
 interface TriageQueueResponse {
@@ -21,6 +27,7 @@ interface TriageQueueResponse {
 }
 
 export const noDueTimeText = 'No due time';
+export const significantFlagText = 'Significant';
 
 function ActionCard({ item }: { item: TriageItem }) {
   return (
@@ -49,7 +56,19 @@ function CategoryGroup({ group }: { group: TriageGroup }) {
       >
         {group.category} {group.count}
       </button>
-      {expanded && group.items.map((item) => <p key={item.messageId}>{item.summary}</p>)}
+      {expanded &&
+        (group.systems
+          ? group.systems.map((systemGroup) => (
+              <section key={systemGroup.system} aria-label={systemGroup.system}>
+                {systemGroup.items.map((item) => (
+                  <article key={item.messageId}>
+                    <p>{item.summary}</p>
+                    {item.extract.significant && <p>{significantFlagText}</p>}
+                  </article>
+                ))}
+              </section>
+            ))
+          : group.items.map((item) => <p key={item.messageId}>{item.summary}</p>))}
     </section>
   );
 }
