@@ -11,10 +11,10 @@ export const triageEffects = (
 } => {
   const source = { messageId: proposal.messageId, accountEmail: proposal.accountEmail };
   const confirmed = verdict?.decision === 'confirmed';
-  const action = verdict?.correction?.action ?? (confirmed ? proposal.action : undefined);
+  const decidedAction = verdict?.correction?.action ?? (confirmed ? proposal.action : undefined);
   const taskDraft = verdict?.correction?.taskDraft ?? proposal.taskDraft;
   return {
-    archives: action === 'archive' ? [source] : [],
+    archives: decidedAction === 'archive' ? [source] : [],
     tasks: taskDraft ? [{ title: taskDraft.title, ...source }] : [],
   };
 };
