@@ -45,7 +45,7 @@
 - [x] An `act` proposal rejected without a correction produces no task and no archive
 - [x] A confirmed `keep` on a `sales` proposal puts the company on the check-later list
 - [x] A confirmed `keep` on a proposal of any other category puts nothing on the check-later list
-- [ ] A rejected `keep` on a `sales` proposal puts nothing on the check-later list
+- [x] A rejected `keep` on a `sales` proposal puts nothing on the check-later list
 - [ ] When a message has two verdicts, the later one decides its current state
 - [ ] A message with a proposal and no verdict is waiting in the triage queue
 - [ ] A message with a verdict is no longer waiting in the triage queue

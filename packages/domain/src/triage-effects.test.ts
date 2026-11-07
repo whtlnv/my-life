@@ -102,4 +102,17 @@ describe('triageEffects', () => {
       tasks: [],
     });
   });
+
+  it('puts nothing on the check-later list for a sales keep proposal the user rejected', () => {
+    const salesKeepProposal = {
+      ...archiveProposal,
+      action: 'keep',
+      category: 'sales',
+      extract: { company: 'Acme' },
+    };
+    expect(triageEffects(salesKeepProposal, { decision: 'rejected' })).toEqual({
+      archives: [],
+      tasks: [],
+    });
+  });
 });
