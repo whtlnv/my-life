@@ -9,7 +9,6 @@ import {
   buildNowView,
   chooseVerdictExamples,
   describeSourceFreshness,
-  hasVerdict,
   isAccountFresh,
   isAddressedToUser,
   isLeadingCategory,
@@ -297,7 +296,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const commands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
       .filter((proposal) => proposal.action === 'archive')
-      .filter((proposal) => hasVerdict(proposal, verdicts))
+      .filter(({ messageId }) => {
+        const latestVerdict = verdicts.filter((verdict) => verdict.messageId === messageId).at(-1);
+        return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
+      })
       .map(({ messageId }) => ({ id: `archive-${messageId}`, messageId }))
       .filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands });
