@@ -92,13 +92,17 @@ function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
 
+function latestVerdictFor<V extends { messageId: string }>(messageId: string, verdicts: V[]): V | undefined {
+  return verdicts.filter((verdict) => verdict.messageId === messageId).at(-1);
+}
+
 function isStillConfirmed(messageId: string, verdicts: { messageId: string; decision: string }[]): boolean {
-  const latestVerdict = verdicts.filter((verdict) => verdict.messageId === messageId).at(-1);
+  const latestVerdict = latestVerdictFor(messageId, verdicts);
   return latestVerdict !== undefined && latestVerdict.decision !== 'rejected';
 }
 
 function proposalEffects(proposal: Proposal, verdicts: { messageId: string }[]) {
-  const verdict = verdicts.filter((candidate) => candidate.messageId === proposal.messageId).at(-1);
+  const verdict = latestVerdictFor(proposal.messageId, verdicts);
   return triageEffects(proposal as Parameters<typeof triageEffects>[0], verdict as Parameters<typeof triageEffects>[1]);
 }
 
