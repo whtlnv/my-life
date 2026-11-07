@@ -43,64 +43,71 @@ describe('startup settings', () => {
     expect(settings.port).toBe(port);
   });
 
-  it('uses the Application Support database path when MY_LIFE_DATABASE_PATH is unset', () => {
-    const settings = readStartupSettings({}, '/Users/ana');
+  it.each([
+    {
+      rule: 'uses the Application Support database path when MY_LIFE_DATABASE_PATH is unset',
+      environment: {},
+      setting: 'databasePath',
+      expected: resolveDatabasePath(undefined, '/Users/ana'),
+    },
+    {
+      rule: 'uses /tmp/elsewhere.sqlite as the database path when MY_LIFE_DATABASE_PATH is /tmp/elsewhere.sqlite',
+      environment: { MY_LIFE_DATABASE_PATH: '/tmp/elsewhere.sqlite' },
+      setting: 'databasePath',
+      expected: '/tmp/elsewhere.sqlite',
+    },
+    {
+      rule: "uses the dashboard package's dist folder as the dashboard directory when MY_LIFE_DASHBOARD_DIRECTORY is unset",
+      environment: {},
+      setting: 'dashboardDirectory',
+      expected: fileURLToPath(new URL('../../dashboard/dist', import.meta.url)),
+    },
+    {
+      rule: 'uses /tmp/elsewhere-dist as the dashboard directory when MY_LIFE_DASHBOARD_DIRECTORY is /tmp/elsewhere-dist',
+      environment: { MY_LIFE_DASHBOARD_DIRECTORY: '/tmp/elsewhere-dist' },
+      setting: 'dashboardDirectory',
+      expected: '/tmp/elsewhere-dist',
+    },
+    {
+      rule: 'polls Gmail every 60 seconds when MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS is unset',
+      environment: {},
+      setting: 'gmailPollingIntervalInMilliseconds',
+      expected: 60_000,
+    },
+    {
+      rule: 'polls Gmail every 90 seconds when MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS is 90',
+      environment: { MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS: '90' },
+      setting: 'gmailPollingIntervalInMilliseconds',
+      expected: 90_000,
+    },
+    {
+      rule: 'triages with claude-opus-5-5 when MY_LIFE_TRIAGE_MODEL is unset',
+      environment: {},
+      setting: 'triageModel',
+      expected: 'claude-opus-5-5',
+    },
+    {
+      rule: 'triages with claude-sonnet-5-5 when MY_LIFE_TRIAGE_MODEL is claude-sonnet-5-5',
+      environment: { MY_LIFE_TRIAGE_MODEL: 'claude-sonnet-5-5' },
+      setting: 'triageModel',
+      expected: 'claude-sonnet-5-5',
+    },
+    {
+      rule: 'caps daily triage spend at USD 20 when MY_LIFE_DAILY_SPEND_CEILING_USD is unset',
+      environment: {},
+      setting: 'dailySpendCeilingInUsd',
+      expected: 20,
+    },
+    {
+      rule: 'caps daily triage spend at USD 35 when MY_LIFE_DAILY_SPEND_CEILING_USD is 35',
+      environment: { MY_LIFE_DAILY_SPEND_CEILING_USD: '35' },
+      setting: 'dailySpendCeilingInUsd',
+      expected: 35,
+    },
+  ] as const)('$rule', ({ environment, setting, expected }) => {
+    const settings = readStartupSettings(environment, '/Users/ana');
 
-    expect(settings.databasePath).toBe(resolveDatabasePath(undefined, '/Users/ana'));
-  });
-
-  it('uses /tmp/elsewhere.sqlite as the database path when MY_LIFE_DATABASE_PATH is /tmp/elsewhere.sqlite', () => {
-    const settings = readStartupSettings({ MY_LIFE_DATABASE_PATH: '/tmp/elsewhere.sqlite' }, '/Users/ana');
-
-    expect(settings.databasePath).toBe('/tmp/elsewhere.sqlite');
-  });
-
-  it("uses the dashboard package's dist folder as the dashboard directory when MY_LIFE_DASHBOARD_DIRECTORY is unset", () => {
-    const settings = readStartupSettings({}, '/Users/ana');
-
-    expect(settings.dashboardDirectory).toBe(fileURLToPath(new URL('../../dashboard/dist', import.meta.url)));
-  });
-
-  it('uses /tmp/elsewhere-dist as the dashboard directory when MY_LIFE_DASHBOARD_DIRECTORY is /tmp/elsewhere-dist', () => {
-    const settings = readStartupSettings({ MY_LIFE_DASHBOARD_DIRECTORY: '/tmp/elsewhere-dist' }, '/Users/ana');
-
-    expect(settings.dashboardDirectory).toBe('/tmp/elsewhere-dist');
-  });
-
-  it('polls Gmail every 60 seconds when MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS is unset', () => {
-    const settings = readStartupSettings({}, '/Users/ana');
-
-    expect(settings.gmailPollingIntervalInMilliseconds).toBe(60_000);
-  });
-
-  it('polls Gmail every 90 seconds when MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS is 90', () => {
-    const settings = readStartupSettings({ MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS: '90' }, '/Users/ana');
-
-    expect(settings.gmailPollingIntervalInMilliseconds).toBe(90_000);
-  });
-
-  it('triages with claude-opus-5-5 when MY_LIFE_TRIAGE_MODEL is unset', () => {
-    const settings = readStartupSettings({}, '/Users/ana');
-
-    expect(settings.triageModel).toBe('claude-opus-5-5');
-  });
-
-  it('triages with claude-sonnet-5-5 when MY_LIFE_TRIAGE_MODEL is claude-sonnet-5-5', () => {
-    const settings = readStartupSettings({ MY_LIFE_TRIAGE_MODEL: 'claude-sonnet-5-5' }, '/Users/ana');
-
-    expect(settings.triageModel).toBe('claude-sonnet-5-5');
-  });
-
-  it('caps daily triage spend at USD 20 when MY_LIFE_DAILY_SPEND_CEILING_USD is unset', () => {
-    const settings = readStartupSettings({}, '/Users/ana');
-
-    expect(settings.dailySpendCeilingInUsd).toBe(20);
-  });
-
-  it('caps daily triage spend at USD 35 when MY_LIFE_DAILY_SPEND_CEILING_USD is 35', () => {
-    const settings = readStartupSettings({ MY_LIFE_DAILY_SPEND_CEILING_USD: '35' }, '/Users/ana');
-
-    expect(settings.dailySpendCeilingInUsd).toBe(35);
+    expect(settings[setting]).toBe(expected);
   });
 
   it('refuses to start triage and names ANTHROPIC_API_KEY as the reason when the key is unset', () => {
