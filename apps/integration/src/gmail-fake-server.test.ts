@@ -236,6 +236,23 @@ describe('Gmail fake server', () => {
     expect(messagesSeenByTriage).toHaveLength(1);
     expect(queue.action).toEqual([expect.objectContaining({ messageId: messagesSeenByTriage[0]?.id })]);
   });
+  it('polling the action-to-me scenario from its current history id gets a 200 history read and reports no messages', async () => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
+    const gmail = await startGmailFakeServer('action-to-me', accountEmail);
+    const gmailApi = `${gmail.url}/gmail/v1/users/me`;
+    try {
+      const { historyId } = (await (await fetch(`${gmailApi}/profile`)).json()) as { historyId: string };
+      const historyRead = await fetch(`${gmailApi}/history?startHistoryId=${historyId}`);
+
+      await pollGmailOnce({ ...extensionOptionsFor(gmail.url, backend), storedHistoryId: historyId });
+      await backend.request('/triage-run', { method: 'POST' });
+
+      expect(historyRead.status).toBe(200);
+      expect(messagesSeenByTriage).toHaveLength(0);
+    } finally {
+      await gmail.close();
+    }
+  });
   it('a confirmed archive carried out against the fake leaves the message out of the inbox with the label my-life/archived', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => expenseProposal);
     const gmail = await startGmailFakeServer('expense', accountEmail);

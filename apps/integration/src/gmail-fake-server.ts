@@ -176,7 +176,7 @@ export async function startGmailFakeServer(scenario: GmailScenario, accountEmail
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fake').pathname;
     const prefix = '/gmail/v1/users/me';
-    if (path === `${prefix}/history`) {
+    if (path === `${prefix}/history` && scenario === 'history-404') {
       response.writeHead(404);
       response.end();
       return;
@@ -189,6 +189,8 @@ export async function startGmailFakeServer(scenario: GmailScenario, accountEmail
       let body: unknown;
       if (path === `${prefix}/profile`) {
         body = { historyId: '1' };
+      } else if (path === `${prefix}/history`) {
+        body = {};
       } else if (path === `${prefix}/labels` && request.method === 'POST') {
         const { name } = JSON.parse(requestBody) as { name: string };
         const label = { id: `label-${String(labels.length + 1)}`, name };

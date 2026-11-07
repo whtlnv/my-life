@@ -207,7 +207,7 @@
 - [x] Against the `calendar-notification` scenario, the notification shows in the calendar-drive group
 - [x] Against the `history-404` scenario, the extension recovers with a full inbox report
 - [x] Against the fake Gmail server, a confirmed archive leaves the message out of the inbox with the label `my-life/archived`
-- [ ] Against the `action-to-me` scenario with a stored history id, the fake answers the history read with 200 and only the messages added since, and the extension reports just those; only the `history-404` scenario answers 404
+- [x] Against the `action-to-me` scenario with a stored history id, the fake answers the history read with 200 and only the messages added since, and the extension reports just those; only the `history-404` scenario answers 404
 
 ### Wiring and acceptance
 
