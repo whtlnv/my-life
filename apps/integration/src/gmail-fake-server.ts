@@ -18,22 +18,21 @@ interface FakeGmailMessage {
 }
 
 function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGmailMessage[] {
+  const budgetReview: FakeGmailMessage = {
+    id: 'budget-review',
+    threadId: 'budget-review',
+    snippet: 'Could you review the budget before Friday?',
+    payload: {
+      headers: [
+        { name: 'From', value: 'Luis <luis@example.com>' },
+        { name: 'To', value: accountEmail },
+        { name: 'Subject', value: 'Budget review' },
+        { name: 'Date', value: 'Mon, 2 Nov 2026 09:00:00 -0600' },
+      ],
+    },
+  };
   const messages: Record<GmailScenario, FakeGmailMessage[]> = {
-    'action-to-me': [
-      {
-        id: 'budget-review',
-        threadId: 'budget-review',
-        snippet: 'Could you review the budget before Friday?',
-        payload: {
-          headers: [
-            { name: 'From', value: 'Luis <luis@example.com>' },
-            { name: 'To', value: accountEmail },
-            { name: 'Subject', value: 'Budget review' },
-            { name: 'Date', value: 'Mon, 2 Nov 2026 09:00:00 -0600' },
-          ],
-        },
-      },
-    ],
+    'action-to-me': [budgetReview],
     'cc-thread': [
       {
         id: 'launch-review-first',
@@ -150,21 +149,7 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
         },
       },
     ],
-    'history-404': [
-      {
-        id: 'budget-review',
-        threadId: 'budget-review',
-        snippet: 'Could you review the budget before Friday?',
-        payload: {
-          headers: [
-            { name: 'From', value: 'Luis <luis@example.com>' },
-            { name: 'To', value: accountEmail },
-            { name: 'Subject', value: 'Budget review' },
-            { name: 'Date', value: 'Mon, 2 Nov 2026 09:00:00 -0600' },
-          ],
-        },
-      },
-    ],
+    'history-404': [budgetReview],
   };
   return messages[scenario];
 }
