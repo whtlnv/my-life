@@ -76,6 +76,31 @@ const triageAnsweringInOrder = (proposalsInOrder: unknown[], costInUsd: number) 
   propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd, promptVersion: 'triage-v1' }),
 });
 
+const reportTriageAndConfirmShopNewsletters = async (
+  app: App,
+  messageIds = ['newsletter-1', 'newsletter-2', 'newsletter-3'],
+): Promise<void> => {
+  for (const messageId of messageIds) {
+    await postJson(app, '/mail-report', {
+      accountEmail: 'ana@example.com',
+      historyId: '1001',
+      messages: [
+        {
+          id: messageId,
+          threadId: messageId,
+          from: 'Shop <news@shop.example.com>',
+          to: 'ana@example.com',
+          subject: 'This week at the shop',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+          snippet: 'New arrivals',
+        },
+      ],
+    });
+    await postTriageRun(app);
+    await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
+  }
+};
+
 const triageRecordingAskedMessageIds = (askedMessageIds: string[], costInUsd = 0) => ({
   propose: (message: { id: string }) => {
     askedMessageIds.push(message.id);
@@ -2081,25 +2106,7 @@ describe('backend app', () => {
       triage,
       filter,
     });
-    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3', 'newsletter-4']) {
-      await postJson(app, '/mail-report', {
-        accountEmail: 'ana@example.com',
-        historyId: '1001',
-        messages: [
-          {
-            id: messageId,
-            threadId: messageId,
-            from: 'Shop <news@shop.example.com>',
-            to: 'ana@example.com',
-            subject: 'This week at the shop',
-            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-            snippet: 'New arrivals',
-          },
-        ],
-      });
-      await postTriageRun(app);
-      await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
-    }
+    await reportTriageAndConfirmShopNewsletters(app, ['newsletter-1', 'newsletter-2', 'newsletter-3', 'newsletter-4']);
     const { openFilterProposalStore } = await import('./filter-proposal-store');
 
     expect({ askedCandidates, stored: openFilterProposalStore(databasePath).loadAll() }).toEqual({
@@ -2270,25 +2277,7 @@ describe('backend app', () => {
       triage: triageAnsweringInOrder([archiveProposal, archiveProposal, archiveProposal], 1),
       filter,
     });
-    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3']) {
-      await postJson(app, '/mail-report', {
-        accountEmail: 'ana@example.com',
-        historyId: '1001',
-        messages: [
-          {
-            id: messageId,
-            threadId: messageId,
-            from: 'Shop <news@shop.example.com>',
-            to: 'ana@example.com',
-            subject: 'This week at the shop',
-            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-            snippet: 'New arrivals',
-          },
-        ],
-      });
-      await postTriageRun(app);
-      await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
-    }
+    await reportTriageAndConfirmShopNewsletters(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -2357,7 +2346,6 @@ describe('backend app', () => {
     });
   });
 
-
   it('does not ask the filter port for a proposal when a filter candidate appears while triage is paused by the daily spend ceiling', async () => {
     const askedCandidates: unknown[] = [];
     const filter = {
@@ -2384,25 +2372,7 @@ describe('backend app', () => {
       triage: triageAnsweringInOrder([archiveProposal, archiveProposal, archiveProposal], 7),
       filter,
     });
-    for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3']) {
-      await postJson(app, '/mail-report', {
-        accountEmail: 'ana@example.com',
-        historyId: '1001',
-        messages: [
-          {
-            id: messageId,
-            threadId: messageId,
-            from: 'Shop <news@shop.example.com>',
-            to: 'ana@example.com',
-            subject: 'This week at the shop',
-            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-            snippet: 'New arrivals',
-          },
-        ],
-      });
-      await postTriageRun(app);
-      await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
-    }
+    await reportTriageAndConfirmShopNewsletters(app);
 
     expect(askedCandidates).toEqual([]);
   });
