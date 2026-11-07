@@ -72,6 +72,17 @@ function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
 
+function confirmedTasks(proposals: Proposal[], verdicts: { messageId: string }[]) {
+  return proposals.flatMap((proposal) => {
+    const verdict = verdicts.find((candidate) => candidate.messageId === proposal.messageId);
+    const effects = triageEffects(
+      proposal as Parameters<typeof triageEffects>[0],
+      verdict as Parameters<typeof triageEffects>[1],
+    );
+    return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
+  });
+}
+
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(proposals, verdicts);
   return {
@@ -229,14 +240,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ commands });
   });
   app.get('/tasks', (context) => {
-    const verdicts = verdictStore.loadAll();
-    const tasks = proposals.flatMap((proposal) =>
-      triageEffects(
-        proposal as Parameters<typeof triageEffects>[0],
-        verdicts.find((verdict) => verdict.messageId === proposal.messageId) as Parameters<typeof triageEffects>[1],
-      ).tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail })),
-    );
-    return context.json({ tasks });
+    return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
