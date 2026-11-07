@@ -3,16 +3,13 @@ export function chooseVerdictExamples<V extends { from: string; category: string
   verdicts: V[],
   limit: number,
 ): V[] {
+  const messageDomain = senderDomain(message.from);
   const fromSender = newestFirst(verdicts.filter((verdict) => verdict.from === message.from));
   const fromSenderDomain = newestFirst(
-    verdicts.filter(
-      (verdict) => verdict.from !== message.from && senderDomain(verdict.from) === senderDomain(message.from),
-    ),
+    verdicts.filter((verdict) => verdict.from !== message.from && senderDomain(verdict.from) === messageDomain),
   );
   const ofSameCategory = newestFirst(
-    verdicts.filter(
-      (verdict) => senderDomain(verdict.from) !== senderDomain(message.from) && verdict.category === message.category,
-    ),
+    verdicts.filter((verdict) => senderDomain(verdict.from) !== messageDomain && verdict.category === message.category),
   );
   return [...fromSender, ...fromSenderDomain, ...ofSameCategory].slice(0, limit);
 }
