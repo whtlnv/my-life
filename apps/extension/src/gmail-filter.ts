@@ -20,20 +20,29 @@ export async function carryOutFilterCommands(options: CarryOutFilterCommandsOpti
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: CreateFilterCommand[] };
   for (const command of commands) {
-    const labelId = await findOrCreateLabelId(options.fetch, authorization, command.label);
-    const createdFilter = (await (
-      await options.fetch(`${gmailApi}/settings/filters`, {
-        method: 'POST',
-        headers: authorization,
-        body: JSON.stringify({
-          criteria: command.criteria,
-          action: { addLabelIds: [labelId], removeLabelIds: ['INBOX'] },
-        }),
-      })
-    ).json()) as { id: string };
+    const gmailFilterId = await createGmailFilter(options.fetch, authorization, command);
     await options.fetch(`${options.backendUrl}/commands/${command.id}/acknowledgement`, {
       method: 'POST',
-      body: JSON.stringify({ gmailFilterId: createdFilter.id }),
+      body: JSON.stringify({ gmailFilterId }),
     });
   }
+}
+
+async function createGmailFilter(
+  fetch: FetchFunction,
+  authorization: { Authorization: string },
+  command: CreateFilterCommand,
+) {
+  const labelId = await findOrCreateLabelId(fetch, authorization, command.label);
+  const createdFilter = (await (
+    await fetch(`${gmailApi}/settings/filters`, {
+      method: 'POST',
+      headers: authorization,
+      body: JSON.stringify({
+        criteria: command.criteria,
+        action: { addLabelIds: [labelId], removeLabelIds: ['INBOX'] },
+      }),
+    })
+  ).json()) as { id: string };
+  return createdFilter.id;
 }
