@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { healthResponse } from '@my-life/contracts';
 
 import { createApp } from './app';
+import { createClaudeTriage } from './claude-triage';
 import { openProposalStore } from './proposal-store';
 import { openSpendStore } from './spend-store';
 import { openVerdictStore } from './verdict-store';
@@ -773,6 +774,24 @@ describe('backend app', () => {
     expect(openSpendStore(databasePath).loadAll()).toEqual([
       { spentAt: '2026-11-02T15:10:00.000Z', model: 'claude-opus-5-5', costInUsd: 0.05 },
     ]);
+  });
+
+  it('logs each triage spend at POST /triage-run with the triage model configured for the Claude adapter, not an empty string', async () => {
+    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
+    writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
+    const triage = createClaudeTriage({
+      model: 'claude-model-from-settings',
+      promptPath,
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: () => Promise.resolve({ content: [], usage: { input_tokens: 0, output_tokens: 0 } }),
+    });
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    await app.request('/triage-run', { method: 'POST' });
+
+    expect(openSpendStore(databasePath).loadAll().map((spend) => spend.model)).toEqual(['claude-model-from-settings']);
   });
   it("neither triages again after a backend restart a message proposed before it, nor forgets the spend logged before it toward today's ceiling", async () => {
     const askedMessageIds: string[] = [];

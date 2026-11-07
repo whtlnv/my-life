@@ -56,6 +56,7 @@ function describeMessage(message: TriageMessage, examples: unknown[] | undefined
 }
 
 interface TriageOutcome {
+  model: string;
   promptVersion: string;
   proposal?: unknown;
   failure?: { input: unknown };
@@ -94,8 +95,8 @@ export function createClaudeTriage({
       const input = readToolUseInput(response);
       const parsed = triageProposal.safeParse(input);
       return parsed.success
-        ? { promptVersion, proposal: parsed.data, costInUsd }
-        : { promptVersion, failure: { input }, costInUsd };
+        ? { model, promptVersion, proposal: parsed.data, costInUsd }
+        : { model, promptVersion, failure: { input }, costInUsd };
     },
   };
 }
