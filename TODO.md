@@ -83,6 +83,7 @@
 - [ ] When the extension receives a `create-filter` command, it creates the label if missing, calls `users.settings.filters.create` with the criteria, `addLabelIds` of that label and `removeLabelIds: ['INBOX']`, and acknowledges with the Gmail filter id
 - [ ] When `users.settings.filters.create` fails, the extension does not acknowledge the command, and it is offered again on the next poll
 - [ ] `GET /filters` lists filters whose creation was acknowledged, with criteria, label, account and the Gmail filter id; an approved but unacknowledged one is not listed
+- [ ] `GET /filters` says when each filter was approved and when its creation was acknowledged, from the clock at the time of each event, also after a backend restart (supervisor: approvals and acknowledgements are stored without their time; CLAUDE.md says every append-only event carries a timestamp and every number says when)
 - [ ] `DELETE /filters/:id` yields a `delete-filter` command for that filter's account only
 - [ ] When the extension receives a `delete-filter` command it calls `users.settings.filters.delete` with the Gmail filter id and acknowledges; after the acknowledgement the filter is gone from `GET /filters`
 - [ ] The dashboard app shell has a `Filters` tab linking to `#/filters`, marked current on that route
