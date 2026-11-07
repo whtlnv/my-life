@@ -20,6 +20,7 @@ import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore } from './reported-message-store';
 import { openSpendStore } from './spend-store';
+import { openVerdictStore } from './verdict-store';
 
 interface ReportedMessage {
   id: string;
@@ -69,8 +70,8 @@ function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
 
-function splitActionFromGroups(proposals: Proposal[]) {
-  const { groups } = triageQueue(proposals, []);
+function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
+  const { groups } = triageQueue(proposals, verdicts);
   return {
     action: groups
       .filter(({ category }) => category === 'action')
@@ -107,6 +108,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const mailSourceStore = openMailSourceStore(databasePath);
   const proposalStore = openProposalStore(databasePath);
   const spendStore = openSpendStore(databasePath);
+  const verdictStore = openVerdictStore(databasePath);
   const reportedMessages: ReportedMessage[] = [];
   const accountEmailByMessageId = new Map<string, string>();
   const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => ({
@@ -181,9 +183,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.body(null, 200);
   });
+  app.post('/verdicts', async (context) => {
+    const { messageId, decision } = await context.req.json<{ messageId: string; decision: string }>();
+    verdictStore.save({ messageId, decision, decidedAt: clock.now().toISOString() });
+    return context.body(null, 200);
+  });
   app.get('/triage-queue', (context) => {
     return context.json({
-      ...splitActionFromGroups(proposals),
+      ...splitActionFromGroups(proposals, verdictStore.loadAll()),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
     });

@@ -9,6 +9,7 @@ import { healthResponse } from '@my-life/contracts';
 import { createApp } from './app';
 import { openProposalStore } from './proposal-store';
 import { openSpendStore } from './spend-store';
+import { openVerdictStore } from './verdict-store';
 
 type App = ReturnType<typeof createApp>;
 
@@ -834,5 +835,29 @@ describe('backend app', () => {
         },
       ],
     });
+  });
+
+  it('stores a verdict posted at POST /verdicts for a waiting proposal with the time it was decided, and the item leaves GET /triage-queue', async () => {
+    const proposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+    };
+    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+
+    const response = await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+
+    expect(response.status).toBe(200);
+    expect(openVerdictStore(databasePath).loadAll()).toEqual([
+      { messageId: 'message-1', decision: 'confirmed', decidedAt: '2026-11-02T15:10:00.000Z' },
+    ]);
+    const queue = await app.request('/triage-queue');
+    expect(await queue.json()).toMatchObject({ action: [] });
   });
 });
