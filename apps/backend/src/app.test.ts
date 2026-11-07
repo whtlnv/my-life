@@ -955,4 +955,24 @@ describe('backend app', () => {
     expect(stored.map(({ messageId }) => messageId).sort()).toEqual(['receipt-newest', 'receipt-older']);
     expect(stored.every(({ decision }) => decision === 'confirmed')).toBe(true);
   });
+
+  it('lists at GET /commands for the message\'s account an archive command with an id and the message id once its archive proposal is confirmed', async () => {
+    const proposal = {
+      action: 'archive',
+      category: 'cc-thread',
+      summary: 'Luis shared the budget with the team',
+      extract: { sinceLastMessage: 'Luis shared the budget' },
+      reason: 'The user is only copied',
+    };
+    const triage = { propose: () => Promise.resolve({ proposal, costInUsd: 1, promptVersion: 'triage-v1' }) };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await app.request('/triage-run', { method: 'POST' });
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+
+    const response = await app.request(`/commands?accountEmail=${encodeURIComponent('ana@example.com')}`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ commands: [{ id: expect.any(String), messageId: 'message-1' }] });
+  });
 });

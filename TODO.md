@@ -133,7 +133,7 @@
 - [x] A rejection carrying a correction stores the correction with the verdict
 - [x] A verdict posted before the backend restarts (same database file) still keeps its item out of the queue after it
 - [x] Confirming a whole group stores one confirm verdict for every item in that group and none outside it
-- [ ] A confirmed archive queues an archive command for the message's account, listed by `GET /commands?accountEmail=…` (the path the extension already calls) with an `id` and `messageId` per command
+- [x] A confirmed archive queues an archive command for the message's account, listed by `GET /commands?accountEmail=…` (the path the extension already calls) with an `id` and `messageId` per command
 - [ ] The commands for one account do not include another account's commands
 - [ ] A command acknowledged through `POST /commands/:id/acknowledgement` (the path the extension already calls) is no longer pending
 - [ ] A confirmed `act` stores a task, and the task list shows its title, source link and account
