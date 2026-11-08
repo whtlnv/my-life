@@ -886,6 +886,35 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(after[0]?.id).not.toEqual(loadedDigestId);
   });
 
+  it('refuses a confirmation posted at POST /digests/:id/confirmation for an unknown digest as not found, and stores no verdict', async () => {
+    const databasePath = temporaryDatabasePath();
+    const triage = triageAnsweringInOrder(
+      [
+        {
+          action: 'archive',
+          category: 'system-update',
+          summary: 'GitHub build passed',
+          extract: { system: 'GitHub', severity: 'low', significant: false },
+          reason: 'A routine notification',
+        },
+      ],
+      1,
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, databasePath });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+    });
+    await postTriageRun(app);
+    await getJson(app, '/triage-queue');
+
+    const response = await app.request('/digests/unknown-digest/confirmation', { method: 'POST' });
+
+    expect(response.status).toBe(404);
+    expect(openVerdictStore(databasePath).loadAll()).toEqual([]);
+  });
+
   it('lists at GET /commands an archive command for each item of a digest confirmed at POST /digests/:id/confirmation whose own proposal is archive', async () => {
     const commandedMessageIds = await commandedMessageIdsAfterConfirmingGitHubDigest([
       { id: 'message-build', action: 'archive', summary: 'GitHub build passed' },

@@ -646,6 +646,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   app.post('/digests/:id/confirmation', (context) => {
     const digestId = context.req.param('id');
+    if (!listedDigestMessageIds.has(digestId)) return context.body(null, 404);
     digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))
       .filter((digest) => identifyDigest(digest) === digestId)
       .flatMap(({ proposals: digested }) => digested)
