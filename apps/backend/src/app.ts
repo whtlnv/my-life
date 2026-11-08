@@ -788,7 +788,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/search', (context) => {
     const query = context.req.query('q') ?? '';
-    return context.json({ messages: messagesWhoseBodyContainsWord(reportedMessages, query) });
+    return context.json({ messages: messagesWhoseBodyOrSummaryContainsWord(reportedMessages, proposals, query) });
   });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
@@ -820,8 +820,17 @@ const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 
 const freeMailDomains = new Set(['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com']);
 
-function messagesWhoseBodyContainsWord(messages: ReportedMessage[], word: string): ReportedMessage[] {
-  return messages.filter((message) => message.body !== undefined && message.body.split(/\W+/).includes(word));
+function messagesWhoseBodyOrSummaryContainsWord(
+  messages: ReportedMessage[],
+  proposals: Proposal[],
+  word: string,
+): ReportedMessage[] {
+  const containsWord = (text: string | undefined): boolean => text !== undefined && text.split(/\W+/).includes(word);
+  return messages.filter(
+    (message) =>
+      containsWord(message.body) ||
+      containsWord(proposals.findLast((proposal) => proposal.messageId === message.id)?.summary),
+  );
 }
 
 // One organization per name: each reported message lists under the organization its latest proposal names, or

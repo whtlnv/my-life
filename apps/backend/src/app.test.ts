@@ -3539,4 +3539,19 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
   });
+
+  it('lists at GET /search?q= the message whose summary alone contains the query word', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ summary: 'Luis asks for the forecast before Friday' }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' }],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/search?q=forecast');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+  });
 });
