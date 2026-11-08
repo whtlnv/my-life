@@ -61,7 +61,11 @@ async function freePort(): Promise<number> {
   const probe = createNetServer();
   await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
   const { port } = probe.address() as AddressInfo;
-  await new Promise<void>((resolve) => probe.close(() => resolve()));
+  await new Promise<void>((resolve) =>
+    probe.close(() => {
+      resolve();
+    }),
+  );
   return port;
 }
 
@@ -114,18 +118,21 @@ describe('the shipped backend (main.ts)', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         ...budgetReviewReport,
-        messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+        messages: [
+          { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+        ],
       }),
     });
 
     await fetch(`${baseUrl}/triage-run`, { method: 'POST' });
 
     const { digests } = (await (await fetch(`${baseUrl}/triage-queue`)).json()) as { digests: unknown[] };
-    expect(digests).toEqual([
-      expect.objectContaining({ key: 'GitHub', summaryLines: writtenSummaryLines }),
-    ]);
+    expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: writtenSummaryLines })]);
     expect(recorded).toContainEqual(
-      expect.objectContaining({ model: 'claude-sonnet-5-5', tools: [expect.objectContaining({ name: 'write_summary' })] }),
+      expect.objectContaining({
+        model: 'claude-sonnet-5-5',
+        tools: [expect.objectContaining({ name: 'write_summary' })],
+      }),
     );
   }, 30_000);
 });
