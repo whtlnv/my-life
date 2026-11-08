@@ -2737,4 +2737,14 @@ describe('backend app', () => {
       }) as unknown,
     ]);
   });
+
+  it('lists at GET /contacts, once a message is reported at POST /mail-report, its sender as a contact with the display name and email from its From header', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
+  });
 });

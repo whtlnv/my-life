@@ -563,6 +563,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
+  app.get('/contacts', (context) => {
+    const contacts = reportedMessageStore.loadAll().map(({ from }) => {
+      const [, displayName, email] = /^(.*) <(.*)>$/.exec(from) as RegExpExecArray;
+      return { displayName, emails: [email] };
+    });
+    return context.json({ contacts });
+  });
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
     const category = context.req.param('category');

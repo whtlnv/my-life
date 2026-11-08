@@ -38,7 +38,7 @@
 
 ### Contacts and organizations
 
-- [ ] A message's sender becomes a contact with the display name and email from its `From` header
+- [x] A message's sender becomes a contact with the display name and email from its `From` header
 - [ ] Two messages from the same email, on different accounts, link to one contact
 - [ ] Two messages from different emails link to two contacts
 - [ ] A message's organization is the one its extraction names
