@@ -5,7 +5,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 ## 1. Start today — Google Cloud project and OAuth client (Phase 0's spike waits on it)
 
 - [ ] **One Google Cloud project** (any of your accounts can own it; a Workspace one you administer is simplest). Enable the **Gmail API**, **Google Calendar API** and **Google Drive API**.
-- [ ] **OAuth consent screen**: user type _External_, publishing status _Testing_. Add **every Google account you want aggregated** as a test user (the Workspace ones and the gmail.com ones). Scopes to list: `calendar.readonly`, `gmail.modify`, `gmail.settings.basic`, `drive.readonly`, `userinfo.email`.
+- [ ] **OAuth consent screen**: user type _External_, publishing status _Testing_. Add **every Google account you want aggregated** as a test user (the Workspace ones and the gmail.com ones). Scopes to list: `calendar.readonly`, `gmail.modify`, `gmail.settings.basic`, `contacts.readonly`, `contacts.other.readonly`, `drive.readonly`, `userinfo.email`.
 - [ ] **OAuth client of type _Chrome Extension_** with the extension ID `goknkpgifknnopfpldahflhndahempki` (fixed by the `key` in `apps/extension/wxt.config.ts`; the private key is at `~/Library/Application Support/my-life/extension-key.pem`, never in git). Paste the client ID into `apps/extension/.env` as `WXT_GOOGLE_OAUTH_CLIENT_ID=…` (see `.env.example`).
 - [ ] **List the accounts**: for each, the email, whether it is Workspace or gmail.com, and what it is for (one line each). Goes in `profile/accounts.md` and the backend allow-list.
 
@@ -43,3 +43,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 ## 8. The Mac
 
 - [ ] Confirm the Mac stays on and Chrome stays open (locked decision 1). Claude provides the launchd plist for the backend in Phase 0; you install it once.
+
+## 9. People API (Phase 2b)
+
+- [ ] Enable the **People API** in the Google Cloud project and add `contacts.readonly` and `contacts.other.readonly` to the OAuth consent screen's scopes. Each profile then needs one more consent (reload the extension card; revoke the cached token in `chrome://identity-internals` first if the prompt does not appear).
