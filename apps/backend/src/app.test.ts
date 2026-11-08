@@ -31,6 +31,11 @@ const postTriageRun = (app: App) => app.request('/triage-run', { method: 'POST' 
 const getCommands = (app: App, accountEmail: string) =>
   app.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`);
 
+const firstPendingFilterProposalId = async (app: App) => {
+  const { proposals } = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+  return proposals[0]?.id ?? '';
+};
+
 const switchCategory = (app: App, category: string, mode: string) =>
   app.request(`/categories/${category}/mode`, {
     method: 'PUT',
@@ -2491,9 +2496,9 @@ describe('backend app', () => {
   it('lists at GET /commands for the account a create-filter command with the criteria and label once its filter proposal is approved through POST /filter-proposals/:id/approval', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const proposalId = await firstPendingFilterProposalId(app);
 
-    const approval = await app.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/approval`, {
+    const approval = await app.request(`/filter-proposals/${proposalId}/approval`, {
       method: 'POST',
     });
     const commands = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
@@ -2533,10 +2538,7 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
-    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
-      proposals: { id?: string }[];
-    };
-    const proposalId = listed.proposals[0]?.id ?? '';
+    const proposalId = await firstPendingFilterProposalId(beforeRestart);
     await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     const afterRestart = createApp(options);
 
@@ -2565,8 +2567,7 @@ describe('backend app', () => {
   it('lists at GET /commands a create-filter command with the id create-filter-<proposal id>, and no longer lists it once acknowledged through POST /commands/:id/acknowledgement', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
-    const proposalId = listed.proposals[0]?.id ?? '';
+    const proposalId = await firstPendingFilterProposalId(app);
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     const createFilterCommands = async () =>
       (
@@ -2585,8 +2586,7 @@ describe('backend app', () => {
   it('lists at GET /filters a filter only once its create-filter command is acknowledged, with its criteria, label, account and the Gmail filter id', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
-    const proposalId = listed.proposals[0]?.id ?? '';
+    const proposalId = await firstPendingFilterProposalId(app);
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     const listFilters = async () => {
       const response = await app.request('/filters');
@@ -2642,10 +2642,7 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
-    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
-      proposals: { id?: string }[];
-    };
-    const proposalId = listed.proposals[0]?.id ?? '';
+    const proposalId = await firstPendingFilterProposalId(beforeRestart);
     currentTime = new Date('2026-11-02T15:20:00.000Z');
     await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     currentTime = new Date('2026-11-02T15:25:00.000Z');
@@ -2672,8 +2669,7 @@ describe('backend app', () => {
   it('yields after DELETE /filters/:id a delete-filter command with the Gmail filter id at GET /commands for that filter account only', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
-    const proposalId = listed.proposals[0]?.id ?? '';
+    const proposalId = await firstPendingFilterProposalId(app);
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
       method: 'POST',
@@ -2700,8 +2696,7 @@ describe('backend app', () => {
   it('drops the filter from GET /filters and its delete-filter command from GET /commands once that command is acknowledged', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
-    const proposalId = listed.proposals[0]?.id ?? '';
+    const proposalId = await firstPendingFilterProposalId(app);
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
       method: 'POST',
@@ -2746,10 +2741,7 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
-    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
-      proposals: { id?: string }[];
-    };
-    const proposalId = listed.proposals[0]?.id ?? '';
+    const proposalId = await firstPendingFilterProposalId(beforeRestart);
     await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     await beforeRestart.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
       method: 'POST',
@@ -2777,9 +2769,9 @@ describe('backend app', () => {
   it('no longer lists at GET /filter-proposals a filter proposal rejected through POST /filter-proposals/:id/rejection', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const proposalId = await firstPendingFilterProposalId(app);
 
-    const rejection = await app.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/rejection`, {
+    const rejection = await app.request(`/filter-proposals/${proposalId}/rejection`, {
       method: 'POST',
     });
     const afterRejection = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
@@ -2790,9 +2782,9 @@ describe('backend app', () => {
   it('no longer lists at GET /filter-proposals a filter proposal approved through POST /filter-proposals/:id/approval', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const proposalId = await firstPendingFilterProposalId(app);
 
-    const approval = await app.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/approval`, {
+    const approval = await app.request(`/filter-proposals/${proposalId}/approval`, {
       method: 'POST',
     });
     const afterApproval = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
@@ -2828,10 +2820,8 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
-    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
-      proposals: { id?: string }[];
-    };
-    await beforeRestart.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/rejection`, { method: 'POST' });
+    const proposalId = await firstPendingFilterProposalId(beforeRestart);
+    await beforeRestart.request(`/filter-proposals/${proposalId}/rejection`, { method: 'POST' });
     askedCandidates.length = 0;
     const afterRestart = createApp(options);
 
