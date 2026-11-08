@@ -213,6 +213,16 @@ const keepProposalExtracting = (extraction: Record<string, unknown> = {}) => ({
   ...extraction,
 });
 
+const triageUnderV2Recording = <Asked>(
+  askedMessages: Asked[],
+  record: (message: { id: string; body?: string; contact?: unknown }) => Asked,
+) => ({
+  propose: (message: { id: string; body?: string; contact?: unknown }) => {
+    askedMessages.push(record(message));
+    return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
+  },
+});
+
 const filterAnswering = (proposal: unknown) => ({
   propose: () => Promise.resolve({ proposal, costInUsd: 0.05, promptVersion: 'filter-v1' }),
 });
@@ -3441,12 +3451,7 @@ describe('backend app', () => {
       proposal: keepProposalExtracting(),
     });
     const askedMessages: { id: string; body?: string | undefined }[] = [];
-    const triage = {
-      propose: (message: { id: string; body?: string }) => {
-        askedMessages.push({ id: message.id, body: message.body });
-        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
-      },
-    };
+    const triage = triageUnderV2Recording(askedMessages, ({ id, body }) => ({ id, body }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     const body = 'Hi Ana, can you review the budget by Friday? Luis';
 
@@ -3508,12 +3513,7 @@ describe('backend app', () => {
       proposal: keepProposalExtracting(),
     });
     const askedMessages: { id: string; body?: string | undefined }[] = [];
-    const triage = {
-      propose: (message: { id: string; body?: string }) => {
-        askedMessages.push({ id: message.id, body: message.body });
-        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
-      },
-    };
+    const triage = triageUnderV2Recording(askedMessages, ({ id, body }) => ({ id, body }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
 
     await postJson(app, '/bodies-report', {
@@ -3542,12 +3542,7 @@ describe('backend app', () => {
       bodies: [{ messageId: 'message-1', body }],
     });
     const askedMessages: { id: string; body?: string | undefined }[] = [];
-    const triage = {
-      propose: (message: { id: string; body?: string }) => {
-        askedMessages.push({ id: message.id, body: message.body });
-        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
-      },
-    };
+    const triage = triageUnderV2Recording(askedMessages, ({ id, body }) => ({ id, body }));
     const afterRestart = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -3562,12 +3557,7 @@ describe('backend app', () => {
 
   it("hands the triage port, for a message from a contact the user marked vip and gave an organization, lists and a note, that contact's record with the display name from the From header", async () => {
     const askedMessages: { id: string; contact?: unknown }[] = [];
-    const triage = {
-      propose: (message: { id: string; contact?: unknown }) => {
-        askedMessages.push({ id: message.id, contact: message.contact });
-        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
-      },
-    };
+    const triage = triageUnderV2Recording(askedMessages, ({ id, contact }) => ({ id, contact }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postJson(app, '/contacts-import', {
@@ -3589,12 +3579,7 @@ describe('backend app', () => {
 
   it('hands the triage port no contact record for a message whose sender was never imported, marked or given details', async () => {
     const askedMessages: { id: string; contact?: unknown }[] = [];
-    const triage = {
-      propose: (message: { id: string; contact?: unknown }) => {
-        askedMessages.push({ id: message.id, contact: message.contact });
-        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
-      },
-    };
+    const triage = triageUnderV2Recording(askedMessages, ({ id, contact }) => ({ id, contact }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
 
