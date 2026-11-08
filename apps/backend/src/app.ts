@@ -438,6 +438,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map((message) => message.id);
     return context.json({ messageIds });
   });
+  app.post('/bodies-report', async (context) => {
+    const report = await context.req.json<{ accountEmail: string; bodies: { messageId: string; body: string }[] }>();
+    report.bodies.forEach(({ messageId, body }) => {
+      reportedMessageStore.saveBody(messageId, body);
+      const reportedMessage = reportedMessages.find((message) => message.id === messageId);
+      if (reportedMessage !== undefined) reportedMessage.body = body;
+    });
+    return context.body(null, 200);
+  });
   app.post('/triage-run', async (context) => {
     const triage = options.triage;
     if (triage === undefined) {

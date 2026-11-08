@@ -104,6 +104,7 @@ export function openReportedMessageStore(databasePath: string) {
   >(
     'SELECT messages.message_id AS id, messages.account_email AS accountEmail, bodies.thread_id AS threadId, bodies.snippet AS snippet, bodies.body_text AS body, senders.from_header AS "from", senders.list_id AS listId, recipients.to_header AS "to", recipients.cc_header AS cc, subjects.subject AS subject, dates.date_header AS date FROM reported_messages AS messages JOIN reported_message_bodies AS bodies ON bodies.message_id = messages.message_id JOIN reported_message_senders AS senders ON senders.message_id = messages.message_id JOIN reported_message_recipients AS recipients ON recipients.message_id = messages.message_id JOIN reported_message_subjects AS subjects ON subjects.message_id = messages.message_id JOIN reported_message_dates AS dates ON dates.message_id = messages.message_id ORDER BY messages.rowid',
   );
+  const updateBody = database.prepare('UPDATE reported_message_bodies SET body_text = ? WHERE message_id = ?');
   const countMessages = database.prepare('SELECT COUNT(*) FROM reported_messages').pluck();
   const loadHeaders = database.prepare<
     [string],
@@ -125,6 +126,9 @@ export function openReportedMessageStore(databasePath: string) {
       saveSubject.run(messageId, message.subject);
       saveDate.run(messageId, message.date);
       saveBody.run(messageId, message.threadId, message.snippet, message.body ?? null);
+    },
+    saveBody(messageId: string, body: string): void {
+      updateBody.run(body, messageId);
     },
     loadReportedMessages(): StoredReportedMessage[] {
       return loadReportedMessages.all().map(({ listId, cc, body, ...rest }) => ({

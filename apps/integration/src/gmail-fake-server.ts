@@ -14,8 +14,10 @@ interface FakeGmailMessage {
   id: string;
   threadId: string;
   snippet: string;
-  payload: { headers: { name: string; value: string }[] };
+  payload: { headers: { name: string; value: string }[]; mimeType?: string; body?: { size: number; data: string } };
 }
+
+export const budgetReviewBody = 'Hi,\n\nCould you review the budget before Friday? The numbers are in the shared sheet.\n\nLuis\n';
 
 function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGmailMessage[] {
   const budgetReview: FakeGmailMessage = {
@@ -29,6 +31,8 @@ function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGm
         { name: 'Subject', value: 'Budget review' },
         { name: 'Date', value: 'Mon, 2 Nov 2026 09:00:00 -0600' },
       ],
+      mimeType: 'text/plain',
+      body: { size: budgetReviewBody.length, data: Buffer.from(budgetReviewBody).toString('base64url') },
     },
   };
   const messages: Record<GmailScenario, FakeGmailMessage[]> = {

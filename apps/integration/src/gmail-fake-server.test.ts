@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '@my-life/backend/app';
+import { backfillBodiesOnce } from '@my-life/extension/body-backfill';
 import { carryOutArchiveCommands } from '@my-life/extension/gmail-archive';
 import { carryOutFilterCommands } from '@my-life/extension/gmail-filter';
 import { pollGmailOnce } from '@my-life/extension/gmail-poll';
 
-import { startGmailFakeServer } from './gmail-fake-server';
+import { budgetReviewBody, startGmailFakeServer } from './gmail-fake-server';
 
 const accountEmail = 'ana@example.com';
 const backendUrl = 'http://backend.test';
@@ -59,6 +60,7 @@ interface MessageSeenByTriage {
   to?: string;
   threadId?: string;
   date?: string;
+  body?: string;
 }
 
 function systemUpdateProposalFor(message: MessageSeenByTriage): object {
@@ -263,6 +265,43 @@ describe('Gmail fake server', () => {
     } finally {
       await gmail.close();
     }
+  });
+  it('backfilling bodies against the action-to-me scenario, for its message reported without a body, leaves GET /bodies-missing empty and the triage request carrying the body', async () => {
+    const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
+    await backend.request('/mail-report', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        accountEmail,
+        historyId: '1',
+        messages: [
+          {
+            id: 'budget-review',
+            threadId: 'budget-review',
+            from: 'Luis <luis@example.com>',
+            to: accountEmail,
+            subject: 'Budget review',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'Could you review the budget before Friday?',
+          },
+        ],
+      }),
+    });
+    const bodiesMissingPath = `/bodies-missing?account=${encodeURIComponent(accountEmail)}`;
+    const gmail = await startGmailFakeServer('action-to-me', accountEmail);
+    let bodiesMissingBefore: unknown;
+    try {
+      bodiesMissingBefore = await (await backend.request(bodiesMissingPath)).json();
+      await backfillBodiesOnce(extensionOptionsFor(gmail.url, backend));
+    } finally {
+      await gmail.close();
+    }
+    const bodiesMissingAfter: unknown = await (await backend.request(bodiesMissingPath)).json();
+    await backend.request('/triage-run', { method: 'POST' });
+
+    expect(bodiesMissingBefore).toEqual({ messageIds: ['budget-review'] });
+    expect(bodiesMissingAfter).toEqual({ messageIds: [] });
+    expect(messagesSeenByTriage).toEqual([expect.objectContaining({ id: 'budget-review', body: budgetReviewBody })]);
   });
   it('a confirmed archive carried out against the fake leaves the message out of the inbox with the label my-life/archived', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => expenseProposal);

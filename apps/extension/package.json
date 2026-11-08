@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./body-backfill": "./src/body-backfill.ts",
     "./calendar-poll": "./src/calendar-poll.ts",
     "./contacts-import": "./src/contacts-import.ts",
     "./gmail-archive": "./src/gmail-archive.ts",
