@@ -611,12 +611,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         from: reportedMessages.find((message) => message.id === proposal.messageId)?.from ?? '',
       }));
   }
+  // A digest's id: its account, category and key.
+  function identifyDigest({ key, proposals: digested }: ReturnType<typeof digests>[number]): string {
+    const { accountEmail, category } = digested[0] ?? {};
+    return JSON.stringify([accountEmail, category, key]);
+  }
   // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
-    return digests(waitingOutsideTheActionBlock(verdicts)).map(({ key, proposals: digested, severityCounts }) => {
+    return digests(waitingOutsideTheActionBlock(verdicts)).map((digest) => {
+      const { key, proposals: digested, severityCounts } = digest;
       const { accountEmail, category } = digested[0] ?? {};
       return {
-        id: JSON.stringify([accountEmail, category, key]),
+        id: identifyDigest(digest),
         accountEmail,
         category,
         key,
@@ -628,10 +634,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.post('/digests/:id/confirmation', (context) => {
     const digestId = context.req.param('id');
     digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))
-      .filter(({ key, proposals: digested }) => {
-        const { accountEmail, category } = digested[0] ?? {};
-        return JSON.stringify([accountEmail, category, key]) === digestId;
-      })
+      .filter((digest) => identifyDigest(digest) === digestId)
       .flatMap(({ proposals: digested }) => digested)
       .forEach(({ messageId }) => {
         verdictStore.save({ messageId, decision: 'confirmed', decidedAt: clock.now().toISOString() });
