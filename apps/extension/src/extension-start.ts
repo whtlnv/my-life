@@ -1,5 +1,6 @@
 import { refreshBadge } from './badge-refresh';
 import { pollCalendarOnce } from './calendar-poll';
+import { importContactsOnce } from './contacts-import';
 import { carryOutArchiveCommands } from './gmail-archive';
 import { carryOutFilterCommands } from './gmail-filter';
 import { pollGmailOnce } from './gmail-poll';
@@ -7,6 +8,7 @@ import type { FetchFunction } from './fetch-function';
 
 const calendarPollIntervalMilliseconds = 5 * 60 * 1000;
 const gmailPollIntervalMilliseconds = 60 * 1000;
+const contactsImportIntervalMilliseconds = 24 * 60 * 60 * 1000;
 
 interface StartExtensionOptions {
   fetch: FetchFunction;
@@ -56,8 +58,22 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     pollGmail().catch((error: unknown) => {
       console.error('Gmail poll failed', error);
     });
+  const importContacts = async () => {
+    await importContactsOnce({
+      fetch: options.fetch,
+      accessToken: await options.accessToken(),
+      accountEmail,
+      backendUrl: options.backendUrl,
+    });
+  };
+  const importContactsAndLogFailure = () =>
+    importContacts().catch((error: unknown) => {
+      console.error('Contacts import failed', error);
+    });
   await pollCalendar();
   await pollGmailAndLogFailure();
+  await importContactsAndLogFailure();
   options.every?.(gmailPollIntervalMilliseconds, pollGmailAndLogFailure);
+  options.every?.(contactsImportIntervalMilliseconds, importContactsAndLogFailure);
   options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
 }

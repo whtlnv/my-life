@@ -4,6 +4,7 @@ import { startExtension } from './extension-start';
 
 const calendarApi = 'https://www.googleapis.com/calendar/v3';
 const gmailApi = 'https://gmail.googleapis.com/gmail/v1';
+const peopleApi = 'https://people.googleapis.com/v1';
 
 describe('startExtension', () => {
   it('registers with the backend using the profile account email, then posts the first snapshot', async () => {
@@ -500,6 +501,70 @@ describe('startExtension', () => {
     expect(acknowledgements).toEqual([
       { path: '/commands/create-filter-proposal-1/acknowledgement', body: { gmailFilterId: 'gmail-filter-7' } },
       { path: '/commands/delete-filter-proposal-2/acknowledgement', body: undefined },
+    ]);
+  });
+
+  it('imports the Google Contacts at start and again once a day, and a scheduled Gmail poll imports none', async () => {
+    const contactsImports: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${gmailApi}/users/me/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
+      }
+      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.href.startsWith(`${gmailApi}/users/me/history`)) {
+        return Promise.resolve(Response.json({ historyId: '4321' }));
+      }
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      }
+      if (url.href.startsWith('http://127.0.0.1:7777/commands?')) {
+        return Promise.resolve(Response.json({ commands: [] }));
+      }
+      if (url.href === `${peopleApi}/contactGroups`) {
+        return Promise.resolve(Response.json({ contactGroups: [] }));
+      }
+      if (url.href.startsWith(`${peopleApi}/people/me/connections`)) {
+        return Promise.resolve(Response.json({ connections: [] }));
+      }
+      if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
+        return Promise.resolve(Response.json({ otherContacts: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/contacts-import' && init?.method === 'POST') {
+        contactsImports.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const scheduledPolls = new Map<number, () => Promise<void>>();
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
+      accessToken: () => Promise.resolve('token-for-francisco'),
+      backendUrl: 'http://127.0.0.1:7777',
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+      every: (milliseconds: number, poll: () => Promise<void>) => {
+        scheduledPolls.set(milliseconds, poll);
+      },
+    });
+    expect(contactsImports).toHaveLength(1);
+
+    await scheduledPolls.get(60 * 1000)?.();
+    expect(contactsImports).toHaveLength(1);
+
+    const dailyContactsImport = scheduledPolls.get(24 * 60 * 60 * 1000);
+    expect(dailyContactsImport).toBeDefined();
+    await dailyContactsImport?.();
+    expect(contactsImports).toEqual([
+      { accountEmail: 'francisco@example.com', contacts: [] },
+      { accountEmail: 'francisco@example.com', contacts: [] },
     ]);
   });
 });
