@@ -2881,4 +2881,42 @@ describe('backend app', () => {
       ].join('\n'),
     });
   });
+
+  it('answers GET /expense-statement without week with the current business week', async () => {
+    const expenseOf = (vendor: string, date: string) => ({
+      action: 'archive',
+      category: 'expense',
+      summary: `Invoice from ${vendor}`,
+      extract: { vendor, amount: 100, currency: 'MXN', date },
+      reason: 'An invoice to file',
+    });
+    const proposalByMessageId: Record<string, unknown> = {
+      'message-last-week': expenseOf('Last week', '2026-10-30'),
+      'message-this-week': expenseOf('This week', '2026-11-03'),
+    };
+    const triage = {
+      propose: (message: { id: string }) =>
+        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
+    };
+    const thursdayInMexicoCity = { now: () => new Date('2026-11-05T18:00:00.000Z') };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: thursdayInMexicoCity, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-last-week', threadId: 'thread-last', date: 'Fri, 30 Oct 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-this-week', threadId: 'thread-this', date: 'Tue, 3 Nov 2026 10:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/expense-statement');
+
+    const vendors = (await response.text())
+      .split('\n')
+      .slice(1)
+      .filter((row) => row !== '')
+      .map((row) => row.split(',')[0]);
+    expect(vendors).toEqual(['This week']);
+  });
 });

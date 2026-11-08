@@ -162,6 +162,13 @@ function agreementRate(category: string, proposals: Proposal[], verdicts: Stored
   return confirmedCount / categoryProposals.length;
 }
 
+const mondayOfBusinessWeek = (instant: Date): string => {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
+  const midnight = Date.parse(`${today}T00:00:00.000Z`);
+  const daysSinceMonday = (new Date(midnight).getUTCDay() + 6) % 7;
+  return new Date(midnight - daysSinceMonday * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+};
+
 const recentProposalCount = 5;
 
 function recentProposals(category: string, proposals: Proposal[]) {
@@ -577,7 +584,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       link: gmailMessageLink(proposal),
     }));
     const entries = expenseStatement(expenseProposals, {
-      week: context.req.query('week') ?? '',
+      week: context.req.query('week') ?? mondayOfBusinessWeek(clock.now()),
       timeZone: businessTimeZone,
     });
     const rows = entries.map(({ vendor, amount, currency, date, accountEmail, link }) =>

@@ -101,7 +101,7 @@
 - [x] A proposal of another category (`sales`, `system-update`) dated inside the week is not in the statement, even when its extract carries an amount (supervisor triangulation: the green never reads the category)
 - [x] An `expense` proposal the user rejected is left out of the statement
 - [x] `GET /expense-statement?week=YYYY-MM-DD` answers a CSV file (`text/csv`, `Content-Disposition: attachment`) with header `vendor,amount,currency,date,account,link` and one row per entry, quoting fields that contain commas or quotes
-- [ ] `GET /expense-statement` without `week` answers the current business week
+- [x] `GET /expense-statement` without `week` answers the current business week
 - [ ] An `expense` proposal the user rejected through `POST /verdicts` is left out of `GET /expense-statement` (supervisor keystone: the route hands the domain rule proposals without their verdicts)
 - [ ] After a backend restart on the same database, `GET /expense-statement` still lists the week's expenses with their message dates (supervisor keystone: the route reads message dates from the in-memory report list)
 - [ ] The dashboard app shell has a `Statement` tab linking to `#/statement`, marked current on that route
