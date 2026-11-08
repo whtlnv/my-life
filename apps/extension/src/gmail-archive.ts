@@ -3,7 +3,7 @@ import { gmailApi } from './gmail-api';
 
 const archivedLabelName = 'my-life/archived';
 
-interface CarryOutArchiveCommandsOptions {
+export interface CommandOptions {
   fetch: FetchFunction;
   accessToken: string;
   accountEmail: string;
@@ -24,7 +24,7 @@ interface GmailLabel {
   name: string;
 }
 
-export async function carryOutArchiveCommands(options: CarryOutArchiveCommandsOptions) {
+export async function carryOutArchiveCommands(options: CommandOptions) {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const commands = await fetchPendingArchiveCommands(options);
   for (const command of commands) {
@@ -37,7 +37,7 @@ export async function carryOutArchiveCommands(options: CarryOutArchiveCommandsOp
   }
 }
 
-async function acknowledgeCommand(options: CarryOutArchiveCommandsOptions, commandId: string) {
+async function acknowledgeCommand(options: CommandOptions, commandId: string) {
   await options.fetch(`${options.backendUrl}/commands/${commandId}/acknowledgement`, { method: 'POST' });
 }
 
@@ -54,7 +54,7 @@ async function archiveMessage(
   });
 }
 
-async function fetchPendingArchiveCommands(options: CarryOutArchiveCommandsOptions) {
+async function fetchPendingArchiveCommands(options: CommandOptions) {
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: ListedCommand[] };
   return commands.filter((command): command is ArchiveCommand => command.messageId !== undefined);

@@ -1,13 +1,6 @@
 import type { FetchFunction } from './fetch-function';
-import { findOrCreateLabelId } from './gmail-archive';
+import { findOrCreateLabelId, type CommandOptions } from './gmail-archive';
 import { gmailApi } from './gmail-api';
-
-interface CarryOutFilterCommandsOptions {
-  fetch: FetchFunction;
-  accessToken: string;
-  accountEmail: string;
-  backendUrl: string;
-}
 
 interface CreateFilterCommand {
   id: string;
@@ -22,7 +15,7 @@ interface DeleteFilterCommand {
   gmailFilterId: string;
 }
 
-export async function carryOutFilterCommands(options: CarryOutFilterCommandsOptions) {
+export async function carryOutFilterCommands(options: CommandOptions) {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as {
@@ -41,7 +34,7 @@ export async function carryOutFilterCommands(options: CarryOutFilterCommandsOpti
   }
 }
 
-async function acknowledgeCommand(options: CarryOutFilterCommandsOptions, commandId: string, body?: string) {
+async function acknowledgeCommand(options: CommandOptions, commandId: string, body?: string) {
   await options.fetch(`${options.backendUrl}/commands/${commandId}/acknowledgement`, {
     method: 'POST',
     ...(body === undefined ? {} : { body }),
