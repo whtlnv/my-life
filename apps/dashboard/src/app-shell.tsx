@@ -104,6 +104,7 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
   const onTriage = route === routes.triage;
   const onCategories = route === routes.categories;
   const onFilters = route === routes.filters;
+  const onNow = !onTriage && !onCategories && !onFilters;
   return (
     <div className="shell">
       <header className="topbar">
@@ -112,7 +113,7 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             my-life
           </a>
           <nav className="tabs" aria-label="Pages">
-            <Tab href={routes.now} current={!onTriage && !onCategories && !onFilters}>
+            <Tab href={routes.now} current={onNow}>
               Now
             </Tab>
             <Tab href={routes.triage} current={onTriage}>
