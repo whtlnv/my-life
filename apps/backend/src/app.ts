@@ -564,10 +564,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   app.get('/contacts', (context) => {
-    const contacts = reportedMessageStore.loadAll().map(({ from }) => {
-      const [, displayName, email] = /^(.*) <(.*)>$/.exec(from) as RegExpExecArray;
-      return { displayName, emails: [email] };
-    });
+    const contacts = reportedMessageStore.loadAll().map(({ from }) => contactFromSender(from));
     return context.json({ contacts });
   });
   app.put('/categories/:category/mode', async (context) => {
@@ -646,4 +643,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
   }
   return app;
+}
+
+function contactFromSender(from: string) {
+  const [, displayName, email] = /^(.*) <(.*)>$/.exec(from) as RegExpExecArray;
+  return { displayName, emails: [email] };
 }
