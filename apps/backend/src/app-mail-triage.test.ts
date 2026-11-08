@@ -1747,65 +1747,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
   it('opens a database created before Phase 2c and serves GET /triage-queue with its waiting system-update proposal as a digest and its automatic proposal of today under handled for you', async () => {
     const databasePath = temporaryDatabasePath();
-    const prePhase2cDatabase = openDatabase(databasePath);
-    prePhase2cDatabase.exec(`
-      CREATE TABLE reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL);
-      CREATE TABLE reported_message_recipients (message_id TEXT PRIMARY KEY, to_header TEXT, cc_header TEXT);
-      CREATE TABLE reported_message_senders (message_id TEXT PRIMARY KEY, from_header TEXT NOT NULL, list_id TEXT);
-      CREATE TABLE reported_message_subjects (message_id TEXT PRIMARY KEY, subject TEXT NOT NULL);
-      CREATE TABLE reported_message_dates (message_id TEXT PRIMARY KEY, date_header TEXT NOT NULL);
-      CREATE TABLE reported_message_bodies (message_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, snippet TEXT NOT NULL, body_text TEXT);
-      CREATE TABLE proposals (message_id TEXT NOT NULL, made_at TEXT NOT NULL, prompt_version TEXT NOT NULL, proposal TEXT NOT NULL);
-      CREATE TABLE automatic_proposals (message_id TEXT NOT NULL);
-      CREATE TABLE category_modes (category TEXT NOT NULL, mode TEXT NOT NULL);
-      CREATE TABLE verdicts (message_id TEXT NOT NULL, decision TEXT NOT NULL, correction TEXT, decided_at TEXT NOT NULL);
-    `);
-    const madeToday = '2026-11-02T15:00:00.000Z';
-    for (const [messageId, from, proposal] of [
-      [
-        'message-system',
-        'GitHub <noreply@github.com>',
-        {
-          action: 'archive',
-          category: 'system-update',
-          summary: 'GitHub build failed',
-          extract: { system: 'GitHub', severity: 'high', significant: true },
-          reason: 'A failed build',
-        },
-      ],
-      [
-        'message-cc',
-        'Luis <luis@example.com>',
-        {
-          action: 'archive',
-          category: 'cc-thread',
-          summary: 'Luis shared the budget with the team',
-          extract: {},
-          reason: 'A cc thread',
-        },
-      ],
-    ] as const) {
-      prePhase2cDatabase
-        .prepare('INSERT INTO reported_messages VALUES (?, ?)')
-        .run(messageId, 'ana@example.com');
-      prePhase2cDatabase
-        .prepare('INSERT INTO reported_message_recipients VALUES (?, ?, NULL)')
-        .run(messageId, 'ana@example.com');
-      prePhase2cDatabase.prepare('INSERT INTO reported_message_senders VALUES (?, ?, NULL)').run(messageId, from);
-      prePhase2cDatabase.prepare('INSERT INTO reported_message_subjects VALUES (?, ?)').run(messageId, 'Update');
-      prePhase2cDatabase
-        .prepare('INSERT INTO reported_message_dates VALUES (?, ?)')
-        .run(messageId, 'Mon, 2 Nov 2026 09:00:00 -0600');
-      prePhase2cDatabase
-        .prepare('INSERT INTO reported_message_bodies VALUES (?, ?, ?, NULL)')
-        .run(messageId, `thread-${messageId}`, proposal.summary);
-      prePhase2cDatabase
-        .prepare('INSERT INTO proposals VALUES (?, ?, ?, ?)')
-        .run(messageId, madeToday, currentTriagePromptVersion, JSON.stringify(proposal));
-    }
-    prePhase2cDatabase.exec("INSERT INTO category_modes VALUES ('cc-thread', 'automatic')");
-    prePhase2cDatabase.exec("INSERT INTO automatic_proposals VALUES ('message-cc')");
-    prePhase2cDatabase.close();
+    seedPrePhase2cDatabase(databasePath);
 
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
     const response = await app.request('/triage-queue');
@@ -1827,6 +1769,66 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     });
   });
 });
+
+function seedPrePhase2cDatabase(databasePath: string): void {
+  const prePhase2cDatabase = openDatabase(databasePath);
+  prePhase2cDatabase.exec(`
+    CREATE TABLE reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL);
+    CREATE TABLE reported_message_recipients (message_id TEXT PRIMARY KEY, to_header TEXT, cc_header TEXT);
+    CREATE TABLE reported_message_senders (message_id TEXT PRIMARY KEY, from_header TEXT NOT NULL, list_id TEXT);
+    CREATE TABLE reported_message_subjects (message_id TEXT PRIMARY KEY, subject TEXT NOT NULL);
+    CREATE TABLE reported_message_dates (message_id TEXT PRIMARY KEY, date_header TEXT NOT NULL);
+    CREATE TABLE reported_message_bodies (message_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, snippet TEXT NOT NULL, body_text TEXT);
+    CREATE TABLE proposals (message_id TEXT NOT NULL, made_at TEXT NOT NULL, prompt_version TEXT NOT NULL, proposal TEXT NOT NULL);
+    CREATE TABLE automatic_proposals (message_id TEXT NOT NULL);
+    CREATE TABLE category_modes (category TEXT NOT NULL, mode TEXT NOT NULL);
+    CREATE TABLE verdicts (message_id TEXT NOT NULL, decision TEXT NOT NULL, correction TEXT, decided_at TEXT NOT NULL);
+  `);
+  const madeToday = '2026-11-02T15:00:00.000Z';
+  for (const [messageId, from, proposal] of [
+    [
+      'message-system',
+      'GitHub <noreply@github.com>',
+      {
+        action: 'archive',
+        category: 'system-update',
+        summary: 'GitHub build failed',
+        extract: { system: 'GitHub', severity: 'high', significant: true },
+        reason: 'A failed build',
+      },
+    ],
+    [
+      'message-cc',
+      'Luis <luis@example.com>',
+      {
+        action: 'archive',
+        category: 'cc-thread',
+        summary: 'Luis shared the budget with the team',
+        extract: {},
+        reason: 'A cc thread',
+      },
+    ],
+  ] as const) {
+    prePhase2cDatabase.prepare('INSERT INTO reported_messages VALUES (?, ?)').run(messageId, 'ana@example.com');
+    prePhase2cDatabase
+      .prepare('INSERT INTO reported_message_recipients VALUES (?, ?, NULL)')
+      .run(messageId, 'ana@example.com');
+    prePhase2cDatabase.prepare('INSERT INTO reported_message_senders VALUES (?, ?, NULL)').run(messageId, from);
+    prePhase2cDatabase.prepare('INSERT INTO reported_message_subjects VALUES (?, ?)').run(messageId, 'Update');
+    prePhase2cDatabase
+      .prepare('INSERT INTO reported_message_dates VALUES (?, ?)')
+      .run(messageId, 'Mon, 2 Nov 2026 09:00:00 -0600');
+    prePhase2cDatabase
+      .prepare('INSERT INTO reported_message_bodies VALUES (?, ?, ?, NULL)')
+      .run(messageId, `thread-${messageId}`, proposal.summary);
+    prePhase2cDatabase
+      .prepare('INSERT INTO proposals VALUES (?, ?, ?, ?)')
+      .run(messageId, madeToday, currentTriagePromptVersion, JSON.stringify(proposal));
+  }
+  prePhase2cDatabase.exec("INSERT INTO category_modes VALUES ('cc-thread', 'automatic')");
+  prePhase2cDatabase.exec("INSERT INTO automatic_proposals VALUES ('message-cc')");
+  prePhase2cDatabase.close();
+}
 
 async function commandedMessageIdsAfterConfirmingGitHubDigest(
   notices: { id: string; action: string; summary: string }[],
