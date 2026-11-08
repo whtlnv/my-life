@@ -33,7 +33,7 @@ import {
 import { openAcknowledgementStore } from './acknowledgement-store';
 import { openCreatedFilterStore } from './created-filter-store';
 import { openCategoryModeStore } from './category-mode-store';
-import { openContactDetailsStore, type ContactDetails } from './contact-details-store';
+import { openContactDetailsStore, type ContactDetails, type ImportedContactRecord } from './contact-details-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 import { openFilterDeletionRequestStore } from './filter-deletion-request-store';
 import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
@@ -268,6 +268,12 @@ function recordImportedContact(
     return;
   }
   importedContacts.push({ displayName, emails, messageIds: [] });
+}
+
+function listImportedContacts(imports: ImportedContactRecord[]): ListedContact[] {
+  const importedContacts: ListedContact[] = [];
+  imports.forEach((imported) => recordImportedContact(importedContacts, imported));
+  return importedContacts;
 }
 
 // The HTTP app, built without a port so tests call it directly through `app.request`.
@@ -640,7 +646,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.save(context.req.param('email'), details);
     return context.body(null, 200);
   });
-  const importedContacts: ListedContact[] = [];
   const importContact = ({ name, emails, organization, starred, lists }: ImportedContact): void => {
     const primaryEmail = emails[0]!;
     const userSetOrganization = contactDetailsStore.loadAll()[primaryEmail]?.organization !== undefined;
@@ -652,7 +657,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (starred && !userRemovedVip) {
       contactDetailsStore.saveMark(primaryEmail, 'vip');
     }
-    recordImportedContact(importedContacts, { displayName: name, emails });
+    contactDetailsStore.saveImported({ displayName: name, emails });
   };
   app.post('/contacts-import', async (context) => {
     const { contacts } = await context.req.json<{ contacts: ImportedContact[] }>();
@@ -662,7 +667,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/contacts', (context) => {
     const contactDetails = contactDetailsStore.loadAll();
     const markedEmails = contactDetailsStore.markedEmails();
-    const contacts = withUnlistedImportedContacts(contactsByEmail(reportedSenders(), proposals), importedContacts);
+    const contacts = withUnlistedImportedContacts(
+      contactsByEmail(reportedSenders(), proposals),
+      listImportedContacts(contactDetailsStore.loadImported()),
+    );
     return context.json({
       contacts: contacts.map((contact) => {
         const primaryEmail = contact.emails[0]!;

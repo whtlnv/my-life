@@ -75,7 +75,7 @@
 - [x] A Google label on an imported contact becomes one of its lists
 - [x] An imported name or organization does not replace one the user set in the app
 - [x] A starred imported contact whose `vip` mark the user removed in the app stays unmarked after the next import
-- [ ] Imported contacts, with their names, emails, organization and lists, are still listed after a backend restart
+- [x] Imported contacts, with their names, emails, organization and lists, are still listed after a backend restart
 - [ ] A contacts import whose body does not match the contract is answered 400 and stores nothing
 - [ ] The contacts import, from the extension against the fake People server to the stored contacts, ends with the contacts readable from the backend
 

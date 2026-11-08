@@ -3288,4 +3288,40 @@ describe('backend app', () => {
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
   });
+
+  it('still lists at GET /contacts, after a backend restart on the same database file, a contact imported through POST /contacts-import before it whose email no reported message carries, with its imported name, emails, organization and lists', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    await postJson(beforeRestart, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [
+        {
+          name: 'Luis Pérez',
+          emails: ['luis@example.com', 'luis@acme.com'],
+          organization: 'Acme',
+          starred: false,
+          lists: ['board'],
+        },
+      ],
+    });
+
+    const afterRestart = createApp(options);
+    const { contacts } = (await getContacts(afterRestart)) as {
+      contacts: { displayName: string; emails: string[]; messageIds: string[]; organization?: string; lists?: string[] }[];
+    };
+
+    expect(contacts).toMatchObject([
+      {
+        displayName: 'Luis Pérez',
+        emails: ['luis@example.com', 'luis@acme.com'],
+        messageIds: [],
+        organization: 'Acme',
+        lists: ['board'],
+      },
+    ]);
+  });
 });
