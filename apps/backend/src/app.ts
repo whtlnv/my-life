@@ -124,6 +124,9 @@ const pollingIntervalsInMilliseconds = {
 
 const businessTimeZone = 'America/Mexico_City';
 
+// main.ts loads `prompts/<version>.md`, and the Claude adapter reports the file's name as the proposal's version.
+export const currentTriagePromptVersion = 'triage-v2';
+
 function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
@@ -414,7 +417,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
-  const currentTriagePromptVersion = 'triage-v2';
   // A message proposed before its body arrived is asked about once more, this time with the body.
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
     (message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id),

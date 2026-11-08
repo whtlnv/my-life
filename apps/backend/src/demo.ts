@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { serve } from '@hono/node-server';
 
-import { createApp } from './app';
+import { createApp, currentTriagePromptVersion } from './app';
 
 // The demo instance scripts/demo.sh serves: every account reporting, a meeting in progress, a full triage queue. Its
 // triage is scripted (the proposal is looked up by message id), so it costs nothing and needs no key.
@@ -505,7 +505,11 @@ const app = createApp({
   dailySpendCeilingInUsd: 20,
   triage: {
     propose: (message) =>
-      Promise.resolve({ proposal: proposalByMessageId.get(message.id), costInUsd: 0.018, promptVersion: 'triage-v2' }),
+      Promise.resolve({
+        proposal: proposalByMessageId.get(message.id),
+        costInUsd: 0.018,
+        promptVersion: currentTriagePromptVersion,
+      }),
   },
   filter: {
     propose: (candidate) => {
