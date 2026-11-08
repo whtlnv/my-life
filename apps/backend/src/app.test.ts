@@ -2909,6 +2909,24 @@ describe('backend app', () => {
     expect(luisContacts[0]?.messageIds).toEqual(['message-1', 'message-2']);
   });
 
+  it('lists a reported message that is not yet triaged under both parties it links to: its sender contact and the organization of its sender\'s domain', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const { contacts } = (await (await app.request('/contacts')).json()) as {
+      contacts: { emails: string[]; messageIds: string[] }[];
+    };
+    const { organizations } = (await (await app.request('/organizations')).json()) as {
+      organizations: { name: string; messageIds: string[] }[];
+    };
+
+    const partiesListingTheMessage = [
+      ...contacts.filter(({ messageIds }) => messageIds.includes('message-1')).flatMap(({ emails }) => emails),
+      ...organizations.filter(({ messageIds }) => messageIds.includes('message-1')).map(({ name }) => name),
+    ];
+    expect(partiesListingTheMessage.toSorted()).toEqual(['example.com', 'luis@example.com']);
+  });
+
   it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {
     const triage = {
       propose: () =>

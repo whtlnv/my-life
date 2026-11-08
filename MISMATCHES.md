@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 01:09 · `apps/backend/src/app.test.ts::lists a reported message that is not yet triaged under both parties it links to: its sender contact and the organization of its sender's domain`
+- Behavior: One message lists under every contact and organization it links to
+- Predicted: pass — the natural reading (one triaged message under its sender, two extracted people and the named organization) was already covered by the previous green's per-person link loop
+- Actual: pass — vacuous as a Red; no behavior was missing in that slice
+- Type: passed unexpectedly
+- Resolution: Rewrote to the slice of the item that is genuinely missing — a reported, not yet triaged message lists under its sender contact but under no organization, because `/organizations` derives its links from proposals only; the rewritten test fails with `AssertionError` (got `['luis@example.com']`, expected `['example.com', 'luis@example.com']`).
+
 ## 2026-11-08 00:46 · `apps/backend/src/app.test.ts::lists at GET /organizations a message once, under the organization its latest proposal names, when the store holds two proposals for it`
 - Behavior: a message proposed twice lists once at `GET /organizations`, under the organization its latest proposal names
 - Predicted: pass — startup already collapses the stored proposals to the latest row per message before the route sees them

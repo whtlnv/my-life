@@ -573,8 +573,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ contacts: contactsByEmail(senders, proposals) });
   });
   app.get('/organizations', (context) => {
-    const senderByMessageId = new Map(reportedMessageStore.loadAll().map(({ messageId, from }) => [messageId, from]));
-    return context.json({ organizations: organizationsFromProposals(proposals, senderByMessageId) });
+    const senders = reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
+    return context.json({ organizations: organizationsByName(senders, proposals) });
   });
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
@@ -658,10 +658,13 @@ const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 
 const freeMailDomains = new Set(['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com']);
 
-function organizationsFromProposals(proposals: Proposal[], senderByMessageId: Map<string, string>) {
+// One organization per name: each reported message lists under the organization its latest proposal names, or
+// under its sender's domain when no proposal names one.
+function organizationsByName(senders: { messageId: string; from: string }[], proposals: Proposal[]) {
   const messageIdsByName = new Map<string, string[]>();
-  for (const { organization, messageId } of proposals) {
-    const name = organization ?? senderDomain(senderByMessageId.get(messageId) ?? '');
+  for (const { messageId, from } of senders) {
+    const organization = proposals.findLast((proposal) => proposal.messageId === messageId)?.organization;
+    const name = organization ?? senderDomain(from);
     if (freeMailDomains.has(name)) continue;
     messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
   }
