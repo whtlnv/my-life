@@ -943,18 +943,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
     const isVip = (contact: { emails: string[] }) => markedEmails.has(contact.emails[0] ?? '');
+    const deadlineWindowInMilliseconds = 48 * 60 * 60 * 1000;
+    const isWithinDeadlineWindow = (date: string) =>
+      Date.parse(date) - clock.now().getTime() <= deadlineWindowInMilliseconds;
     const hasDeadline = (contact: { messageIds: string[] }) =>
       proposals.some(
         (proposal) =>
-          contact.messageIds.includes(proposal.messageId) &&
-          (proposal.dates ?? []).some((date) => Date.parse(date) - clock.now().getTime() <= 48 * 60 * 60 * 1000),
+          contact.messageIds.includes(proposal.messageId) && (proposal.dates ?? []).some(isWithinDeadlineWindow),
       );
+    const vipContacts = contacts.filter(isVip);
     return context.json({
       urgent: [
         ...contacts.filter(hasDeadline).map((contact) => ({ ...contact, reasons: ['deadline'] })),
-        ...contacts.filter(isVip).map((contact) => ({ ...contact, reasons: ['VIP waiting'] })),
+        ...vipContacts.map((contact) => ({ ...contact, reasons: ['VIP waiting'] })),
       ],
-      vip: contacts.filter(isVip),
+      vip: vipContacts,
       everyoneElse: contacts.filter((contact) => !isVip(contact) && !hasDeadline(contact)),
     });
   });
