@@ -98,6 +98,7 @@
 
 - [x] The weekly statement holds every `expense` proposal whose message date falls in the requested Monday–Sunday business week (`America/Mexico_City`), with vendor, amount, currency, date and the message link, sorted by date
 - [ ] An `expense` proposal from outside the requested week is not in that week's statement
+- [ ] A proposal of another category (`sales`, `system-update`) dated inside the week is not in the statement, even when its extract carries an amount (supervisor triangulation: the green never reads the category)
 - [ ] An `expense` proposal the user rejected is left out of the statement
 - [ ] `GET /expense-statement?week=YYYY-MM-DD` answers a CSV file (`text/csv`, `Content-Disposition: attachment`) with header `vendor,amount,currency,date,account,link` and one row per entry, quoting fields that contain commas or quotes
 - [ ] `GET /expense-statement` without `week` answers the current business week
