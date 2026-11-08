@@ -36,5 +36,20 @@ function withoutQuotedReply(text: string): string {
 }
 
 function withoutTags(html: string): string {
-  return html.replace(/<[^>]*>/g, '');
+  return decodeEntities(
+    html.replace(/<(style|script)[^>]*>[\s\S]*?<\/\1>/g, '').replace(/<[^>]*>/g, ''),
+  );
+}
+
+const entities: Record<string, string> = {
+  '&nbsp;': ' ',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&amp;': '&',
+};
+
+function decodeEntities(text: string): string {
+  return text.replace(/&(?:nbsp|lt|gt|quot|#39|amp);/g, (entity) => entities[entity] ?? entity);
 }

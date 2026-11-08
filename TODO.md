@@ -13,7 +13,7 @@
 - [x] A body under 20 KB is kept whole; a body over 20 KB is cut to 20 KB
 - [x] An attachment part (a part with a filename) never contributes text to the body
 - [x] The body of a `multipart/mixed` message whose only text part is HTML (beside an attachment) comes out as that HTML's text
-- [ ] An HTML body drops the contents of its `<style>` and `<script>` elements and decodes `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;` and `&nbsp;`
+- [x] An HTML body drops the contents of its `<style>` and `<script>` elements and decodes `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;` and `&nbsp;`
 - [ ] An HTML body is trimmed of its quoted reply and signature and capped like a plain-text body
 - [ ] A body of non-ASCII text is cut so its UTF-8 encoding is at most 20 KB, never mid-character
 - [ ] The Gmail poll reads each message with `format=full` and reports its trimmed body alongside the headers

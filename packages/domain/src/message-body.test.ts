@@ -180,4 +180,17 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe('Hola Ana, te mando la factura.');
   });
+
+  it('drops the contents of the style and script elements of an HTML body and decodes its entities', () => {
+    const html =
+      '<html><head><style>p { color: red; }</style><script>track("open");</script></head>' +
+      '<body><p>Ana &amp; Luis:&nbsp;el total es &lt;$500 &gt; &quot;OK&quot; &#39;ya&#39;</p></body></html>';
+    const payload = {
+      mimeType: 'text/html',
+      headers: [{ name: 'Content-Type', value: 'text/html; charset="UTF-8"' }],
+      body: { size: html.length, data: Buffer.from(html, 'utf8').toString('base64url') },
+    };
+
+    expect(messageBody(payload)).toBe('Ana & Luis: el total es <$500 > "OK" \'ya\'');
+  });
 });
