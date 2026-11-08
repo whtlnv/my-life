@@ -1256,4 +1256,50 @@ describe('TriagePage', () => {
     );
     expect(within(item).getByText(accountName('francisco@erlia.com'))).toBeInTheDocument();
   });
+
+  it('posts the confirm for only the digest whose Confirm button is clicked, and removes that card once accepted', async () => {
+    const confirmedDigestId = JSON.stringify(['francisco@psmutuus.com', 'system-update', 'GitHub', 'message-1']);
+    const otherDigestId = JSON.stringify(['francisco@psmutuus.com', 'sales', 'sales@initech.com', 'message-2']);
+    const digest = (id: string, summaryLine: string) => ({
+      id,
+      accountEmail: 'francisco@psmutuus.com',
+      category: 'system-update',
+      key: 'GitHub',
+      count: 1,
+      severityCounts: {},
+      summaryLines: [summaryLine],
+      significantItems: [],
+    });
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        digests: [digest(confirmedDigestId, 'Two failed deploys on main'), digest(otherDigestId, 'Initech pitches')],
+        handledForYou: [],
+        remaining: 0,
+        paused: false,
+      },
+      `/digests/${encodeURIComponent(confirmedDigestId)}/confirmation`,
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const digestsSection = await screen.findByRole('region', { name: sectionTitles.digests });
+    const confirmedCard = within(digestsSection).getByText('Two failed deploys on main').closest('article');
+    if (!confirmedCard) throw new Error('the digest card is not an article');
+    await user.click(within(confirmedCard).getByRole('button', { name: /Confirm/ }));
+
+    await waitFor(() => {
+      expect(within(digestsSection).queryByText('Two failed deploys on main')).not.toBeInTheDocument();
+    });
+    expect(fetch).toHaveBeenCalledWith(`/digests/${encodeURIComponent(confirmedDigestId)}/confirmation`, {
+      method: 'POST',
+    });
+    expect(fetch).not.toHaveBeenCalledWith(
+      `/digests/${encodeURIComponent(otherDigestId)}/confirmation`,
+      expect.anything(),
+    );
+    expect(within(digestsSection).getByText('Initech pitches')).toBeInTheDocument();
+  });
 });

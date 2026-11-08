@@ -448,7 +448,11 @@ function CategoryGroup({ group, onAccepted }: { group: TriageGroup; onAccepted: 
   );
 }
 
-function DigestCard({ digest }: { digest: Digest }) {
+function confirmDigest(id: Digest['id']) {
+  return fetch(`/digests/${encodeURIComponent(id)}/confirmation`, { method: 'POST' });
+}
+
+function DigestCard({ digest, onAccepted }: { digest: Digest; onAccepted: () => void }) {
   return (
     <article className="card">
       {digest.summaryLines.map((line) => (
@@ -467,6 +471,15 @@ function DigestCard({ digest }: { digest: Digest }) {
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        className="button"
+        onClick={() => {
+          whenAccepted(confirmDigest(digest.id), onAccepted);
+        }}
+      >
+        Confirm
+      </button>
     </article>
   );
 }
@@ -527,6 +540,12 @@ export function TriagePage() {
     );
   }
 
+  function removeDigest(id: Digest['id']) {
+    setQueue(
+      (current) => current && { ...current, digests: (current.digests ?? []).filter((other) => other.id !== id) },
+    );
+  }
+
   const groups = queue.groups.filter((group) => group.category !== 'unknown');
   return (
     <main>
@@ -572,7 +591,13 @@ export function TriagePage() {
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
-          <DigestCard key={digest.id} digest={digest} />
+          <DigestCard
+            key={digest.id}
+            digest={digest}
+            onAccepted={() => {
+              removeDigest(digest.id);
+            }}
+          />
         ))}
       </section>
       <section aria-label={sectionTitles.needsInput} className="section">
