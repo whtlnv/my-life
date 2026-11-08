@@ -199,8 +199,11 @@ function agreementRate(category: string, proposals: Proposal[], verdicts: Stored
 
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
+const businessDateOf = (instant: Date): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
+
 const mondayOfBusinessWeek = (instant: Date): string => {
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
+  const today = businessDateOf(instant);
   const midnight = Date.parse(`${today}T00:00:00.000Z`);
   const daysSinceMonday = (new Date(midnight).getUTCDay() + 6) % 7;
   return new Date(midnight - daysSinceMonday * millisecondsPerDay).toISOString().slice(0, 10);
@@ -228,9 +231,6 @@ function awaitingTheUser(proposals: Proposal[]): Proposal[] {
 function withLink(proposal: Proposal) {
   return { ...proposal, link: gmailMessageLink(proposal) };
 }
-
-const businessDateOf = (instant: Date): string =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
 
 function describeHandledForYou(proposals: Proposal[], clock: Clock) {
   const today = businessDateOf(clock.now());
