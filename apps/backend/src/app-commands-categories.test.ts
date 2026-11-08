@@ -648,4 +648,18 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
       ]) as unknown,
     });
   });
+  it('lists at GET /commands no undo command for an account other than the one whose handled-for-you item was undone', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com', 'bea@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await switchCategory(app, 'cc-thread', 'automatic');
+    await proposeBudgetReview(app);
+
+    await app.request('/handled-for-you/message-1/undo', { method: 'POST' });
+    const response = await getCommands(app, 'bea@example.com');
+
+    expect(await response.json()).toEqual({ commands: [] });
+  });
 });
