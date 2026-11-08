@@ -34,7 +34,8 @@ function isUnansweredAsk(
 }
 
 function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: number): boolean {
-  return (message.dates ?? []).some((date) => Date.parse(date) - Date.parse(now) <= deadlineHours * 60 * 60 * 1000);
+  const deadlineWindowMilliseconds = deadlineHours * 60 * 60 * 1000;
+  return (message.dates ?? []).some((date) => Date.parse(date) - Date.parse(now) <= deadlineWindowMilliseconds);
 }
 
 export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; reasons: string[] } {
