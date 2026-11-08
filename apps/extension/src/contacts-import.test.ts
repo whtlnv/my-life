@@ -56,6 +56,9 @@ describe('importContactsOnce', () => {
           }),
         );
       }
+      if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
+        return Promise.resolve(Response.json({ otherContacts: [] }));
+      }
       if (url.href === 'http://127.0.0.1:7777/contacts-import' && init?.method === 'POST') {
         backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
         return Promise.resolve(Response.json({ ok: true }));
