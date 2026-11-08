@@ -682,7 +682,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
   const listedDigestStore = openListedDigestStore(databasePath);
-  function describeDigests(verdicts: StoredVerdict[]) {
+  function recordAndDescribeListedDigests(verdicts: StoredVerdict[]) {
     return waitingDigests(verdicts).map((digest) => {
       const { key, proposals: digested, severityCounts, significantItems } = digest;
       const { accountEmail, category } = digested[0] ?? {};
@@ -727,7 +727,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const undoneMessageIds = undoAutomaticStore.loadAll();
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
-      digests: describeDigests(verdicts),
+      digests: recordAndDescribeListedDigests(verdicts),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
