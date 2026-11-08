@@ -139,6 +139,13 @@ const confirmBudgetReviewProposal = async (app: App) => {
   await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 };
 
+const statementVendors = async (response: Response) =>
+  (await response.text())
+    .split('\n')
+    .slice(1)
+    .filter((row) => row !== '')
+    .map((row) => row.split(',')[0]);
+
 const appServingDashboardAsset = (fileName: string, content: string) => {
   const dashboardDirectory = mkdtempSync(join(tmpdir(), 'my-life-dashboard-'));
   mkdirSync(join(dashboardDirectory, 'assets'));
@@ -2912,11 +2919,7 @@ describe('backend app', () => {
 
     const response = await app.request('/expense-statement');
 
-    const vendors = (await response.text())
-      .split('\n')
-      .slice(1)
-      .filter((row) => row !== '')
-      .map((row) => row.split(',')[0]);
+    const vendors = await statementVendors(response);
     expect(vendors).toEqual(['This week']);
   });
 
@@ -2942,7 +2945,12 @@ describe('backend app', () => {
       ...budgetReviewReport,
       messages: [
         { ...budgetReview, id: 'message-kept', threadId: 'thread-kept', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
-        { ...budgetReview, id: 'message-rejected', threadId: 'thread-rejected', date: 'Tue, 3 Nov 2026 10:00:00 -0600' },
+        {
+          ...budgetReview,
+          id: 'message-rejected',
+          threadId: 'thread-rejected',
+          date: 'Tue, 3 Nov 2026 10:00:00 -0600',
+        },
       ],
     });
     await postTriageRun(app);
@@ -2950,11 +2958,7 @@ describe('backend app', () => {
 
     const response = await app.request('/expense-statement?week=2026-11-02');
 
-    const vendors = (await response.text())
-      .split('\n')
-      .slice(1)
-      .filter((row) => row !== '')
-      .map((row) => row.split(',')[0]);
+    const vendors = await statementVendors(response);
     expect(vendors).toEqual(['Kept']);
   });
 });
