@@ -40,6 +40,10 @@ function waitingForReplyAtLeast(
   );
 }
 
+function asksSomething(message: UrgencyMessage): boolean {
+  return (message.asks ?? []).length > 0;
+}
+
 function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: number): boolean {
   const deadlineWindowMilliseconds = deadlineHours * 60 * 60 * 1000;
   return (message.dates ?? []).some((date) => Date.parse(date) - Date.parse(now) <= deadlineWindowMilliseconds);
@@ -60,7 +64,7 @@ export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; r
   }
   const urgent = messages.some(
     (message) =>
-      (message.asks ?? []).length > 0 &&
+      asksSomething(message) &&
       waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays),
   );
   return urgent ? { urgent: true, reasons: ['unanswered ask'] } : { urgent: false, reasons: [] };
