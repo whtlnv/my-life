@@ -459,6 +459,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return matchesContract() ? undefined : 400;
   };
   const verdictExampleLimit = 8;
+  // A category the user chose in answer to a question outranks the one the model proposed.
+  const categoryOfVerdict = (verdict: { messageId: string; correction?: unknown }): string =>
+    (verdict.correction as { category?: string } | undefined)?.category ??
+    proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ??
+    '';
   const verdictExamplesFor = (message: ReportedMessage) =>
     chooseVerdictExamples(
       message,
@@ -468,10 +473,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           ...verdict,
           from: verdictMessage?.from ?? '',
           listId: verdictMessage?.listId,
-          category:
-            (verdict.correction as { category?: string } | undefined)?.category ??
-            proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ??
-            '',
+          category: categoryOfVerdict(verdict),
         };
       }),
       verdictExampleLimit,
