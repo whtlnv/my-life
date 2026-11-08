@@ -25,12 +25,17 @@ async function fetchMessageBody(options: BackfillBodiesOptions, messageId: strin
   return messageBody(message.payload);
 }
 
-export async function backfillBodiesOnce(options: BackfillBodiesOptions): Promise<void> {
+async function fetchMissingMessageIds(options: BackfillBodiesOptions): Promise<string[]> {
   const missingUrl = new URL(`${options.backendUrl}/bodies-missing`);
   missingUrl.searchParams.set('account', options.accountEmail);
-  const missing = (await (await options.fetch(missingUrl)).json()) as BodiesMissing;
+  const response = await options.fetch(missingUrl);
+  const missing = (await response.json()) as BodiesMissing;
+  return missing.messageIds;
+}
+
+export async function backfillBodiesOnce(options: BackfillBodiesOptions): Promise<void> {
   const bodies = [];
-  for (const messageId of missing.messageIds) {
+  for (const messageId of await fetchMissingMessageIds(options)) {
     bodies.push({ messageId, body: await fetchMessageBody(options, messageId) });
   }
   await options.fetch(`${options.backendUrl}/bodies-report`, {
