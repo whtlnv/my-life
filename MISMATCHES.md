@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 16:27 · `apps/backend/src/app-contacts.test.ts::lists at GET /contacts, after a second POST /contacts-import brings another organization for a contact whose imported organization the user replaced through PATCH /contacts/:email, that contact still with the organization the user set`
+- Behavior: A later Google Contacts import leaves the organization the user set on a contact unchanged
+- Predicted: passes on first run (no right-reason failure available): a66ddba already stores imported details in `imported_contact_details` and `loadAll` layers the user's `contact_details` over them
+- Actual: passed (1 passed, 51 skipped)
+- Type: passed unexpectedly
+- Resolution: The behavior was delivered as a side effect of a66ddba's fix for the sibling TODO item; making the test fail would mean inventing a different behavior, so it stays as a regression pin (import → user edit → import) and the item needs no `/green` work.
+
 ## 2026-11-08 16:04 · `apps/backend/src/main.test.ts::lists at GET /people under Urgent a contact whose unanswered ask is 1 business day old when MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS is 1`
 - Behavior: The urgency thresholds the shipped backend gets from its startup settings decide `GET /people`
 - Predicted: AssertionError — `urgent` is `[]`, because `GET /people` hard-codes `unansweredAskBusinessDays: 2`
