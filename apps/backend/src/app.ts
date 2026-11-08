@@ -646,7 +646,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
 }
 
 function contactFromSender(from: string) {
-  const match = /^(.*) <(.*)>$/.exec(from);
+  const match = /^"?(.*?)"? <(.*)>$/.exec(from);
   if (match === null) {
     return { displayName: from, emails: [from] };
   }

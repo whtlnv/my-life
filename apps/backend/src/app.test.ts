@@ -2758,4 +2758,15 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ contacts: [{ displayName: 'ana@acme.com', emails: ['ana@acme.com'] }] });
   });
+
+  it('lists at GET /contacts a sender whose display name is quoted in its From header as a contact named without the quotes', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const quotedNameMessage = { ...budgetReviewReport.messages[0], from: '"Ana Ruiz" <ana@acme.com>' };
+    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [quotedNameMessage] });
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ contacts: [{ displayName: 'Ana Ruiz', emails: ['ana@acme.com'] }] });
+  });
 });
