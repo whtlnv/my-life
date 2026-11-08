@@ -572,7 +572,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ contacts: contactsFromSenders(senders) });
   });
   app.get('/organizations', (context) => {
-    return context.json({ organizations: organizationsFromProposals(proposals) });
+    const senderByMessageId = new Map(reportedMessageStore.loadAll().map(({ messageId, from }) => [messageId, from]));
+    return context.json({ organizations: organizationsFromProposals(proposals, senderByMessageId) });
   });
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
@@ -654,11 +655,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
 
 const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 
-function organizationsFromProposals(proposals: Proposal[]) {
+function organizationsFromProposals(proposals: Proposal[], senderByMessageId: Map<string, string>) {
   return proposals.map(({ organization, messageId }) => ({
-    name: organization,
+    name: organization ?? senderDomain(senderByMessageId.get(messageId) ?? ''),
     messageIds: [messageId],
   }));
+}
+
+function senderDomain(from: string): string {
+  const { email } = contactFromSender(from);
+  return email.slice(email.indexOf('@') + 1);
 }
 
 function contactsFromSenders(senders: string[]) {

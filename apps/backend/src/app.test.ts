@@ -2773,8 +2773,17 @@ describe('backend app', () => {
   it('lists at GET /contacts one contact for two messages from the same email reported on different accounts', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com', 'bob@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReport);
-    const sameSenderToBob = { ...budgetReviewReport.messages[0], id: 'message-2', threadId: 'thread-2', to: 'bob@example.com' };
-    await postJson(app, '/mail-report', { ...budgetReviewReport, accountEmail: 'bob@example.com', messages: [sameSenderToBob] });
+    const sameSenderToBob = {
+      ...budgetReviewReport.messages[0],
+      id: 'message-2',
+      threadId: 'thread-2',
+      to: 'bob@example.com',
+    };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      accountEmail: 'bob@example.com',
+      messages: [sameSenderToBob],
+    });
 
     const response = await app.request('/contacts');
 
@@ -2784,8 +2793,16 @@ describe('backend app', () => {
 
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const fromMarta = { ...budgetReviewReport.messages[0], id: 'message-2', threadId: 'thread-2', from: 'Marta <marta@acme.com>' };
-    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [budgetReviewReport.messages[0], fromMarta] });
+    const fromMarta = {
+      ...budgetReviewReport.messages[0],
+      id: 'message-2',
+      threadId: 'thread-2',
+      from: 'Marta <marta@acme.com>',
+    };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [budgetReviewReport.messages[0], fromMarta],
+    });
 
     const response = await app.request('/contacts');
 
@@ -2822,5 +2839,30 @@ describe('backend app', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1'] }] });
+  });
+
+  it("lists at GET /organizations, once a message is triaged with an extraction that names no organization, the organization of its sender's domain with the message linked to it", async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v2',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/organizations');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ organizations: [{ name: 'example.com', messageIds: ['message-1'] }] });
   });
 });

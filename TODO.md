@@ -44,7 +44,7 @@
 - [x] Two messages from the same email, on different accounts, link to one contact
 - [x] Two messages from different emails link to two contacts
 - [x] A message's organization is the one its extraction names
-- [ ] A message whose extraction names no organization links to the organization of its sender's domain
+- [x] A message whose extraction names no organization links to the organization of its sender's domain
 - [ ] A message from a free-mail domain (`gmail.com`, `outlook.com`, `hotmail.com`, `yahoo.com`, `icloud.com`) links to no domain organization
 - [ ] Every person in a message's extraction with an email becomes a contact linked to that message
 - [ ] A person in a message's extraction without an email links to no contact
