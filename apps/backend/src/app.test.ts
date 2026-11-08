@@ -3595,6 +3595,40 @@ describe('backend app', () => {
     ]);
   });
 
+  it('hands the triage port no thread state for the first message of a thread, even when a later reply in that thread was triaged before it arrived', async () => {
+    const askedMessages: { id: string; threadState?: unknown }[] = [];
+    const triage = {
+      propose: (message: { id: string; threadState?: unknown }) => {
+        askedMessages.push({ id: message.id, threadState: message.threadState });
+        const proposal =
+          message.id === 'message-2'
+            ? keepProposalExtracting({ threadState: 'Luis is still waiting for Ana to review the budget' })
+            : keepProposalExtracting();
+        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v2' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        {
+          ...budgetReview,
+          id: 'message-2',
+          subject: 'Re: Budget review',
+          date: 'Tue, 3 Nov 2026 09:00:00 -0600',
+          snippet: 'Any news?',
+        },
+      ],
+    });
+    await postTriageRun(app);
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    await postTriageRun(app);
+
+    expect(askedMessages.filter(({ id }) => id === 'message-1')).toEqual([{ id: 'message-1', threadState: undefined }]);
+  });
+
   it('lists at GET /search?q= the message whose body contains the query word', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);

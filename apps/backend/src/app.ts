@@ -506,7 +506,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // A reply is read with the thread state the earlier message's extraction left behind.
   function threadStateFor(message: ReportedMessage): string | undefined {
     const earlierMessage = reportedMessages.find(
-      (other) => other.threadId === message.threadId && other.id !== message.id,
+      (other) =>
+        other.threadId === message.threadId &&
+        other.id !== message.id &&
+        new Date(other.date).getTime() <= new Date(message.date).getTime(),
     );
     if (earlierMessage === undefined) {
       return undefined;
