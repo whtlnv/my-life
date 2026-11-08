@@ -49,7 +49,7 @@
 - [x] Undoing a message that no automatic category acted on answers 404 and queues nothing
 - [x] An undone item no longer appears under handled for you
 - [x] After a backend restart, an undone item still does not appear under handled for you and its undo command is not re-queued once acknowledged
-- [ ] Given an undo command, the extension removes the `my-life/auto` label from the message, adds it back to the inbox and acknowledges the command
+- [x] Given an undo command, the extension removes the `my-life/auto` label from the message, adds it back to the inbox and acknowledges the command
 - [ ] The extension acknowledges no undo command whose Gmail request failed
 - [ ] A database created before Phase 2c opens and serves `GET /triage-queue` with digests and handled for you
 - [ ] The triage page shows its sections in the order Needs you, digests, Needs input, Handled for you

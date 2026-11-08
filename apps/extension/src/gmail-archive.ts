@@ -14,6 +14,7 @@ interface ArchiveCommand {
   id: string;
   messageId: string;
   label?: string;
+  type?: string;
 }
 
 // GET /commands lists every command kind for the account; filter commands carry no messageId.
@@ -29,7 +30,16 @@ export async function carryOutArchiveCommands(options: CommandOptions) {
   const commands = await fetchPendingArchiveCommands(options);
   for (const command of commands) {
     const labelId = await findOrCreateLabelId(options.fetch, authorization, command.label ?? archivedLabelName);
-    const archiveResponse = await archiveMessage(options.fetch, authorization, command.messageId, labelId);
+    const archiveResponse =
+      command.type === 'undo-automatic'
+        ? await modifyMessageLabels(options.fetch, authorization, command.messageId, {
+            removeLabelIds: [labelId],
+            addLabelIds: ['INBOX'],
+          })
+        : await modifyMessageLabels(options.fetch, authorization, command.messageId, {
+            removeLabelIds: ['INBOX'],
+            addLabelIds: [labelId],
+          });
     if (!archiveResponse.ok) {
       continue;
     }
@@ -44,16 +54,16 @@ export async function acknowledgeCommand(options: CommandOptions, commandId: str
   });
 }
 
-async function archiveMessage(
+async function modifyMessageLabels(
   fetch: FetchFunction,
   authorization: { Authorization: string },
   messageId: string,
-  labelId: string,
+  labelChanges: { removeLabelIds: string[]; addLabelIds: string[] },
 ) {
   return fetch(`${gmailApi}/messages/${messageId}/modify`, {
     method: 'POST',
     headers: authorization,
-    body: JSON.stringify({ removeLabelIds: ['INBOX'], addLabelIds: [labelId] }),
+    body: JSON.stringify(labelChanges),
   });
 }
 

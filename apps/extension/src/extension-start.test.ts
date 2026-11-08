@@ -316,6 +316,42 @@ describe('startExtension', () => {
     expect(acknowledgements).toEqual(['/commands/command-1/acknowledgement']);
   });
 
+  it('after the first Gmail poll, carries out a pending undo-automatic command by removing my-life/auto from the message and returning it to the inbox, and acknowledges it', async () => {
+    const gmailModifications: { path: string; body: unknown }[] = [];
+    const acknowledgements: string[] = [];
+    const fakeFetch = routedFetch((url, init) => {
+      if (isGmailLabelsRead(url, init)) {
+        return jsonResponse({ labels: [{ id: 'Label_auto', name: 'my-life/auto' }] });
+      }
+      if (url.pathname.endsWith('/modify') && init?.method === 'POST') {
+        gmailModifications.push({ path: url.pathname, body: requestBody(init) });
+        return jsonResponse({ id: 'message-7' });
+      }
+      if (url.href === pendingCommandsUrl) {
+        return jsonResponse({
+          commands: [
+            { id: 'undo-automatic-message-7', type: 'undo-automatic', messageId: 'message-7', label: 'my-life/auto' },
+          ],
+        });
+      }
+      if (isAcknowledgementPost(url, init)) {
+        acknowledgements.push(url.pathname);
+        return acceptedRequest();
+      }
+      return defaultRoute(url, init);
+    });
+
+    await startExtension(startOptions(fakeFetch));
+
+    expect(gmailModifications).toEqual([
+      {
+        path: '/gmail/v1/users/me/messages/message-7/modify',
+        body: { removeLabelIds: ['Label_auto'], addLabelIds: ['INBOX'] },
+      },
+    ]);
+    expect(acknowledgements).toEqual(['/commands/undo-automatic-message-7/acknowledgement']);
+  });
+
   it('after the first Gmail poll, creates and deletes the Gmail filters the pending create-filter and delete-filter commands ask for, and acknowledges both', async () => {
     const gmailFilterRequests: { method: string | undefined; path: string; body: unknown }[] = [];
     const acknowledgements: BackendPost[] = [];
