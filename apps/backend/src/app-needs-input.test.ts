@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createApp } from './app';
+import { createApp, type AppOptions } from './app';
 import { createEscalatingTriage } from './escalating-triage';
 import {
   postJson,
@@ -10,6 +10,15 @@ import {
   budgetReviewReport,
   triageAnswering,
 } from './app.test-support';
+
+async function needsInputAfterTriagingBudgetReview(
+  triage: NonNullable<AppOptions['triage']>,
+): Promise<{ questions: unknown[] }> {
+  const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+  await postJson(app, '/mail-report', budgetReviewReport);
+  await postTriageRun(app);
+  return getJson<{ questions: unknown[] }>(app, '/needs-input');
+}
 
 describe('backend app: GET /needs-input', () => {
   it('asks which category is right for a message whose two triage models disagreed, offering both categories', async () => {
@@ -21,11 +30,7 @@ describe('backend app: GET /needs-input', () => {
       reason: 'The user is only copied',
       disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
     });
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
-
-    const needsInput = await getJson<{ questions: unknown[] }>(app, '/needs-input');
+    const needsInput = await needsInputAfterTriagingBudgetReview(triage);
 
     expect(needsInput.questions).toEqual([
       expect.objectContaining({
@@ -49,11 +54,7 @@ describe('backend app: GET /needs-input', () => {
       first: triageAnswering(actionProposal),
       second: triageAnswering(actionProposal),
     });
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
-
-    const needsInput = await getJson<{ questions: unknown[] }>(app, '/needs-input');
+    const needsInput = await needsInputAfterTriagingBudgetReview(triage);
 
     expect(needsInput.questions).toEqual([]);
   });
