@@ -1,6 +1,6 @@
 import { openDatabase } from './open-database';
 
-export type ContactDetails = { lists?: string[]; note?: string };
+export type ContactDetails = { lists?: string[]; note?: string; organization?: string };
 
 export function openContactDetailsStore(databasePath: string) {
   const database = openDatabase(databasePath);

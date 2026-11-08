@@ -67,7 +67,7 @@
 - [x] The extension reads its account's contacts (`people/me/connections`, every page) and reports names, emails, organization, starred and labels
 - [x] The extension reads its account's Other Contacts (`otherContacts`, every page) and reports names and emails
 - [x] The contacts import runs once a day, not on every Gmail poll
-- [ ] An imported contact with an email the store already holds merges into that contact instead of adding one
+- [x] An imported contact with an email the store already holds merges into that contact instead of adding one
 - [ ] An imported contact with an unknown email adds a new contact
 - [ ] The same person imported from two accounts by the same email ends as one contact holding both accounts' data
 - [ ] A starred imported contact is marked `vip`

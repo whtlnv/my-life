@@ -3155,4 +3155,18 @@ describe('backend app', () => {
     expect([numericNote.status, textLists.status, numericLists.status]).toEqual([400, 400, 400]);
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], lists: ['board'], note: 'Prefers calls' }]);
   });
+
+  it('lists at GET /contacts, after POST /contacts-import brings a contact with the email of a reported sender, one contact for that email holding its message and the imported organization', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const importResponse = await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
+    });
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; organization?: string }[] };
+
+    expect(importResponse.status).toBe(200);
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], messageIds: ['message-1'], organization: 'Acme' }]);
+  });
 });

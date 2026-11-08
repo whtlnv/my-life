@@ -594,6 +594,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.save(context.req.param('email'), details);
     return context.body(null, 200);
   });
+  app.post('/contacts-import', async (context) => {
+    const { contacts } = await context.req.json<{ contacts: { emails: string[]; organization: string }[] }>();
+    for (const { emails, organization } of contacts) {
+      contactDetailsStore.save(emails[0]!, { organization });
+    }
+    return context.body(null, 200);
+  });
   app.get('/contacts', (context) => {
     const contactDetails = contactDetailsStore.loadAll();
     const markedEmails = contactDetailsStore.markedEmails();
