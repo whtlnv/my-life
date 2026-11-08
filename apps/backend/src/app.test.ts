@@ -1322,8 +1322,7 @@ describe('backend app', () => {
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
     const triage = budgetReviewActTriage();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -1350,8 +1349,7 @@ describe('backend app', () => {
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
-    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
-    await postTriageRun(beforeRestart);
+    await proposeBudgetReview(beforeRestart);
 
     const afterRestart = createApp(options);
     const queue = await afterRestart.request('/triage-queue');
@@ -1380,8 +1378,7 @@ describe('backend app', () => {
     };
     const triage = triageAnswering(proposal);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const queue = await app.request('/triage-queue');
 
@@ -1401,8 +1398,7 @@ describe('backend app', () => {
     const triage = budgetReviewActTriage();
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 
@@ -1435,8 +1431,7 @@ describe('backend app', () => {
     const triage = triageAnswering(proposal);
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
     const correction = { action: 'act', taskDraft: { title: 'Review the budget for Luis' } };
 
     await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'rejected', correction });
@@ -1451,8 +1446,7 @@ describe('backend app', () => {
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
-    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
-    await postTriageRun(beforeRestart);
+    await proposeBudgetReview(beforeRestart);
     await postJson(beforeRestart, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
 
     const afterRestart = createApp(options);
@@ -1701,8 +1695,7 @@ describe('backend app', () => {
   it('includes in the GET /now badge count an action proposal waiting for a verdict', async () => {
     const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const now = await app.request('/now');
 
