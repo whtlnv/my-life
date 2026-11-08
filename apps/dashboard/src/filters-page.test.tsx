@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { accountName } from './account-name';
-import { approveLabel, FiltersPage, rejectLabel } from './filters-page';
+import { approveLabel, deleteLabel, FiltersPage, rejectLabel } from './filters-page';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -70,5 +70,55 @@ describe('FiltersPage', () => {
       { url: '/filter-proposals/proposal-1/approval', method: 'POST' },
       { url: '/filter-proposals/proposal-2/rejection', method: 'POST' },
     ]);
+  });
+
+  it('lists created filters from GET /filters with account name, criteria and label; Delete sends DELETE /filters/:id with the Gmail filter id', async () => {
+    const filters = [
+      {
+        criteria: { from: 'news@shop.example.com' },
+        labelName: 'Shop newsletters',
+        skipInbox: true,
+        accountEmail: 'franciscoc@psmutuus.com',
+        gmailFilterId: 'gmail-filter-1',
+        approvedAt: '2026-11-02T15:10:00.000Z',
+        acknowledgedAt: '2026-11-02T15:11:00.000Z',
+      },
+    ];
+    const deletionRequests: { url: string; method: string | undefined }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === '/filter-proposals') {
+          return Promise.resolve(
+            new Response(JSON.stringify({ proposals: [] }), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        if (input === '/filters') {
+          return Promise.resolve(
+            new Response(JSON.stringify({ filters }), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        if (typeof input === 'string' && input.startsWith('/filters/')) {
+          deletionRequests.push({ url: input, method: init?.method });
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<FiltersPage />);
+
+    const list = await screen.findByRole('list', { name: 'Created filters' });
+    const rows = within(list).getAllByRole('listitem');
+    expect(rows).toHaveLength(1);
+    const [shopRow] = rows;
+    if (shopRow === undefined) throw new Error('expected one filter row');
+    expect(within(shopRow).getByText('news@shop.example.com')).toBeInTheDocument();
+    expect(within(shopRow).getByText('Shop newsletters')).toBeInTheDocument();
+    expect(within(shopRow).getByText(accountName('franciscoc@psmutuus.com'))).toBeInTheDocument();
+
+    await userEvent.click(within(shopRow).getByRole('button', { name: deleteLabel }));
+
+    expect(deletionRequests).toEqual([{ url: '/filters/gmail-filter-1', method: 'DELETE' }]);
   });
 });

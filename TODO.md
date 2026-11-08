@@ -91,7 +91,7 @@
 - [x] A requested deletion survives a backend restart on the same database: the `delete-filter` command is still listed afterwards, and the deletion request carries the time it was made (supervisor keystone: `DELETE /filters/:id` keeps the request in an in-memory array)
 - [x] The dashboard app shell has a `Filters` tab linking to `#/filters`, marked current on that route
 - [x] The `#/filters` page lists pending proposals; Approve sends `POST /filter-proposals/:id/approval` and Reject sends `POST /filter-proposals/:id/rejection`
-- [ ] The `#/filters` page lists created filters with account name, criteria and label; Delete sends `DELETE /filters/:id`
+- [x] The `#/filters` page lists created filters with account name, criteria and label; Delete sends `DELETE /filters/:id`
 - [ ] The `#/filters` page shows an empty state when there are neither proposals nor filters
 
 ### Weekly expense statement
