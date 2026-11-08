@@ -199,6 +199,14 @@ const shopNewsletterArchiveProposal = {
 
 const shopNewsletterArchiveTriage = () => triageAnswering(shopNewsletterArchiveProposal);
 
+const expenseInvoiceProposal = (vendor: string, date: string, amount = 100) => ({
+  action: 'archive',
+  category: 'expense',
+  summary: `Invoice from ${vendor}`,
+  extract: { vendor, amount, currency: 'MXN', date },
+  reason: 'An invoice to file',
+});
+
 const proposeBudgetReview = async (app: App) => {
   await postJson(app, '/mail-report', budgetReviewReport);
   await postTriageRun(app);
@@ -2666,16 +2674,9 @@ describe('backend app', () => {
   });
 
   it("answers GET /expense-statement?week= with a CSV attachment of the week's expenses, quoting commas and quotes", async () => {
-    const expenseOf = (vendor: string, amount: number, date: string) => ({
-      action: 'archive',
-      category: 'expense',
-      summary: `Invoice from ${vendor}`,
-      extract: { vendor, amount, currency: 'MXN', date },
-      reason: 'An invoice to file',
-    });
     const proposalByMessageId: Record<string, unknown> = {
-      'message-acme': expenseOf('Acme, Inc.', 120, '2026-11-02'),
-      'message-tacos': expenseOf('Tacos "El Güero"', 85.5, '2026-11-03'),
+      'message-acme': expenseInvoiceProposal('Acme, Inc.', '2026-11-02', 120),
+      'message-tacos': expenseInvoiceProposal('Tacos "El Güero"', '2026-11-03', 85.5),
     };
     const triage = triageAnsweringByMessageId(proposalByMessageId);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
@@ -2711,16 +2712,9 @@ describe('backend app', () => {
   });
 
   it('answers GET /expense-statement without week with the current business week', async () => {
-    const expenseOf = (vendor: string, date: string) => ({
-      action: 'archive',
-      category: 'expense',
-      summary: `Invoice from ${vendor}`,
-      extract: { vendor, amount: 100, currency: 'MXN', date },
-      reason: 'An invoice to file',
-    });
     const proposalByMessageId: Record<string, unknown> = {
-      'message-last-week': expenseOf('Last week', '2026-10-30'),
-      'message-this-week': expenseOf('This week', '2026-11-03'),
+      'message-last-week': expenseInvoiceProposal('Last week', '2026-10-30'),
+      'message-this-week': expenseInvoiceProposal('This week', '2026-11-03'),
     };
     const triage = triageAnsweringByMessageId(proposalByMessageId);
     const thursdayInMexicoCity = { now: () => new Date('2026-11-05T18:00:00.000Z') };
@@ -2742,16 +2736,9 @@ describe('backend app', () => {
   });
 
   it('leaves out of GET /expense-statement an expense proposal the user rejected through POST /verdicts', async () => {
-    const expenseOf = (vendor: string, date: string) => ({
-      action: 'archive',
-      category: 'expense',
-      summary: `Invoice from ${vendor}`,
-      extract: { vendor, amount: 100, currency: 'MXN', date },
-      reason: 'An invoice to file',
-    });
     const proposalByMessageId: Record<string, unknown> = {
-      'message-kept': expenseOf('Kept', '2026-11-02'),
-      'message-rejected': expenseOf('Rejected', '2026-11-03'),
+      'message-kept': expenseInvoiceProposal('Kept', '2026-11-02'),
+      'message-rejected': expenseInvoiceProposal('Rejected', '2026-11-03'),
     };
     const triage = triageAnsweringByMessageId(proposalByMessageId);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
@@ -2778,16 +2765,9 @@ describe('backend app', () => {
   });
 
   it("still lists in GET /expense-statement the week's expenses, in message-date order, after a backend restart on the same database file", async () => {
-    const expenseOf = (vendor: string, date: string) => ({
-      action: 'archive',
-      category: 'expense',
-      summary: `Invoice from ${vendor}`,
-      extract: { vendor, amount: 100, currency: 'MXN', date },
-      reason: 'An invoice to file',
-    });
     const proposalByMessageId: Record<string, unknown> = {
-      'message-tuesday': expenseOf('Tuesday', '2026-11-03'),
-      'message-monday': expenseOf('Monday', '2026-11-02'),
+      'message-tuesday': expenseInvoiceProposal('Tuesday', '2026-11-03'),
+      'message-monday': expenseInvoiceProposal('Monday', '2026-11-02'),
     };
     const triage = triageAnsweringByMessageId(proposalByMessageId);
     const options = {
