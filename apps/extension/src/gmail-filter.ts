@@ -1,5 +1,5 @@
 import type { FetchFunction } from './fetch-function';
-import { findOrCreateLabelId, type CommandOptions } from './gmail-archive';
+import { acknowledgeCommand, findOrCreateLabelId, type CommandOptions } from './gmail-archive';
 import { gmailApi } from './gmail-api';
 
 interface CreateFilterCommand {
@@ -32,13 +32,6 @@ export async function carryOutFilterCommands(options: CommandOptions) {
     if (gmailFilterId === undefined) continue;
     await acknowledgeCommand(options, command.id, JSON.stringify({ gmailFilterId }));
   }
-}
-
-async function acknowledgeCommand(options: CommandOptions, commandId: string, body?: string) {
-  await options.fetch(`${options.backendUrl}/commands/${commandId}/acknowledgement`, {
-    method: 'POST',
-    ...(body === undefined ? {} : { body }),
-  });
 }
 
 async function deleteGmailFilter(

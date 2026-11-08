@@ -37,8 +37,11 @@ export async function carryOutArchiveCommands(options: CommandOptions) {
   }
 }
 
-async function acknowledgeCommand(options: CommandOptions, commandId: string) {
-  await options.fetch(`${options.backendUrl}/commands/${commandId}/acknowledgement`, { method: 'POST' });
+export async function acknowledgeCommand(options: CommandOptions, commandId: string, body?: string) {
+  await options.fetch(`${options.backendUrl}/commands/${commandId}/acknowledgement`, {
+    method: 'POST',
+    ...(body === undefined ? {} : { body }),
+  });
 }
 
 async function archiveMessage(
