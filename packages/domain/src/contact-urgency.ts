@@ -25,16 +25,17 @@ function answeredByUser(message: UrgencyMessage, messages: UrgencyMessage[]): bo
   );
 }
 
-function isUnansweredAsk(
+function waitingForReplyAtLeast(
   message: UrgencyMessage,
   messages: UrgencyMessage[],
   now: string,
-  settings: ContactUrgencyInput['settings'],
+  timeZone: string,
+  businessDays: number,
 ): boolean {
   return (
     !message.sentByUser &&
     !answeredByUser(message, messages) &&
-    businessDaysBetween(message.receivedAt, now, settings.timeZone) >= settings.unansweredAskBusinessDays
+    businessDaysBetween(message.receivedAt, now, timeZone) >= businessDays
   );
 }
 
@@ -50,15 +51,14 @@ export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; r
   }
   if (
     input.vip &&
-    messages.some(
-      (message) =>
-        !message.sentByUser &&
-        !answeredByUser(message, messages) &&
-        businessDaysBetween(message.receivedAt, now, settings.timeZone) >= settings.vipWaitingBusinessDays,
+    messages.some((message) =>
+      waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.vipWaitingBusinessDays),
     )
   ) {
     return { urgent: true, reasons: ['VIP waiting'] };
   }
-  const urgent = messages.some((message) => isUnansweredAsk(message, messages, now, settings));
+  const urgent = messages.some((message) =>
+    waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays),
+  );
   return urgent ? { urgent: true, reasons: ['unanswered ask'] } : { urgent: false, reasons: [] };
 }
