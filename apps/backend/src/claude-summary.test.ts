@@ -63,23 +63,12 @@ describe('Claude summary', () => {
     expect(written).toMatchObject({ costInUsd: 4 });
   });
 
-  it('fails the summary when the model writes more than two lines through its write_summary tool', async () => {
-    const summary = createClaudeSummary({
-      model: 'claude-haiku-5-5',
-      pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
-      createMessage: () =>
-        writeSummaryAnswer({ lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed', 'Sentry: 3 new issues'] }),
-    });
-
-    await expect(
-      summary.summarize({
-        items: [{ summary: 'GitHub build passed' }, { summary: 'Vercel deploy failed' }, { summary: 'Sentry issue' }],
-      }),
-    ).rejects.toThrow();
-  });
-
   it.each([
     { rule: 'no lines', input: { lines: [] } },
+    {
+      rule: 'more than two lines',
+      input: { lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed', 'Sentry: 3 new issues'] },
+    },
     { rule: 'an empty line', input: { lines: [''] } },
     { rule: 'a line that is not text', input: { lines: [42] } },
     { rule: 'no lines field', input: {} },
