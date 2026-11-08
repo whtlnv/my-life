@@ -10,3 +10,4 @@ const importedContact = z.object({
 
 // What the extension posts to the backend after reading one account's Google Contacts.
 export const contactsImport = z.object({ accountEmail: z.string(), contacts: z.array(importedContact) });
+export type ContactsImport = z.infer<typeof contactsImport>;

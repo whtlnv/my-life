@@ -7,6 +7,7 @@ import {
   calendarSnapshot,
   contactDetails,
   contactsImport,
+  type ContactsImport,
   mailReport,
   triageCategories,
   type HealthResponse,
@@ -240,13 +241,7 @@ interface ListedContact {
   messageIds: string[];
 }
 
-interface ImportedContact {
-  name: string;
-  emails: string[];
-  organization: string;
-  starred?: boolean;
-  lists?: string[];
-}
+type ImportedContact = ContactsImport['contacts'][number];
 
 function sharePrimaryEmail(left: { emails: string[] }, right: { emails: string[] }): boolean {
   return left.emails[0] === right.emails[0];
@@ -648,8 +643,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const importContact = ({ name, emails, organization, starred, lists }: ImportedContact): void => {
     const primaryEmail = emails[0]!;
     const userSetOrganization = contactDetailsStore.loadAll()[primaryEmail]?.organization !== undefined;
+    const keepStoredOrganization = userSetOrganization || organization === undefined;
     contactDetailsStore.save(primaryEmail, {
-      ...(userSetOrganization ? {} : { organization }),
+      ...(keepStoredOrganization ? {} : { organization }),
       ...(lists ? { lists } : {}),
     });
     const userRemovedVip = userUnmarkedEmails.has(primaryEmail);
@@ -659,11 +655,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.saveImported({ displayName: name, emails });
   };
   app.post('/contacts-import', async (context) => {
-    const body = await context.req.json<{ contacts: ImportedContact[] }>();
-    if (!contactsImport.safeParse(body).success) {
+    const parsed = contactsImport.safeParse(await context.req.json());
+    if (!parsed.success) {
       return context.body(null, 400);
     }
-    body.contacts.forEach(importContact);
+    parsed.data.contacts.forEach(importContact);
     return context.body(null, 200);
   });
   app.get('/contacts', (context) => {
