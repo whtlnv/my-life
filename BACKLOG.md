@@ -16,6 +16,12 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/dashboard/src/statement-page.tsx:44] The statement page reads the CSV columns by position, apart from the route that writes them** (added: 2026-11-07)
+  `parseStatement` destructures `vendor, amount, currency, date, accountEmail, link` by index, while `GET /expense-statement`
+  in `apps/backend/src/app.ts` writes the header `vendor,amount,currency,date,account,link` and the rows in that order; a
+  reordered or added column compiles and shows amounts under the wrong heading. Deferred for the same reason as the
+  `/triage-queue` and `/now` entries below: there is no statement contract to share the column list from, and adding one is
+  new `packages/contracts` surface delivered test-first.
 - **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07)
   `new URL(input instanceof Request ? input.url : input.toString())` opens about 30 fake `fetch` functions across six
   extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 30 times.
