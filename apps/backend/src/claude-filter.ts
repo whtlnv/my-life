@@ -3,18 +3,13 @@ import { basename, extname } from 'node:path';
 
 import { filterProposal } from '@my-life/contracts';
 
-import { computeCostInUsd, type ClaudePricing, type ClaudeResponse } from './claude-triage';
+import { computeCostInUsd, type ClaudePricing, type ClaudeRequest, type ClaudeResponse } from './claude-triage';
 
 interface ClaudeFilterDependencies {
   model: string;
   promptPath: string;
   pricing: ClaudePricing;
-  createMessage: (request: {
-    model: string;
-    system: string;
-    tools: { name: string; strict: boolean; input_schema: unknown }[];
-    messages: { role: 'user'; content: string }[];
-  }) => Promise<ClaudeResponse>;
+  createMessage: (request: ClaudeRequest) => Promise<ClaudeResponse>;
 }
 
 interface FilterCandidate {

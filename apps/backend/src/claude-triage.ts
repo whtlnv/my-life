@@ -9,6 +9,13 @@ export interface ClaudeResponse {
   usage: { input_tokens: number; output_tokens: number };
 }
 
+export interface ClaudeRequest {
+  model: string;
+  system: string;
+  messages: { role: string; content: string }[];
+  tools: { name: string; strict: boolean; input_schema: unknown }[];
+}
+
 export interface ClaudePricing {
   inputPerMillionTokensInUsd: number;
   outputPerMillionTokensInUsd: number;
@@ -19,12 +26,7 @@ interface ClaudeTriageDependencies {
   promptPath: string;
   profileDirectory?: string;
   pricing: ClaudePricing;
-  createMessage: (request: {
-    model: string;
-    system: string;
-    messages: { role: string; content: string }[];
-    tools: { name: string; strict: boolean; input_schema: unknown }[];
-  }) => Promise<ClaudeResponse>;
+  createMessage: (request: ClaudeRequest) => Promise<ClaudeResponse>;
 }
 
 function profileFileName(accountEmail: string): string {

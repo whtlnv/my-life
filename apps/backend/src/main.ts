@@ -6,7 +6,7 @@ import { serve } from '@hono/node-server';
 
 import { createApp } from './app';
 import { createClaudeFilter } from './claude-filter';
-import { createClaudeTriage, type ClaudePricing } from './claude-triage';
+import { createClaudeTriage, type ClaudePricing, type ClaudeRequest } from './claude-triage';
 import { readStartupSettings } from './startup-settings';
 
 // The shipped composition: settings from the environment (MY_LIFE_*), the SQLite store under Application Support,
@@ -29,12 +29,7 @@ const pricingByModel: Record<string, ClaudePricing> = {
 
 // One Anthropic call shape for both adapters: a system prompt, user messages, strict tools, low effort, fallbacks.
 function createMessageWith(client: Anthropic) {
-  return async (request: {
-    model: string;
-    system: string;
-    messages: { role: string; content: string }[];
-    tools: { name: string; strict: boolean; input_schema: unknown }[];
-  }) => {
+  return async (request: ClaudeRequest) => {
     const response = await client.beta.messages.create({
       model: request.model,
       max_tokens: maximumAnswerTokens,

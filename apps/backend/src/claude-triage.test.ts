@@ -390,8 +390,8 @@ describe('Claude triage', () => {
       pricing: defaultPricing,
       model: 'claude-opus-5-5',
       promptPath,
-      createMessage: (request: Record<string, unknown>) => {
-        sentRequests.push(request);
+      createMessage: (request) => {
+        sentRequests.push({ ...request });
         return Promise.resolve({ content: [], usage: { input_tokens: 0, output_tokens: 0 } });
       },
     });
