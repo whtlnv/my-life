@@ -128,4 +128,22 @@ describe('contactUrgency', () => {
       reasons: ['VIP waiting'],
     });
   });
+
+  it('is not urgent when a non-VIP contact\'s message that asks nothing has waited several business days for a reply', () => {
+    const mondayFivePm = '2026-11-09T23:00:00.000Z';
+    const thursdayFivePm = '2026-11-12T23:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-lunch',
+        receivedAt: mondayFivePm,
+        sentByUser: false,
+        asks: [],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: thursdayFivePm, settings: urgencySettings })).toEqual({
+      urgent: false,
+      reasons: [],
+    });
+  });
 });

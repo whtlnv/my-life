@@ -5,6 +5,7 @@ interface UrgencyMessage {
   receivedAt: string;
   sentByUser: boolean;
   dates?: string[];
+  asks?: { ask: string }[];
 }
 
 interface ContactUrgencyInput {
@@ -57,8 +58,10 @@ export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; r
   ) {
     return { urgent: true, reasons: ['VIP waiting'] };
   }
-  const urgent = messages.some((message) =>
-    waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays),
+  const urgent = messages.some(
+    (message) =>
+      (message.asks ?? []).length > 0 &&
+      waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays),
   );
   return urgent ? { urgent: true, reasons: ['unanswered ask'] } : { urgent: false, reasons: [] };
 }
