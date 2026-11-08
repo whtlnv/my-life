@@ -629,12 +629,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return digests(waitingOutsideTheActionBlock(verdicts)).map((digest) => {
       const { key, proposals: digested, severityCounts } = digest;
       const { accountEmail, category } = digested[0] ?? {};
+      const id = identifyDigest(digest);
       listedDigestMessageIds.set(
-        identifyDigest(digest),
+        id,
         digested.map(({ messageId }) => messageId),
       );
       return {
-        id: identifyDigest(digest),
+        id,
         accountEmail,
         category,
         key,
