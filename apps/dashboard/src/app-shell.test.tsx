@@ -70,34 +70,18 @@ describe('AppShell', () => {
     expect(triageTab).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
-  it('has a Categories tab linking to the categories page, marked current on that route', async () => {
+  it.each([
+    { name: 'Categories', route: '#/categories' },
+    { name: 'Filters', route: '#/filters' },
+    { name: 'Statement', route: '#/statement' },
+  ])('has a $name tab linking to the $name page, marked current on that route', async ({ name, route }) => {
     answerGetNowWith(nowWithNoAccountsAndNothingToTriage);
 
-    render(<AppShell route="#/categories">{null}</AppShell>);
+    render(<AppShell route={route}>{null}</AppShell>);
 
-    const categoriesTab = await screen.findByRole('link', { name: 'Categories' });
-    expect(categoriesTab).toHaveAttribute('href', '#/categories');
-    expect(categoriesTab).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
-  });
-  it('has a Filters tab linking to the filters page, marked current on that route', async () => {
-    answerGetNowWith(nowWithNoAccountsAndNothingToTriage);
-
-    render(<AppShell route="#/filters">{null}</AppShell>);
-
-    const filtersTab = await screen.findByRole('link', { name: 'Filters' });
-    expect(filtersTab).toHaveAttribute('href', '#/filters');
-    expect(filtersTab).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
-  });
-  it('has a Statement tab linking to the statement page, marked current on that route', async () => {
-    answerGetNowWith(nowWithNoAccountsAndNothingToTriage);
-
-    render(<AppShell route="#/statement">{null}</AppShell>);
-
-    const statementTab = await screen.findByRole('link', { name: 'Statement' });
-    expect(statementTab).toHaveAttribute('href', '#/statement');
-    expect(statementTab).toHaveAttribute('aria-current', 'page');
+    const tab = await screen.findByRole('link', { name });
+    expect(tab).toHaveAttribute('href', route);
+    expect(tab).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
   it('still renders the tabs and the page when the backend cannot be reached', async () => {
