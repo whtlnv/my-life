@@ -117,7 +117,9 @@ export interface AppOptions {
     ) => Promise<{ proposal: unknown; costInUsd: number; promptVersion: string }>;
   };
   summary?: {
-    summarize: (request: { items: { summary: string }[] }) => Promise<{ lines: string[]; costInUsd: number; model?: string }>;
+    summarize: (request: {
+      items: { summary: string }[];
+    }) => Promise<{ lines: string[]; costInUsd: number; model?: string }>;
   };
 }
 
@@ -646,7 +648,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   async function summarizeWithinTheSpendCeiling(items: { summary: string }[]) {
     if (hasReachedDailySpendCeiling()) return undefined;
     const summary = await options.summary?.summarize({ items }).catch(() => undefined);
-    if (summary) spendStore.save({ spentAt: clock.now().toISOString(), model: summary.model ?? '', costInUsd: summary.costInUsd });
+    if (summary)
+      spendStore.save({ spentAt: clock.now().toISOString(), model: summary.model ?? '', costInUsd: summary.costInUsd });
     return summary;
   }
   // The waiting proposals outside the action block, with the sender each digest groups by.
@@ -800,9 +803,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/handled-for-you/:messageId/undo', (context) => {
     const messageId = context.req.param('messageId');
-    const wasHandledForYou = proposals.some(
-      (proposal) => proposal.messageId === messageId && proposal.madeAutomatic,
-    );
+    const wasHandledForYou = proposals.some((proposal) => proposal.messageId === messageId && proposal.madeAutomatic);
     if (!wasHandledForYou) return context.body(null, 404);
     undoAutomaticStore.save(messageId);
     return context.body(null, 200);
@@ -844,20 +845,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     const isMessageOfAccount = (messageId: string) =>
       proposals.some((proposal) => proposal.messageId === messageId && proposal.accountEmail === accountEmail);
-    const undoAutomaticCommands = undoAutomaticStore.loadAll().filter(isMessageOfAccount).map((messageId) => ({
-      id: `undo-automatic-${messageId}`,
-      type: 'undo-automatic',
-      messageId,
-      label: automaticLabelName,
-    }));
+    const undoAutomaticCommands = undoAutomaticStore
+      .loadAll()
+      .filter(isMessageOfAccount)
+      .map((messageId) => ({
+        id: `undo-automatic-${messageId}`,
+        type: 'undo-automatic',
+        messageId,
+        label: automaticLabelName,
+      }));
     const pendingCommands = [
       ...archiveCommands,
       ...filterCommands,
       ...deleteFilterCommands,
       ...undoAutomaticCommands,
-    ].filter(
-      (command) => !acknowledgedCommandIds.includes(command.id),
-    );
+    ].filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: pendingCommands });
   });
   app.get('/tasks', (context) => {

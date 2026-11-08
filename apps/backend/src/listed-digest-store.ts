@@ -2,9 +2,7 @@ import { openDatabase } from './open-database';
 
 export function openListedDigestStore(databasePath: string) {
   const database = openDatabase(databasePath);
-  database.exec(
-    'CREATE TABLE IF NOT EXISTS listed_digests (digest_id TEXT PRIMARY KEY, message_ids TEXT NOT NULL)',
-  );
+  database.exec('CREATE TABLE IF NOT EXISTS listed_digests (digest_id TEXT PRIMARY KEY, message_ids TEXT NOT NULL)');
   const saveListedDigest = database.prepare(
     'INSERT OR REPLACE INTO listed_digests (digest_id, message_ids) VALUES (?, ?)',
   );
