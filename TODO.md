@@ -113,5 +113,6 @@
 
 - [x] The backend started by `main.ts` (with an Anthropic key) wires the category-mode store, the Claude filter adapter and the statement route, so a category switched to `automatic` over HTTP issues archive commands and a third confirmed archive yields a stored filter proposal
 - [x] The extension's shipped start-up (`extension-start.ts`) carries out `create-filter` and `delete-filter` commands on every Gmail poll alongside archive commands
+- [ ] The weekly statement and `GET /expense-statement` list entries in message-date order as instants (a Tuesday message before a Friday one whatever the header's weekday text), not by comparing the RFC 2822 date strings (supervisor: the demo shows `Sat, 07 Nov` sorted before `Tue, 03 Nov`)
 - [ ] `scripts/demo.sh` seeds category modes with agreement rates, two filter proposals and one created filter, and a week of expense proposals across two accounts
 - [ ] Screenshots of `#/categories`, `#/filters` and `#/statement` over `scripts/demo.sh` go in `docs/screenshots/` and show every page built from the existing tokens and component classes
