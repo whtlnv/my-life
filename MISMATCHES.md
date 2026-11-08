@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 16:04 · `apps/backend/src/main.test.ts::lists at GET /people under Urgent a contact whose unanswered ask is 1 business day old when MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS is 1`
+- Behavior: The urgency thresholds the shipped backend gets from its startup settings decide `GET /people`
+- Predicted: AssertionError — `urgent` is `[]`, because `GET /people` hard-codes `unansweredAskBusinessDays: 2`
+- Actual: TypeError — `businessDaysBetween is not a function` (the test imported it from `@my-life/domain`, whose entry point does not export it)
+- Type: wrong-reason
+- Resolution: The test now finds "1 business day ago" with a local weekday helper (Intl, America/Mexico_City). It then failed as predicted. A probe that set the hard-coded value to 1 made it pass, and the probe was reverted.
+
 ## 2026-11-08 15:23 · `packages/domain/src/contact-urgency.test.ts::is not urgent when a message from the contact carries an extracted deadline more than 48 hours away`
 - Behavior: a contact whose message carries an extracted deadline more than 48 hours away is not urgent
 - Predicted: passes on first run, because `hasDeadlineSoon` already bounds the window with `date - now <= deadlineHours`

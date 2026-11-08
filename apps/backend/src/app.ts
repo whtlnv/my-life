@@ -111,6 +111,7 @@ export interface AppOptions {
   databasePath?: string;
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
+  urgency?: { unansweredAskBusinessDays: number };
   triage?: {
     propose: (message: TriageRequest, examples?: unknown[]) => Promise<TriageResult>;
   };
@@ -960,7 +961,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         });
     const urgencySettings = {
       timeZone: businessTimeZone,
-      unansweredAskBusinessDays: 2,
+      unansweredAskBusinessDays: options.urgency?.unansweredAskBusinessDays ?? 2,
       deadlineHours: 48,
       vipWaitingBusinessDays: 1,
     };

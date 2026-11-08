@@ -126,6 +126,7 @@ const app = createApp({
   dashboardDirectory: settings.dashboardDirectory,
   gmailPollingIntervalInMilliseconds: settings.gmailPollingIntervalInMilliseconds,
   dailySpendCeilingInUsd: settings.dailySpendCeilingInUsd,
+  urgency: settings.urgency,
   ...(triage === undefined ? {} : { triage }),
   ...(filter === undefined ? {} : { filter }),
   ...(summary === undefined ? {} : { summary }),

@@ -42,7 +42,10 @@ function toolUseAnswer(request: RecordedAnthropicRequest) {
   };
 }
 
-async function startFakeAnthropic(recorded: RecordedAnthropicRequest[]): Promise<Server> {
+async function startFakeAnthropic(
+  recorded: RecordedAnthropicRequest[],
+  answer: (request: RecordedAnthropicRequest) => unknown = toolUseAnswer,
+): Promise<Server> {
   const server = createServer((request, response) => {
     let body = '';
     request.on('data', (chunk: Buffer) => (body += chunk.toString()));
@@ -50,7 +53,7 @@ async function startFakeAnthropic(recorded: RecordedAnthropicRequest[]): Promise
       const parsed = JSON.parse(body) as RecordedAnthropicRequest;
       recorded.push(parsed);
       response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify(toolUseAnswer(parsed)));
+      response.end(JSON.stringify(answer(parsed)));
     });
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -134,5 +137,68 @@ describe('the shipped backend (main.ts)', () => {
         tools: [expect.objectContaining({ name: 'write_summary' })],
       }),
     );
+  }, 30_000);
+
+  it('lists at GET /people under Urgent a contact whose unanswered ask is 1 business day old when MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS is 1', async () => {
+    fakeAnthropic = await startFakeAnthropic([], (request) => ({
+      ...toolUseAnswer(request),
+      content: [
+        {
+          type: 'tool_use',
+          id: 'tool-use-1',
+          name: 'propose_triage',
+          input: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+            asks: [{ ask: 'Review the budget' }],
+          },
+        },
+      ],
+    }));
+    const anthropicPort = (fakeAnthropic.address() as AddressInfo).port;
+    const port = await freePort();
+    const baseUrl = `http://127.0.0.1:${String(port)}`;
+    backend = spawn('node_modules/.bin/tsx', ['src/main.ts'], {
+      cwd: backendDirectory,
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: 'test-key',
+        ANTHROPIC_BASE_URL: `http://127.0.0.1:${String(anthropicPort)}`,
+        MY_LIFE_PORT: String(port),
+        MY_LIFE_DATABASE_PATH: temporaryDatabasePath(),
+        MY_LIFE_ALLOWED_EMAILS: 'ana@example.com',
+        MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
+        MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none',
+        MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS: '1',
+      },
+      stdio: 'ignore',
+    });
+    await waitUntilHealthy(baseUrl);
+    // One business day before now: step back a day at a time until the day after it up to now holds a weekday.
+    const dayInMilliseconds = 24 * 60 * 60 * 1000;
+    const weekdayIn = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Mexico_City' });
+    const isWeekend = (time: number) => ['Sat', 'Sun'].includes(weekdayIn.format(time));
+    const now = Date.now();
+    let askedAtTime = now - dayInMilliseconds;
+    while (isWeekend(askedAtTime + dayInMilliseconds)) {
+      askedAtTime -= dayInMilliseconds;
+    }
+    const askedAt = new Date(askedAtTime).toISOString();
+    const [budgetReview] = budgetReviewReport.messages;
+    await fetch(`${baseUrl}/mail-report`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...budgetReviewReport, messages: [{ ...budgetReview, date: askedAt }] }),
+    });
+    await fetch(`${baseUrl}/triage-run`, { method: 'POST' });
+
+    const { urgent } = (await (await fetch(`${baseUrl}/people`)).json()) as {
+      urgent: { emails: string[]; reasons: string[] }[];
+    };
+
+    expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['unanswered ask'] })]);
   }, 30_000);
 });
