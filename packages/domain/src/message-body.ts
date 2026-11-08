@@ -4,6 +4,8 @@ interface MessagePart {
   parts?: MessagePart[];
 }
 
+const maximumBodyLength = 20 * 1024;
+
 export function messageBody(payload: MessagePart): string {
   const plainPart = payload.parts?.find((part) => part.mimeType === 'text/plain');
   if (plainPart) {
@@ -13,7 +15,7 @@ export function messageBody(payload: MessagePart): string {
   if (payload.mimeType === 'text/html') {
     return withoutTags(text);
   }
-  return withoutSignature(withoutQuotedReply(text)).slice(0, 20 * 1024);
+  return withoutSignature(withoutQuotedReply(text)).slice(0, maximumBodyLength);
 }
 
 function withoutSignature(text: string): string {
