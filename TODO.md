@@ -25,7 +25,7 @@
 - [x] Confirming a digest queues an archive command for each of its items whose own proposal is `archive`
 - [x] Confirming a digest queues no archive command for its items whose own proposal is `keep`
 - [x] Confirming a digest leaves another waiting digest of the same category unconfirmed
-- [ ] Confirming a digest removes its items from `GET /triage-queue`
+- [x] Confirming a digest removes its items from `GET /triage-queue`
 - [ ] After a digest is confirmed, a new proposal for the same account, category and key opens a fresh digest holding only that proposal
 - [ ] A proposal that joined a digest after the dashboard loaded it is not confirmed by that confirm and stays in the fresh digest
 - [ ] Confirming an unknown digest answers 404 and records nothing
