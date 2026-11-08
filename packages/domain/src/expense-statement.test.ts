@@ -62,7 +62,10 @@ describe('expenseStatement', () => {
 
   it('leaves out a proposal of another category dated inside the week, even when its extract carries an amount', () => {
     const proposals = [
-      { ...expenseProposal('message-sales', '2026-11-03T18:00:00.000Z', 'Acme CRM', 4999, '2026-11-03'), category: 'sales' },
+      {
+        ...expenseProposal('message-sales', '2026-11-03T18:00:00.000Z', 'Acme CRM', 4999, '2026-11-03'),
+        category: 'sales',
+      },
       expenseProposal('message-expense', '2026-11-04T18:00:00.000Z', 'Uber', 154.5, '2026-11-04'),
       {
         ...expenseProposal('message-system-update', '2026-11-05T18:00:00.000Z', 'GitHub', 21, '2026-11-05'),
@@ -73,5 +76,26 @@ describe('expenseStatement', () => {
     expect(
       expenseStatement(proposals, { week: '2026-11-02', timeZone: 'America/Mexico_City' }).map((entry) => entry.link),
     ).toEqual(['https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-expense']);
+  });
+
+  it('leaves out an expense proposal the user rejected', () => {
+    const proposals = [
+      {
+        ...expenseProposal('message-rejected', '2026-11-03T18:00:00.000Z', 'Acme Pitch', 4999, '2026-11-03'),
+        verdict: { decision: 'rejected' },
+      },
+      {
+        ...expenseProposal('message-confirmed', '2026-11-04T18:00:00.000Z', 'Uber', 154.5, '2026-11-04'),
+        verdict: { decision: 'confirmed' },
+      },
+      expenseProposal('message-undecided', '2026-11-05T18:00:00.000Z', 'AWS', 1200, '2026-11-05'),
+    ];
+
+    expect(
+      expenseStatement(proposals, { week: '2026-11-02', timeZone: 'America/Mexico_City' }).map((entry) => entry.link),
+    ).toEqual([
+      'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-confirmed',
+      'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-undecided',
+    ]);
   });
 });

@@ -6,6 +6,7 @@ export interface ExpenseProposal {
   action: string;
   extract: { vendor: string; amount: number; currency: string; date: string };
   link: string;
+  verdict?: { decision: string };
 }
 
 export interface ExpenseStatementEntry {
@@ -38,6 +39,6 @@ export const expenseStatement = (
   period: StatementPeriod,
 ): ExpenseStatementEntry[] =>
   proposals
-    .filter((proposal) => proposal.category === 'expense' && isInWeek(proposal.date, period))
+    .filter((proposal) => proposal.category === 'expense' && proposal.verdict?.decision !== 'rejected' && isInWeek(proposal.date, period))
     .sort((left, right) => left.date.localeCompare(right.date))
     .map((proposal) => ({ ...proposal.extract, accountEmail: proposal.accountEmail, link: proposal.link }));
