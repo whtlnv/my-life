@@ -599,9 +599,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
-  // The waiting proposals outside the action block, grouped per account and sender (or system).
-  function describeDigests(verdicts: StoredVerdict[]) {
-    const waiting = triageQueue(awaitingTheUser(proposals), verdicts)
+  // The waiting proposals outside the action block, with the sender each digest groups by.
+  function waitingOutsideTheActionBlock(verdicts: StoredVerdict[]) {
+    return triageQueue(awaitingTheUser(proposals), verdicts)
       .groups.filter(({ category }) => !isLeadingCategory(category))
       .flatMap((group) => group.proposals)
       .map((proposal) => ({
@@ -610,7 +610,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         extract: proposal.extract ?? {},
         from: reportedMessages.find((message) => message.id === proposal.messageId)?.from ?? '',
       }));
-    return digests(waiting).map(({ key, proposals: digested, severityCounts }) => ({
+  }
+  // The waiting proposals grouped per account and sender (or system).
+  function describeDigests(verdicts: StoredVerdict[]) {
+    return digests(waitingOutsideTheActionBlock(verdicts)).map(({ key, proposals: digested, severityCounts }) => ({
       accountEmail: digested[0]?.accountEmail,
       category: digested[0]?.category,
       key,
