@@ -11,7 +11,12 @@ interface ContactUrgencyInput {
   messages: UrgencyMessage[];
   vip: boolean;
   now: string;
-  settings: { timeZone: string; unansweredAskBusinessDays: number; deadlineHours: number };
+  settings: {
+    timeZone: string;
+    unansweredAskBusinessDays: number;
+    deadlineHours: number;
+    vipWaitingBusinessDays: number;
+  };
 }
 
 function answeredByUser(message: UrgencyMessage, messages: UrgencyMessage[]): boolean {
@@ -42,6 +47,17 @@ export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; r
   const { messages, now, settings } = input;
   if (messages.some((message) => hasDeadlineSoon(message, now, settings.deadlineHours))) {
     return { urgent: true, reasons: ['deadline'] };
+  }
+  if (
+    input.vip &&
+    messages.some(
+      (message) =>
+        !message.sentByUser &&
+        !answeredByUser(message, messages) &&
+        businessDaysBetween(message.receivedAt, now, settings.timeZone) >= settings.vipWaitingBusinessDays,
+    )
+  ) {
+    return { urgent: true, reasons: ['VIP waiting'] };
   }
   const urgent = messages.some((message) => isUnansweredAsk(message, messages, now, settings));
   return urgent ? { urgent: true, reasons: ['unanswered ask'] } : { urgent: false, reasons: [] };

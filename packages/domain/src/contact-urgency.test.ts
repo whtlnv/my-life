@@ -110,4 +110,22 @@ describe('contactUrgency', () => {
       reasons: [],
     });
   });
+
+  it('is urgent, with the reason "VIP waiting", when a VIP contact\'s message has waited a business day for a reply', () => {
+    const mondayFivePm = '2026-11-09T23:00:00.000Z';
+    const tuesdayFivePm = '2026-11-10T23:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-lunch',
+        receivedAt: mondayFivePm,
+        sentByUser: false,
+        asks: [],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: true, now: tuesdayFivePm, settings: urgencySettings })).toEqual({
+      urgent: true,
+      reasons: ['VIP waiting'],
+    });
+  });
 });
