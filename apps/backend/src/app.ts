@@ -43,7 +43,11 @@ interface ReportedMessage extends ReportedMessageHeaders {
   id: string;
 }
 
-type Proposal = Parameters<typeof triageQueue>[0][number] & { summary?: string; madeAutomatic?: boolean };
+type Proposal = Parameters<typeof triageQueue>[0][number] & {
+  summary?: string;
+  madeAutomatic?: boolean;
+  organization?: string;
+};
 type TriageProposal = Parameters<typeof triageEffects>[0];
 type TriageVerdict = Parameters<typeof triageEffects>[1];
 
@@ -566,6 +570,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/contacts', (context) => {
     const senders = reportedMessageStore.loadAll().map(({ from }) => from);
     return context.json({ contacts: contactsFromSenders(senders) });
+  });
+  app.get('/organizations', (context) => {
+    const organizations = proposals.map(({ organization, messageId }) => ({
+      name: organization,
+      messageIds: [messageId],
+    }));
+    return context.json({ organizations });
   });
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();

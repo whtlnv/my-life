@@ -2797,4 +2797,30 @@ describe('backend app', () => {
       ],
     });
   });
+
+  it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+            organization: 'Mutuus',
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v2',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/organizations');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1'] }] });
+  });
 });
