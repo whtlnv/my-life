@@ -568,13 +568,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
+  const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
   app.get('/contacts', (context) => {
-    const senders = reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
-    return context.json({ contacts: contactsByEmail(senders, proposals) });
+    return context.json({ contacts: contactsByEmail(reportedSenders(), proposals) });
   });
   app.get('/organizations', (context) => {
-    const senders = reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
-    return context.json({ organizations: organizationsByName(senders, proposals) });
+    return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });
   });
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
