@@ -184,6 +184,18 @@ const triageAnsweringByMessageId = (proposalByMessageId: Record<string, unknown>
     Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
 });
 
+const messageWithQuarterlyNumbersBody = {
+  ...budgetReviewReport.messages[0],
+  body: 'Hi Ana, the quarterly numbers are attached. Luis',
+};
+
+const budgetReviewReportWithQuarterlyNumbersBody = {
+  ...budgetReviewReport,
+  messages: [messageWithQuarterlyNumbersBody],
+};
+
+const searchResultsListingOnlyMessageOne = { messages: [expect.objectContaining({ id: 'message-1' })] };
+
 const budgetReviewReportWithSecondMessageFromMarta = {
   ...budgetReviewReport,
   messages: [
@@ -3499,7 +3511,12 @@ describe('backend app', () => {
         return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
       },
     };
-    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    const afterRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+    });
 
     await postTriageRun(afterRestart);
 
@@ -3508,15 +3525,12 @@ describe('backend app', () => {
 
   it('lists at GET /search?q= the message whose body contains the query word', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [{ ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' }],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
 
     const response = await app.request('/search?q=quarterly');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+    expect(await response.json()).toEqual(searchResultsListingOnlyMessageOne);
   });
 
   it('lists at GET /search?q= no message whose body lacks the query word, even when the word appears inside another word', async () => {
@@ -3524,7 +3538,7 @@ describe('backend app', () => {
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
       messages: [
-        { ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' },
+        messageWithQuarterlyNumbersBody,
         {
           ...budgetReviewReport.messages[0],
           id: 'message-2',
@@ -3537,51 +3551,42 @@ describe('backend app', () => {
     const response = await app.request('/search?q=numbers');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+    expect(await response.json()).toEqual(searchResultsListingOnlyMessageOne);
   });
 
   it('lists at GET /search?q= the message whose summary alone contains the query word', async () => {
     const triage = triageAnswering(keepProposalExtracting({ summary: 'Luis asks for the forecast before Friday' }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [{ ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' }],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
     await postTriageRun(app);
 
     const response = await app.request('/search?q=forecast');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+    expect(await response.json()).toEqual(searchResultsListingOnlyMessageOne);
   });
 
   it('lists at GET /search?q= a message stored after an earlier search, without a rebuild', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const beforeStoring = await app.request('/search?q=quarterly');
     expect(await beforeStoring.json()).toEqual({ messages: [] });
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [{ ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' }],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
 
     const response = await app.request('/search?q=quarterly');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+    expect(await response.json()).toEqual(searchResultsListingOnlyMessageOne);
   });
 
   it('still lists at GET /search?q= after a backend restart on the same database file a message whose body was reported before it', async () => {
     const databasePath = temporaryDatabasePath();
     const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
-    await postJson(beforeRestart, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [{ ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' }],
-    });
+    await postJson(beforeRestart, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
     const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
 
     const response = await afterRestart.request('/search?q=quarterly');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+    expect(await response.json()).toEqual(searchResultsListingOnlyMessageOne);
   });
 });
