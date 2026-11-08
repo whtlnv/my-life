@@ -944,15 +944,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/contacts/:email/timeline', (context) => {
     const email = context.req.param('email');
+    const namesContact = (messageIdentifier: string): boolean =>
+      proposals.some(
+        ({ messageId, people = [] }) =>
+          messageId === messageIdentifier && people.some((person) => person.email === email),
+      );
     const messages = reportedMessages
-      .filter(
-        (message) =>
-          contactFromSender(message.from).email === email ||
-          proposals.some(
-            ({ messageId, people = [] }) =>
-              messageId === message.id && people.some((person) => person.email === email),
-          ),
-      )
+      .filter((message) => contactFromSender(message.from).email === email || namesContact(message.id))
       .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
