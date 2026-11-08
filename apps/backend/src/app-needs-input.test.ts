@@ -130,4 +130,40 @@ describe('backend app: GET /needs-input', () => {
     ]);
     expect((await getJson<{ questions: unknown[] }>(app, '/needs-input')).questions).toEqual([]);
   });
+
+  it('hands triage the category chosen in answer to a category question as an example for a later message from the same sender', async () => {
+    const examplesByMessageId = new Map<string, unknown[] | undefined>();
+    const triage = {
+      propose: (message: { id: string }, examples?: unknown[]) => {
+        examplesByMessageId.set(message.id, examples);
+        return Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'cc-thread',
+            summary: 'Luis copies the user on the budget thread',
+            extract: {},
+            reason: 'The user is only copied',
+            disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v1',
+        });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    await postJson(app, '/needs-input/answers', { kind: 'category', messageId: 'message-1', answer: 'action' });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-2', threadId: 'thread-2', subject: 'Budget follow-up' }],
+    });
+
+    await postTriageRun(app);
+
+    expect(examplesByMessageId.get('message-2')).toEqual([
+      expect.objectContaining({ messageId: 'message-1', category: 'action' }),
+    ]);
+  });
 });

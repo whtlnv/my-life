@@ -468,7 +468,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           ...verdict,
           from: verdictMessage?.from ?? '',
           listId: verdictMessage?.listId,
-          category: proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ?? '',
+          category:
+            (verdict.correction as { category?: string } | undefined)?.category ??
+            proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ??
+            '',
         };
       }),
       verdictExampleLimit,
