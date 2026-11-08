@@ -15,4 +15,17 @@ describe('extension manifest', () => {
 
     expect(manifest.oauth2?.scopes).toContain('https://www.googleapis.com/auth/gmail.settings.basic');
   });
+
+  it('requests the contacts.readonly and contacts.other.readonly scopes so Google Contacts can seed the People view', async () => {
+    if (typeof config.manifest !== 'function') throw new Error('manifest must be a function');
+    const manifest: UserManifest = await config.manifest({
+      browser: 'chrome',
+      manifestVersion: 3,
+      mode: 'production',
+      command: 'build',
+    });
+
+    expect(manifest.oauth2?.scopes).toContain('https://www.googleapis.com/auth/contacts.readonly');
+    expect(manifest.oauth2?.scopes).toContain('https://www.googleapis.com/auth/contacts.other.readonly');
+  });
 });

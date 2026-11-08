@@ -59,7 +59,7 @@
 
 ### Google Contacts import
 
-- [ ] The extension's Google token is requested with `contacts.readonly` and `contacts.other.readonly`
+- [x] The extension's Google token is requested with `contacts.readonly` and `contacts.other.readonly`
 - [ ] The extension reads its account's contacts (`people/me/connections`, every page) and reports names, emails, organization, starred and labels
 - [ ] The extension reads its account's Other Contacts (`otherContacts`, every page) and reports names and emails
 - [ ] The contacts import runs once a day, not on every Gmail poll
