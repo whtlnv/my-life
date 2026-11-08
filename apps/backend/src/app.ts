@@ -782,7 +782,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
     const newSenderQuestions = proposals.flatMap(({ messageId, accountEmail, asks }) => {
       const message = reportedMessages.find((reported) => reported.id === messageId);
-      if (asks === undefined || asks.length === 0 || message === undefined) return [];
+      const asksTheUser = asks !== undefined && asks.length > 0;
+      if (!asksTheUser || message === undefined) return [];
       const senderEmail = contactFromSender(message.from).email;
       return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
     });
