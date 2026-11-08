@@ -1371,4 +1371,49 @@ describe('TriagePage', () => {
     expect(within(handledRow).getByText(categoryLabel('sales'))).toBeInTheDocument();
     expect(within(handledRow).getByText(accountName('francisco@psmutuus.com'))).toBeInTheDocument();
   });
+
+  it('posts the undo for only the handled item whose Undo button is clicked, and removes it from the list once accepted', async () => {
+    const handledItem = (messageId: string, summary: string) => ({
+      messageId,
+      accountEmail: 'francisco@psmutuus.com',
+      action: 'archive',
+      category: 'sales',
+      summary,
+      extract: {},
+      reason: 'A sales pitch',
+      link: `https://mail.google.com/mail/?authuser=francisco%40psmutuus.com#all/${messageId}`,
+    });
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        digests: [],
+        handledForYou: [
+          handledItem('message-1', 'Initech pitches a CRM'),
+          handledItem('message-2', 'Globex pitches a webinar'),
+        ],
+        remaining: 0,
+        paused: false,
+      },
+      '/handled-for-you/message-1/undo',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const handledSection = await screen.findByRole('region', { name: sectionTitles.handledForYou });
+    await user.click(
+      await within(handledSection).findByRole('button', { name: new RegExp(sectionTitles.handledForYou) }),
+    );
+    const undoneRow = (await within(handledSection).findByText('Initech pitches a CRM')).closest('li');
+    if (undoneRow === null) throw new Error('the handled item is not rendered as a list item');
+    await user.click(within(undoneRow).getByRole('button', { name: /Undo/ }));
+
+    await waitFor(() => {
+      expect(within(handledSection).queryByText('Initech pitches a CRM')).not.toBeInTheDocument();
+    });
+    expect(fetch).toHaveBeenCalledWith('/handled-for-you/message-1/undo', expect.objectContaining({ method: 'POST' }));
+    expect(fetch).not.toHaveBeenCalledWith('/handled-for-you/message-2/undo', expect.anything());
+    expect(within(handledSection).getByText('Globex pitches a webinar')).toBeInTheDocument();
+  });
 });

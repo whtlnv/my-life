@@ -485,7 +485,17 @@ function DigestCard({ digest, onAccepted }: { digest: Digest; onAccepted: () => 
   );
 }
 
-function HandledForYouSection({ items }: { items: TriageItem[] | undefined }) {
+function undoHandledItem(messageId: TriageItem['messageId']) {
+  return fetch(`/handled-for-you/${encodeURIComponent(messageId)}/undo`, { method: 'POST' });
+}
+
+function HandledForYouSection({
+  items,
+  onUndone,
+}: {
+  items: TriageItem[] | undefined;
+  onUndone: (messageId: TriageItem['messageId']) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   return (
     <section aria-label={sectionTitles.handledForYou} className="section">
@@ -507,6 +517,17 @@ function HandledForYouSection({ items }: { items: TriageItem[] | undefined }) {
               <span>{item.summary}</span>
               <span>{categoryLabel(item.category ?? '')}</span>
               <span>{accountName(item.accountEmail)}</span>
+              <button
+                type="button"
+                className="button"
+                onClick={() => {
+                  whenAccepted(undoHandledItem(item.messageId), () => {
+                    onUndone(item.messageId);
+                  });
+                }}
+              >
+                Undo
+              </button>
             </li>
           ))}
         </ul>
@@ -577,6 +598,16 @@ export function TriagePage() {
     );
   }
 
+  function removeHandledItem(messageId: TriageItem['messageId']) {
+    setQueue(
+      (current) =>
+        current && {
+          ...current,
+          handledForYou: (current.handledForYou ?? []).filter((other) => other.messageId !== messageId),
+        },
+    );
+  }
+
   const groups = queue.groups.filter((group) => group.category !== 'unknown');
   return (
     <main>
@@ -635,7 +666,7 @@ export function TriagePage() {
         <h2 className="section-title">{sectionTitles.needsInput}</h2>
         <p className="empty">{nothingNeedsInputText}</p>
       </section>
-      <HandledForYouSection items={queue.handledForYou} />
+      <HandledForYouSection items={queue.handledForYou} onUndone={removeHandledItem} />
       <section className="section">
         <h2 className="section-title">Everything else</h2>
         {groups.length === 0 && <p className="empty">No groups waiting</p>}

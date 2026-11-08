@@ -60,6 +60,6 @@
 - [x] Confirming a digest card from the page posts the confirm for that digest only and removes the card
 - [x] Handled for you starts collapsed and shows how many items it holds
 - [x] Expanding Handled for you lists each item with its summary, category and account
-- [ ] Clicking undo on a handled item posts the undo for that item and removes it from the strip
+- [x] Clicking undo on a handled item posts the undo for that item and removes it from the strip
 - [ ] The shipped backend (`main.ts`) writes digest summaries through the real Claude adapter on the configured summary model, and the shipped extension (`extension-start.ts`) applies undo commands from its command poll
 - [ ] `scripts/demo.sh` seeds digests (one with a significant item) and handled-for-you items; screenshots of the triage page, expanded and collapsed, are saved to `docs/screenshots/`
