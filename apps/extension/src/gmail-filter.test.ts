@@ -93,9 +93,7 @@ describe('carryOutFilterCommands', () => {
         );
       }
       if (path === `${gmailApi}/labels`) {
-        return Promise.resolve(
-          Response.json({ labels: [{ id: 'Label_99', name: 'my-life/shop', type: 'user' }] }),
-        );
+        return Promise.resolve(Response.json({ labels: [{ id: 'Label_99', name: 'my-life/shop', type: 'user' }] }));
       }
       if (path === `${gmailApi}/settings/filters` && init?.method === 'POST') {
         filterCreationAttempts += 1;

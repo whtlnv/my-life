@@ -30,7 +30,9 @@ export function openFilterProposalStore(databasePath: string) {
       proposed_at: string;
       proposal: string;
     }
-  >('SELECT rowid AS id, account_email, message_ids, prompt_version, proposed_at, proposal FROM filter_proposals ORDER BY rowid');
+  >(
+    'SELECT rowid AS id, account_email, message_ids, prompt_version, proposed_at, proposal FROM filter_proposals ORDER BY rowid',
+  );
   const loadCandidateKeys = database.prepare<[], { candidate_key: string }>(
     'SELECT candidate_key FROM filter_proposals',
   );

@@ -8,9 +8,10 @@ export function openCreatedFilterStore(databasePath: string) {
   const saveCreatedFilter = database.prepare(
     'INSERT INTO created_filters (command_id, gmail_filter_id, acknowledged_at) VALUES (?, ?, ?)',
   );
-  const loadCreatedFilters = database.prepare<[], { command_id: string; gmail_filter_id: string; acknowledged_at: string }>(
-    'SELECT command_id, gmail_filter_id, acknowledged_at FROM created_filters ORDER BY rowid',
-  );
+  const loadCreatedFilters = database.prepare<
+    [],
+    { command_id: string; gmail_filter_id: string; acknowledged_at: string }
+  >('SELECT command_id, gmail_filter_id, acknowledged_at FROM created_filters ORDER BY rowid');
   return {
     save(commandId: string, gmailFilterId: string, acknowledgedAt: string): void {
       saveCreatedFilter.run(commandId, gmailFilterId, acknowledgedAt);

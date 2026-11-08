@@ -37,10 +37,7 @@ const isInWeek = (instant: string, period: StatementPeriod): boolean => {
 const belongsInStatement = (proposal: ExpenseProposal, period: StatementPeriod): boolean =>
   proposal.category === 'expense' && proposal.verdict?.decision !== 'rejected' && isInWeek(proposal.date, period);
 
-export const expenseStatement = (
-  proposals: ExpenseProposal[],
-  period: StatementPeriod,
-): ExpenseStatementEntry[] =>
+export const expenseStatement = (proposals: ExpenseProposal[], period: StatementPeriod): ExpenseStatementEntry[] =>
   proposals
     .filter((proposal) => belongsInStatement(proposal, period))
     .sort((left, right) => Date.parse(left.date) - Date.parse(right.date))

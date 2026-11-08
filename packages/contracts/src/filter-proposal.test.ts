@@ -15,7 +15,11 @@ describe('filterProposal', () => {
 
   it('accepts criteria holding only from, or only listId, with the other criteria absent', () => {
     const onlyFrom = { criteria: { from: 'news@vendor.example' }, labelName: 'Newsletters/Vendor', skipInbox: true };
-    const onlyListId = { criteria: { listId: 'digest.vendor.example' }, labelName: 'Newsletters/Vendor', skipInbox: false };
+    const onlyListId = {
+      criteria: { listId: 'digest.vendor.example' },
+      labelName: 'Newsletters/Vendor',
+      skipInbox: false,
+    };
 
     expect(filterProposal.safeParse(onlyFrom)).toEqual({ success: true, data: onlyFrom });
     expect(filterProposal.safeParse(onlyListId)).toEqual({ success: true, data: onlyListId });
