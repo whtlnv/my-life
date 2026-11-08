@@ -113,6 +113,9 @@ export interface AppOptions {
       candidate: FilterCandidate & { messages: { from: string; subject: string }[] },
     ) => Promise<{ proposal: unknown; costInUsd: number; promptVersion: string }>;
   };
+  summary?: {
+    summarize: () => Promise<{ lines: string[]; costInUsd: number }>;
+  };
 }
 
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
@@ -419,6 +422,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
+  let summaryLines: string[] | undefined;
   // A message proposed before its body arrived is asked about once more, this time with the body.
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
     (message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id),
@@ -573,6 +577,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageIdsAwaitingRetriage.delete(message.id);
         queueProposal({ ...displayedProposal, madeAutomatic });
       }
+      summaryLines = (await options.summary?.summarize())?.lines;
     } finally {
       triageRunInProgress = false;
     }
@@ -642,6 +647,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         key,
         count: digested.length,
         severityCounts,
+        summaryLines,
       };
     });
   }
