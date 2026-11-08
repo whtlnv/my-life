@@ -1068,6 +1068,35 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(digests[0]).not.toHaveProperty('summaryLines');
   });
 
+  it('answers POST /triage-run with 200 when the summary model answers with output that fails validation, and still returns the digest in GET /triage-queue without summary lines', async () => {
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const summary = {
+      summarize: () => Promise.reject(new Error('The summary model answered with output that fails validation')),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+    });
+
+    const triageRun = await postTriageRun(app);
+
+    const queue = await app.request('/triage-queue');
+    const { digests } = (await queue.json()) as { digests: object[] };
+    expect(triageRun.status).toBe(200);
+    expect(queue.status).toBe(200);
+    expect(digests).toHaveLength(1);
+    expect(digests[0]).toMatchObject({ key: 'GitHub' });
+    expect(digests[0]).not.toHaveProperty('summaryLines');
+  });
+
   it('opens in GET /triage-queue a fresh digest, with a new id and only the new proposal, for a proposal of the same account, category and key triaged after its digest was confirmed', async () => {
     const gitHubNotice = (summary: string) => ({
       action: 'archive',
