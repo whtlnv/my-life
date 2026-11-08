@@ -84,6 +84,18 @@ async function waitUntilHealthy(baseUrl: string): Promise<void> {
   throw new Error('the shipped backend never answered /health');
 }
 
+// Step back a day at a time until the day after it up to now holds a weekday.
+function oneBusinessDayAgo(): Date {
+  const dayInMilliseconds = 24 * 60 * 60 * 1000;
+  const weekdayIn = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Mexico_City' });
+  const isWeekend = (time: number) => ['Sat', 'Sun'].includes(weekdayIn.format(time));
+  let time = Date.now() - dayInMilliseconds;
+  while (isWeekend(time + dayInMilliseconds)) {
+    time -= dayInMilliseconds;
+  }
+  return new Date(time);
+}
+
 describe('the shipped backend (main.ts)', () => {
   let backend: ChildProcess | undefined;
   let fakeAnthropic: Server | undefined;
@@ -177,16 +189,7 @@ describe('the shipped backend (main.ts)', () => {
       stdio: 'ignore',
     });
     await waitUntilHealthy(baseUrl);
-    // One business day before now: step back a day at a time until the day after it up to now holds a weekday.
-    const dayInMilliseconds = 24 * 60 * 60 * 1000;
-    const weekdayIn = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Mexico_City' });
-    const isWeekend = (time: number) => ['Sat', 'Sun'].includes(weekdayIn.format(time));
-    const now = Date.now();
-    let askedAtTime = now - dayInMilliseconds;
-    while (isWeekend(askedAtTime + dayInMilliseconds)) {
-      askedAtTime -= dayInMilliseconds;
-    }
-    const askedAt = new Date(askedAtTime).toISOString();
+    const askedAt = oneBusinessDayAgo().toISOString();
     const [budgetReview] = budgetReviewReport.messages;
     await fetch(`${baseUrl}/mail-report`, {
       method: 'POST',
