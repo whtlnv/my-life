@@ -105,7 +105,7 @@
 - [x] An `expense` proposal the user rejected through `POST /verdicts` is left out of `GET /expense-statement` (supervisor keystone: the route hands the domain rule proposals without their verdicts)
 - [x] After a backend restart on the same database, `GET /expense-statement` still lists the week's expenses with their message dates (supervisor keystone: the route reads message dates from the in-memory report list)
 - [x] The dashboard app shell has a `Statement` tab linking to `#/statement`, marked current on that route
-- [ ] The `#/statement` page shows the current week's entries in a table with their total per currency, and a Download link to that week's CSV
+- [x] The `#/statement` page shows the current week's entries in a table with their total per currency, and a Download link to that week's CSV
 - [ ] The `#/statement` page's previous / next week controls load and show the other week's entries
 - [ ] The `#/statement` page shows an empty state for a week with no expenses
 
