@@ -430,6 +430,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     mailSourceStore.save(report.accountEmail, clock.now());
     return context.body(null, 200);
   });
+  app.get('/bodies-missing', (context) => {
+    const accountEmail = context.req.query('account');
+    const messageIds = reportedMessageStore
+      .loadReportedMessages()
+      .filter((message) => message.accountEmail === accountEmail && message.body === undefined)
+      .map((message) => message.id);
+    return context.json({ messageIds });
+  });
   app.post('/triage-run', async (context) => {
     const triage = options.triage;
     if (triage === undefined) {

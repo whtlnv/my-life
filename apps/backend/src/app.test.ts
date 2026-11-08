@@ -3340,4 +3340,14 @@ describe('backend app', () => {
     expect(response.status).toBe(400);
     expect(contacts).toEqual([]);
   });
+
+  it('lists at GET /bodies-missing?account= the id of a message reported at POST /mail-report for that account without a body', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const response = await app.request('/bodies-missing?account=ana%40example.com');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ messageIds: ['message-1'] });
+  });
 });

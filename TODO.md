@@ -81,7 +81,7 @@
 
 ### Backfill and retriage
 
-- [ ] `GET /bodies-missing?account=` lists the stored messages of that account that have no body
+- [x] `GET /bodies-missing?account=` lists the stored messages of that account that have no body
 - [ ] `GET /bodies-missing?account=` lists no message of another account, and no message that has a body
 - [ ] On its poll, the extension fetches each listed message with `format=full` and reports its body
 - [ ] The backfill, from the extension against the fake Gmail server, ends with the body stored for every listed message
