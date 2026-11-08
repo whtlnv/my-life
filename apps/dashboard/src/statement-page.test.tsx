@@ -40,8 +40,9 @@ describe('StatementPage', () => {
       .filter((row) => /1,?500/.test(row.textContent));
     expect(totalRows).toHaveLength(1);
     expect(totalRows[0]?.textContent).toContain('MXN');
-    const downloadLink = screen.getAllByRole('link').find((link) => link.getAttribute('href') === '/expense-statement');
-    expect(downloadLink).toBeDefined();
+    const downloadLink = screen.getByRole('link', { name: /download/i });
+    expect(downloadLink).toHaveAttribute('href', '/expense-statement');
+    expect(downloadLink).toHaveAttribute('download');
   });
 
   it("loads and shows the previous week's entries, then the current week's again, through the previous / next week controls", async () => {
