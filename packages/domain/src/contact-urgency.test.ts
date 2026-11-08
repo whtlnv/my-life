@@ -45,4 +45,29 @@ describe('contactUrgency', () => {
       reasons: [],
     });
   });
+
+  it('is not urgent when the user answered the ask in the same thread, however old the ask', () => {
+    const mondayFivePm = '2026-11-09T23:00:00.000Z';
+    const tuesdayNineAm = '2026-11-10T15:00:00.000Z';
+    const threeWeeksLater = '2026-11-30T23:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-budget',
+        receivedAt: mondayFivePm,
+        sentByUser: false,
+        asks: [{ ask: 'Review the Q3 budget spreadsheet and send comments' }],
+      },
+      {
+        threadId: 'thread-budget',
+        receivedAt: tuesdayNineAm,
+        sentByUser: true,
+        asks: [],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: threeWeeksLater, settings: urgencySettings })).toEqual({
+      urgent: false,
+      reasons: [],
+    });
+  });
 });

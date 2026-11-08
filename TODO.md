@@ -12,7 +12,7 @@
 - [x] The business days between two instants on weekdays only count every day: Monday 17:00 to Wednesday 17:00 is 2 business days
 - [x] A contact whose ask to the user has gone unanswered for 2 business days is urgent, with the reason "unanswered ask"
 - [x] A contact whose ask to the user has gone unanswered for less than 2 business days is not urgent
-- [ ] A contact whose ask the user answered in the same thread (a sent message after it) is not urgent, however old the ask
+- [x] A contact whose ask the user answered in the same thread (a sent message after it) is not urgent, however old the ask
 - [ ] A contact whose message carries an extracted deadline inside the next 48 hours is urgent, with the reason "deadline"
 - [ ] A contact whose message carries an extracted deadline more than 48 hours away is not urgent
 - [ ] A VIP contact whose message has waited for a reply more than 1 business day is urgent, with the reason "VIP waiting"
