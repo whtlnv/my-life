@@ -87,6 +87,13 @@ interface TriageResult {
 // What the triage port learns about the sender: the display name from the From header plus the record the user and
 // the contacts import keep on that email.
 type TriageContact = { displayName: string; marks: string[] } & ContactDetails;
+// What the triage port receives for one message: the report, the account it arrived on, the sender's record and the
+// thread state an earlier message's extraction left behind.
+type TriageRequest = ReportedMessage & {
+  accountEmail: string;
+  contact?: TriageContact | undefined;
+  threadState?: string | undefined;
+};
 
 export interface AppOptions {
   allowedEmails: string[];
@@ -96,14 +103,7 @@ export interface AppOptions {
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
   triage?: {
-    propose: (
-      message: ReportedMessage & {
-        accountEmail: string;
-        contact?: TriageContact | undefined;
-        threadState?: string | undefined;
-      },
-      examples?: unknown[],
-    ) => Promise<TriageResult>;
+    propose: (message: TriageRequest, examples?: unknown[]) => Promise<TriageResult>;
   };
   filter?: {
     propose: (
@@ -514,6 +514,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const storedProposal = latestProposalFor(proposalStore.loadAll(), earlierMessage.id);
     return (storedProposal?.proposal as { threadState?: string } | undefined)?.threadState;
   }
+  function triageRequestFor(message: ReportedMessage, accountEmail: string): TriageRequest {
+    return {
+      ...message,
+      accountEmail,
+      contact: triageContactFor(message.from),
+      threadState: threadStateFor(message),
+    };
+  }
   app.post('/triage-run', async (context) => {
     const triage = options.triage;
     if (triage === undefined) {
@@ -533,9 +541,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         }
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
         const examples = verdictExamplesFor(message);
-        const contact = triageContactFor(message.from);
-        const threadState = threadStateFor(message);
-        const result = await triage.propose({ ...message, accountEmail, contact, threadState }, examples);
+        const result = await triage.propose(triageRequestFor(message, accountEmail), examples);
         const costInUsd = result.costInUsd;
         const answeredAt = clock.now().toISOString();
         spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });
