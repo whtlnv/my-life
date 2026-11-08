@@ -2526,7 +2526,9 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
-    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
+      proposals: { id?: string }[];
+    };
     const proposalId = listed.proposals[0]?.id ?? '';
     await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     const afterRestart = createApp(options);
@@ -2560,8 +2562,9 @@ describe('backend app', () => {
     const proposalId = listed.proposals[0]?.id ?? '';
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     const createFilterCommands = async () =>
-      ((await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type?: string; id?: string }[] })
-        .commands.filter(({ type }) => type === 'create-filter');
+      (
+        (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type?: string; id?: string }[] }
+      ).commands.filter(({ type }) => type === 'create-filter');
 
     const [command] = await createFilterCommands();
     await app.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
@@ -2818,7 +2821,9 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
-    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
+    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
+      proposals: { id?: string }[];
+    };
     await beforeRestart.request(`/filter-proposals/${listed.proposals[0]?.id ?? ''}/rejection`, { method: 'POST' });
     askedCandidates.length = 0;
     const afterRestart = createApp(options);
@@ -2827,5 +2832,53 @@ describe('backend app', () => {
     const afterRejection = (await (await afterRestart.request('/filter-proposals')).json()) as { proposals: unknown[] };
 
     expect({ askedCandidates, proposals: afterRejection.proposals }).toEqual({ askedCandidates: [], proposals: [] });
+  });
+
+  it("answers GET /expense-statement?week= with a CSV attachment of the week's expenses, quoting commas and quotes", async () => {
+    const expenseOf = (vendor: string, amount: number, date: string) => ({
+      action: 'archive',
+      category: 'expense',
+      summary: `Invoice from ${vendor}`,
+      extract: { vendor, amount, currency: 'MXN', date },
+      reason: 'An invoice to file',
+    });
+    const proposalByMessageId: Record<string, unknown> = {
+      'message-acme': expenseOf('Acme, Inc.', 120, '2026-11-02'),
+      'message-tacos': expenseOf('Tacos "El Güero"', 85.5, '2026-11-03'),
+    };
+    const triage = {
+      propose: (message: { id: string }) =>
+        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-acme', threadId: 'thread-acme', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-tacos', threadId: 'thread-tacos', date: 'Tue, 3 Nov 2026 10:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/expense-statement?week=2026-11-02');
+
+    const link = (messageId: string) => `https://mail.google.com/mail/?authuser=ana%40example.com#all/${messageId}`;
+    expect({
+      status: response.status,
+      contentType: response.headers.get('content-type'),
+      disposition: response.headers.get('content-disposition'),
+      body: await response.text(),
+    }).toEqual({
+      status: 200,
+      contentType: expect.stringContaining('text/csv') as unknown,
+      disposition: expect.stringContaining('attachment') as unknown,
+      body: [
+        'vendor,amount,currency,date,account,link',
+        `"Acme, Inc.",120,MXN,2026-11-02,ana@example.com,${link('message-acme')}`,
+        `"Tacos ""El Güero""",85.5,MXN,2026-11-03,ana@example.com,${link('message-tacos')}`,
+        '',
+      ].join('\n'),
+    });
   });
 });

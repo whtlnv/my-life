@@ -10,6 +10,7 @@ import {
   chooseVerdictExamples,
   currentVerdict,
   describeSourceFreshness,
+  expenseStatement,
   filterCandidates,
   isAccountFresh,
   isAddressedToUser,
@@ -20,6 +21,7 @@ import {
   triageQueue,
   type CalendarSnapshot,
   type Clock,
+  type ExpenseProposal,
 } from '@my-life/domain';
 
 import { openAcknowledgementStore } from './acknowledgement-store';
@@ -147,6 +149,11 @@ function confirmedCheckLater(proposals: Proposal[], verdicts: StoredVerdict[]) {
     }));
   });
 }
+
+const csvField = (value: string | number): string => {
+  const text = String(value);
+  return /[",]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+};
 
 function agreementRate(category: string, proposals: Proposal[], verdicts: StoredVerdict[]): number | undefined {
   const categoryProposals = proposals.filter((proposal) => proposal.category === category);
@@ -561,6 +568,24 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         agreementRate: agreementRate(category, proposals, verdicts),
         recentProposals: recentProposals(category, proposals),
       })),
+    });
+  });
+  app.get('/expense-statement', (context) => {
+    const expenseProposals = proposals.map((proposal) => ({
+      ...(proposal as unknown as ExpenseProposal),
+      date: reportedMessages.find((message) => message.id === proposal.messageId)?.date ?? '',
+      link: gmailMessageLink(proposal),
+    }));
+    const entries = expenseStatement(expenseProposals, {
+      week: context.req.query('week') ?? '',
+      timeZone: businessTimeZone,
+    });
+    const rows = entries.map(({ vendor, amount, currency, date, accountEmail, link }) =>
+      [vendor, amount, currency, date, accountEmail, link].map(csvField).join(','),
+    );
+    return context.body(['vendor,amount,currency,date,account,link', ...rows, ''].join('\n'), 200, {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': 'attachment; filename="expense-statement.csv"',
     });
   });
   app.get('/check-later', (context) => {

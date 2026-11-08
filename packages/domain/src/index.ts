@@ -11,3 +11,4 @@ export { chooseVerdictExamples } from './verdict-examples';
 export { currentVerdict } from './current-verdict';
 export { isTriagePaused } from './triage-spend';
 export { filterCandidates } from './filter-candidates';
+export { expenseStatement, type ExpenseProposal } from './expense-statement';
