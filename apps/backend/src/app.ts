@@ -498,7 +498,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         const existingIndex = proposals.findIndex((proposal) => proposal.messageId === message.id);
         if (existingIndex === -1) {
           proposals.push({ ...displayedProposal, madeAutomatic });
-        } else {
+        } else if (latestVerdictFor(message.id, verdictStore.loadAll()) === undefined) {
           proposals[existingIndex] = { ...displayedProposal, madeAutomatic };
         }
       }

@@ -3409,4 +3409,42 @@ describe('backend app', () => {
 
     expect(askedMessages).toEqual([{ id: 'message-1', body }]);
   });
+
+  it('lists at GET /tasks no task when the retriage after its body arrives proposes act for a message whose keep proposal the user had already confirmed', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
+    openProposalStore(databasePath).save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:00:00.000Z',
+      promptVersion: 'triage-v1',
+      proposal: keepProposalExtracting(),
+    });
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'act',
+            category: 'action',
+            summary: 'Luis asks for a budget review',
+            extract: { asker: 'Luis', ask: 'Review the budget' },
+            reason: 'Luis asks the user directly',
+            taskDraft: { title: 'Review the budget by Friday' },
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v2',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    await postJson(app, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+
+    await postJson(app, '/bodies-report', {
+      accountEmail: 'ana@example.com',
+      bodies: [{ messageId: 'message-1', body: 'Hi Ana, can you review the budget by Friday? Luis' }],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/tasks');
+    expect(await response.json()).toEqual({ tasks: [] });
+  });
 });
