@@ -25,7 +25,10 @@ const routedFetch =
 
 const requestBody = (init?: RequestInit): unknown =>
   typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
-type BackendPost = { path: string; body: unknown };
+interface BackendPost {
+  path: string;
+  body: unknown;
+}
 const backendPost = (url: URL, init: RequestInit): BackendPost => ({ path: url.pathname, body: requestBody(init) });
 
 const isBackendPost = (url: URL, init?: RequestInit): init is RequestInit =>
