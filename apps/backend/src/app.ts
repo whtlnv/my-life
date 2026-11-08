@@ -645,8 +645,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   return app;
 }
 
+const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
+
 function contactFromSender(from: string) {
-  const match = /^"?(.*?)"? <(.*)>$/.exec(from);
+  const match = quotedOrBareDisplayNameThenAngleBracketedEmail.exec(from);
   if (match === null) {
     return { displayName: from, emails: [from] };
   }
