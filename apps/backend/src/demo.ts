@@ -522,8 +522,8 @@ async function seed(): Promise<void> {
     body: JSON.stringify({ mode: 'automatic' }),
   });
   await app.request('/triage-run', { method: 'POST' });
-  // Verdicts: the newsletters were confirmed archives (three per sender), one pitch was rejected as a cc-thread,
-  // so the categories page has agreement rates and the filter page has candidates.
+  // Verdicts: the newsletters were confirmed archives (three per sender), one system update was rejected and
+  // corrected to keep, so the categories page has agreement rates and the filter page has candidates.
   for (const sender of newsletterSenders) {
     for (const index of [1, 2, 3]) {
       await postJson('/verdicts', { messageId: `m-${sender.key}-${String(index)}`, decision: 'confirmed' });
