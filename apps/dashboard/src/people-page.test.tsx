@@ -159,4 +159,53 @@ describe('PeoplePage', () => {
       expect(row).toHaveTextContent(message.accountEmail);
     }
   });
+  it("shows a selected organization's timeline from GET /organizations/:name/timeline, newest first, each message with its account", async () => {
+    const people = {
+      vip: [],
+      urgent: [],
+      everyoneElse: [
+        {
+          displayName: 'Marta Soto',
+          emails: ['marta@acme.com'],
+          messageIds: ['m3'],
+          organization: 'Acme',
+          lastMessageAt: '2026-11-04T17:45:00.000Z',
+        },
+      ],
+    };
+    const timeline = {
+      messages: [
+        { id: 'm4', subject: 'Renewal quote', accountEmail: 'work@example.com' },
+        { id: 'm3', subject: 'Onboarding call', accountEmail: 'personal@example.com' },
+      ],
+    };
+    const bodies: Record<string, unknown> = {
+      '/people': people,
+      [`/organizations/${encodeURIComponent('Acme')}/timeline`]: timeline,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const body = bodies[String(input)];
+        return Promise.resolve(
+          body === undefined
+            ? new Response(null, { status: 404 })
+            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+
+    render(<PeoplePage />);
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    await userEvent.click(await within(everyoneElseList).findByRole('button', { name: 'Acme' }));
+
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Acme' });
+    const rows = within(timelineList).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    for (const [index, message] of timeline.messages.entries()) {
+      const row = rows[index] as HTMLElement;
+      expect(row).toHaveTextContent(message.subject);
+      expect(row).toHaveTextContent(message.accountEmail);
+    }
+  });
 });

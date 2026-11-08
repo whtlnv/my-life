@@ -40,10 +40,12 @@ const PeopleList = ({
   title,
   people,
   onSelect,
+  onSelectOrganization,
 }: {
   title: string;
   people: PersonRow[];
   onSelect: (person: PersonRow) => void;
+  onSelectOrganization: (organization: string) => void;
 }) => (
   <section>
     <h2>{title}</h2>
@@ -53,7 +55,9 @@ const PeopleList = ({
           <button type="button" onClick={() => onSelect(person)}>
             {person.displayName}
           </button>{' '}
-          {person.organization}{' '}
+          <button type="button" onClick={() => onSelectOrganization(person.organization)}>
+            {person.organization}
+          </button>{' '}
           <time dateTime={person.lastMessageAt}>{timeInBusinessZone(person.lastMessageAt)}</time>{' '}
           {person.reasons?.join(', ')}
         </li>
@@ -88,11 +92,32 @@ export const PeoplePage = () => {
       .then((timeline) => setSelected({ ...timeline, displayName: person.displayName }));
   };
 
+  const showOrganizationTimeline = (organization: string) => {
+    void fetch(`/organizations/${encodeURIComponent(organization)}/timeline`)
+      .then((response) => response.json() as Promise<Timeline>)
+      .then((timeline) => setSelected({ ...timeline, displayName: organization }));
+  };
+
   return (
     <main>
-      <PeopleList title="VIP" people={lists.vip} onSelect={showTimeline} />
-      <PeopleList title="Urgent" people={lists.urgent} onSelect={showTimeline} />
-      <PeopleList title="Everyone else" people={lists.everyoneElse} onSelect={showTimeline} />
+      <PeopleList
+        title="VIP"
+        people={lists.vip}
+        onSelect={showTimeline}
+        onSelectOrganization={showOrganizationTimeline}
+      />
+      <PeopleList
+        title="Urgent"
+        people={lists.urgent}
+        onSelect={showTimeline}
+        onSelectOrganization={showOrganizationTimeline}
+      />
+      <PeopleList
+        title="Everyone else"
+        people={lists.everyoneElse}
+        onSelect={showTimeline}
+        onSelectOrganization={showOrganizationTimeline}
+      />
       {selected && <ContactTimeline timeline={selected} />}
     </main>
   );
