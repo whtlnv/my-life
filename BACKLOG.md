@@ -16,6 +16,23 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/app.ts:231] `createApp` is one 400-line closure holding every route** (added: 2026-11-07)
+  The file is 630 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+  through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
+  first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
+  a mechanical extraction.
+- **[apps/backend/src/app.test.ts:156] One 3000-line `describe` with 110 tests covers every route** (added: 2026-11-07)
+  Finding the tests for one route means searching the whole file, and its staging helpers sit 2000 lines above the tests
+  that use them. Deferred to the `createApp` split above: the test files should follow the route modules, not come first.
+- **[packages/domain/src/expense-statement.ts:26] `localCalendarDate` is defined four times** (added: 2026-11-07)
+  Identical `Intl.DateTimeFormat('en-CA', …)` helpers sit in `expense-statement.ts`, `now-view.ts`, `triage-spend.ts` and
+  inline in `apps/backend/src/app.ts` `mondayOfBusinessWeek`, so a fix to the business-date rule has to be made four
+  times. Deferred because the domain has no shared date module and `now-view.ts` and `triage-spend.ts` are outside
+  2aaf298..HEAD.
+- **[apps/dashboard/src/filters-page.tsx:46] A fourth dashboard copy of the business time zone** (added: 2026-11-07)
+  `timeInBusinessZone` hard-codes `America/Mexico_City`, as `app-shell.tsx`, `triage-page.tsx` and `dashboard-app.tsx` do.
+  Deferred to the `dashboard-app.tsx` entry below: no dashboard module holds shared constants, and the time zone is due to
+  come from `GET /now` when it becomes a setting.
 - **[apps/extension/src/extension-start.ts:8] The extension's 60 s Gmail poll is coupled to the backend's Gmail staleness interval** (added: 2026-11-07)
   `gmailPollIntervalMilliseconds` sets how often the extension really polls, while the backend judges mail staleness by
   `MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS` (default in `apps/backend/src/startup-settings.ts`); setting that variable marks a
