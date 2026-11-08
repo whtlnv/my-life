@@ -107,11 +107,7 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
     };
   }, []);
 
-  const onTriage = route === routes.triage;
-  const onCategories = route === routes.categories;
-  const onFilters = route === routes.filters;
-  const onStatement = route === routes.statement;
-  const onNow = !onTriage && !onCategories && !onFilters && !onStatement;
+  const onNow = !Object.values(routes).some((href) => href !== routes.now && href === route);
   return (
     <div className="shell">
       <header className="topbar">
@@ -123,17 +119,17 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             <Tab href={routes.now} current={onNow}>
               Now
             </Tab>
-            <Tab href={routes.triage} current={onTriage}>
+            <Tab href={routes.triage} current={route === routes.triage}>
               Triage
               {status.badgeCount > 0 && <span className="count">{status.badgeCount}</span>}
             </Tab>
-            <Tab href={routes.categories} current={onCategories}>
+            <Tab href={routes.categories} current={route === routes.categories}>
               Categories
             </Tab>
-            <Tab href={routes.filters} current={onFilters}>
+            <Tab href={routes.filters} current={route === routes.filters}>
               Filters
             </Tab>
-            <Tab href={routes.statement} current={onStatement}>
+            <Tab href={routes.statement} current={route === routes.statement}>
               Statement
             </Tab>
           </nav>
