@@ -13,7 +13,11 @@ export function messageBody(payload: MessagePart): string {
   if (payload.mimeType === 'text/html') {
     return withoutTags(text);
   }
-  return withoutQuotedReply(text);
+  return withoutSignature(withoutQuotedReply(text));
+}
+
+function withoutSignature(text: string): string {
+  return text.replace(/\n-- \n[\s\S]*$/, '');
 }
 
 function withoutQuotedReply(text: string): string {

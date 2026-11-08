@@ -80,4 +80,17 @@ describe('messageBody', () => {
       'Hola equipo,\n\nOn Friday, just as Ana wrote:\nthe venue moved to the second floor.\n',
     );
   });
+
+  it('drops a signature after a "-- " delimiter line', () => {
+    const payload = {
+      mimeType: 'text/plain',
+      headers: [{ name: 'Content-Type', value: 'text/plain; charset="UTF-8"' }],
+      body: {
+        size: 65,
+        data: 'R3JhY2lhcywgbG8gcmV2aXNvIGhveS4KCi0tIApBbmEgTMOzcGV6CkRpcmVjdG9yYSBkZSBPcGVyYWNpb25lcwo',
+      },
+    };
+
+    expect(messageBody(payload)).toBe('Gracias, lo reviso hoy.\n');
+  });
 });
