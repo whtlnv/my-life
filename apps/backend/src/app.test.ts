@@ -3212,18 +3212,38 @@ describe('backend app', () => {
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], messageIds: ['message-1'], organization: 'Acme' }]);
   });
 
-  it('lists at GET /contacts, after POST /contacts-import brings a contact whose email no reported message carries, a new contact with the imported name, email and organization and no messages', async () => {
+  it.each([
+    {
+      imported: 'a contact whose email no reported message carries',
+      contact: { name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] },
+      listed: { displayName: 'Luis Pérez', emails: ['luis@example.com'], messageIds: [], organization: 'Acme' },
+      as: 'a new contact with the imported name, email and organization and no messages',
+    },
+    {
+      imported: 'a starred contact',
+      contact: { name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: true, lists: [] },
+      listed: { emails: ['luis@example.com'], marks: ['vip'] },
+      as: 'that contact with the vip mark',
+    },
+    {
+      imported: 'a contact with a Google label',
+      contact: {
+        name: 'Luis Pérez',
+        emails: ['luis@example.com'],
+        organization: 'Acme',
+        starred: false,
+        lists: ['board'],
+      },
+      listed: { emails: ['luis@example.com'], lists: ['board'] },
+      as: 'that contact with the label as one of its lists',
+    },
+  ])('lists at GET /contacts, after POST /contacts-import brings $imported, $as', async ({ contact, listed }) => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 
-    await postJson(app, '/contacts-import', {
-      accountEmail: 'ana@example.com',
-      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
-    });
+    await postJson(app, '/contacts-import', { accountEmail: 'ana@example.com', contacts: [contact] });
     const { contacts } = await getContacts(app);
 
-    expect(contacts).toMatchObject([
-      { displayName: 'Luis Pérez', emails: ['luis@example.com'], messageIds: [], organization: 'Acme' },
-    ]);
+    expect(contacts).toMatchObject([listed]);
   });
 
   it('lists at GET /contacts, after POST /contacts-import from two accounts brings the same email, one contact holding the organization one account reported and the second address the other reported', async () => {
@@ -3249,18 +3269,6 @@ describe('backend app', () => {
     ]);
   });
 
-  it('lists at GET /contacts, after POST /contacts-import brings a starred contact, that contact with the vip mark', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
-
-    await postJson(app, '/contacts-import', {
-      accountEmail: 'ana@example.com',
-      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: true, lists: [] }],
-    });
-    const { contacts } = await getContacts(app);
-
-    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: ['vip'] }]);
-  });
-
   it('lists at GET /contacts, after POST /contacts-import brings unstarred a contact the user marked vip through PUT /contacts/:email/marks/vip, that contact still with the vip mark', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await markContact(app, 'luis@example.com', 'vip');
@@ -3272,20 +3280,6 @@ describe('backend app', () => {
     const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: ['vip'] }]);
-  });
-
-  it('lists at GET /contacts, after POST /contacts-import brings a contact with a Google label, that contact with the label as one of its lists', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
-
-    await postJson(app, '/contacts-import', {
-      accountEmail: 'ana@example.com',
-      contacts: [
-        { name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: ['board'] },
-      ],
-    });
-    const { contacts } = await getContacts(app);
-
-    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], lists: ['board'] }]);
   });
 
   it('lists at GET /contacts, after POST /contacts-import brings an organization for a contact whose organization the user set through PATCH /contacts/:email, that contact still with the organization the user set', async () => {
