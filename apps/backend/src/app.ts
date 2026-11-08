@@ -577,11 +577,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     await next();
   };
-  app.put('/contacts/:email/marks/:mark', rejectUnknownMark, (context) => {
+  const contactMarkRoute = '/contacts/:email/marks/:mark';
+  app.put(contactMarkRoute, rejectUnknownMark, (context) => {
     contactDetailsStore.saveMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
-  app.delete('/contacts/:email/marks/:mark', rejectUnknownMark, (context) => {
+  app.delete(contactMarkRoute, rejectUnknownMark, (context) => {
     contactDetailsStore.removeMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
