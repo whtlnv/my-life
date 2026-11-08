@@ -2815,6 +2815,33 @@ describe('backend app', () => {
     });
   });
 
+  it('lists at GET /contacts, once a message is triaged with an extraction naming a person with an email, that person as a contact linked to the message', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+            people: [{ name: 'Marta Díaz', email: 'marta@acme.com', role: 'copied' }],
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v2',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    const { contacts } = (await response.json()) as { contacts: unknown[] };
+    expect(contacts).toContainEqual({ displayName: 'Marta Díaz', emails: ['marta@acme.com'], messageIds: ['message-1'] });
+  });
+
   it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {
     const triage = {
       propose: () =>

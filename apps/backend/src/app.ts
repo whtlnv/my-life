@@ -47,6 +47,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number] & {
   summary?: string;
   madeAutomatic?: boolean;
   organization?: string;
+  people?: { name: string; email: string }[];
 };
 type TriageProposal = Parameters<typeof triageEffects>[0];
 type TriageVerdict = Parameters<typeof triageEffects>[1];
@@ -569,7 +570,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/contacts', (context) => {
     const senders = reportedMessageStore.loadAll().map(({ from }) => from);
-    return context.json({ contacts: contactsFromSenders(senders) });
+    return context.json({ contacts: [...contactsFromSenders(senders), ...contactsFromProposals(proposals)] });
   });
   app.get('/organizations', (context) => {
     const senderByMessageId = new Map(reportedMessageStore.loadAll().map(({ messageId, from }) => [messageId, from]));
@@ -679,6 +680,12 @@ function contactsFromSenders(senders: string[]) {
     displayNamesByEmail.set(email, displayName);
   }
   return [...displayNamesByEmail].map(([email, displayName]) => ({ displayName, emails: [email] }));
+}
+
+function contactsFromProposals(proposals: Proposal[]) {
+  return proposals.flatMap(({ people = [], messageId }) =>
+    people.map(({ name, email }) => ({ displayName: name, emails: [email], messageIds: [messageId] })),
+  );
 }
 
 function contactFromSender(from: string) {

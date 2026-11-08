@@ -48,7 +48,7 @@
 - [x] Two messages that name the same organization list under one organization holding both messages
 - [x] A message proposed twice lists once, under the organization its latest proposal names
 - [x] A message from a free-mail domain (`gmail.com`, `outlook.com`, `hotmail.com`, `yahoo.com`, `icloud.com`) links to no domain organization
-- [ ] Every person in a message's extraction with an email becomes a contact linked to that message
+- [x] Every person in a message's extraction with an email becomes a contact linked to that message
 - [ ] A person in a message's extraction without an email links to no contact
 - [ ] One message lists under every contact and organization it links to
 - [ ] A message lists under no contact it does not link to
