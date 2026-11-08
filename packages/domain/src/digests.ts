@@ -10,7 +10,11 @@ interface DigestableProposal {
 }
 
 function digestKey(proposal: DigestableProposal): string | undefined {
-  return 'system' in proposal.extract ? proposal.extract.system : proposal.from;
+  return 'system' in proposal.extract ? proposal.extract.system : senderAddress(proposal.from);
+}
+
+function senderAddress(from: string | undefined): string | undefined {
+  return from?.match(/<([^>]+)>/)?.[1] ?? from;
 }
 
 export function digests<Proposal extends DigestableProposal>(proposals: readonly Proposal[]): Digest<Proposal>[] {

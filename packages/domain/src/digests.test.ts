@@ -102,4 +102,25 @@ describe('digests', () => {
     const result = digests([anaPitch, brunoPitch]);
     expect(result.map((digest) => digest.proposals)).toEqual([[anaPitch], [brunoPitch]]);
   });
+
+  it('places two sales proposals whose From headers carry different display names for the same address in one digest', () => {
+    const formalPitch = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'Ana Ruiz <ana@acme.example>',
+      action: 'archive',
+      category: 'sales',
+      extract: { company: 'Acme', solution: 'CRM', problem: 'lost leads' },
+    };
+    const casualPitch = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: '"Ana from Acme" <ana@acme.example>',
+      action: 'archive',
+      category: 'sales',
+      extract: { company: 'Acme', solution: 'CRM', problem: 'follow-up' },
+    };
+    const result = digests([formalPitch, casualPitch]);
+    expect(result.map((digest) => digest.proposals)).toEqual([[formalPitch, casualPitch]]);
+  });
 });
