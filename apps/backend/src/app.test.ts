@@ -3185,4 +3185,29 @@ describe('backend app', () => {
       { displayName: 'Luis Pérez', emails: ['luis@example.com'], messageIds: [], organization: 'Acme' },
     ]);
   });
+
+  it('lists at GET /contacts, after POST /contacts-import from two accounts brings the same email, one contact holding the organization one account reported and the second address the other reported', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com', 'ana@psmutuus.com'], clock: clockAtTenPastThree });
+
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
+    });
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@psmutuus.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com', 'luis@acme.com'], starred: false, lists: [] }],
+    });
+    const { contacts } = (await getContacts(app)) as {
+      contacts: { displayName: string; emails: string[]; messageIds: string[]; organization?: string }[];
+    };
+
+    expect(contacts).toMatchObject([
+      {
+        displayName: 'Luis Pérez',
+        emails: ['luis@example.com', 'luis@acme.com'],
+        messageIds: [],
+        organization: 'Acme',
+      },
+    ]);
+  });
 });

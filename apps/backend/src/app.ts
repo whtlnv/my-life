@@ -623,7 +623,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }>();
     for (const { name, emails, organization } of contacts) {
       contactDetailsStore.save(emails[0]!, { organization });
-      importedContacts.push({ displayName: name, emails, messageIds: [] });
+      const alreadyImported = importedContacts.find((imported) => imported.emails[0] === emails[0]);
+      if (alreadyImported) {
+        alreadyImported.emails = [...new Set([...alreadyImported.emails, ...emails])];
+      } else {
+        importedContacts.push({ displayName: name, emails, messageIds: [] });
+      }
     }
     return context.body(null, 200);
   });
