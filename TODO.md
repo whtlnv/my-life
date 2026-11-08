@@ -50,7 +50,7 @@
 - [x] When the first triage model and the second opinion choose different categories for a message, both categories are stored with the proposal
 - [x] When the first triage model's category stands without a second opinion, no disagreement is stored
 - [x] `GET /needs-input` asks which category is right for a message whose two models disagreed, offering both categories
-- [ ] `GET /needs-input` asks nothing about a message whose two models agreed
+- [x] `GET /needs-input` asks nothing about a message whose two models agreed
 - [ ] `GET /needs-input` still asks the category question of a message whose two models disagreed, after a backend restart on the same database file, with no triage call made again
 - [ ] `GET /needs-input` asks which category is right for a message proposed as `unknown`
 - [ ] Answering a category question records the chosen category as the message's verdict, and the question is not asked again

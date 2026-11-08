@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 17:24 · `apps/backend/src/app-needs-input.test.ts::asks nothing about a message whose two triage models agreed on its category`
+- Behavior: `GET /needs-input` asks nothing about a message whose two models agreed
+- Predicted: passes on first run, because ee3e830's route only builds questions from proposals that carry a `disagreement`, and `createEscalatingTriage` stores none when the categories match
+- Actual: passed (1 passed, 1 skipped)
+- Type: passed unexpectedly (anticipated: TODO item already delivered by the prior cycle's minimum implementation)
+- Resolution: Not vacuous. With the escalating triage's agreement check removed for a moment, it fails with `expected [ { kind: 'category', … } ] to deeply equal []`. Kept as a pin; `/green` has nothing to implement for this item.
+
 ## 2026-11-08 16:54 · `apps/backend/src/app-contacts.test.ts::leaves out of GET /organizations/:name/timeline the messages of contacts outside that organization`
 - Behavior: an organization's timeline leaves out messages from contacts outside it
 - Predicted: passes on first run (route already filters by the organization's grouped message ids)
