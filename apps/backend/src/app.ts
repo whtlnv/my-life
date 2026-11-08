@@ -634,7 +634,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   async function rewriteDigestSummaryLines() {
-    for (const digest of digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))) {
+    for (const digest of waitingDigests(verdictStore.loadAll())) {
       const items = digest.proposals.map(({ messageId }) => ({
         summary: latestProposalFor(proposals, messageId)?.summary ?? '',
       }));
@@ -661,6 +661,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         from: reportedMessages.find((message) => message.id === proposal.messageId)?.from ?? '',
       }));
   }
+  // Every digest of the waiting proposals: GET /triage-queue lists, the triage run summarizes and a confirm reaches
+  // the same digests, so their ids agree.
+  function waitingDigests(verdicts: StoredVerdict[]) {
+    return digests(waitingOutsideTheActionBlock(verdicts));
+  }
   // A digest's id: its account, category, key and first message, so a digest opened after a confirm is a fresh one.
   function identifyDigest({
     key,
@@ -675,7 +680,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
   const listedDigestStore = openListedDigestStore(databasePath);
   function describeDigests(verdicts: StoredVerdict[]) {
-    return digests(waitingOutsideTheActionBlock(verdicts)).map((digest) => {
+    return waitingDigests(verdicts).map((digest) => {
       const { key, proposals: digested, severityCounts, significantItems } = digest;
       const { accountEmail, category } = digested[0] ?? {};
       const id = identifyDigest(digest);
@@ -704,7 +709,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const digestId = context.req.param('id');
     const listedMessageIds = listedDigestStore.load(digestId);
     if (!listedMessageIds) return context.body(null, 404);
-    digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))
+    waitingDigests(verdictStore.loadAll())
       .filter((digest) => identifyDigest(digest) === digestId)
       .flatMap(({ proposals: digested }) => digested)
       .filter(({ messageId }) => listedMessageIds.includes(messageId))
