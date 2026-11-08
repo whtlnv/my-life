@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { accountName } from './account-name';
-import { approveLabel, deleteLabel, FiltersPage, rejectLabel } from './filters-page';
+import { approveLabel, deleteLabel, FiltersPage, noFiltersText, rejectLabel } from './filters-page';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -120,5 +120,28 @@ describe('FiltersPage', () => {
     await userEvent.click(within(shopRow).getByRole('button', { name: deleteLabel }));
 
     expect(deletionRequests).toEqual([{ url: '/filters/gmail-filter-1', method: 'DELETE' }]);
+  });
+
+  it('shows an empty state when GET /filter-proposals and GET /filters both return nothing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        if (input === '/filter-proposals') {
+          return Promise.resolve(
+            new Response(JSON.stringify({ proposals: [] }), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        if (input === '/filters') {
+          return Promise.resolve(
+            new Response(JSON.stringify({ filters: [] }), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<FiltersPage />);
+
+    expect(await screen.findByText(noFiltersText)).toBeInTheDocument();
   });
 });

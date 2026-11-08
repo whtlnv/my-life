@@ -30,6 +30,8 @@ export const rejectLabel = 'Reject';
 
 export const deleteLabel = 'Delete';
 
+export const noFiltersText = 'No filter proposals or filters';
+
 interface FilterSummaryProps {
   filter: FilterDefinition;
 }
@@ -67,6 +69,7 @@ export const FiltersPage = () => {
 
   return (
     <>
+      {proposals.length === 0 && filters.length === 0 && <p className="empty">{noFiltersText}</p>}
       <ul aria-label="Filter proposals">
         {proposals.map((proposal) => (
           <li key={proposal.id}>
