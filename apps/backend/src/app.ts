@@ -646,11 +646,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   app.post('/digests/:id/confirmation', (context) => {
     const digestId = context.req.param('id');
-    if (!listedDigestMessageIds.has(digestId)) return context.body(null, 404);
+    const listedMessageIds = listedDigestMessageIds.get(digestId);
+    if (!listedMessageIds) return context.body(null, 404);
     digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))
       .filter((digest) => identifyDigest(digest) === digestId)
       .flatMap(({ proposals: digested }) => digested)
-      .filter(({ messageId }) => listedDigestMessageIds.get(digestId)?.includes(messageId))
+      .filter(({ messageId }) => listedMessageIds.includes(messageId))
       .forEach(({ messageId }) => {
         verdictStore.save({ messageId, decision: 'confirmed', decidedAt: clock.now().toISOString() });
       });
