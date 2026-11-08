@@ -770,7 +770,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
     return context.json({
       contacts: contacts.map((contact) => {
-        const primaryEmail = contact.emails[0]!;
+        const primaryEmail = contact.emails[0] ?? '';
         return {
           ...contact,
           marks: markedEmails.has(primaryEmail) ? ['vip'] : [],
