@@ -1,6 +1,7 @@
 import { refreshBadge } from './badge-refresh';
 import { pollCalendarOnce } from './calendar-poll';
 import { carryOutArchiveCommands } from './gmail-archive';
+import { carryOutFilterCommands } from './gmail-filter';
 import { pollGmailOnce } from './gmail-poll';
 import type { FetchFunction } from './fetch-function';
 
@@ -48,6 +49,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       storedHistoryId,
     });
     await carryOutArchiveCommands({ fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl });
+    await carryOutFilterCommands({ fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl });
   };
   const pollGmailAndLogFailure = () =>
     pollGmail().catch((error: unknown) => {

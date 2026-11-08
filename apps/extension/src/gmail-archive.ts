@@ -54,7 +54,7 @@ async function archiveMessage(
 async function fetchPendingArchiveCommands(options: CarryOutArchiveCommandsOptions) {
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: ArchiveCommand[] };
-  return commands;
+  return commands.filter((command) => command.messageId !== undefined);
 }
 
 export async function findOrCreateLabelId(fetch: FetchFunction, authorization: { Authorization: string }, labelName: string) {

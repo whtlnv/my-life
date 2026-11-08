@@ -425,4 +425,81 @@ describe('startExtension', () => {
     expect(gmailModifications).toEqual(['/gmail/v1/users/me/messages/message-7/modify']);
     expect(acknowledgements).toEqual(['/commands/command-1/acknowledgement']);
   });
+
+  it('after the first Gmail poll, creates and deletes the Gmail filters the pending create-filter and delete-filter commands ask for, and acknowledges both', async () => {
+    const gmailFilterRequests: { method: string | undefined; path: string; body: unknown }[] = [];
+    const acknowledgements: { path: string; body: unknown }[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
+      if (url.href === `${gmailApi}/users/me/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
+      }
+      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.href === `${gmailApi}/users/me/labels` && init?.method !== 'POST') {
+        return Promise.resolve(Response.json({ labels: [{ id: 'Label_99', name: 'my-life/shop' }] }));
+      }
+      if (url.pathname.startsWith('/gmail/v1/users/me/settings/filters')) {
+        gmailFilterRequests.push({ method: init?.method, path: url.pathname, body });
+        if (init?.method === 'POST') {
+          return Promise.resolve(Response.json({ id: 'gmail-filter-7', ...(body as object) }));
+        }
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/commands?accountEmail=francisco%40example.com') {
+        return Promise.resolve(
+          Response.json({
+            commands: [
+              {
+                id: 'create-filter-proposal-1',
+                type: 'create-filter',
+                criteria: { from: 'news@shop.example.com' },
+                labelName: 'my-life/shop',
+                skipInbox: true,
+              },
+              { id: 'delete-filter-proposal-2', type: 'delete-filter', gmailFilterId: 'gmail-filter-3' },
+            ],
+          }),
+        );
+      }
+      if (url.pathname.endsWith('/acknowledgement') && init?.method === 'POST') {
+        acknowledgements.push({ path: url.pathname, body });
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
+      accessToken: () => Promise.resolve('token-for-francisco'),
+      backendUrl: 'http://127.0.0.1:7777',
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+    });
+
+    expect(gmailFilterRequests).toEqual([
+      {
+        method: 'POST',
+        path: '/gmail/v1/users/me/settings/filters',
+        body: {
+          criteria: { from: 'news@shop.example.com' },
+          action: { addLabelIds: ['Label_99'], removeLabelIds: ['INBOX'] },
+        },
+      },
+      { method: 'DELETE', path: '/gmail/v1/users/me/settings/filters/gmail-filter-3', body: undefined },
+    ]);
+    expect(acknowledgements).toEqual([
+      { path: '/commands/create-filter-proposal-1/acknowledgement', body: { gmailFilterId: 'gmail-filter-7' } },
+      { path: '/commands/delete-filter-proposal-2/acknowledgement', body: undefined },
+    ]);
+  });
 });
