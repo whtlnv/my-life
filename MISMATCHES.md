@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 13:21 · `apps/extension/src/gmail-archive.test.ts::does not acknowledge an undo-automatic command whose Gmail request failed`
+- Behavior: The extension acknowledges no undo command whose Gmail request failed
+- Predicted: passes on first run — the `!labelResponse.ok` → `continue` guard in `carryOutArchiveCommands` already covers undo, since commit 8f93cde routed undo through the same loop as archive
+- Actual: passed
+- Type: passed unexpectedly
+- Resolution: The behavior arrived with 8f93cde, so no failing test is possible without asserting wrong behavior. A mutation check (guard removed → acknowledgement `undo-automatic-message-7` received) shows the test is not vacuous. It is kept as a characterization pin; /green has nothing to implement.
+
 ## 2026-11-08 13:00 · `apps/backend/src/app-commands-categories.test.ts::lists at GET /triage-queue nothing under handled for you for a proposal the user confirmed in advise mode, even after its category is switched to automatic`
 - Behavior: `GET /triage-queue` does not list, under handled for you, a proposal the user confirmed in advise mode
 - Predicted: right-reason assertion failure was the target, but reading `app.ts` first predicted a pass

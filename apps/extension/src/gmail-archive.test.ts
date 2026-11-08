@@ -142,6 +142,37 @@ describe('carryOutArchiveCommands', () => {
 
     expect(events).toEqual(['modify refused', 'modify carried out', 'acknowledge command-1']);
   });
+  it('does not acknowledge an undo-automatic command whose Gmail request failed', async () => {
+    const acknowledgedCommandIds: string[] = [];
+    const backendAndRefusingGmail: FetchFunction = (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === 'http://127.0.0.1:7777/commands') {
+        return Promise.resolve(
+          Response.json({
+            commands: [
+              { id: 'undo-automatic-message-7', type: 'undo-automatic', messageId: 'message-7', label: 'my-life/auto' },
+            ],
+          }),
+        );
+      }
+      const acknowledgementPath = /^\/commands\/([^/]+)\/acknowledgement$/.exec(url.pathname);
+      if (url.origin === 'http://127.0.0.1:7777' && acknowledgementPath !== null && init?.method === 'POST') {
+        acknowledgedCommandIds.push(acknowledgementPath[1] ?? '');
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/labels`) {
+        return Promise.resolve(Response.json({ labels: [inboxLabel, { id: 'Label_auto', name: 'my-life/auto' }] }));
+      }
+      if (url.pathname.endsWith('/modify')) {
+        return Promise.resolve(Response.json({ error: { code: 500, message: 'Backend Error' } }, { status: 500 }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await runArchive(backendAndRefusingGmail);
+
+    expect(acknowledgedCommandIds).toEqual([]);
+  });
   it('adds the label my-life/auto, created when missing, to a message archived by a command labeled my-life/auto', async () => {
     const gmailRequests: GmailRequest[] = [];
     const gmail = fakeBackendAndGmail([inboxLabel, archivedLabel], gmailRequests);
