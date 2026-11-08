@@ -151,6 +151,10 @@ const triageAnsweringByMessageId = (proposalByMessageId: Record<string, unknown>
     Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
 });
 
+const filterAnswering = (proposal: unknown) => ({
+  propose: () => Promise.resolve({ proposal, costInUsd: 0.05, promptVersion: 'filter-v1' }),
+});
+
 const filterRecordingAskedCandidates = (askedCandidates: unknown[], proposal: unknown, costInUsd = 0.05) => ({
   propose: (candidate: unknown) => {
     askedCandidates.push(candidate);
@@ -2407,14 +2411,11 @@ describe('backend app', () => {
   });
 
   function appProposingShopNewslettersFilter() {
-    const filter = {
-      propose: () =>
-        Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-          costInUsd: 0.05,
-          promptVersion: 'filter-v1',
-        }),
-    };
+    const filter = filterAnswering({
+      criteria: { from: 'news@shop.example.com' },
+      labelName: 'Shop newsletters',
+      skipInbox: true,
+    });
     const triage = shopNewsletterArchiveTriage();
     return createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
   }
@@ -2468,14 +2469,11 @@ describe('backend app', () => {
       clock: clockAtTenPastThree,
       databasePath: temporaryDatabasePath(),
       triage: shopNewsletterArchiveTriage(),
-      filter: {
-        propose: () =>
-          Promise.resolve({
-            proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-            costInUsd: 0.05,
-            promptVersion: 'filter-v1',
-          }),
-      },
+      filter: filterAnswering({
+        criteria: { from: 'news@shop.example.com' },
+        labelName: 'Shop newsletters',
+        skipInbox: true,
+      }),
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
@@ -2563,14 +2561,11 @@ describe('backend app', () => {
       clock: { now: () => currentTime },
       databasePath: temporaryDatabasePath(),
       triage: shopNewsletterArchiveTriage(),
-      filter: {
-        propose: () =>
-          Promise.resolve({
-            proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-            costInUsd: 0.05,
-            promptVersion: 'filter-v1',
-          }),
-      },
+      filter: filterAnswering({
+        criteria: { from: 'news@shop.example.com' },
+        labelName: 'Shop newsletters',
+        skipInbox: true,
+      }),
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
@@ -2647,14 +2642,11 @@ describe('backend app', () => {
       clock: { now: () => currentTime },
       databasePath: temporaryDatabasePath(),
       triage: shopNewsletterArchiveTriage(),
-      filter: {
-        propose: () =>
-          Promise.resolve({
-            proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-            costInUsd: 0.05,
-            promptVersion: 'filter-v1',
-          }),
-      },
+      filter: filterAnswering({
+        criteria: { from: 'news@shop.example.com' },
+        labelName: 'Shop newsletters',
+        skipInbox: true,
+      }),
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
