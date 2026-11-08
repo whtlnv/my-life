@@ -26,7 +26,7 @@
 - [x] `GET /people` lists as urgent, with the reason "unanswered ask", a non-VIP contact whose ask has waited 2 business days with no reply from the user
 - [x] `GET /people` does not list as urgent a contact whose only extracted deadline has already passed
 - [x] The urgency thresholds the backend is created with (from its settings in `main.ts`) decide `GET /people`: with the unanswered-ask threshold at 1 business day, a 1-business-day-old unanswered ask is urgent
-- [ ] `GET /people` sorts each list by the contact's most recent message, newest first
+- [x] `GET /people` sorts each list by the contact's most recent message, newest first
 - [ ] A contact whose email is on the profile's "Always matters" line is listed as VIP
 - [ ] A contact on the profile's "Always matters" line whose VIP mark the user removed is not listed as VIP
 - [ ] A later Google Contacts import updates the organization of a contact whose organization the user never edited (backlog: apps/backend/src/app.ts:897 The first imported organization sticks for good)

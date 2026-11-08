@@ -978,10 +978,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
     const isUrgent = (contact: { emails: string[] }) =>
       urgentContacts.some((urgentContact) => urgentContact.emails[0] === contact.emails[0]);
+    const mostRecentMessageTime = (contact: { messageIds: string[] }) =>
+      Math.max(
+        ...reportedMessages
+          .filter((message) => contact.messageIds.includes(message.id))
+          .map((message) => new Date(message.date).getTime()),
+      );
     return context.json({
       urgent: urgentContacts,
       vip: contacts.filter(isVip),
-      everyoneElse: contacts.filter((contact) => !isVip(contact) && !isUrgent(contact)),
+      everyoneElse: contacts
+        .filter((contact) => !isVip(contact) && !isUrgent(contact))
+        .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first)),
     });
   });
   app.get('/organizations', (context) => {

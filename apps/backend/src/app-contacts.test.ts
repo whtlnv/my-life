@@ -316,6 +316,21 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(everyoneElse.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
   });
 
+  it('lists at GET /people under Everyone else the contact whose most recent message is newest first', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const [luisMessage, martaMessage] = budgetReviewReportWithSecondMessageFromMarta.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [luisMessage, { ...martaMessage, date: 'Mon, 2 Nov 2026 09:05:00 -0600' }],
+    });
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { everyoneElse } = (await response.json()) as { everyoneElse: { emails: string[] }[] };
+    expect(everyoneElse.map(({ emails }) => emails)).toEqual([['marta@acme.com'], ['luis@example.com']]);
+  });
+
   it('lists at GET /people a non-VIP contact whose triaged message carries a deadline inside 48 hours under Urgent with the reason "deadline", and not under Everyone else', async () => {
     const tomorrowNoon = '2026-11-03T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));
