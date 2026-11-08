@@ -61,7 +61,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number] & {
   summary?: string;
   madeAutomatic?: boolean;
   organization?: string;
-  people?: { name: string; email: string }[];
+  people?: { name: string; email?: string }[];
 };
 type TriageProposal = Parameters<typeof triageEffects>[0];
 type TriageVerdict = Parameters<typeof triageEffects>[1];
