@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 16:32 · `apps/backend/src/app-contacts.test.ts::leaves out of GET /contacts/:email/timeline a message another contact sent`
+- Behavior: A contact's timeline leaves out messages sent by other contacts
+- Predicted: passes on first run — the previous cycle's timeline route already filters reported messages by sender email
+- Actual: passed on first run (no red)
+- Type: passed unexpectedly (anticipated: TODO item already delivered by the prior cycle's minimum implementation)
+- Resolution: Not vacuous. With the sender filter removed for a moment, the test fails with `expected ['message-1','message-2'] to deeply equal ['message-1']`. Kept as a pin for the exclusion, and `/green` has nothing to implement for this item.
+
 ## 2026-11-08 16:27 · `apps/backend/src/app-contacts.test.ts::lists at GET /contacts, after a second POST /contacts-import brings another organization for a contact whose imported organization the user replaced through PATCH /contacts/:email, that contact still with the organization the user set`
 - Behavior: A later Google Contacts import leaves the organization the user set on a contact unchanged
 - Predicted: passes on first run (no right-reason failure available): a66ddba already stores imported details in `imported_contact_details` and `loadAll` layers the user's `contact_details` over them

@@ -118,6 +118,17 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     });
   });
 
+  it('leaves out of GET /contacts/:email/timeline a message another contact sent', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+
+    const response = await app.request('/contacts/luis@example.com/timeline');
+
+    expect(response.status).toBe(200);
+    const { messages } = (await response.json()) as { messages: { id: string }[] };
+    expect(messages.map((message) => message.id)).toEqual(['message-1']);
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
