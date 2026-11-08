@@ -97,7 +97,11 @@ export interface AppOptions {
   gmailPollingIntervalInMilliseconds?: number;
   triage?: {
     propose: (
-      message: ReportedMessage & { accountEmail: string; contact?: TriageContact | undefined },
+      message: ReportedMessage & {
+        accountEmail: string;
+        contact?: TriageContact | undefined;
+        threadState?: string | undefined;
+      },
       examples?: unknown[],
     ) => Promise<TriageResult>;
   };
@@ -499,6 +503,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...details,
     };
   }
+  // A reply is read with the thread state the earlier message's extraction left behind.
+  function threadStateFor(message: ReportedMessage): string | undefined {
+    const earlierMessage = reportedMessages.find(
+      (other) => other.threadId === message.threadId && other.id !== message.id,
+    );
+    if (earlierMessage === undefined) {
+      return undefined;
+    }
+    const storedProposal = latestProposalFor(proposalStore.loadAll(), earlierMessage.id);
+    return (storedProposal?.proposal as { threadState?: string } | undefined)?.threadState;
+  }
   app.post('/triage-run', async (context) => {
     const triage = options.triage;
     if (triage === undefined) {
@@ -519,7 +534,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
         const examples = verdictExamplesFor(message);
         const contact = triageContactFor(message.from);
-        const result = await triage.propose({ ...message, accountEmail, contact }, examples);
+        const threadState = threadStateFor(message);
+        const result = await triage.propose({ ...message, accountEmail, contact, threadState }, examples);
         const costInUsd = result.costInUsd;
         const answeredAt = clock.now().toISOString();
         spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });

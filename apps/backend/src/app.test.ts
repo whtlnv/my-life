@@ -3566,6 +3566,35 @@ describe('backend app', () => {
     expect(askedMessages).toEqual([{ id: 'message-1', contact: undefined }]);
   });
 
+  it("hands the triage port, for a reply in a thread whose earlier message was already triaged, that earlier extraction's thread state", async () => {
+    const threadStateAfterFirstMessage = 'Luis asked Ana to review the budget by Friday; Ana has not answered';
+    const askedMessages: { id: string; threadState?: unknown }[] = [];
+    const triage = {
+      propose: (message: { id: string; threadState?: unknown }) => {
+        askedMessages.push({ id: message.id, threadState: message.threadState });
+        const proposal =
+          message.id === 'message-1'
+            ? keepProposalExtracting({ threadState: threadStateAfterFirstMessage })
+            : keepProposalExtracting();
+        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v2' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-2', subject: 'Re: Budget review', snippet: 'Any news?' }],
+    });
+
+    await postTriageRun(app);
+
+    expect(askedMessages.filter(({ id }) => id === 'message-2')).toEqual([
+      { id: 'message-2', threadState: threadStateAfterFirstMessage },
+    ]);
+  });
+
   it('lists at GET /search?q= the message whose body contains the query word', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
