@@ -68,6 +68,16 @@ describe('createEscalatingTriage', () => {
       }),
     );
   });
+  it('stores no disagreement when the second opinion files the message under the same category as the first', async () => {
+    const triage = createEscalatingTriage({
+      first: answering('claude-haiku-5-5', 'action', 0.0005, []),
+      second: answering('claude-opus-5-5', 'action', 0.015, []),
+    });
+
+    const outcome = await triage.propose(message);
+
+    expect(outcome.proposal).not.toHaveProperty('disagreement');
+  });
   it.each([
     { reason: 'cannot place the message (unknown)', firstAnswer: answering('claude-haiku-5-5', 'unknown', 0.0005, []) },
     {
