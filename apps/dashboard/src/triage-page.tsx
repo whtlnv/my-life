@@ -48,9 +48,16 @@ interface TriageGroup {
   systems?: SystemGroup[];
 }
 
+interface Digest {
+  id: string;
+  severityCounts: Record<string, number>;
+  summaryLines: string[];
+}
+
 interface TriageQueueResponse {
   action: TriageItem[];
   groups: TriageGroup[];
+  digests?: Digest[];
   remaining: number;
   paused?: boolean;
   fetchedAt?: string;
@@ -65,6 +72,7 @@ export const sectionTitles = {
 export const noDueTimeText = 'No due time';
 export const nothingNeedsInputText = 'No questions waiting';
 export const significantFlagText = 'Significant';
+export const severityCountText = (severity: string, count: number) => `${String(count)} ${severity}`;
 export const remainingMessagesText = (count: number) =>
   count === 1 ? '1 message remaining' : `${String(count)} messages remaining`;
 export const pausedNoticeText = 'Triage is paused: the daily spend ceiling was reached';
@@ -539,6 +547,18 @@ export function TriagePage() {
       </section>
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
+        {queue.digests?.map((digest) => (
+          <article key={digest.id} className="card">
+            {digest.summaryLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+            {Object.entries(digest.severityCounts).map(([severity, count]) => (
+              <span key={severity} className="pill">
+                {severityCountText(severity, count)}
+              </span>
+            ))}
+          </article>
+        ))}
       </section>
       <section aria-label={sectionTitles.needsInput} className="section">
         <h2 className="section-title">{sectionTitles.needsInput}</h2>

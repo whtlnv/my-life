@@ -9,6 +9,7 @@ import {
   pausedNoticeText,
   remainingMessagesText,
   sectionTitles,
+  severityCountText,
   significantFlagText,
   TriagePage,
 } from './triage-page';
@@ -1184,5 +1185,35 @@ describe('TriagePage', () => {
 
     const needsInput = await screen.findByRole('region', { name: sectionTitles.needsInput });
     expect(within(needsInput).getByText(nothingNeedsInputText)).toBeInTheDocument();
+  });
+
+  it('shows on a digest card its summary lines and its count by severity', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      digests: [
+        {
+          id: 'digest-1',
+          accountEmail: 'francisco@psmutuus.com',
+          category: 'system-update',
+          key: 'GitHub',
+          count: 3,
+          severityCounts: { high: 2, low: 1 },
+          summaryLines: ['Two failed deploys on main', 'One dependency alert'],
+          significantItems: [],
+        },
+      ],
+      handledForYou: [],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const digestsSection = await screen.findByRole('region', { name: sectionTitles.digests });
+    expect(within(digestsSection).getByText('Two failed deploys on main')).toBeInTheDocument();
+    expect(within(digestsSection).getByText('One dependency alert')).toBeInTheDocument();
+    expect(within(digestsSection).getByText(severityCountText('high', 2))).toBeInTheDocument();
+    expect(within(digestsSection).getByText(severityCountText('low', 1))).toBeInTheDocument();
   });
 });
