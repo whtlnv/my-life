@@ -7,6 +7,8 @@ export function openContactDetailsStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec('CREATE TABLE IF NOT EXISTS contact_details (email TEXT NOT NULL, details TEXT NOT NULL)');
   database.exec('CREATE TABLE IF NOT EXISTS contact_marks (email TEXT NOT NULL, mark TEXT NOT NULL)');
+  // Every mark the user removed in the app, kept so a later Google Contacts import never puts it back.
+  database.exec('CREATE TABLE IF NOT EXISTS contact_mark_removals (email TEXT NOT NULL, mark TEXT NOT NULL)');
   database.exec('CREATE TABLE IF NOT EXISTS imported_contacts (display_name TEXT NOT NULL, emails TEXT NOT NULL)');
   const insertDetails = database.prepare('INSERT INTO contact_details (email, details) VALUES (?, ?)');
   const loadDetails = database.prepare<[], { email: string; details: string }>(
@@ -15,6 +17,10 @@ export function openContactDetailsStore(databasePath: string) {
   const insertMark = database.prepare('INSERT INTO contact_marks (email, mark) VALUES (?, ?)');
   const loadMarkedEmails = database.prepare<[], { email: string }>('SELECT email FROM contact_marks');
   const deleteMark = database.prepare('DELETE FROM contact_marks WHERE email = ? AND mark = ?');
+  const insertRemoval = database.prepare('INSERT INTO contact_mark_removals (email, mark) VALUES (?, ?)');
+  const findRemoval = database.prepare<[string, string], { email: string }>(
+    'SELECT email FROM contact_mark_removals WHERE email = ? AND mark = ? LIMIT 1',
+  );
   const insertImported = database.prepare('INSERT INTO imported_contacts (display_name, emails) VALUES (?, ?)');
   const loadImported = database.prepare<[], { display_name: string; emails: string }>(
     'SELECT display_name, emails FROM imported_contacts ORDER BY rowid',
@@ -35,6 +41,10 @@ export function openContactDetailsStore(databasePath: string) {
     },
     removeMark(email: string, mark: string): void {
       deleteMark.run(email, mark);
+      insertRemoval.run(email, mark);
+    },
+    userRemovedMark(email: string, mark: string): boolean {
+      return findRemoval.get(email, mark) !== undefined;
     },
     markedEmails(): Set<string> {
       return new Set(loadMarkedEmails.all().map((row) => row.email));

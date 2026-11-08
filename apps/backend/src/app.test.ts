@@ -3305,6 +3305,27 @@ describe('backend app', () => {
     expect(contacts).toMatchObject([{ displayName: 'noreply@vendor.io', emails: ['noreply@vendor.io'] }]);
   });
 
+  it('lists at GET /contacts with no marks a contact whose vip mark the user removed before a backend restart, after the restarted backend takes the same starred import again', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+    };
+    const starredLuis = {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], starred: true, lists: [] }],
+    };
+    const beforeRestart = createApp(options);
+    await postJson(beforeRestart, '/contacts-import', starredLuis);
+    await unmarkContact(beforeRestart, 'luis@example.com', 'vip');
+
+    const afterRestart = createApp(options);
+    await postJson(afterRestart, '/contacts-import', starredLuis);
+    const { contacts } = (await getContacts(afterRestart)) as { contacts: { emails: string[]; marks?: string[] }[] };
+
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
+  });
+
   it('lists at GET /contacts, after POST /contacts-import brings starred again a contact whose vip mark the user removed through DELETE /contacts/:email/marks/vip, that contact still with no marks', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const starredLuis = {
