@@ -1,12 +1,23 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { StrictMode, useEffect, useState, type ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { AppShell, routes } from './app-shell';
+import { CategoriesPage } from './categories-page';
 import { DashboardApp } from './dashboard-app';
+import { FiltersPage } from './filters-page';
+import { StatementPage } from './statement-page';
 import './styles.css';
 import { TriagePage } from './triage-page';
 
-// One local page, two views (CLAUDE.md locked decision 10): the now view at `/` and the triage queue at `#/triage`.
+// One local page (CLAUDE.md locked decision 10): the now view at `/`, the triage queue at `#/triage`, and the
+// Phase 2 pages: categories, filters and the weekly expense statement.
+const pages: Record<string, ComponentType> = {
+  [routes.triage]: TriagePage,
+  [routes.categories]: CategoriesPage,
+  [routes.filters]: FiltersPage,
+  [routes.statement]: StatementPage,
+};
+
 function App() {
   const [route, setRoute] = useState(window.location.hash);
   useEffect(() => {
@@ -18,7 +29,12 @@ function App() {
       window.removeEventListener('hashchange', readRoute);
     };
   }, []);
-  return <AppShell route={route}>{route === routes.triage ? <TriagePage /> : <DashboardApp />}</AppShell>;
+  const Page = pages[route] ?? DashboardApp;
+  return (
+    <AppShell route={route}>
+      <Page />
+    </AppShell>
+  );
 }
 
 const root = document.getElementById('root');

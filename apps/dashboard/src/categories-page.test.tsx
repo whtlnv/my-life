@@ -58,7 +58,9 @@ describe('CategoriesPage', () => {
     const row = within(list).getByRole('listitem');
     expect(noProposalsYetText).toMatch(/^no proposals yet$/i);
     const placeholder = within(row).getByText(noProposalsYetText);
-    expect(placeholder.compareDocumentPosition(within(row).getByRole('switch')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      placeholder.compareDocumentPosition(within(row).getByRole('switch')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(row).queryByText(/agreement/)).toBeNull();
   });
 
@@ -69,7 +71,7 @@ describe('CategoriesPage', () => {
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         if (input === '/categories/sales/mode') {
-          const body = JSON.parse(String(init?.body)) as { mode: string };
+          const body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { mode: string };
           modeRequests.push({ url: input, method: init?.method, body });
           salesMode = body.mode;
           return Promise.resolve(new Response(null, { status: 200 }));

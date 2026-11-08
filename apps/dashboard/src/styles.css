@@ -878,3 +878,124 @@ kbd {
   color: var(--warning);
   font-weight: 500;
 }
+
+/* ---------- categories, filters, statement ---------- */
+
+.stack > * + * {
+  margin-top: var(--space-3);
+}
+
+.category-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.category-head .spacer {
+  flex: 1;
+}
+
+.mode-text {
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+
+.switch[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.switch[aria-checked='true'] .switch-knob {
+  transform: translateX(18px);
+  background: #fff;
+}
+
+.card .rows {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.criteria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.criterion-name {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.criterion code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+.toolbar-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  font-weight: 600;
+}
+
+.table-card {
+  padding: var(--space-2) var(--space-4);
+}
+
+.total-row td {
+  border-top: 2px solid var(--border-strong);
+  font-weight: 600;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+.card-note {
+  color: var(--muted);
+  font-size: 13px;
+}

@@ -144,4 +144,39 @@ describe('FiltersPage', () => {
 
     expect(await screen.findByText(noFiltersText)).toBeInTheDocument();
   });
+  it('reloads the lists after a decision, so an approved proposal leaves the page', async () => {
+    let approved = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === '/filter-proposals/proposal-1/approval' && init?.method === 'POST') {
+          approved = true;
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        if (input === '/filter-proposals') {
+          const proposals = approved
+            ? []
+            : [
+                {
+                  id: 'proposal-1',
+                  criteria: { from: 'news@vendor.example' },
+                  labelName: 'vendor-news',
+                  accountEmail: 'franciscoc@psmutuus.com',
+                },
+              ];
+          return Promise.resolve(Response.json({ proposals }));
+        }
+        if (input === '/filters') return Promise.resolve(Response.json({ filters: [] }));
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<FiltersPage />);
+
+    const list = await screen.findByRole('list', { name: 'Filter proposals' });
+    await userEvent.click(within(list).getByRole('button', { name: approveLabel }));
+
+    expect(await screen.findByText(noFiltersText)).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Filter proposals' })).not.toBeInTheDocument();
+  });
 });

@@ -403,6 +403,67 @@ const messages: DemoMessage[] = [
   },
 ];
 
+// Three senders the user keeps archiving: after the third confirmed archive each becomes a filter candidate.
+const newsletterSenders = [
+  { key: 'shop', account: accounts.psmutuus, from: 'Shop News <news@shop.example.com>', company: 'Shop' },
+  { key: 'saas', account: accounts.erlia, from: 'Updates <updates@saas.example.com>', company: 'SaaSly' },
+  { key: 'forum', account: accounts.icona, from: 'Forum Digest <digest@forum.example.com>', company: 'Forum' },
+];
+for (const sender of newsletterSenders) {
+  for (const index of [1, 2, 3]) {
+    messages.push({
+      id: `m-${sender.key}-${String(index)}`,
+      accountEmail: sender.account,
+      from: sender.from,
+      subject: `${sender.company} weekly #${String(index)}`,
+      minutesAgo: 3000 + index * 1440,
+      snippet: 'This week in our world...',
+      proposal: {
+        action: 'archive',
+        category: 'sales',
+        summary: `${sender.company} newsletter #${String(index)}`,
+        extract: { company: sender.company, solution: 'Newsletter', problem: 'None' },
+        reason: 'Recurring newsletter',
+      },
+    });
+  }
+}
+
+const dayOfWeek = (now.getDay() + 6) % 7; // 0 = Monday
+const thisWeekExpenses: DemoMessage[] = [
+  {
+    id: 'm-exp-week-1',
+    accountEmail: accounts.erlia,
+    from: 'Uber Receipts <noreply@uber.com>',
+    subject: 'Your Friday trip with Uber',
+    minutesAgo: Math.max(60, dayOfWeek * 1440 - 600),
+    snippet: 'Total: $245.00 MXN',
+    proposal: {
+      action: 'archive',
+      category: 'expense',
+      summary: 'Uber trip receipt',
+      extract: { vendor: 'Uber', amount: 245, currency: 'MXN', date: todayAt(0).slice(0, 10) },
+      reason: 'A receipt to file',
+    },
+  },
+  {
+    id: 'm-exp-week-2',
+    accountEmail: accounts.psmutuus,
+    from: 'GitHub <billing@github.com>',
+    subject: 'Receipt for Team plan',
+    minutesAgo: Math.max(120, dayOfWeek * 1440 - 60),
+    snippet: 'Amount: $48.00 USD',
+    proposal: {
+      action: 'archive',
+      category: 'expense',
+      summary: 'GitHub Team plan receipt',
+      extract: { vendor: 'GitHub', amount: 48, currency: 'USD', date: todayAt(0).slice(0, 10) },
+      reason: 'A receipt to file',
+    },
+  },
+];
+messages.push(...thisWeekExpenses);
+
 const proposalByMessageId = new Map(messages.map((message) => [message.id, message.proposal]));
 
 const app = createApp({
@@ -413,6 +474,17 @@ const app = createApp({
   triage: {
     propose: (message) =>
       Promise.resolve({ proposal: proposalByMessageId.get(message.id), costInUsd: 0.018, promptVersion: 'triage-v1' }),
+  },
+  filter: {
+    propose: (candidate) => {
+      const from = 'from' in candidate.criteria ? candidate.criteria.from : '';
+      const company = newsletterSenders.find((sender) => sender.from.includes(from))?.company ?? 'sender';
+      return Promise.resolve({
+        proposal: { criteria: { from }, labelName: `my-life/${company.toLowerCase()}-newsletter`, skipInbox: true },
+        costInUsd: 0.012,
+        promptVersion: 'filter-v1',
+      });
+    },
   },
 });
 
@@ -443,7 +515,33 @@ async function seed(): Promise<void> {
         })),
     });
   }
+  // Calendar & Drive notices run automatically; everything else still asks.
+  await app.request('/categories/calendar-drive/mode', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ mode: 'automatic' }),
+  });
   await app.request('/triage-run', { method: 'POST' });
+  // Verdicts: the newsletters were confirmed archives (three per sender), one pitch was rejected as a cc-thread,
+  // so the categories page has agreement rates and the filter page has candidates.
+  for (const sender of newsletterSenders) {
+    for (const index of [1, 2, 3]) {
+      await postJson('/verdicts', { messageId: `m-${sender.key}-${String(index)}`, decision: 'confirmed' });
+    }
+  }
+  await postJson('/verdicts', { messageId: 'm-sentry-2', decision: 'confirmed' });
+  await postJson('/verdicts', { messageId: 'm-aws-2', decision: 'rejected', correction: { action: 'keep' } });
+  await postJson('/verdicts', { messageId: 'm-exp-week-1', decision: 'confirmed' });
+  // A second run turns the confirmed archives into filter proposals; the forum one is approved and created in Gmail.
+  await app.request('/triage-run', { method: 'POST' });
+  const proposals = (await (await app.request('/filter-proposals')).json()) as { proposals: { id: string }[] };
+  const forumProposal = proposals.proposals.at(-1);
+  if (forumProposal !== undefined) {
+    await app.request(`/filter-proposals/${forumProposal.id}/approval`, { method: 'POST' });
+    await postJson(`/commands/create-filter-${forumProposal.id}/acknowledgement`, {
+      gmailFilterId: 'ANe1BmjDemoFilter',
+    });
+  }
 }
 
 // Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).
