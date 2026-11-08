@@ -60,4 +60,25 @@ describe('digests', () => {
     const result = digests([workAwsProposal, personalAwsProposal]);
     expect(result.map((digest) => digest.proposals)).toEqual([[workAwsProposal], [personalAwsProposal]]);
   });
+
+  it('places two sales proposals from the same account and the same sender address in one digest keyed by that address', () => {
+    const firstPitch = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'ana@acme.example',
+      action: 'archive',
+      category: 'sales',
+      extract: { company: 'Acme', solution: 'CRM', problem: 'lost leads' },
+    };
+    const secondPitch = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'ana@acme.example',
+      action: 'archive',
+      category: 'sales',
+      extract: { company: 'Acme', solution: 'CRM', problem: 'follow-up' },
+    };
+    const result = digests([firstPitch, secondPitch]);
+    expect(result).toEqual([expect.objectContaining({ key: 'ana@acme.example', proposals: [firstPitch, secondPitch] })]);
+  });
 });
