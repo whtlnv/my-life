@@ -47,6 +47,14 @@ function createTables(database: ReturnType<typeof openDatabase>): void {
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_message_bodies (message_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, snippet TEXT NOT NULL, body_text TEXT)',
   );
+  addBodyTextColumnIfMissing(database);
+}
+
+// A database created before bodies were stored has the bodies table without its body_text column.
+function addBodyTextColumnIfMissing(database: ReturnType<typeof openDatabase>): void {
+  const columns = database.pragma('table_info(reported_message_bodies)') as { name: string }[];
+  if (columns.some((column) => column.name === 'body_text')) return;
+  database.exec('ALTER TABLE reported_message_bodies ADD COLUMN body_text TEXT');
 }
 
 export function openReportedMessageStore(databasePath: string) {

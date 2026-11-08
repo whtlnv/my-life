@@ -23,7 +23,7 @@
 - [x] A body reported for a message is stored and is still there after the backend restarts
 - [x] The triage request for a message with a stored body carries the body
 - [x] The triage request for a message without a stored body carries the snippet (already pinned: `claude-triage.test.ts` "sends the message's headers, snippet…" and the restart case in `app.test.ts`)
-- [ ] A database whose reported-message tables were created before bodies existed opens at startup, keeps every stored message, and stores and reloads bodies from then on
+- [x] A database whose reported-message tables were created before bodies existed opens at startup, keeps every stored message, and stores and reloads bodies from then on
 
 
 ### Extraction v2
