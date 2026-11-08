@@ -70,4 +70,28 @@ describe('PeoplePage', () => {
       expect(row.querySelector('time')).toHaveAttribute('datetime', at);
     }
   });
+
+  it('says on an urgent row why the contact is urgent, with every reason GET /people gives', async () => {
+    answerGetPeopleWith({
+      vip: [],
+      urgent: [
+        {
+          displayName: 'Luis Ortega',
+          emails: ['luis@erlia.mx'],
+          messageIds: ['m2'],
+          organization: 'Erlia',
+          lastMessageAt: '2026-11-05T16:30:00.000Z',
+          reasons: ['unanswered ask', 'deadline'],
+        },
+      ],
+      everyoneElse: [],
+    });
+
+    render(<PeoplePage />);
+
+    const urgentList = await screen.findByRole('list', { name: 'Urgent' });
+    const row = await within(urgentList).findByRole('listitem');
+    expect(row).toHaveTextContent('unanswered ask');
+    expect(row).toHaveTextContent('deadline');
+  });
 });

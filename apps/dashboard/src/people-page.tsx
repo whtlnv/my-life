@@ -4,6 +4,7 @@ interface PersonRow {
   displayName: string;
   organization: string;
   lastMessageAt: string;
+  reasons?: string[];
 }
 
 interface PeopleLists {
@@ -26,7 +27,8 @@ const PeopleList = ({ title, people }: { title: string; people: PersonRow[] }) =
       {people.map((person) => (
         <li key={person.displayName}>
           {person.displayName} {person.organization}{' '}
-          <time dateTime={person.lastMessageAt}>{timeInBusinessZone(person.lastMessageAt)}</time>
+          <time dateTime={person.lastMessageAt}>{timeInBusinessZone(person.lastMessageAt)}</time>{' '}
+          {person.reasons?.join(', ')}
         </li>
       ))}
     </ul>

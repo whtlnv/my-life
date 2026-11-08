@@ -43,7 +43,7 @@
 - [x] An organization's timeline leaves out messages from contacts outside it
 - [x] The dashboard shell shows a People tab that opens the People page
 - [x] The People page shows the VIP, Urgent and Everyone else lists, each row with the contact's name, organization and the time of its last message
-- [ ] An urgent row on the People page says why the contact is urgent
+- [x] An urgent row on the People page says why the contact is urgent
 - [ ] Selecting a contact on the People page shows its merged timeline
 - [ ] Selecting an organization on the People page shows its timeline
 - [ ] Marking a contact VIP from the People page moves it into the VIP list; removing the mark moves it out
