@@ -7,6 +7,7 @@ import { serve } from '@hono/node-server';
 import { createApp } from './app';
 import { createClaudeFilter } from './claude-filter';
 import { createClaudeTriage, type ClaudePricing, type ClaudeRequest } from './claude-triage';
+import { createEscalatingTriage } from './escalating-triage';
 import { readStartupSettings } from './startup-settings';
 
 // The shipped composition: settings from the environment (MY_LIFE_*), the SQLite store under Application Support,
@@ -58,23 +59,37 @@ function claudeSettings() {
     console.log(`triage disabled: ${settings.triage.reason}`);
     return undefined;
   }
-  const pricing = pricingByModel[settings.triageModel];
-  if (pricing === undefined) {
-    console.log(`triage disabled: no pricing known for model ${settings.triageModel}`);
-    return undefined;
-  }
-  return { pricing, createMessage: createMessageWith(new Anthropic()) };
+  return { createMessage: createMessageWith(new Anthropic()) };
 }
 
+function pricingFor(model: string): ClaudePricing {
+  const pricing = pricingByModel[model];
+  if (pricing === undefined) throw new Error(`no pricing known for model ${model}; triage cannot start`);
+  return pricing;
+}
+
+// Haiku (MY_LIFE_TRIAGE_MODEL) reads every message; Opus (MY_LIFE_TRIAGE_ESCALATION_MODEL) gives a second opinion
+// only when the first says the message needs the user or cannot place it. User decision 2026-11-08, see
+// docs/decisions/2026-11-08-triage-model-comparison.md. Filter proposals stay on the stronger model.
 const claude = claudeSettings();
-const triage =
-  claude === undefined
-    ? undefined
-    : createClaudeTriage({ model: settings.triageModel, promptPath, profileDirectory, ...claude });
+const strongestModel = settings.triageEscalationModel ?? settings.triageModel;
+function createTriage(createMessage: NonNullable<typeof claude>['createMessage']) {
+  const triageFor = (model: string) =>
+    createClaudeTriage({ model, promptPath, profileDirectory, pricing: pricingFor(model), createMessage });
+  const first = triageFor(settings.triageModel);
+  const escalation = settings.triageEscalationModel;
+  return escalation === undefined ? first : createEscalatingTriage({ first, second: triageFor(escalation) });
+}
+const triage = claude === undefined ? undefined : createTriage(claude.createMessage);
 const filter =
   claude === undefined
     ? undefined
-    : createClaudeFilter({ model: settings.triageModel, promptPath: filterPromptPath, ...claude });
+    : createClaudeFilter({
+        model: strongestModel,
+        promptPath: filterPromptPath,
+        pricing: pricingFor(strongestModel),
+        createMessage: claude.createMessage,
+      });
 
 const app = createApp({
   allowedEmails: settings.allowedEmails,
@@ -97,7 +112,7 @@ serve({ fetch: app.fetch, port: settings.port, hostname: '127.0.0.1' }, (info) =
     `my-life backend listening on http://127.0.0.1:${String(info.port)} · ${String(settings.allowedEmails.length)} allowed account(s) · store ${settings.databasePath}` +
       (triage === undefined
         ? ''
-        : ` · triage and filter proposals with ${settings.triageModel}, ceiling USD ${String(settings.dailySpendCeilingInUsd)}/day`),
+        : ` · triage with ${settings.triageModel}${settings.triageEscalationModel === undefined ? '' : `, second opinion from ${settings.triageEscalationModel}`}, filter proposals with ${strongestModel}, ceiling USD ${String(settings.dailySpendCeilingInUsd)}/day`),
   );
   if (triage !== undefined) {
     runTriage();

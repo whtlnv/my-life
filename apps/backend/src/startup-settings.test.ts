@@ -81,10 +81,10 @@ describe('startup settings', () => {
       expected: 90_000,
     },
     {
-      rule: 'triages with claude-opus-5-5 when MY_LIFE_TRIAGE_MODEL is unset',
+      rule: 'triages with claude-haiku-5-5 when MY_LIFE_TRIAGE_MODEL is unset',
       environment: {},
       setting: 'triageModel',
-      expected: 'claude-opus-5-5',
+      expected: 'claude-haiku-5-5',
     },
     {
       rule: 'triages with claude-sonnet-5-5 when MY_LIFE_TRIAGE_MODEL is claude-sonnet-5-5',
@@ -123,5 +123,32 @@ describe('startup settings', () => {
     const settings = readStartupSettings({ ANTHROPIC_API_KEY: 'sk-ant-test-key' }, '/Users/ana');
 
     expect(settings.triage).toEqual({ enabled: true });
+  });
+  it.each([
+    {
+      rule: 'triages with Haiku first and escalates to Opus when nothing is configured',
+      environment: {},
+      triageModel: 'claude-haiku-5-5',
+      escalationModel: 'claude-opus-5-5',
+    },
+    {
+      rule: 'reads the first and the escalation model from MY_LIFE_TRIAGE_MODEL and MY_LIFE_TRIAGE_ESCALATION_MODEL',
+      environment: { MY_LIFE_TRIAGE_MODEL: 'claude-sonnet-5-5', MY_LIFE_TRIAGE_ESCALATION_MODEL: 'claude-opus-5-5' },
+      triageModel: 'claude-sonnet-5-5',
+      escalationModel: 'claude-opus-5-5',
+    },
+    {
+      rule: 'runs one model for everything when MY_LIFE_TRIAGE_ESCALATION_MODEL is none',
+      environment: { MY_LIFE_TRIAGE_MODEL: 'claude-opus-5-5', MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none' },
+      triageModel: 'claude-opus-5-5',
+      escalationModel: undefined,
+    },
+  ])('$rule', ({ environment, triageModel, escalationModel }) => {
+    const settings = readStartupSettings(environment, '/Users/ana');
+
+    expect({ triageModel: settings.triageModel, escalationModel: settings.triageEscalationModel }).toEqual({
+      triageModel,
+      escalationModel,
+    });
   });
 });
