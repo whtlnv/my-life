@@ -1,5 +1,6 @@
 interface MessagePart {
   mimeType: string;
+  filename?: string;
   body: { size: number; data?: string };
   parts?: MessagePart[];
 }
@@ -7,9 +8,11 @@ interface MessagePart {
 const maximumBodyLength = 20 * 1024;
 
 export function messageBody(payload: MessagePart): string {
-  const plainPart = payload.parts?.find((part) => part.mimeType === 'text/plain');
-  if (plainPart) {
-    return messageBody(plainPart);
+  const bodyPart =
+    payload.parts?.find((part) => part.mimeType === 'text/plain' && !part.filename) ??
+    payload.parts?.find((part) => part.mimeType.startsWith('multipart/'));
+  if (bodyPart) {
+    return messageBody(bodyPart);
   }
   const text = Buffer.from(payload.body.data ?? '', 'base64url').toString('utf8');
   if (payload.mimeType === 'text/html') {

@@ -104,4 +104,50 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe(text.slice(0, 20 * 1024));
   });
+
+  it('never takes text from an attachment part, even a text/plain one', () => {
+    const payload = {
+      mimeType: 'multipart/mixed',
+      filename: '',
+      headers: [{ name: 'Content-Type', value: 'multipart/mixed; boundary="000000000000def456"' }],
+      body: { size: 0 },
+      parts: [
+        {
+          partId: '0',
+          mimeType: 'multipart/alternative',
+          filename: '',
+          headers: [{ name: 'Content-Type', value: 'multipart/alternative; boundary="000000000000abc123"' }],
+          body: { size: 0 },
+          parts: [
+            {
+              partId: '0.0',
+              mimeType: 'text/plain',
+              filename: '',
+              headers: [{ name: 'Content-Type', value: 'text/plain; charset="UTF-8"' }],
+              body: { size: 39, data: 'SG9sYSBBbmEsClRlIG1hbmRvIGxhcyBub3RhcyBhZGp1bnRhcy4K' },
+            },
+            {
+              partId: '0.1',
+              mimeType: 'text/html',
+              filename: '',
+              headers: [{ name: 'Content-Type', value: 'text/html; charset="UTF-8"' }],
+              body: { size: 45, data: 'PHA-SG9sYSBBbmEsIHRlIG1hbmRvIGxhcyBub3RhcyBhZGp1bnRhcy48L3A-' },
+            },
+          ],
+        },
+        {
+          partId: '1',
+          mimeType: 'text/plain',
+          filename: 'notas.txt',
+          headers: [
+            { name: 'Content-Type', value: 'text/plain; charset="UTF-8"; name="notas.txt"' },
+            { name: 'Content-Disposition', value: 'attachment; filename="notas.txt"' },
+          ],
+          body: { size: 30, data: 'Tm90YXMgaW50ZXJuYXM6IG5vIGNvbXBhcnRpci4K' },
+        },
+      ],
+    };
+
+    expect(messageBody(payload)).toBe('Hola Ana,\nTe mando las notas adjuntas.\n');
+  });
 });
