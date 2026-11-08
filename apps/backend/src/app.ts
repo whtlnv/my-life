@@ -162,11 +162,13 @@ function agreementRate(category: string, proposals: Proposal[], verdicts: Stored
   return confirmedCount / categoryProposals.length;
 }
 
+const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
 const mondayOfBusinessWeek = (instant: Date): string => {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
   const midnight = Date.parse(`${today}T00:00:00.000Z`);
   const daysSinceMonday = (new Date(midnight).getUTCDay() + 6) % 7;
-  return new Date(midnight - daysSinceMonday * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return new Date(midnight - daysSinceMonday * millisecondsPerDay).toISOString().slice(0, 10);
 };
 
 const recentProposalCount = 5;
