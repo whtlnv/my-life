@@ -948,7 +948,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         (proposal) => contact.messageIds.includes(proposal.messageId) && (proposal.dates ?? []).length > 0,
       );
     return context.json({
-      urgent: contacts.filter(hasDeadline).map((contact) => ({ ...contact, reasons: ['deadline'] })),
+      urgent: [
+        ...contacts.filter(hasDeadline).map((contact) => ({ ...contact, reasons: ['deadline'] })),
+        ...contacts.filter(isVip).map((contact) => ({ ...contact, reasons: ['VIP waiting'] })),
+      ],
       vip: contacts.filter(isVip),
       everyoneElse: contacts.filter((contact) => !isVip(contact) && !hasDeadline(contact)),
     });

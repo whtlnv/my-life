@@ -334,6 +334,23 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(everyoneElse.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
   });
 
+  it('lists at GET /people a VIP contact whose message has waited more than 1 business day for a reply under both VIP and Urgent, with the reason "VIP waiting"', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await markContact(app, 'luis@example.com', 'vip');
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, urgent } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      urgent: { emails: string[]; reasons: string[] }[];
+    };
+    expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+    expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['VIP waiting'] })]);
+  });
+
   it('lists at GET /contacts, after a backend restart on the same database file, the lists and note set on a contact through PATCH /contacts/:email before it', async () => {
     const options = {
       allowedEmails: ['ana@example.com'],
