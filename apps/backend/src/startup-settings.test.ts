@@ -93,6 +93,12 @@ describe('startup settings', () => {
       expected: 'claude-sonnet-5-5',
     },
     {
+      rule: 'writes digest summaries with claude-haiku-5-5 when MY_LIFE_SUMMARY_MODEL is unset',
+      environment: {},
+      setting: 'summaryModel',
+      expected: 'claude-haiku-5-5',
+    },
+    {
       rule: 'caps daily triage spend at USD 20 when MY_LIFE_DAILY_SPEND_CEILING_USD is unset',
       environment: {},
       setting: 'dailySpendCeilingInUsd',
