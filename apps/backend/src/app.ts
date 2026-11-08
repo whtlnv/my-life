@@ -671,7 +671,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
     return digests(waitingOutsideTheActionBlock(verdicts)).map((digest) => {
-      const { key, proposals: digested, severityCounts } = digest;
+      const { key, proposals: digested, severityCounts, significantItems } = digest;
       const { accountEmail, category } = digested[0] ?? {};
       const id = identifyDigest(digest);
       listedDigestStore.save(
@@ -686,6 +686,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         count: digested.length,
         severityCounts,
         summaryLines: digestSummaryStore.load(id),
+        significantItems: significantItems.map((item) => ({
+          messageId: item.messageId,
+          summary: proposals.find(({ messageId }) => messageId === item.messageId)?.summary,
+          accountEmail: item.accountEmail,
+          link: gmailMessageLink(item),
+        })),
       };
     });
   }

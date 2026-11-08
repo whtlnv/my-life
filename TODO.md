@@ -53,7 +53,7 @@
 - [x] The extension acknowledges no undo command whose Gmail request failed
 - [x] A database created before Phase 2c opens and serves `GET /triage-queue` with digests and handled for you
 - [x] The triage page shows its sections in the order Needs you, digests, Needs input, Handled for you
-- [ ] `GET /triage-queue` lists in each digest its significant items, each with its message id, summary, account and Gmail link, and none of its items that are not significant
+- [x] `GET /triage-queue` lists in each digest its significant items, each with its message id, summary, account and Gmail link, and none of its items that are not significant
 - [ ] The Needs input section shows that nothing needs input when it is empty
 - [ ] A digest card shows its summary lines and its count by severity
 - [ ] A digest card lists its significant items, each linked to its message and naming its account

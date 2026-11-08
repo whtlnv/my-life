@@ -791,6 +791,60 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     );
   });
 
+  it('lists in each GET /triage-queue digest its significant items, each with its message id, summary, account and Gmail link, and none of its items that are not significant', async () => {
+    const triage = triageAnsweringInOrder(
+      [
+        {
+          action: 'archive',
+          category: 'system-update',
+          summary: 'GitHub build failed',
+          extract: { system: 'GitHub', severity: 'high', significant: true },
+          reason: 'A failed build',
+        },
+        {
+          action: 'archive',
+          category: 'system-update',
+          summary: 'GitHub build passed',
+          extract: { system: 'GitHub', severity: 'low', significant: false },
+          reason: 'A routine notification',
+        },
+      ],
+      1,
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        {
+          ...budgetReview,
+          id: 'message-failed',
+          from: 'GitHub <noreply@github.com>',
+          date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+        },
+        {
+          ...budgetReview,
+          id: 'message-passed',
+          from: 'GitHub <noreply@github.com>',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+        },
+      ],
+    });
+    await postTriageRun(app);
+
+    const { digests } = await getJson<{ digests: { significantItems?: unknown }[] }>(app, '/triage-queue');
+
+    expect(digests).toHaveLength(1);
+    expect(digests[0]?.significantItems).toEqual([
+      {
+        messageId: 'message-failed',
+        summary: 'GitHub build failed',
+        accountEmail: 'ana@example.com',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-failed',
+      },
+    ]);
+  });
+
   it('adds a proposal triaged after a digest was listed in GET /triage-queue to that same digest, which keeps its id, when it has the same account, category and key', async () => {
     const gitHubNotice = (summary: string) => ({
       action: 'archive',
@@ -833,7 +887,9 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
 
     await postTriageRun(app);
@@ -894,7 +950,12 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
         reason: 'A routine notification',
       },
       { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },
-      { action: 'keep', category: 'cc-thread', summary: 'Luis copied the team', reason: 'A thread the user is copied on' },
+      {
+        action: 'keep',
+        category: 'cc-thread',
+        summary: 'Luis copied the team',
+        reason: 'A thread the user is copied on',
+      },
     ];
     const triage = triageAnsweringInOrder(proposalsInOrder, 1);
     const summaryRequests: string[][] = [];
@@ -949,16 +1010,16 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
     await postTriageRun(app);
 
     await postTriageRun(app);
 
     const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
-    expect(digests).toEqual([
-      expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] }),
-    ]);
+    expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] })]);
   });
 
   it('still carries on a digest in GET /triage-queue, after a backend restart on the same database file, the summary lines written before it, without a new summary call', async () => {
@@ -982,7 +1043,9 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(beforeRestart, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
     await postTriageRun(beforeRestart);
 
@@ -991,9 +1054,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const { digests } = await getJson<{ digests: unknown[] }>(afterRestart, '/triage-queue');
 
     expect(summaryCalls).toBe(1);
-    expect(digests).toEqual([
-      expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] }),
-    ]);
+    expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] })]);
   });
 
   it('logs the cost of each summary call made at POST /triage-run as spend, with its time, next to the triage spend', async () => {
@@ -1016,7 +1077,9 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
 
     await postTriageRun(app);
@@ -1054,7 +1117,9 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
 
     await postTriageRun(app);
@@ -1092,7 +1157,9 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
 
     await postTriageRun(app);
@@ -1119,7 +1186,9 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
 
     const triageRun = await postTriageRun(app);
@@ -1219,7 +1288,9 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
     await postTriageRun(app);
     await getJson(app, '/triage-queue');
@@ -1263,7 +1334,11 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     );
 
     expect(confirmedDigestId).toEqual(expect.any(String));
-    expect(openVerdictStore(databasePath).loadAll().map(({ messageId }) => messageId)).toEqual(['message-build']);
+    expect(
+      openVerdictStore(databasePath)
+        .loadAll()
+        .map(({ messageId }) => messageId),
+    ).toEqual(['message-build']);
     expect(after).toEqual([expect.objectContaining({ key: 'GitHub', count: 1 })]);
     expect(after[0]?.id).not.toEqual(confirmedDigestId);
   });
@@ -1301,7 +1376,12 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       ...budgetReviewReport,
       messages: [
         { ...budgetReview, id: 'message-github', threadId: 'message-github', from: 'GitHub <noreply@github.com>' },
-        { ...budgetReview, id: 'message-vercel', threadId: 'message-vercel', from: 'Vercel <notifications@vercel.com>' },
+        {
+          ...budgetReview,
+          id: 'message-vercel',
+          threadId: 'message-vercel',
+          from: 'Vercel <notifications@vercel.com>',
+        },
       ],
     });
     await postTriageRun(app);
