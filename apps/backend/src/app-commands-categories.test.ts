@@ -692,4 +692,28 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
 
     expect(await queue.json()).toMatchObject({ handledForYou: [] });
   });
+  it('lists at GET /triage-queue nothing under handled for you and at GET /commands no undo command, after a backend restart on the same database file, for an item undone before it whose commands the extension acknowledged', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage: ccThreadTriage('archive'),
+    };
+    const beforeRestart = createApp(options);
+    await switchCategory(beforeRestart, 'cc-thread', 'automatic');
+    await proposeBudgetReview(beforeRestart);
+    await beforeRestart.request('/handled-for-you/message-1/undo', { method: 'POST' });
+    const pendingResponse = await getCommands(beforeRestart, 'ana@example.com');
+    const { commands: pendingCommands } = (await pendingResponse.json()) as { commands: { id: string }[] };
+    for (const command of pendingCommands) await postAcknowledgement(beforeRestart, command.id);
+
+    const afterRestart = createApp(options);
+    const queue = await afterRestart.request('/triage-queue');
+    const commands = await getCommands(afterRestart, 'ana@example.com');
+
+    expect({ queue: await queue.json(), commands: await commands.json() }).toMatchObject({
+      queue: { handledForYou: [] },
+      commands: { commands: [] },
+    });
+  });
 });

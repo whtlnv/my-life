@@ -42,6 +42,7 @@ import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calend
 import { openFilterDeletionRequestStore } from './filter-deletion-request-store';
 import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
 import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
+import { openUndoAutomaticStore } from './undo-automatic-store';
 import { openFilterProposalStore } from './filter-proposal-store';
 import { openDigestSummaryStore } from './digest-summary-store';
 import { openListedDigestStore } from './listed-digest-store';
@@ -701,14 +702,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
-  const undoneHandledForYouMessageIds: string[] = [];
+  const undoAutomaticStore = openUndoAutomaticStore(databasePath);
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: describeDigests(verdicts),
       handledForYou: describeHandledForYou(proposals, clock).filter(
-        ({ messageId }) => !undoneHandledForYouMessageIds.includes(messageId),
+        ({ messageId }) => !undoAutomaticStore.loadAll().includes(messageId),
       ),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
@@ -786,7 +787,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       (proposal) => proposal.messageId === messageId && proposal.madeAutomatic,
     );
     if (!wasHandledForYou) return context.body(null, 404);
-    undoneHandledForYouMessageIds.push(messageId);
+    undoAutomaticStore.save(messageId);
     return context.body(null, 200);
   });
   app.get('/commands', (context) => {
@@ -826,7 +827,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     const isMessageOfAccount = (messageId: string) =>
       proposals.some((proposal) => proposal.messageId === messageId && proposal.accountEmail === accountEmail);
-    const undoAutomaticCommands = undoneHandledForYouMessageIds.filter(isMessageOfAccount).map((messageId) => ({
+    const undoAutomaticCommands = undoAutomaticStore.loadAll().filter(isMessageOfAccount).map((messageId) => ({
       id: `undo-automatic-${messageId}`,
       type: 'undo-automatic',
       messageId,
