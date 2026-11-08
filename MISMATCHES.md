@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 01:31 · `apps/backend/src/app.test.ts::still lists at GET /contacts and GET /organizations, after a backend restart on the same database file, every contact and organization with the messages linked to them before it: the senders, the person the extraction named and the organization it named, with nothing reported or triaged again`
+- Behavior: Contacts, organizations and message links survive a backend restart
+- Predicted: pass — senders come from the reported-message store and the proposals array is reloaded at startup from the proposal store, whose JSON already carries `people` and `organization`
+- Actual: `AssertionError` on the organizations assertion first (wrong reason: `localeCompare` orders `acme.com` before `Mutuus`, my expected order was wrong); after fixing the expected order, pass as predicted
+- Type: wrong-reason, then passed unexpectedly (predicted, but not a right-reason failure)
+- Resolution: the item had no missing behavior, so the test stays as a guardrail pin after proving it non-vacuous (temporarily dropping `people` and `organization` from the proposals reloaded at startup makes it fail with Pedro's contact missing; production restored, `git diff` touches only the test file).
+
 ## 2026-11-08 01:15 · `apps/backend/src/app.test.ts::lists a message under no contact it does not link to: a second message from another sender, whose extraction names nobody, appears under its sender alone, not under the first sender or the person the first message names`
 - Behavior: A message lists under no contact it does not link to
 - Predicted: pass — `contactsByEmail` links each sender and each extracted person to the one message id it came from, so a second message can only appear under its own sender

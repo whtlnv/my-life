@@ -2999,4 +2999,41 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1'] }] });
   });
+
+  it('still lists at GET /contacts and GET /organizations, after a backend restart on the same database file, every contact and organization with the messages linked to them before it: the senders, the person the extraction named and the organization it named, with nothing reported or triaged again', async () => {
+    const triage = triageAnsweringByMessageId({
+      'message-1': keepProposalExtracting({
+        organization: 'Mutuus',
+        people: [{ name: 'Pedro Soto', email: 'pedro@acme.com', role: 'copied' }],
+      }),
+      'message-2': keepProposalExtracting({ people: [] }),
+    });
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+    });
+    await postJson(beforeRestart, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+    await postTriageRun(beforeRestart);
+
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    const { contacts } = (await (await afterRestart.request('/contacts')).json()) as {
+      contacts: { displayName: string; emails: string[]; messageIds: string[] }[];
+    };
+    const { organizations } = (await (await afterRestart.request('/organizations')).json()) as {
+      organizations: { name: string; messageIds: string[] }[];
+    };
+
+    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toEqual([
+      { displayName: 'Luis', emails: ['luis@example.com'], messageIds: ['message-1'] },
+      { displayName: 'Marta', emails: ['marta@acme.com'], messageIds: ['message-2'] },
+      { displayName: 'Pedro Soto', emails: ['pedro@acme.com'], messageIds: ['message-1'] },
+    ]);
+    expect(organizations.toSorted((left, right) => left.name.localeCompare(right.name))).toEqual([
+      { name: 'acme.com', messageIds: ['message-2'] },
+      { name: 'Mutuus', messageIds: ['message-1'] },
+    ]);
+  });
 });
