@@ -11,6 +11,13 @@ interface SentRequest {
   model: string;
 }
 
+function writeSummaryAnswer(input: unknown, usage = { input_tokens: 0, output_tokens: 0 }) {
+  return Promise.resolve({
+    content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input }],
+    usage,
+  });
+}
+
 describe('Claude summary', () => {
   it('asks the summary model set in config', async () => {
     const settings = readStartupSettings({ MY_LIFE_SUMMARY_MODEL: 'claude-summary-model-from-settings' }, '/Users/ana');
@@ -20,12 +27,7 @@ describe('Claude summary', () => {
       pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
       createMessage: (request: SentRequest) => {
         sentRequests.push(request);
-        return Promise.resolve({
-          content: [
-            { type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } },
-          ],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        });
+        return writeSummaryAnswer({ lines: ['GitHub: 2 builds'] });
       },
     });
 
@@ -38,18 +40,7 @@ describe('Claude summary', () => {
     const summary = createClaudeSummary({
       model: 'claude-haiku-5-5',
       pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
-      createMessage: () =>
-        Promise.resolve({
-          content: [
-            {
-              type: 'tool_use',
-              id: 'tool-use-1',
-              name: 'write_summary',
-              input: { lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed'] },
-            },
-          ],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        }),
+      createMessage: () => writeSummaryAnswer({ lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed'] }),
     });
 
     const written = await summary.summarize({
@@ -64,12 +55,7 @@ describe('Claude summary', () => {
       model: 'claude-haiku-5-5',
       pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
       createMessage: () =>
-        Promise.resolve({
-          content: [
-            { type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } },
-          ],
-          usage: { input_tokens: 2_000_000, output_tokens: 400_000 },
-        }),
+        writeSummaryAnswer({ lines: ['GitHub: 2 builds'] }, { input_tokens: 2_000_000, output_tokens: 400_000 }),
     });
 
     const written = await summary.summarize({ items: [{ summary: 'GitHub build passed' }] });
@@ -82,17 +68,7 @@ describe('Claude summary', () => {
       model: 'claude-haiku-5-5',
       pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
       createMessage: () =>
-        Promise.resolve({
-          content: [
-            {
-              type: 'tool_use',
-              id: 'tool-use-1',
-              name: 'write_summary',
-              input: { lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed', 'Sentry: 3 new issues'] },
-            },
-          ],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        }),
+        writeSummaryAnswer({ lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed', 'Sentry: 3 new issues'] }),
     });
 
     await expect(
@@ -111,11 +87,7 @@ describe('Claude summary', () => {
     const summary = createClaudeSummary({
       model: 'claude-haiku-5-5',
       pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
-      createMessage: () =>
-        Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input }],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        }),
+      createMessage: () => writeSummaryAnswer(input),
     });
 
     await expect(summary.summarize({ items: [{ summary: 'GitHub build passed' }] })).rejects.toThrow();
@@ -136,12 +108,7 @@ describe('Claude summary', () => {
       pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
       createMessage: (request) => {
         sentRequests.push(request);
-        return Promise.resolve({
-          content: [
-            { type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } },
-          ],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        });
+        return writeSummaryAnswer({ lines: ['GitHub: 2 builds'] });
       },
     });
 
