@@ -874,13 +874,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const summaryLines = ['GitHub: 1 notice since Monday, none significant'];
     const summary = { summarize: () => Promise.resolve({ lines: summaryLines, costInUsd: 0.01 }) };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-build');
 
     await postTriageRun(app);
 
@@ -987,13 +981,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       },
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-build');
     await postTriageRun(app);
 
     await postTriageRun(app);
@@ -1050,13 +1038,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary, databasePath };
     const beforeRestart = createApp(options);
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(beforeRestart, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(beforeRestart, 'message-build');
     await postTriageRun(beforeRestart);
 
     const afterRestart = createApp(options);
@@ -1084,13 +1066,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       triage,
       summary,
     });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-build');
 
     await postTriageRun(app);
 
@@ -1124,13 +1100,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       triage,
       summary,
     });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-build');
 
     await postTriageRun(app);
 
@@ -1164,13 +1134,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       triage,
       summary,
     });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-build');
 
     await postTriageRun(app);
 
@@ -1193,13 +1157,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       summarize: () => Promise.reject(new Error('The summary model answered with output that fails validation')),
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-build');
 
     const triageRun = await postTriageRun(app);
 
@@ -1275,13 +1233,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       1,
     );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, databasePath });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-build');
     await postTriageRun(app);
     await getJson(app, '/triage-queue');
 
@@ -1395,13 +1347,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       1,
     );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-github', threadId: 'message-github', from: 'GitHub <noreply@github.com>' },
-      ],
-    });
+    await reportFromGitHub(app, 'message-github');
     await postTriageRun(app);
     const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
 
