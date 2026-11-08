@@ -123,4 +123,27 @@ describe('digests', () => {
     const result = digests([formalPitch, casualPitch]);
     expect(result.map((digest) => digest.proposals)).toEqual([[formalPitch, casualPitch]]);
   });
+
+  it('places two calendar-drive proposals from the same account and the same sender address in one digest keyed by that address', () => {
+    const movedSync = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'calendar-notification@google.com',
+      action: 'archive',
+      category: 'calendar-drive',
+      extract: { item: 'Weekly product sync', change: 'Moved from Wednesday 10:00 to Thursday 11:00' },
+    };
+    const acceptedReview = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'calendar-notification@google.com',
+      action: 'archive',
+      category: 'calendar-drive',
+      extract: { item: 'Quarterly review', change: 'Ana accepted' },
+    };
+    const result = digests([movedSync, acceptedReview]);
+    expect(result).toEqual([
+      expect.objectContaining({ key: 'calendar-notification@google.com', proposals: [movedSync, acceptedReview] }),
+    ]);
+  });
 });

@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 11:30 · `packages/domain/src/digests.test.ts::places two calendar-drive proposals from the same account and the same sender address in one digest keyed by that address`
+- Behavior: Two calendar-drive proposals from the same account and the same sender address are in one digest
+- Predicted: the Vitest run passes (digestKey already falls back to the sender address when the extract has no `system`); tsc fails with TS2345 because `{ item, change }` is not in DigestableProposal's extract union
+- Actual: the Vitest run passes; tsc fails with TS2322 (same cause: `{ item, change }` cannot be assigned to `{ system } | { company }`)
+- Type: right-reason mismatch
+- Resolution: The runtime behavior already exists because of the fallback. The missing piece is the type contract, so the red is carried by the typecheck, and /green only has to widen DigestableProposal's extract. The error code differs only because TypeScript reports the assignment, not an argument.
+
 ## 2026-11-08 11:27 · `packages/domain/src/digests.test.ts::places two sales proposals from the same account and different sender addresses in two digests even when they name the same company`
 - Behavior: two sales proposals from one account but different sender addresses are in two digests
 - Predicted: passes on first run (read beforehand: `digestKey` already keys sales on `from`), so no right-reason failure was available

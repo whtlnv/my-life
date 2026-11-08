@@ -6,7 +6,8 @@ export interface Digest<Proposal> {
 interface DigestableProposal {
   readonly accountEmail: string;
   readonly from?: string;
-  readonly extract: { readonly system: string } | { readonly company: string };
+  readonly extract:
+    { readonly system: string } | { readonly company: string } | { readonly item: string; readonly change: string };
 }
 
 function digestKey(proposal: DigestableProposal): string | undefined {
