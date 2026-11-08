@@ -569,8 +569,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
+  const markedEmails = new Set<string>();
+  app.put('/contacts/:email/marks/:mark', (context) => {
+    markedEmails.add(context.req.param('email'));
+    return context.body(null, 200);
+  });
   app.get('/contacts', (context) => {
-    return context.json({ contacts: contactsByEmail(reportedSenders(), proposals) });
+    return context.json({
+      contacts: contactsByEmail(reportedSenders(), proposals).map((contact) => ({
+        ...contact,
+        marks: markedEmails.has(contact.emails[0]!) ? ['vip'] : [],
+      })),
+    });
   });
   app.get('/organizations', (context) => {
     return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });

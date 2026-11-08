@@ -36,6 +36,9 @@ const getContacts = (app: App) =>
 const getOrganizations = (app: App) =>
   getJson<{ organizations: { name: string; messageIds: string[] }[] }>(app, '/organizations');
 
+const markContact = (app: App, email: string, mark: string) =>
+  app.request(`/contacts/${encodeURIComponent(email)}/marks/${mark}`, { method: 'PUT' });
+
 const getCommands = (app: App, accountEmail: string) =>
   app.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`);
 
@@ -3033,6 +3036,19 @@ describe('backend app', () => {
     expect(organizations.toSorted((left, right) => left.name.localeCompare(right.name))).toEqual([
       { name: 'acme.com', messageIds: ['message-2'] },
       { name: 'Mutuus', messageIds: ['message-1'] },
+    ]);
+  });
+
+  it('lists at GET /contacts a contact marked vip through PUT /contacts/:email/marks/vip with the vip mark, and an unmarked contact with no marks', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+
+    await markContact(app, 'luis@example.com', 'vip');
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+
+    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
+      { emails: ['luis@example.com'], marks: ['vip'] },
+      { emails: ['marta@acme.com'], marks: [] },
     ]);
   });
 });

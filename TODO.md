@@ -54,7 +54,7 @@
 - [x] One message lists under every contact and organization it links to
 - [x] A message lists under no contact it does not link to
 - [x] Contacts, organizations and message links survive a backend restart
-- [ ] A contact marked `vip` in the app reads as `vip`; an unmarked contact does not
+- [x] A contact marked `vip` in the app reads as `vip`; an unmarked contact does not
 - [ ] A contact's lists and note, set in the app, read back as set and survive a restart
 
 ### Google Contacts import
