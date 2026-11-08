@@ -786,6 +786,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/check-later', (context) => {
     return context.json({ checkLater: confirmedCheckLater(proposals, verdictStore.loadAll()) });
   });
+  app.get('/search', (context) => {
+    const query = context.req.query('q') ?? '';
+    return context.json({ messages: reportedMessages.filter((message) => message.body?.includes(query)) });
+  });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
     const latestSnapshots = stored.map((entry) => entry.snapshot);

@@ -3505,4 +3505,17 @@ describe('backend app', () => {
 
     expect(askedMessages).toEqual([{ id: 'message-1', body }]);
   });
+
+  it('lists at GET /search?q= the message whose body contains the query word', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' }],
+    });
+
+    const response = await app.request('/search?q=quarterly');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+  });
 });
