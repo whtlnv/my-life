@@ -16,6 +16,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/app.ts:51] The `/bodies-missing` and `/bodies-report` bodies are declared apart from the extension that sends and reads them** (added: 2026-11-08)
+  `BodiesReport` here and the `{ accountEmail, bodies }` post and `BodiesMissing` read in `apps/extension/src/body-backfill.ts`
+  must change together, and nothing ties them: a renamed field compiles and the backfill silently stores nothing. Deferred for
+  the same reason as the `/triage-queue` and `/now` entries below: there is no contract to share, and adding one is new
+  `packages/contracts` surface delivered test-first.
 - **[apps/dashboard/src/statement-page.tsx:44] The statement page reads the CSV columns by position, apart from the route that writes them** (added: 2026-11-07)
   `parseStatement` destructures `vendor, amount, currency, date, accountEmail, link` by index, while `GET /expense-statement`
   in `apps/backend/src/app.ts` writes the header `vendor,amount,currency,date,account,link` and the rows in that order; a
