@@ -56,9 +56,7 @@ describe('reported message store', () => {
   it('opens a database whose tables were created before bodies existed, keeps its messages, and stores and reloads bodies from then on', () => {
     const databasePath = temporaryDatabasePath();
     const preBodyDatabase = openDatabase(databasePath);
-    preBodyDatabase.exec(
-      'CREATE TABLE reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL)',
-    );
+    preBodyDatabase.exec('CREATE TABLE reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL)');
     preBodyDatabase.exec(
       'CREATE TABLE reported_message_recipients (message_id TEXT PRIMARY KEY, to_header TEXT, cc_header TEXT)',
     );
@@ -66,7 +64,9 @@ describe('reported message store', () => {
       'CREATE TABLE reported_message_senders (message_id TEXT PRIMARY KEY, from_header TEXT NOT NULL, list_id TEXT)',
     );
     preBodyDatabase.exec('CREATE TABLE reported_message_subjects (message_id TEXT PRIMARY KEY, subject TEXT NOT NULL)');
-    preBodyDatabase.exec('CREATE TABLE reported_message_dates (message_id TEXT PRIMARY KEY, date_header TEXT NOT NULL)');
+    preBodyDatabase.exec(
+      'CREATE TABLE reported_message_dates (message_id TEXT PRIMARY KEY, date_header TEXT NOT NULL)',
+    );
     preBodyDatabase.exec(
       'CREATE TABLE reported_message_bodies (message_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, snippet TEXT NOT NULL)',
     );
@@ -75,7 +75,9 @@ describe('reported message store', () => {
     preBodyDatabase.exec("INSERT INTO reported_message_senders VALUES ('old-message', 'news@shop.example', NULL)");
     preBodyDatabase.exec("INSERT INTO reported_message_subjects VALUES ('old-message', 'Weekly deals')");
     preBodyDatabase.exec("INSERT INTO reported_message_dates VALUES ('old-message', '2026-11-01T10:00:00Z')");
-    preBodyDatabase.exec("INSERT INTO reported_message_bodies VALUES ('old-message', 'thread-old', 'Deals of the week')");
+    preBodyDatabase.exec(
+      "INSERT INTO reported_message_bodies VALUES ('old-message', 'thread-old', 'Deals of the week')",
+    );
     preBodyDatabase.close();
     const newMessage = {
       from: 'Luis <luis@example.com>',
