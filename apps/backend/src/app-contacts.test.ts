@@ -340,6 +340,27 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(everyoneElse.map(({ emails }) => emails)).toEqual([['marta@acme.com']]);
   });
 
+  it('lists at GET /people under Everyone else, and not under VIP, a contact on the "Always matters" line whose vip mark the user removed through DELETE /contacts/:email/marks/vip', async () => {
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    writeFileSync(
+      join(profileDirectory, 'example.md'),
+      '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, profileDirectory });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+
+    await unmarkContact(app, 'luis@example.com', 'vip');
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, everyoneElse } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect(vip).toEqual([]);
+    expect(everyoneElse.map(({ emails }) => emails)).toContainEqual(['luis@example.com']);
+  });
+
   it('lists at GET /people under Everyone else the contact whose most recent message is newest first', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const [luisMessage, martaMessage] = budgetReviewReportWithSecondMessageFromMarta.messages;

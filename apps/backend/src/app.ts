@@ -955,7 +955,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         alwaysMattersLineOfAccount(accountEmailByMessageId.get(messageId) ?? '').includes(contact.emails[0] ?? ''),
       );
     const isVip = (contact: { emails: string[]; messageIds: string[] }) =>
-      markedEmails.has(contact.emails[0] ?? '') || isOnAlwaysMattersLine(contact);
+      markedEmails.has(contact.emails[0] ?? '') ||
+      (isOnAlwaysMattersLine(contact) && !contactDetailsStore.userRemovedMark(contact.emails[0] ?? '', 'vip'));
     const conversationMessagesOf = (contact: { messageIds: string[] }) =>
       reportedMessages
         .filter((message) => contact.messageIds.includes(message.id) || message.sentByUser === true)
