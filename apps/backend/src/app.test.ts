@@ -179,6 +179,16 @@ const ccThreadTriage = (action: 'archive' | 'keep') => {
   return triageAnswering(proposal);
 };
 
+const budgetReviewActTriage = (taskDraft?: { title: string }) =>
+  triageAnswering({
+    action: 'act',
+    category: 'action',
+    summary: 'Luis asks for a budget review',
+    extract: { asker: 'Luis', ask: 'Review the budget' },
+    reason: 'Luis asks the user directly',
+    ...(taskDraft && { taskDraft }),
+  });
+
 const shopNewsletterArchiveTriage = () =>
   triageAnswering({
     action: 'archive',
@@ -1310,13 +1320,7 @@ describe('backend app', () => {
   });
 
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-    });
+    const triage = budgetReviewActTriage();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -1394,14 +1398,7 @@ describe('backend app', () => {
   });
 
   it('stores a verdict posted at POST /verdicts for a waiting proposal with the time it was decided, and the item leaves GET /triage-queue', async () => {
-    const proposal = {
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-    };
-    const triage = triageAnswering(proposal);
+    const triage = budgetReviewActTriage();
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
@@ -1450,14 +1447,7 @@ describe('backend app', () => {
   });
 
   it('keeps out of GET /triage-queue after a backend restart on the same database file an item whose verdict was posted before it', async () => {
-    const proposal = {
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-    };
-    const triage = triageAnswering(proposal);
+    const triage = budgetReviewActTriage();
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
@@ -1652,14 +1642,7 @@ describe('backend app', () => {
   });
 
   it('lists at GET /tasks the title, Gmail link and account of a task stored when an act proposal is confirmed', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-      taskDraft: { title: 'Review the budget by Friday' },
-    });
+    const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await confirmBudgetReviewProposal(app);
 
@@ -1679,14 +1662,7 @@ describe('backend app', () => {
 
   it('lists at GET /tasks no task once its confirmed act proposal is re-decided as rejected through POST /verdicts', async () => {
     let currentTime = new Date('2026-11-02T15:10:00.000Z');
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-      taskDraft: { title: 'Review the budget by Friday' },
-    });
+    const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => currentTime }, triage });
     await confirmBudgetReviewProposal(app);
     currentTime = new Date('2026-11-02T15:11:00.000Z');
@@ -1723,14 +1699,7 @@ describe('backend app', () => {
   });
 
   it('includes in the GET /now badge count an action proposal waiting for a verdict', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-      taskDraft: { title: 'Review the budget by Friday' },
-    });
+    const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -1921,14 +1890,7 @@ describe('backend app', () => {
   });
 
   it('lists at GET /tasks with no verdict the task of a new act proposal in a category switched to automatic', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-      taskDraft: { title: 'Review the budget by Friday' },
-    });
+    const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await switchCategory(app, 'action', 'automatic');
     await proposeBudgetReview(app);
@@ -2076,14 +2038,7 @@ describe('backend app', () => {
   });
 
   it('keeps out of GET /triage-queue and out of the GET /now badge count an act proposal acted on automatically in a category switched to automatic', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks for a budget review',
-      extract: { asker: 'Luis', ask: 'Review the budget' },
-      reason: 'Luis asks the user directly',
-      taskDraft: { title: 'Review the budget by Friday' },
-    });
+    const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await switchCategory(app, 'action', 'automatic');
     await proposeBudgetReview(app);
