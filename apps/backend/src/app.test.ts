@@ -2747,4 +2747,15 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
   });
+
+  it('lists at GET /contacts a sender whose From header is a bare address as a contact named by that address', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const bareAddressMessage = { ...budgetReviewReport.messages[0], from: 'ana@acme.com' };
+    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [bareAddressMessage] });
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ contacts: [{ displayName: 'ana@acme.com', emails: ['ana@acme.com'] }] });
+  });
 });
