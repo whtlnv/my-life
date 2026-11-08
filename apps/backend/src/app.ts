@@ -34,19 +34,13 @@ import { openFilterProposalRejectionStore } from './filter-proposal-rejection-st
 import { openFilterProposalStore } from './filter-proposal-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
-import { openReportedMessageStore } from './reported-message-store';
+import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
 import { openSpendStore } from './spend-store';
 import { defaultGmailPollingIntervalInMilliseconds } from './startup-settings';
 import { openVerdictStore, type StoredVerdict } from './verdict-store';
 
-interface ReportedMessage {
+interface ReportedMessage extends ReportedMessageHeaders {
   id: string;
-  from: string;
-  subject: string;
-  date: string;
-  to: string;
-  cc?: string;
-  listId?: string;
 }
 
 type Proposal = Parameters<typeof triageQueue>[0][number] & { summary?: string; madeAutomatic?: boolean };
