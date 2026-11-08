@@ -40,7 +40,7 @@
 - [x] A timeline message shows its thread state and the asks the user has not answered as open
 - [x] A timeline message whose thread has a later message sent by the user shows its asks as answered, not open
 - [x] An organization's timeline lists the messages of every contact in that organization, newest first
-- [ ] An organization's timeline leaves out messages from contacts outside it
+- [x] An organization's timeline leaves out messages from contacts outside it
 - [ ] The dashboard shell shows a People tab that opens the People page
 - [ ] The People page shows the VIP, Urgent and Everyone else lists, each row with the contact's name, organization and the time of its last message
 - [ ] An urgent row on the People page says why the contact is urgent
