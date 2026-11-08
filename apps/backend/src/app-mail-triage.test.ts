@@ -1022,6 +1022,40 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] })]);
   });
 
+  it('rewrites the summary lines of a digest from the items left in it on the next triage run after the user gives one of its items its own verdict', async () => {
+    const gitHubNotice = (summary: string) => ({
+      action: 'archive',
+      category: 'system-update',
+      summary,
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const summary = {
+      summarize: (request?: { items?: { summary: string }[] }) =>
+        Promise.resolve({
+          lines: [(request?.items ?? []).map((item) => item.summary).join(' and ')],
+          costInUsd: 0.01,
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+        { ...budgetReview, id: 'message-deploy', threadId: 'message-deploy', from: 'GitHub <noreply@github.com>' },
+      ],
+    });
+    await postTriageRun(app);
+    await postJson(app, '/verdicts', { messageId: 'message-deploy', decision: 'confirmed' });
+
+    await postTriageRun(app);
+
+    const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+    expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: ['GitHub build passed'] })]);
+  });
+
   it('still carries on a digest in GET /triage-queue, after a backend restart on the same database file, the summary lines written before it, without a new summary call', async () => {
     const triage = triageAnswering({
       action: 'archive',
