@@ -780,9 +780,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const undoneHandledForYouMessageIds: string[] = [];
   app.post('/handled-for-you/:messageId/undo', (context) => {
     const messageId = context.req.param('messageId');
-    if (!proposals.some((proposal) => proposal.messageId === messageId && proposal.madeAutomatic)) {
-      return context.body(null, 404);
-    }
+    const wasHandledForYou = proposals.some(
+      (proposal) => proposal.messageId === messageId && proposal.madeAutomatic,
+    );
+    if (!wasHandledForYou) return context.body(null, 404);
     undoneHandledForYouMessageIds.push(messageId);
     return context.body(null, 200);
   });
