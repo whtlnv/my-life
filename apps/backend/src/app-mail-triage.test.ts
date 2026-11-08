@@ -705,6 +705,102 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     });
   });
 
+  it('returns in GET /triage-queue the waiting system-update, sales and calendar-drive proposals as digests, each with its account, category, key, item count and severity counts', async () => {
+    const proposalsInOrder = [
+      {
+        action: 'archive',
+        category: 'system-update',
+        summary: 'GitHub build failed',
+        extract: { system: 'GitHub', severity: 'high', significant: true },
+        reason: 'A failed build',
+      },
+      {
+        action: 'archive',
+        category: 'system-update',
+        summary: 'GitHub build passed',
+        extract: { system: 'GitHub', severity: 'low', significant: false },
+        reason: 'A routine notification',
+      },
+      {
+        action: 'archive',
+        category: 'sales',
+        summary: 'Acme offers a discount',
+        extract: { company: 'Acme' },
+        reason: 'A sales pitch',
+      },
+      {
+        action: 'archive',
+        category: 'calendar-drive',
+        summary: 'Marta shared a document',
+        extract: { item: 'Q4 plan', change: 'shared' },
+        reason: 'A Drive share notification',
+      },
+    ];
+    const triage = triageAnsweringInOrder(proposalsInOrder, 1);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        {
+          ...budgetReview,
+          id: 'message-failed',
+          from: 'GitHub <noreply@github.com>',
+          date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+        },
+        {
+          ...budgetReview,
+          id: 'message-passed',
+          from: 'GitHub <noreply@github.com>',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+        },
+        {
+          ...budgetReview,
+          id: 'message-sales',
+          from: 'Acme <sales@acme.example>',
+          date: 'Mon, 2 Nov 2026 08:00:00 -0600',
+        },
+        {
+          ...budgetReview,
+          id: 'message-drive',
+          from: 'Google Drive <drive-shares@google.com>',
+          date: 'Mon, 2 Nov 2026 07:00:00 -0600',
+        },
+      ],
+    });
+    await postTriageRun(app);
+
+    const queue = await app.request('/triage-queue');
+
+    const { digests } = (await queue.json()) as { digests: unknown[] };
+    expect(digests).toHaveLength(3);
+    expect(digests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          accountEmail: 'ana@example.com',
+          category: 'system-update',
+          key: 'GitHub',
+          count: 2,
+          severityCounts: { high: 1, low: 1 },
+        }),
+        expect.objectContaining({
+          accountEmail: 'ana@example.com',
+          category: 'sales',
+          key: 'sales@acme.example',
+          count: 1,
+          severityCounts: {},
+        }),
+        expect.objectContaining({
+          accountEmail: 'ana@example.com',
+          category: 'calendar-drive',
+          key: 'drive-shares@google.com',
+          count: 1,
+          severityCounts: {},
+        }),
+      ]),
+    );
+  });
+
   it.each([
     {
       rule: 'groups under cc-thread, not in the action block, an action proposal for a message whose to and cc do not contain the reporting account',

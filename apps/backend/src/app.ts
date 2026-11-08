@@ -18,6 +18,7 @@ import {
   chooseVerdictExamples,
   currentVerdict,
   describeSourceFreshness,
+  digests,
   displayedCategory,
   expenseStatement,
   filterCandidates,
@@ -598,9 +599,30 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
+  // The waiting proposals outside the action block, grouped per account and sender (or system).
+  function describeDigests(verdicts: StoredVerdict[]) {
+    const waiting = triageQueue(awaitingTheUser(proposals), verdicts)
+      .groups.filter(({ category }) => !isLeadingCategory(category))
+      .flatMap((group) => group.proposals)
+      .map((proposal) => ({
+        ...proposal,
+        category: proposal.category ?? '',
+        extract: proposal.extract ?? {},
+        from: reportedMessages.find((message) => message.id === proposal.messageId)?.from ?? '',
+      }));
+    return digests(waiting).map(({ key, proposals: digested, severityCounts }) => ({
+      accountEmail: digested[0]?.accountEmail,
+      category: digested[0]?.category,
+      key,
+      count: digested.length,
+      severityCounts,
+    }));
+  }
   app.get('/triage-queue', (context) => {
+    const verdicts = verdictStore.loadAll();
     return context.json({
-      ...splitActionFromGroups(proposals, verdictStore.loadAll()),
+      ...splitActionFromGroups(proposals, verdicts),
+      digests: describeDigests(verdicts),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
       fetchedAt: clock.now().toISOString(),
