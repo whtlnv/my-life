@@ -217,4 +217,13 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe('Perfecto, ahí estaré.\n');
   });
+
+  it('comes out empty, without throwing, for a metadata-only payload whose part has no body', () => {
+    const payload = {
+      mimeType: 'multipart/alternative',
+      headers: [{ name: 'Content-Type', value: 'multipart/alternative; boundary="000000000000abc123"' }],
+    };
+
+    expect(messageBody(payload)).toBe('');
+  });
 });

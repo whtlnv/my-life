@@ -1,7 +1,7 @@
 interface MessagePart {
   mimeType: string;
   filename?: string;
-  body: { size: number; data?: string };
+  body?: { size: number; data?: string };
   parts?: MessagePart[];
 }
 
@@ -12,7 +12,7 @@ export function messageBody(payload: MessagePart): string {
   if (bodyPart) {
     return messageBody(bodyPart);
   }
-  const decoded = Buffer.from(payload.body.data ?? '', 'base64url').toString('utf8');
+  const decoded = Buffer.from(payload.body?.data ?? '', 'base64url').toString('utf8');
   const text = payload.mimeType === 'text/html' ? htmlText(decoded) : decoded;
   return cappedToMaximumBodyBytes(withoutSignature(withoutQuotedReply(text)));
 }
