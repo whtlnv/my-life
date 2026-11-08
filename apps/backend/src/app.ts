@@ -405,10 +405,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   let triageRunInProgress = false;
   const currentTriagePromptVersion = 'triage-v2';
   // A message proposed before its body arrived is asked about once more, this time with the body.
+  const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
+    (message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id),
+  );
   const messageIdsAwaitingRetriage = new Set<string>(
-    reportedMessages
-      .filter((message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id))
-      .map((message) => message.id),
+    messagesWithBodyProposedUnderAnOlderPrompt.map((message) => message.id),
   );
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
