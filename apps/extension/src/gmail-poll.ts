@@ -26,6 +26,7 @@ interface GmailMessageList {
 interface GmailMessage {
   id: string;
   threadId: string;
+  labelIds: string[];
   snippet: string;
   payload: MessagePart & { headers: { name: string; value: string }[] };
 }
@@ -65,6 +66,7 @@ function toReportedMessage(message: GmailMessage) {
     snippet: message.snippet,
     listId: header('List-Id'),
     body: messageBody(message.payload),
+    ...(message.labelIds.includes('SENT') && { sentByUser: true }),
   };
 }
 

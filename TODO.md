@@ -3,7 +3,7 @@
 
 ## Phase 3 — People, Needs input, tasks
 
-- [ ] When the extension polls Gmail, a message the account sent (Gmail label `SENT`) is reported to the backend marked as sent by the user
+- [x] When the extension polls Gmail, a message the account sent (Gmail label `SENT`) is reported to the backend marked as sent by the user
 - [ ] When the extension polls Gmail, a message received in the inbox is reported marked as not sent by the user
   - predicted-contradiction: `apps/extension/src/gmail-poll.test.ts::pollGmailOnce > reports each message with its From, To, Cc, Subject, Date and List-Id headers, its snippet and its trimmed body, read in full` — asserts: an inbox message is reported as exactly id, threadId, from, to, cc, subject, date, snippet, listId and body, with no other field — retired-by: "a message received in the inbox is reported marked as not sent by the user"
 - [ ] The business days between two instants skip Saturday and Sunday in the business time zone: Friday 17:00 to Tuesday 17:00 is 2 business days
