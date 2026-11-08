@@ -187,4 +187,30 @@ describe('digests', () => {
     };
     expect(digests([receipt, copiedThread])).toEqual([]);
   });
+
+  it('reports how many of its proposals carry each severity', () => {
+    const budgetAlert = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'system-update',
+      extract: { system: 'AWS', severity: 'high', significant: true },
+    };
+    const outageNotice = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'system-update',
+      extract: { system: 'AWS', severity: 'high', significant: true },
+    };
+    const maintenanceNotice = {
+      messageId: 'message-3',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'AWS', severity: 'low', significant: false },
+    };
+    const result = digests([budgetAlert, outageNotice, maintenanceNotice]);
+    expect(result[0]?.severityCounts).toEqual({ high: 2, low: 1 });
+  });
 });

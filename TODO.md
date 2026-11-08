@@ -11,7 +11,7 @@
 - [x] Two calendar-drive proposals from the same account and the same sender address are in one digest
 - [x] Two calendar-drive proposals from the same account and different sender addresses are in two digests
 - [x] An expense or cc-thread proposal is never placed in a digest
-- [ ] A digest reports how many of its items carry each severity (two `high` and one `low` give high 2, low 1)
+- [x] A digest reports how many of its items carry each severity (two `high` and one `low` give high 2, low 1)
 - [ ] A digest lists its significant items by name
 - [ ] A digest does not list its items that are not significant
 - [ ] `GET /triage-queue` returns the waiting system-update, sales and calendar-drive proposals as digests, each with its account, category, key, item count and severity counts
