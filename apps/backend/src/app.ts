@@ -338,6 +338,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const filterDeletionRequestStore = openFilterDeletionRequestStore(databasePath);
   const categoryModeStore = openCategoryModeStore(databasePath);
   const contactDetailsStore = openContactDetailsStore(databasePath);
+  const digestSummaryStore = openDigestSummaryStore(databasePath);
+  // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
+  const listedDigestStore = openListedDigestStore(databasePath);
+  const undoAutomaticStore = openUndoAutomaticStore(databasePath);
   // Messages reported before this process started are reloaded, so a restart never strands a message untriaged.
   const storedMessages = reportedMessageStore.loadReportedMessages();
   const reportedMessages: ReportedMessage[] = storedMessages;
@@ -446,7 +450,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
   let triageRunInProgress = false;
   let verdictGivenSinceLastRun = false;
-  const digestSummaryStore = openDigestSummaryStore(databasePath);
   // A message proposed before its body arrived is asked about once more, this time with the body.
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
     (message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id),
@@ -680,8 +683,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { accountEmail, category, messageId } = digested[0] ?? {};
     return JSON.stringify([accountEmail, category, key, messageId]);
   }
-  // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
-  const listedDigestStore = openListedDigestStore(databasePath);
   function recordAndDescribeListedDigests(verdicts: StoredVerdict[]) {
     return waitingDigests(verdicts).map((digest) => {
       const { key, proposals: digested, severityCounts, significantItems } = digest;
@@ -721,7 +722,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
-  const undoAutomaticStore = openUndoAutomaticStore(databasePath);
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
     const undoneMessageIds = undoAutomaticStore.loadAll();
