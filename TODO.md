@@ -70,7 +70,7 @@
 - [x] An imported contact with an email the store already holds merges into that contact instead of adding one
 - [x] An imported contact with an unknown email adds a new contact
 - [x] The same person imported from two accounts by the same email ends as one contact holding both accounts' data
-- [ ] A starred imported contact is marked `vip`
+- [x] A starred imported contact is marked `vip`
 - [ ] An unstarred imported contact does not remove a `vip` mark the user set in the app
 - [ ] A Google label on an imported contact becomes one of its lists
 - [ ] An imported name or organization does not replace one the user set in the app

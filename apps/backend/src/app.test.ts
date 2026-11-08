@@ -3070,7 +3070,10 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
-    await setContactDetails(beforeRestart, 'luis@example.com', { lists: ['board', 'investors'], note: 'Prefers calls' });
+    await setContactDetails(beforeRestart, 'luis@example.com', {
+      lists: ['board', 'investors'],
+      note: 'Prefers calls',
+    });
 
     const afterRestart = createApp(options);
     const { contacts } = (await getContacts(afterRestart)) as {
@@ -3128,7 +3131,9 @@ describe('backend app', () => {
     await setContactDetails(app, 'luis@example.com', { note: 'Prefers calls' });
     await setContactDetails(app, 'marta@acme.com', { note: 'Answers fast' });
     await setContactDetails(app, 'marta@acme.com', { lists: ['suppliers'] });
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; lists?: string[]; note?: string }[] };
+    const { contacts } = (await getContacts(app)) as {
+      contacts: { emails: string[]; lists?: string[]; note?: string }[];
+    };
 
     expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
       { emails: ['luis@example.com'], lists: ['board', 'investors'], note: 'Prefers calls' },
@@ -3150,7 +3155,9 @@ describe('backend app', () => {
     const numericNote = await patchRaw({ note: 42 });
     const textLists = await patchRaw({ lists: 'investors' });
     const numericLists = await patchRaw({ lists: ['board', 7] });
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; lists?: string[]; note?: string }[] };
+    const { contacts } = (await getContacts(app)) as {
+      contacts: { emails: string[]; lists?: string[]; note?: string }[];
+    };
 
     expect([numericNote.status, textLists.status, numericLists.status]).toEqual([400, 400, 400]);
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], lists: ['board'], note: 'Prefers calls' }]);
@@ -3209,5 +3216,17 @@ describe('backend app', () => {
         organization: 'Acme',
       },
     ]);
+  });
+
+  it('lists at GET /contacts, after POST /contacts-import brings a starred contact, that contact with the vip mark', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: true, lists: [] }],
+    });
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: ['vip'] }]);
   });
 });
