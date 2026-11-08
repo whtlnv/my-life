@@ -615,6 +615,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         summary: latestProposalFor(proposals, messageId)?.summary ?? '',
       }));
       const summary = await options.summary?.summarize({ items });
+      if (summary) spendStore.save({ spentAt: clock.now().toISOString(), model: '', costInUsd: summary.costInUsd });
       summaryLinesByDigest.set(identifyDigest(digest), summary?.lines);
     }
   }
