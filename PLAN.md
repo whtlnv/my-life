@@ -25,7 +25,7 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 Read `CLAUDE.md` first. **Phase 2b's code is delivered** (`DONE.md`): the body parser (`packages/domain/src/message-body.ts`), `format=full` polling and the body backfill, `prompts/triage-v2.md` with the v2 extraction stored in the proposal store under its prompt version, retriage of messages whose body arrives (verdicts kept), contacts and organizations derived from senders and extractions plus the Google Contacts import (stored, merged by email, starred → `vip`, labels → lists, nothing imported overrides the app), and `GET /search`. `scripts/demo.sh` seeds all of it. **Not yet seen over the real accounts**: the contacts scopes and one re-consent per profile (`PENDING_TASKS.md` § 9, `docs/phase-2b-walkthrough.md`), which also clears the Gmail 403 three profiles answer since Phase 2. The launchd backend still runs the pre-2b build until it is restarted. Phase 0's three-day token check is due 2026-11-09.
 
-**Next:** split `apps/backend/src/app.test.ts` (past 3,500 lines) by route group, then `/tdd-supervise` on Phase 2c. Pass `--model` to every `claude -p` subprocess: the TDD skills pin none, so leaves inherit the user's default.
+**Next:** `/tdd-supervise` on Phase 2c. The `createApp` route tests are split by route group (`apps/backend/src/app*.test.ts`, shared staging in `app.test-support.ts`); a new route's tests go in its group's file. Pass `--model` to every `claude -p` subprocess: the TDD skills pin none, so leaves inherit the user's default.
 
 What the supervision showed in Phase 2b — check these every cycle:
 

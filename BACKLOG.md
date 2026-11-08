@@ -59,9 +59,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
-- **[apps/backend/src/app.test.ts:329] One 3340-line `describe` with 151 tests covers every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
-  Finding the tests for one route means searching the whole file, and its staging helpers (lines 17–328) sit up to 3300 lines above the tests
-  that use them. Deferred to the `createApp` split above: the test files should follow the route modules, not come first.
 - **[packages/domain/src/expense-statement.ts:26] `localCalendarDate` is defined four times** (added: 2026-11-07)
   Identical `Intl.DateTimeFormat('en-CA', …)` helpers sit in `expense-statement.ts`, `now-view.ts`, `triage-spend.ts` and
   inline in `apps/backend/src/app.ts` `mondayOfBusinessWeek`, so a fix to the business-date rule has to be made four
