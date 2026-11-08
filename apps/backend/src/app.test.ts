@@ -30,8 +30,17 @@ const postTriageRun = (app: App) => app.request('/triage-run', { method: 'POST' 
 
 const getJson = async <T>(app: App, path: string) => (await (await app.request(path)).json()) as T;
 
-const getContacts = (app: App) =>
-  getJson<{ contacts: { displayName: string; emails: string[]; messageIds: string[] }[] }>(app, '/contacts');
+interface ListedContact {
+  displayName: string;
+  emails: string[];
+  messageIds: string[];
+  marks?: string[];
+  lists?: string[];
+  note?: string;
+  organization?: string;
+}
+
+const getContacts = (app: App) => getJson<{ contacts: ListedContact[] }>(app, '/contacts');
 
 const getOrganizations = (app: App) =>
   getJson<{ organizations: { name: string; messageIds: string[] }[] }>(app, '/organizations');
@@ -3090,7 +3099,7 @@ describe('backend app', () => {
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
 
     await markContact(app, 'luis@example.com', 'vip');
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+    const { contacts } = await getContacts(app);
 
     expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
       { emails: ['luis@example.com'], marks: ['vip'] },
@@ -3112,9 +3121,7 @@ describe('backend app', () => {
     });
 
     const afterRestart = createApp(options);
-    const { contacts } = (await getContacts(afterRestart)) as {
-      contacts: { emails: string[]; lists?: string[]; note?: string }[];
-    };
+    const { contacts } = await getContacts(afterRestart);
 
     expect(contacts).toMatchObject([
       { emails: ['luis@example.com'], lists: ['board', 'investors'], note: 'Prefers calls' },
@@ -3132,7 +3139,7 @@ describe('backend app', () => {
     await markContact(beforeRestart, 'luis@example.com', 'vip');
 
     const afterRestart = createApp(options);
-    const { contacts } = (await getContacts(afterRestart)) as { contacts: { emails: string[]; marks?: string[] }[] };
+    const { contacts } = await getContacts(afterRestart);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: ['vip'] }]);
   });
@@ -3143,7 +3150,7 @@ describe('backend app', () => {
     await markContact(app, 'luis@example.com', 'vip');
 
     await unmarkContact(app, 'luis@example.com', 'vip');
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
   });
@@ -3167,9 +3174,7 @@ describe('backend app', () => {
     await setContactDetails(app, 'luis@example.com', { note: 'Prefers calls' });
     await setContactDetails(app, 'marta@acme.com', { note: 'Answers fast' });
     await setContactDetails(app, 'marta@acme.com', { lists: ['suppliers'] });
-    const { contacts } = (await getContacts(app)) as {
-      contacts: { emails: string[]; lists?: string[]; note?: string }[];
-    };
+    const { contacts } = await getContacts(app);
 
     expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
       { emails: ['luis@example.com'], lists: ['board', 'investors'], note: 'Prefers calls' },
@@ -3191,9 +3196,7 @@ describe('backend app', () => {
     const numericNote = await patchRaw({ note: 42 });
     const textLists = await patchRaw({ lists: 'investors' });
     const numericLists = await patchRaw({ lists: ['board', 7] });
-    const { contacts } = (await getContacts(app)) as {
-      contacts: { emails: string[]; lists?: string[]; note?: string }[];
-    };
+    const { contacts } = await getContacts(app);
 
     expect([numericNote.status, textLists.status, numericLists.status]).toEqual([400, 400, 400]);
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], lists: ['board'], note: 'Prefers calls' }]);
@@ -3207,7 +3210,7 @@ describe('backend app', () => {
       accountEmail: 'ana@example.com',
       contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
     });
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; organization?: string }[] };
+    const { contacts } = await getContacts(app);
 
     expect(importResponse.status).toBe(200);
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], messageIds: ['message-1'], organization: 'Acme' }]);
@@ -3220,9 +3223,7 @@ describe('backend app', () => {
       accountEmail: 'ana@example.com',
       contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
     });
-    const { contacts } = (await getContacts(app)) as {
-      contacts: { displayName: string; emails: string[]; messageIds: string[]; organization?: string }[];
-    };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([
       { displayName: 'Luis Pérez', emails: ['luis@example.com'], messageIds: [], organization: 'Acme' },
@@ -3240,9 +3241,7 @@ describe('backend app', () => {
       accountEmail: 'ana@psmutuus.com',
       contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com', 'luis@acme.com'], starred: false, lists: [] }],
     });
-    const { contacts } = (await getContacts(app)) as {
-      contacts: { displayName: string; emails: string[]; messageIds: string[]; organization?: string }[];
-    };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([
       {
@@ -3261,7 +3260,7 @@ describe('backend app', () => {
       accountEmail: 'ana@example.com',
       contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: true, lists: [] }],
     });
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: ['vip'] }]);
   });
@@ -3274,7 +3273,7 @@ describe('backend app', () => {
       accountEmail: 'ana@example.com',
       contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
     });
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: ['vip'] }]);
   });
@@ -3288,7 +3287,7 @@ describe('backend app', () => {
         { name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: ['board'] },
       ],
     });
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; lists?: string[] }[] };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], lists: ['board'] }]);
   });
@@ -3305,7 +3304,7 @@ describe('backend app', () => {
       accountEmail: 'ana@example.com',
       contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
     });
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; organization?: string }[] };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], organization: 'Mutuus' }]);
   });
@@ -3320,7 +3319,7 @@ describe('backend app', () => {
         { emails: ['noreply@vendor.io'], starred: false, lists: [] },
       ],
     });
-    const { contacts } = (await getContacts(app)) as { contacts: { displayName: string; emails: string[] }[] };
+    const { contacts } = await getContacts(app);
 
     expect(response.status).toBe(200);
     expect(contacts).toMatchObject([{ displayName: 'noreply@vendor.io', emails: ['noreply@vendor.io'] }]);
@@ -3342,7 +3341,7 @@ describe('backend app', () => {
 
     const afterRestart = createApp(options);
     await postJson(afterRestart, '/contacts-import', starredLuis);
-    const { contacts } = (await getContacts(afterRestart)) as { contacts: { emails: string[]; marks?: string[] }[] };
+    const { contacts } = await getContacts(afterRestart);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
   });
@@ -3357,7 +3356,7 @@ describe('backend app', () => {
     await unmarkContact(app, 'luis@example.com', 'vip');
 
     await postJson(app, '/contacts-import', starredLuis);
-    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+    const { contacts } = await getContacts(app);
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
   });
@@ -3383,15 +3382,7 @@ describe('backend app', () => {
     });
 
     const afterRestart = createApp(options);
-    const { contacts } = (await getContacts(afterRestart)) as {
-      contacts: {
-        displayName: string;
-        emails: string[];
-        messageIds: string[];
-        organization?: string;
-        lists?: string[];
-      }[];
-    };
+    const { contacts } = await getContacts(afterRestart);
 
     expect(contacts).toMatchObject([
       {
