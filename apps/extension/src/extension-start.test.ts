@@ -5,112 +5,172 @@ import { startExtension } from './extension-start';
 const calendarApi = 'https://www.googleapis.com/calendar/v3';
 const gmailApi = 'https://gmail.googleapis.com/gmail/v1';
 const peopleApi = 'https://people.googleapis.com/v1';
+const backendApi = 'http://127.0.0.1:7777';
+const profileEmail = 'francisco@example.com';
+const calendarListUrl = `${calendarApi}/users/me/calendarList`;
+const pendingCommandsUrl = `${backendApi}/commands?accountEmail=${encodeURIComponent(profileEmail)}`;
+
+const oneMinute = 60 * 1000;
+const fiveMinutes = 5 * oneMinute;
+const oneDay = 24 * 60 * oneMinute;
+
+const jsonResponse = (body: unknown): Promise<Response> => Promise.resolve(Response.json(body));
+
+const requestUrl = (input: string | URL | Request): URL =>
+  new URL(input instanceof Request ? input.url : input.toString());
+const routedFetch =
+  (route: (url: URL, init?: RequestInit) => Promise<Response>) =>
+  (input: string | URL | Request, init?: RequestInit): Promise<Response> =>
+    route(requestUrl(input), init);
+
+const requestBody = (init?: RequestInit): unknown =>
+  typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
+type BackendPost = { path: string; body: unknown };
+const backendPost = (url: URL, init: RequestInit): BackendPost => ({ path: url.pathname, body: requestBody(init) });
+
+const isBackendPost = (url: URL, init?: RequestInit): init is RequestInit =>
+  url.origin === backendApi && init?.method === 'POST';
+const isBackendPostTo = (path: string, url: URL, init?: RequestInit): init is RequestInit =>
+  isBackendPost(url, init) && url.pathname === path;
+
+const acceptedRequest = () => jsonResponse({ ok: true });
+const registerPost: BackendPost = { path: '/register', body: { email: profileEmail } };
+const emptyCalendarSnapshotPost: BackendPost = {
+  path: '/calendar-snapshot',
+  body: { accountEmail: profileEmail, events: [] },
+};
+const recordBody = (into: unknown[], init: RequestInit): Promise<Response> => {
+  into.push(requestBody(init));
+  return acceptedRequest();
+};
+const unexpectedRequest = () => Promise.resolve(new Response('unexpected request', { status: 404 }));
+const emptyCalendarList = () => jsonResponse({ kind: 'calendar#calendarList', items: [] });
+const gmailProfile = () => jsonResponse({ emailAddress: profileEmail, historyId: '4321' });
+const emptyInbox = () => jsonResponse({ messages: [] });
+const isGmailHistoryRead = (url: URL): boolean => url.href.startsWith(`${gmailApi}/users/me/history`);
+const isGmailLabelsRead = (url: URL, init?: RequestInit): boolean =>
+  url.href === `${gmailApi}/users/me/labels` && init?.method !== 'POST';
+const unchangedHistory = () => jsonResponse({ historyId: '4321' });
+const noPendingCommands = () => jsonResponse({ commands: [] });
+const isAcknowledgementPost = (url: URL, init?: RequestInit): boolean =>
+  url.pathname.endsWith('/acknowledgement') && init?.method === 'POST';
+const recordingBackendPosts =
+  (backendPosts: BackendPost[]) =>
+  (url: URL, init?: RequestInit): Promise<Response> => {
+    if (url.href === calendarListUrl) {
+      return emptyCalendarList();
+    }
+    if (isBackendPost(url, init)) {
+      backendPosts.push(backendPost(url, init));
+      return acceptedRequest();
+    }
+    return unexpectedRequest();
+  };
+const defaultRoute = (url: URL, init?: RequestInit): Promise<Response> => {
+  if (url.href === calendarListUrl) {
+    return emptyCalendarList();
+  }
+  if (url.href === `${gmailApi}/users/me/profile`) {
+    return gmailProfile();
+  }
+  if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
+    return emptyInbox();
+  }
+  if (isGmailHistoryRead(url)) {
+    return unchangedHistory();
+  }
+  if (url.href === pendingCommandsUrl) {
+    return noPendingCommands();
+  }
+  if (url.href === `${peopleApi}/contactGroups`) {
+    return jsonResponse({ contactGroups: [] });
+  }
+  if (url.href.startsWith(`${peopleApi}/people/me/connections`)) {
+    return jsonResponse({ connections: [] });
+  }
+  if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
+    return jsonResponse({ otherContacts: [] });
+  }
+  if (isBackendPost(url, init)) {
+    return acceptedRequest();
+  }
+  return unexpectedRequest();
+};
+const recordingPostsTo =
+  (path: string, into: unknown[]) =>
+  (url: URL, init?: RequestInit): Promise<Response> =>
+    isBackendPostTo(path, url, init) ? recordBody(into, init) : defaultRoute(url, init);
+
+const startOptions = (fetch: typeof globalThis.fetch) => ({
+  fetch,
+  profileAccountEmail: () => Promise.resolve(profileEmail),
+  accessToken: () => Promise.resolve('token-for-francisco'),
+  backendUrl: backendApi,
+  clock: () => new Date('2026-11-02T10:00:00-06:00'),
+  timeZone: 'America/Mexico_City',
+});
+
+const collectInto =
+  (scheduledPolls: Map<number, () => Promise<void>>) => (milliseconds: number, poll: () => Promise<void>) => {
+    scheduledPolls.set(milliseconds, poll);
+  };
+
+const startWithScheduledPolls = async (
+  fetch: typeof globalThis.fetch,
+  overrides: Partial<Parameters<typeof startExtension>[0]> = {},
+): Promise<Map<number, () => Promise<void>>> => {
+  const scheduledPolls = new Map<number, () => Promise<void>>();
+  await startExtension({ ...startOptions(fetch), ...overrides, every: collectInto(scheduledPolls) });
+  return scheduledPolls;
+};
 
 describe('startExtension', () => {
   it('registers with the backend using the profile account email, then posts the first snapshot', async () => {
-    const backendPosts: { path: string; body: unknown }[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        backendPosts.push({ path: url.pathname, body: JSON.parse(init.body as string) });
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+    const backendPosts: BackendPost[] = [];
+    const fakeFetch = routedFetch(recordingBackendPosts(backendPosts));
 
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
-    });
+    await startExtension(startOptions(fakeFetch));
 
-    expect(backendPosts).toEqual([
-      { path: '/register', body: { email: 'francisco@example.com' } },
-      { path: '/calendar-snapshot', body: { accountEmail: 'francisco@example.com', events: [] } },
-    ]);
+    expect(backendPosts).toEqual([registerPost, emptyCalendarSnapshotPost]);
   });
 
   it('polls again every 5 minutes after the first snapshot and posts each result, and a failed poll does not stop the next one', async () => {
-    const backendPosts: { path: string; body: unknown }[] = [];
+    const backendPosts: BackendPost[] = [];
     let calendarListRequests = 0;
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
+    const fakeFetch = routedFetch((url, init) => {
+      if (url.href === calendarListUrl) {
         calendarListRequests++;
         if (calendarListRequests === 2) {
           return Promise.resolve(new Response('forbidden', { status: 403 }));
         }
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
       }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        backendPosts.push({ path: url.pathname, body: JSON.parse(init.body as string) });
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-    let scheduledMilliseconds: number | undefined;
-    let scheduledPoll: (() => Promise<void>) | undefined;
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
-      every: (milliseconds: number, poll: () => Promise<void>) => {
-        scheduledMilliseconds = milliseconds;
-        scheduledPoll = poll;
-      },
+      return recordingBackendPosts(backendPosts)(url, init);
     });
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
+    const calendarPoll = scheduledPolls.get(fiveMinutes);
 
-    expect(scheduledMilliseconds).toBe(5 * 60 * 1000);
-    await expect(scheduledPoll?.()).resolves.toBeUndefined();
-    await expect(scheduledPoll?.()).resolves.toBeUndefined();
-    const snapshot = { path: '/calendar-snapshot', body: { accountEmail: 'francisco@example.com', events: [] } };
-    expect(backendPosts).toEqual([{ path: '/register', body: { email: 'francisco@example.com' } }, snapshot, snapshot]);
+    expect(calendarPoll).toBeDefined();
+    await expect(calendarPoll?.()).resolves.toBeUndefined();
+    await expect(calendarPoll?.()).resolves.toBeUndefined();
+    expect(backendPosts).toEqual([registerPost, emptyCalendarSnapshotPost, emptyCalendarSnapshotPost]);
   });
 
   it('requests the Calendar window for the moment of each scheduled poll, so a poll the next day asks for the next day', async () => {
     const requestedWindows: { timeMin: string | null; timeMax: string | null }[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(
-          Response.json({ kind: 'calendar#calendarList', items: [{ id: 'primary', summary: 'Francisco' }] }),
-        );
+    const fakeFetch = routedFetch((url, init) => {
+      if (url.href === calendarListUrl) {
+        return jsonResponse({ kind: 'calendar#calendarList', items: [{ id: 'primary', summary: 'Francisco' }] });
       }
       if (url.pathname === '/calendar/v3/calendars/primary/events') {
         requestedWindows.push({ timeMin: url.searchParams.get('timeMin'), timeMax: url.searchParams.get('timeMax') });
-        return Promise.resolve(Response.json({ kind: 'calendar#events', items: [] }));
+        return jsonResponse({ kind: 'calendar#events', items: [] });
       }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-    let currentTime = new Date('2026-11-02T10:00:00-06:00');
-    let scheduledPoll: (() => Promise<void>) | undefined;
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => currentTime,
-      timeZone: 'America/Mexico_City',
-      every: (_milliseconds: number, poll: () => Promise<void>) => {
-        scheduledPoll = poll;
-      },
+      return defaultRoute(url, init);
     });
+    let currentTime = new Date('2026-11-02T10:00:00-06:00');
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch, { clock: () => currentTime });
     currentTime = new Date('2026-11-03T09:00:00-06:00');
-    await scheduledPoll?.();
+    await scheduledPolls.get(fiveMinutes)?.();
 
     expect(requestedWindows).toEqual([
       { timeMin: '2026-11-02T06:00:00.000Z', timeMax: '2026-11-04T06:00:00.000Z' },
@@ -120,39 +180,21 @@ describe('startExtension', () => {
 
   it('refreshes the badge from GET /now after the first snapshot and after every scheduled poll', async () => {
     const badgeCounts = [1, 3];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+    const fakeFetch = routedFetch((url, init) => {
+      if (url.href === `${backendApi}/now` && init?.method !== 'POST') {
+        return jsonResponse({ badgeCount: badgeCounts.shift() });
       }
-      if (url.href === 'http://127.0.0.1:7777/now' && init?.method !== 'POST') {
-        return Promise.resolve(Response.json({ badgeCount: badgeCounts.shift() }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+      return defaultRoute(url, init);
+    });
     const badgeTexts: string[] = [];
-    let scheduledPoll: (() => Promise<void>) | undefined;
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
-      every: (_milliseconds: number, poll: () => Promise<void>) => {
-        scheduledPoll = poll;
-      },
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch, {
       setBadgeText: (text: string) => {
         badgeTexts.push(text);
         return Promise.resolve();
       },
     });
     const badgeTextsAfterStart = [...badgeTexts];
-    await scheduledPoll?.();
+    await scheduledPolls.get(fiveMinutes)?.();
 
     expect(badgeTextsAfterStart).toEqual(['1']);
     expect(badgeTexts).toEqual(['1', '3']);
@@ -160,74 +202,28 @@ describe('startExtension', () => {
 
   it('posts the Gmail report to the backend with the profile account email', async () => {
     const mailReports: unknown[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
-        mailReports.push(JSON.parse(init.body as string));
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+    const fakeFetch = routedFetch(recordingPostsTo('/mail-report', mailReports));
 
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
-    });
+    await startExtension(startOptions(fakeFetch));
 
-    expect(mailReports).toEqual([{ accountEmail: 'francisco@example.com', historyId: '4321', messages: [] }]);
+    expect(mailReports).toEqual([{ accountEmail: profileEmail, historyId: '4321', messages: [] }]);
   });
 
   it('still starts and posts the calendar snapshot when Gmail is unreachable, reporting the Gmail failure to the console', async () => {
-    const backendPosts: { path: string; body: unknown }[] = [];
+    const backendPosts: BackendPost[] = [];
     const gmailUnreachable = new TypeError('Failed to fetch');
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
+    const fakeFetch = routedFetch((url, init) => {
       if (url.origin === 'https://gmail.googleapis.com') {
         return Promise.reject(gmailUnreachable);
       }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        backendPosts.push({ path: url.pathname, body: JSON.parse(init.body as string) });
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+      return recordingBackendPosts(backendPosts)(url, init);
+    });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     try {
-      await expect(
-        startExtension({
-          fetch: fakeFetch,
-          profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-          accessToken: () => Promise.resolve('token-for-francisco'),
-          backendUrl: 'http://127.0.0.1:7777',
-          clock: () => new Date('2026-11-02T10:00:00-06:00'),
-          timeZone: 'America/Mexico_City',
-        }),
-      ).resolves.toBeUndefined();
+      await expect(startExtension(startOptions(fakeFetch))).resolves.toBeUndefined();
 
-      expect(backendPosts).toContainEqual({
-        path: '/calendar-snapshot',
-        body: { accountEmail: 'francisco@example.com', events: [] },
-      });
+      expect(backendPosts).toContainEqual(emptyCalendarSnapshotPost);
       expect(consoleError).toHaveBeenCalledWith(expect.any(String), gmailUnreachable);
     } finally {
       consoleError.mockRestore();
@@ -236,43 +232,9 @@ describe('startExtension', () => {
 
   it('polls Gmail again every 60 seconds and posts each mail report', async () => {
     const mailReports: unknown[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
-      if (url.href.startsWith(`${gmailApi}/users/me/history`)) {
-        return Promise.resolve(Response.json({ historyId: '4321' }));
-      }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
-        mailReports.push(JSON.parse(init.body as string));
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-    const scheduledPolls = new Map<number, () => Promise<void>>();
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
-      every: (milliseconds: number, poll: () => Promise<void>) => {
-        scheduledPolls.set(milliseconds, poll);
-      },
-    });
-    const gmailPoll = scheduledPolls.get(60 * 1000);
+    const fakeFetch = routedFetch(recordingPostsTo('/mail-report', mailReports));
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
+    const gmailPoll = scheduledPolls.get(oneMinute);
     await gmailPoll?.();
 
     expect(gmailPoll).toBeDefined();
@@ -281,43 +243,15 @@ describe('startExtension', () => {
 
   it('starts the second scheduled Gmail poll from the history id the first poll reported, not from an empty inbox read', async () => {
     const gmailReads: string[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
+    const fakeFetch = routedFetch((url, init) => {
       if (url.origin === 'https://gmail.googleapis.com') {
         gmailReads.push(url.pathname + url.search);
       }
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
-      if (url.href.startsWith(`${gmailApi}/users/me/history`)) {
-        return Promise.resolve(Response.json({ historyId: '4321' }));
-      }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-    const scheduledPolls = new Map<number, () => Promise<void>>();
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
-      every: (milliseconds: number, poll: () => Promise<void>) => {
-        scheduledPolls.set(milliseconds, poll);
-      },
+      return defaultRoute(url, init);
     });
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
     gmailReads.length = 0;
-    await scheduledPolls.get(60 * 1000)?.();
+    await scheduledPolls.get(oneMinute)?.();
 
     expect(gmailReads).toContain('/gmail/v1/users/me/history?startHistoryId=4321');
     expect(gmailReads).not.toContain('/gmail/v1/users/me/messages?labelIds=INBOX');
@@ -327,49 +261,21 @@ describe('startExtension', () => {
     const mailReports: unknown[] = [];
     const gmailUnreachable = new TypeError('Failed to fetch');
     let historyReads = 0;
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
-      if (url.href.startsWith(`${gmailApi}/users/me/history`)) {
+    const fakeFetch = routedFetch((url, init) => {
+      if (isGmailHistoryRead(url)) {
         historyReads++;
         if (historyReads === 1) {
           return Promise.reject(gmailUnreachable);
         }
-        return Promise.resolve(Response.json({ historyId: '4321' }));
+        return unchangedHistory();
       }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
-        mailReports.push(JSON.parse(init.body as string));
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-    const scheduledPolls = new Map<number, () => Promise<void>>();
+      return recordingPostsTo('/mail-report', mailReports)(url, init);
+    });
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     try {
-      await startExtension({
-        fetch: fakeFetch,
-        profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-        accessToken: () => Promise.resolve('token-for-francisco'),
-        backendUrl: 'http://127.0.0.1:7777',
-        clock: () => new Date('2026-11-02T10:00:00-06:00'),
-        timeZone: 'America/Mexico_City',
-        every: (milliseconds: number, poll: () => Promise<void>) => {
-          scheduledPolls.set(milliseconds, poll);
-        },
-      });
-      const gmailPoll = scheduledPolls.get(60 * 1000);
+      const scheduledPolls = await startWithScheduledPolls(fakeFetch);
+      const gmailPoll = scheduledPolls.get(oneMinute);
       await expect(gmailPoll?.()).resolves.toBeUndefined();
       await expect(gmailPoll?.()).resolves.toBeUndefined();
 
@@ -383,45 +289,25 @@ describe('startExtension', () => {
   it('after the first Gmail poll, archives the pending archive commands for the profile account in Gmail and acknowledges them', async () => {
     const gmailModifications: string[] = [];
     const acknowledgements: string[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
-      if (url.href === `${gmailApi}/users/me/labels` && init?.method !== 'POST') {
-        return Promise.resolve(Response.json({ labels: [{ id: 'Label_9', name: 'my-life/archived' }] }));
+    const fakeFetch = routedFetch((url, init) => {
+      if (isGmailLabelsRead(url, init)) {
+        return jsonResponse({ labels: [{ id: 'Label_9', name: 'my-life/archived' }] });
       }
       if (url.pathname.endsWith('/modify') && init?.method === 'POST') {
         gmailModifications.push(url.pathname);
-        return Promise.resolve(Response.json({ id: 'message-7' }));
+        return jsonResponse({ id: 'message-7' });
       }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      if (url.href === pendingCommandsUrl) {
+        return jsonResponse({ commands: [{ id: 'command-1', messageId: 'message-7' }] });
       }
-      if (url.href === 'http://127.0.0.1:7777/commands?accountEmail=francisco%40example.com') {
-        return Promise.resolve(Response.json({ commands: [{ id: 'command-1', messageId: 'message-7' }] }));
-      }
-      if (url.pathname.endsWith('/acknowledgement') && init?.method === 'POST') {
+      if (isAcknowledgementPost(url, init)) {
         acknowledgements.push(url.pathname);
-        return Promise.resolve(Response.json({ ok: true }));
+        return acceptedRequest();
       }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
+      return defaultRoute(url, init);
     });
+
+    await startExtension(startOptions(fakeFetch));
 
     expect(gmailModifications).toEqual(['/gmail/v1/users/me/messages/message-7/modify']);
     expect(acknowledgements).toEqual(['/commands/command-1/acknowledgement']);
@@ -429,63 +315,41 @@ describe('startExtension', () => {
 
   it('after the first Gmail poll, creates and deletes the Gmail filters the pending create-filter and delete-filter commands ask for, and acknowledges both', async () => {
     const gmailFilterRequests: { method: string | undefined; path: string; body: unknown }[] = [];
-    const acknowledgements: { path: string; body: unknown }[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
-      if (url.href === `${gmailApi}/users/me/labels` && init?.method !== 'POST') {
-        return Promise.resolve(Response.json({ labels: [{ id: 'Label_99', name: 'my-life/shop' }] }));
+    const acknowledgements: BackendPost[] = [];
+    const fakeFetch = routedFetch((url, init) => {
+      const body = requestBody(init);
+      if (isGmailLabelsRead(url, init)) {
+        return jsonResponse({ labels: [{ id: 'Label_99', name: 'my-life/shop' }] });
       }
       if (url.pathname.startsWith('/gmail/v1/users/me/settings/filters')) {
         gmailFilterRequests.push({ method: init?.method, path: url.pathname, body });
         if (init?.method === 'POST') {
-          return Promise.resolve(Response.json({ id: 'gmail-filter-7', ...(body as object) }));
+          return jsonResponse({ id: 'gmail-filter-7', ...(body as object) });
         }
         return Promise.resolve(new Response(null, { status: 204 }));
       }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      if (url.href === pendingCommandsUrl) {
+        return jsonResponse({
+          commands: [
+            {
+              id: 'create-filter-proposal-1',
+              type: 'create-filter',
+              criteria: { from: 'news@shop.example.com' },
+              labelName: 'my-life/shop',
+              skipInbox: true,
+            },
+            { id: 'delete-filter-proposal-2', type: 'delete-filter', gmailFilterId: 'gmail-filter-3' },
+          ],
+        });
       }
-      if (url.href === 'http://127.0.0.1:7777/commands?accountEmail=francisco%40example.com') {
-        return Promise.resolve(
-          Response.json({
-            commands: [
-              {
-                id: 'create-filter-proposal-1',
-                type: 'create-filter',
-                criteria: { from: 'news@shop.example.com' },
-                labelName: 'my-life/shop',
-                skipInbox: true,
-              },
-              { id: 'delete-filter-proposal-2', type: 'delete-filter', gmailFilterId: 'gmail-filter-3' },
-            ],
-          }),
-        );
-      }
-      if (url.pathname.endsWith('/acknowledgement') && init?.method === 'POST') {
+      if (isAcknowledgementPost(url, init)) {
         acknowledgements.push({ path: url.pathname, body });
-        return Promise.resolve(Response.json({ ok: true }));
+        return acceptedRequest();
       }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
+      return defaultRoute(url, init);
     });
+
+    await startExtension(startOptions(fakeFetch));
 
     expect(gmailFilterRequests).toEqual([
       {
@@ -506,137 +370,53 @@ describe('startExtension', () => {
 
   it('imports the Google Contacts at start and again once a day, and a scheduled Gmail poll imports none', async () => {
     const contactsImports: unknown[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
-      if (url.href.startsWith(`${gmailApi}/users/me/history`)) {
-        return Promise.resolve(Response.json({ historyId: '4321' }));
-      }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
-      }
-      if (url.href.startsWith('http://127.0.0.1:7777/commands?')) {
-        return Promise.resolve(Response.json({ commands: [] }));
-      }
-      if (url.href === `${peopleApi}/contactGroups`) {
-        return Promise.resolve(Response.json({ contactGroups: [] }));
-      }
-      if (url.href.startsWith(`${peopleApi}/people/me/connections`)) {
-        return Promise.resolve(Response.json({ connections: [] }));
-      }
-      if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
-        return Promise.resolve(Response.json({ otherContacts: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/contacts-import' && init?.method === 'POST') {
-        contactsImports.push(JSON.parse(init.body as string));
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-    const scheduledPolls = new Map<number, () => Promise<void>>();
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
-      every: (milliseconds: number, poll: () => Promise<void>) => {
-        scheduledPolls.set(milliseconds, poll);
-      },
-    });
+    const fakeFetch = routedFetch(recordingPostsTo('/contacts-import', contactsImports));
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
     expect(contactsImports).toHaveLength(1);
 
-    await scheduledPolls.get(60 * 1000)?.();
+    await scheduledPolls.get(oneMinute)?.();
     expect(contactsImports).toHaveLength(1);
 
-    const dailyContactsImport = scheduledPolls.get(24 * 60 * 60 * 1000);
+    const dailyContactsImport = scheduledPolls.get(oneDay);
     expect(dailyContactsImport).toBeDefined();
     await dailyContactsImport?.();
     expect(contactsImports).toEqual([
-      { accountEmail: 'francisco@example.com', contacts: [] },
-      { accountEmail: 'francisco@example.com', contacts: [] },
+      { accountEmail: profileEmail, contacts: [] },
+      { accountEmail: profileEmail, contacts: [] },
     ]);
   });
 
   it('after the first Gmail poll, reads in full each message the backend lists as missing a body for the profile account and reports the bodies', async () => {
     const bodiesReports: unknown[] = [];
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${gmailApi}/users/me/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
-      }
-      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
-        return Promise.resolve(Response.json({ messages: [] }));
-      }
+    const fakeFetch = routedFetch((url, init) => {
       if (url.href === `${gmailApi}/users/me/messages/older?format=full`) {
-        return Promise.resolve(
-          Response.json({
-            id: 'older',
-            threadId: 'thread-older',
-            labelIds: ['INBOX'],
-            snippet: 'Agenda attached.',
-            payload: {
-              headers: [
-                { name: 'From', value: 'Board <board@lists.example.com>' },
-                { name: 'To', value: 'francisco@example.com' },
-                { name: 'Subject', value: 'Weekly board digest' },
-                { name: 'Date', value: 'Fri, 6 Nov 2026 08:00:00 -0600' },
-              ],
-              mimeType: 'text/plain',
-              body: { size: 16, data: Buffer.from('Agenda attached.').toString('base64url') },
-            },
-          }),
-        );
+        return jsonResponse({
+          id: 'older',
+          threadId: 'thread-older',
+          labelIds: ['INBOX'],
+          snippet: 'Agenda attached.',
+          payload: {
+            headers: [
+              { name: 'From', value: 'Board <board@lists.example.com>' },
+              { name: 'To', value: profileEmail },
+              { name: 'Subject', value: 'Weekly board digest' },
+              { name: 'Date', value: 'Fri, 6 Nov 2026 08:00:00 -0600' },
+            ],
+            mimeType: 'text/plain',
+            body: { size: 16, data: Buffer.from('Agenda attached.').toString('base64url') },
+          },
+        });
       }
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      if (url.href === `${backendApi}/bodies-missing?account=${encodeURIComponent(profileEmail)}`) {
+        return jsonResponse({ messageIds: ['older'] });
       }
-      if (url.href.startsWith('http://127.0.0.1:7777/commands?')) {
-        return Promise.resolve(Response.json({ commands: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/bodies-missing?account=francisco%40example.com') {
-        return Promise.resolve(Response.json({ messageIds: ['older'] }));
-      }
-      if (url.href === `${peopleApi}/contactGroups`) {
-        return Promise.resolve(Response.json({ contactGroups: [] }));
-      }
-      if (url.href.startsWith(`${peopleApi}/people/me/connections`)) {
-        return Promise.resolve(Response.json({ connections: [] }));
-      }
-      if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
-        return Promise.resolve(Response.json({ otherContacts: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/bodies-report' && init?.method === 'POST') {
-        bodiesReports.push(JSON.parse(init.body as string));
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ ok: true }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
-
-    await startExtension({
-      fetch: fakeFetch,
-      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
-      accessToken: () => Promise.resolve('token-for-francisco'),
-      backendUrl: 'http://127.0.0.1:7777',
-      clock: () => new Date('2026-11-02T10:00:00-06:00'),
-      timeZone: 'America/Mexico_City',
+      return recordingPostsTo('/bodies-report', bodiesReports)(url, init);
     });
 
+    await startExtension(startOptions(fakeFetch));
+
     expect(bodiesReports).toEqual([
-      { accountEmail: 'francisco@example.com', bodies: [{ messageId: 'older', body: 'Agenda attached.' }] },
+      { accountEmail: profileEmail, bodies: [{ messageId: 'older', body: 'Agenda attached.' }] },
     ]);
   });
 });
