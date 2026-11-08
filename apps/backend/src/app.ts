@@ -451,7 +451,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       reportedMessageStore.saveBody(messageId, body);
       const reportedMessage = reportedMessages.find((message) => message.id === messageId);
       if (reportedMessage !== undefined) reportedMessage.body = body;
-      if (proposals.some((proposal) => proposal.messageId === messageId)) messageIdsAwaitingRetriage.add(messageId);
+      const latestStoredProposal = proposalStore.loadAll().findLast((stored) => stored.messageId === messageId);
+      if (latestStoredProposal !== undefined && latestStoredProposal.promptVersion !== 'triage-v2') {
+        messageIdsAwaitingRetriage.add(messageId);
+      }
     });
     return context.body(null, 200);
   });

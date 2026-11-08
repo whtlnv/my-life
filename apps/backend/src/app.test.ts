@@ -3447,4 +3447,32 @@ describe('backend app', () => {
     const response = await app.request('/tasks');
     expect(await response.json()).toEqual({ tasks: [] });
   });
+
+  it('does not ask the triage port again for a message already proposed under triage-v2 whose body arrives at POST /bodies-report, on the next POST /triage-run', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
+    openProposalStore(databasePath).save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:00:00.000Z',
+      promptVersion: 'triage-v2',
+      proposal: keepProposalExtracting(),
+    });
+    const askedMessages: { id: string; body?: string | undefined }[] = [];
+    const triage = {
+      propose: (message: { id: string; body?: string }) => {
+        askedMessages.push({ id: message.id, body: message.body });
+        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+
+    await postJson(app, '/bodies-report', {
+      accountEmail: 'ana@example.com',
+      bodies: [{ messageId: 'message-1', body: 'Hi Ana, can you review the budget by Friday? Luis' }],
+    });
+    await postTriageRun(app);
+
+    expect(askedMessages).toEqual([]);
+  });
 });
