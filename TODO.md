@@ -34,7 +34,7 @@
 - [x] When a proposal joins a digest, its summary lines are rewritten from the new set of items
 - [x] When no proposal joins a digest, its summary lines are not rewritten on the next triage run
 - [x] Two digests each carry their own summary lines: the summary model is asked once per digest, with only that digest's item summaries (no item of another digest, no expense or cc-thread item)
-- [ ] The summary request names the model set in config
+- [x] The summary request names the model set in config
 - [ ] Each summary call's cost is logged as spend against the daily ceiling
 - [ ] When the daily spend ceiling is reached, no summary is written and the digest is still returned without one
 - [ ] When the summary model answers with output that fails validation, the digest is returned without summary lines and the triage queue still loads

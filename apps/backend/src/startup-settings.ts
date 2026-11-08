@@ -13,6 +13,7 @@ export interface StartupSettings {
   triageModel: string;
   // The model asked when the first one says `action` or `unknown`; undefined runs one model for everything.
   triageEscalationModel?: string;
+  summaryModel: string;
   dailySpendCeilingInUsd: number;
   triage: TriageAvailability;
 }
@@ -23,6 +24,7 @@ const defaultGmailPollingIntervalInSeconds = 60;
 export const defaultGmailPollingIntervalInMilliseconds = secondsToMilliseconds(defaultGmailPollingIntervalInSeconds);
 const defaultTriageModel = 'claude-haiku-5-5';
 const defaultTriageEscalationModel = 'claude-opus-5-5';
+const defaultSummaryModel = 'claude-opus-5-5';
 const noEscalation = 'none';
 const defaultDailySpendCeilingInUsd = 20;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
@@ -41,6 +43,7 @@ export function readStartupSettings(
     ),
     triageModel: environment.MY_LIFE_TRIAGE_MODEL ?? defaultTriageModel,
     ...readTriageEscalationModel(environment.MY_LIFE_TRIAGE_ESCALATION_MODEL),
+    summaryModel: environment.MY_LIFE_SUMMARY_MODEL ?? defaultSummaryModel,
     dailySpendCeilingInUsd: parseNumberOrDefault(
       environment.MY_LIFE_DAILY_SPEND_CEILING_USD,
       defaultDailySpendCeilingInUsd,
