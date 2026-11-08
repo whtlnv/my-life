@@ -774,7 +774,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/needs-input', (context) => {
     const verdicts = verdictStore.loadAll();
-    const questions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
+    const categoryQuestions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
       const alreadyAnswered = latestVerdictFor(messageId, verdicts) !== undefined;
       const choices = categoryQuestionChoices(category, disagreement);
       if (alreadyAnswered || choices === undefined) return [];
@@ -786,7 +786,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const senderEmail = contactFromSender(message.from).email;
       return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
     });
-    return context.json({ questions: [...questions, ...newSenderQuestions] });
+    return context.json({ questions: [...categoryQuestions, ...newSenderQuestions] });
   });
   app.post('/needs-input/answers', async (context) => {
     const { messageId, answer } = await context.req.json<{ messageId: string; answer: string }>();
