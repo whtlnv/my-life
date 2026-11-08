@@ -12,6 +12,7 @@ export function openContactDetailsStore(databasePath: string) {
   );
   const insertMark = database.prepare('INSERT INTO contact_marks (email, mark) VALUES (?, ?)');
   const loadMarkedEmails = database.prepare<[], { email: string }>('SELECT email FROM contact_marks');
+  const deleteMark = database.prepare('DELETE FROM contact_marks WHERE email = ? AND mark = ?');
   return {
     save(email: string, details: ContactDetails): void {
       insertDetails.run(email, JSON.stringify(details));
@@ -23,6 +24,9 @@ export function openContactDetailsStore(databasePath: string) {
     },
     saveMark(email: string, mark: string): void {
       insertMark.run(email, mark);
+    },
+    removeMark(email: string, mark: string): void {
+      deleteMark.run(email, mark);
     },
     markedEmails(): Set<string> {
       return new Set(loadMarkedEmails.all().map((row) => row.email));

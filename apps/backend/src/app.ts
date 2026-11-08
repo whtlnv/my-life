@@ -575,6 +575,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.saveMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
+  app.delete('/contacts/:email/marks/:mark', (context) => {
+    contactDetailsStore.removeMark(context.req.param('email'), context.req.param('mark'));
+    return context.body(null, 200);
+  });
   app.patch('/contacts/:email', async (context) => {
     contactDetailsStore.save(context.req.param('email'), await context.req.json<ContactDetails>());
     return context.body(null, 200);

@@ -39,6 +39,9 @@ const getOrganizations = (app: App) =>
 const markContact = (app: App, email: string, mark: string) =>
   app.request(`/contacts/${encodeURIComponent(email)}/marks/${mark}`, { method: 'PUT' });
 
+const unmarkContact = (app: App, email: string, mark: string) =>
+  app.request(`/contacts/${encodeURIComponent(email)}/marks/${mark}`, { method: 'DELETE' });
+
 const setContactDetails = (app: App, email: string, details: { lists?: string[]; note?: string }) =>
   app.request(`/contacts/${encodeURIComponent(email)}`, {
     method: 'PATCH',
@@ -3093,5 +3096,16 @@ describe('backend app', () => {
     const { contacts } = (await getContacts(afterRestart)) as { contacts: { emails: string[]; marks?: string[] }[] };
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: ['vip'] }]);
+  });
+
+  it('lists at GET /contacts a contact marked vip and then unmarked through DELETE /contacts/:email/marks/vip with no marks', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await markContact(app, 'luis@example.com', 'vip');
+
+    await unmarkContact(app, 'luis@example.com', 'vip');
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
   });
 });
