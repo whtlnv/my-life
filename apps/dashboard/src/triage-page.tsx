@@ -56,6 +56,12 @@ interface TriageQueueResponse {
   fetchedAt?: string;
 }
 
+export const sectionTitles = {
+  needsYou: 'Needs you',
+  digests: 'Digests',
+  needsInput: 'Needs input',
+  handledForYou: 'Handled for you',
+};
 export const noDueTimeText = 'No due time';
 export const significantFlagText = 'Significant';
 export const remainingMessagesText = (count: number) =>
@@ -509,9 +515,9 @@ export function TriagePage() {
         </p>
       )}
       <Legend />
-      <section aria-label="Needs you">
+      <section aria-label={sectionTitles.needsYou}>
         <h2 className="section-title">
-          Needs you <span className="count">{queue.action.length}</span>
+          {sectionTitles.needsYou} <span className="count">{queue.action.length}</span>
         </h2>
         {queue.action.length === 0 && (
           <p className="empty">
@@ -530,7 +536,16 @@ export function TriagePage() {
           />
         ))}
       </section>
-      <section aria-label="Everything else" className="section">
+      <section aria-label={sectionTitles.digests} className="section">
+        <h2 className="section-title">{sectionTitles.digests}</h2>
+      </section>
+      <section aria-label={sectionTitles.needsInput} className="section">
+        <h2 className="section-title">{sectionTitles.needsInput}</h2>
+      </section>
+      <section aria-label={sectionTitles.handledForYou} className="section">
+        <h2 className="section-title">{sectionTitles.handledForYou}</h2>
+      </section>
+      <section className="section">
         <h2 className="section-title">Everything else</h2>
         {groups.length === 0 && <p className="empty">No groups waiting</p>}
         {groups.map((group) => (

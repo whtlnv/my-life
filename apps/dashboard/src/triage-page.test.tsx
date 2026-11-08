@@ -7,6 +7,7 @@ import {
   noDueTimeText,
   pausedNoticeText,
   remainingMessagesText,
+  sectionTitles,
   significantFlagText,
   TriagePage,
 } from './triage-page';
@@ -1159,5 +1160,19 @@ describe('TriagePage', () => {
       expect(fetch).toHaveBeenCalledWith('/triage-queue');
     });
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('shows its sections in the order Needs you, digests, Needs input, Handled for you', async () => {
+    answerGetTriageQueueWith({ action: [], groups: [], digests: [], handledForYou: [], remaining: 0, paused: false });
+
+    render(<TriagePage />);
+
+    await screen.findByRole('region', { name: sectionTitles.needsYou });
+    expect(screen.getAllByRole('region').map((region) => region.getAttribute('aria-label'))).toEqual([
+      sectionTitles.needsYou,
+      sectionTitles.digests,
+      sectionTitles.needsInput,
+      sectionTitles.handledForYou,
+    ]);
   });
 });
