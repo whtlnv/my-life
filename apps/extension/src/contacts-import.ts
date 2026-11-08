@@ -36,11 +36,15 @@ async function fetchPeopleJson<ResponseBody>(options: ImportContactsOptions, url
   return (await response.json()) as ResponseBody;
 }
 
-async function fetchAllPages<Page extends { nextPageToken?: string }>(
-  options: ImportContactsOptions,
+interface PeoplePage {
+  items: GoogleConnection[];
+  nextPageToken?: string | undefined;
+}
+
+async function fetchAllPages(
   path: string,
   query: Record<string, string>,
-  itemsOf: (page: Page) => GoogleConnection[],
+  fetchPage: (url: URL) => Promise<PeoplePage>,
 ): Promise<GoogleConnection[]> {
   const items: GoogleConnection[] = [];
   let pageToken: string | undefined;
@@ -52,29 +56,29 @@ async function fetchAllPages<Page extends { nextPageToken?: string }>(
     if (pageToken !== undefined) {
       url.searchParams.set('pageToken', pageToken);
     }
-    const page = await fetchPeopleJson<Page>(options, url);
-    items.push(...itemsOf(page));
+    const page = await fetchPage(url);
+    items.push(...page.items);
     pageToken = page.nextPageToken;
   } while (pageToken !== undefined);
   return items;
 }
 
 function fetchAllConnections(options: ImportContactsOptions): Promise<GoogleConnection[]> {
-  return fetchAllPages<GoogleConnectionsResponse>(
-    options,
+  return fetchAllPages(
     'people/me/connections',
     { personFields: 'names,emailAddresses,organizations,memberships' },
-    (page) => page.connections,
+    async (url) => {
+      const page = await fetchPeopleJson<GoogleConnectionsResponse>(options, url);
+      return { items: page.connections, nextPageToken: page.nextPageToken };
+    },
   );
 }
 
 function fetchAllOtherContacts(options: ImportContactsOptions): Promise<GoogleConnection[]> {
-  return fetchAllPages<GoogleOtherContactsResponse>(
-    options,
-    'otherContacts',
-    { readMask: 'names,emailAddresses' },
-    (page) => page.otherContacts,
-  );
+  return fetchAllPages('otherContacts', { readMask: 'names,emailAddresses' }, async (url) => {
+    const page = await fetchPeopleJson<GoogleOtherContactsResponse>(options, url);
+    return { items: page.otherContacts, nextPageToken: page.nextPageToken };
+  });
 }
 
 async function fetchUserGroupNames(options: ImportContactsOptions): Promise<Map<string, string>> {
