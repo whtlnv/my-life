@@ -818,6 +818,40 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(after).toEqual([expect.objectContaining({ id: before[0]?.id, count: 2 })]);
   });
 
+  it('opens in GET /triage-queue a fresh digest, with a new id and only the new proposal, for a proposal of the same account, category and key triaged after its digest was confirmed', async () => {
+    const gitHubNotice = (summary: string) => ({
+      action: 'archive',
+      category: 'system-update',
+      summary,
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    const reportFromGitHub = (id: string) =>
+      postJson(app, '/mail-report', {
+        ...budgetReviewReport,
+        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
+      });
+    await reportFromGitHub('message-build');
+    await postTriageRun(app);
+    const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+    const confirmedDigestId = before[0]?.id ?? '';
+    await app.request(`/digests/${encodeURIComponent(confirmedDigestId)}/confirmation`, { method: 'POST' });
+
+    await reportFromGitHub('message-deploy');
+    await postTriageRun(app);
+
+    const { digests: after } = await getJson<{ digests: { id: string; key: string; count: number }[] }>(
+      app,
+      '/triage-queue',
+    );
+    expect(confirmedDigestId).toEqual(expect.any(String));
+    expect(after).toEqual([expect.objectContaining({ key: 'GitHub', count: 1 })]);
+    expect(after[0]?.id).not.toEqual(confirmedDigestId);
+  });
+
   it('lists at GET /commands an archive command for each item of a digest confirmed at POST /digests/:id/confirmation whose own proposal is archive', async () => {
     const commandedMessageIds = await commandedMessageIdsAfterConfirmingGitHubDigest([
       { id: 'message-build', action: 'archive', summary: 'GitHub build passed' },

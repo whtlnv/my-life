@@ -611,10 +611,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         from: reportedMessages.find((message) => message.id === proposal.messageId)?.from ?? '',
       }));
   }
-  // A digest's id: its account, category and key.
-  function identifyDigest({ key, proposals: digested }: ReturnType<typeof digests>[number]): string {
-    const { accountEmail, category } = digested[0] ?? {};
-    return JSON.stringify([accountEmail, category, key]);
+  // A digest's id: its account, category, key and first message, so a digest opened after a confirm is a fresh one.
+  function identifyDigest({
+    key,
+    proposals: digested,
+  }: {
+    key: string | undefined;
+    proposals: readonly ReturnType<typeof waitingOutsideTheActionBlock>[number][];
+  }): string {
+    const { accountEmail, category, messageId } = digested[0] ?? {};
+    return JSON.stringify([accountEmail, category, key, messageId]);
   }
   // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
