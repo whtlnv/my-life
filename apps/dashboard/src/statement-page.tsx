@@ -32,19 +32,48 @@ const StatementRow = ({ label, amount, currency }: { label: string; amount: numb
   </tr>
 );
 
+const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+const statementUrl = (weekOffset: number) => {
+  if (weekOffset === 0) {
+    return '/expense-statement';
+  }
+  const today = new Date();
+  const monday = new Date(today.getTime() - ((today.getUTCDay() + 6) % 7) * millisecondsPerDay);
+  const week = new Date(monday.getTime() + weekOffset * 7 * millisecondsPerDay).toISOString().slice(0, 10);
+  return `/expense-statement?week=${week}`;
+};
+
 export const StatementPage = () => {
   const [entries, setEntries] = useState<StatementEntry[]>([]);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   useEffect(() => {
-    void fetch('/expense-statement')
+    void fetch(statementUrl(weekOffset))
       .then((response) => response.text())
       .then((csv) => {
         setEntries(parseStatement(csv));
       });
-  }, []);
+  }, [weekOffset]);
 
   return (
     <section>
+      <button
+        type="button"
+        onClick={() => {
+          setWeekOffset(weekOffset - 1);
+        }}
+      >
+        Previous week
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setWeekOffset(weekOffset + 1);
+        }}
+      >
+        Next week
+      </button>
       <a href="/expense-statement">Download</a>
       <table>
         <tbody>

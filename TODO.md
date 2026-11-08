@@ -106,7 +106,7 @@
 - [x] After a backend restart on the same database, `GET /expense-statement` still lists the week's expenses with their message dates (supervisor keystone: the route reads message dates from the in-memory report list)
 - [x] The dashboard app shell has a `Statement` tab linking to `#/statement`, marked current on that route
 - [x] The `#/statement` page shows the current week's entries in a table with their total per currency, and a Download link to that week's CSV
-- [ ] The `#/statement` page's previous / next week controls load and show the other week's entries
+- [x] The `#/statement` page's previous / next week controls load and show the other week's entries
 - [ ] The `#/statement` page shows an empty state for a week with no expenses
 
 ### Wiring and acceptance
