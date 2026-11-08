@@ -93,26 +93,29 @@ const triageAnsweringInOrder = (proposalsInOrder: unknown[], costInUsd: number) 
   propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd, promptVersion: 'triage-v1' }),
 });
 
+const reportShopNewsletter = (app: App, messageId: string, subject = 'This week at the shop') =>
+  postJson(app, '/mail-report', {
+    accountEmail: 'ana@example.com',
+    historyId: '1001',
+    messages: [
+      {
+        id: messageId,
+        threadId: messageId,
+        from: 'Shop <news@shop.example.com>',
+        to: 'ana@example.com',
+        subject,
+        date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+        snippet: 'New arrivals',
+      },
+    ],
+  });
+
 const reportTriageAndConfirmShopNewsletters = async (
   app: App,
   messageIds = ['newsletter-1', 'newsletter-2', 'newsletter-3'],
 ): Promise<void> => {
   for (const messageId of messageIds) {
-    await postJson(app, '/mail-report', {
-      accountEmail: 'ana@example.com',
-      historyId: '1001',
-      messages: [
-        {
-          id: messageId,
-          threadId: messageId,
-          from: 'Shop <news@shop.example.com>',
-          to: 'ana@example.com',
-          subject: 'This week at the shop',
-          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-          snippet: 'New arrivals',
-        },
-      ],
-    });
+    await reportShopNewsletter(app, messageId);
     await postTriageRun(app);
     await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
   }
@@ -2109,21 +2112,7 @@ describe('backend app', () => {
     };
     const beforeRestart = createApp(options);
     for (const messageId of ['newsletter-1', 'newsletter-2', 'newsletter-3', 'newsletter-4']) {
-      await postJson(beforeRestart, '/mail-report', {
-        accountEmail: 'ana@example.com',
-        historyId: '1001',
-        messages: [
-          {
-            id: messageId,
-            threadId: messageId,
-            from: 'Shop <news@shop.example.com>',
-            to: 'ana@example.com',
-            subject: 'This week at the shop',
-            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-            snippet: 'New arrivals',
-          },
-        ],
-      });
+      await reportShopNewsletter(beforeRestart, messageId);
       await postTriageRun(beforeRestart);
       if (messageId !== 'newsletter-4') {
         await postJson(beforeRestart, '/verdicts', { messageId, decision: 'confirmed' });
@@ -2155,21 +2144,7 @@ describe('backend app', () => {
     const subjects = { 'newsletter-1': 'New arrivals', 'newsletter-2': 'Winter sale', 'newsletter-3': 'Last chance' };
     const beforeRestart = createApp(options);
     for (const [messageId, subject] of Object.entries(subjects)) {
-      await postJson(beforeRestart, '/mail-report', {
-        accountEmail: 'ana@example.com',
-        historyId: '1001',
-        messages: [
-          {
-            id: messageId,
-            threadId: messageId,
-            from: 'Shop <news@shop.example.com>',
-            to: 'ana@example.com',
-            subject,
-            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-            snippet: 'Shop news',
-          },
-        ],
-      });
+      await reportShopNewsletter(beforeRestart, messageId, subject);
       await postTriageRun(beforeRestart);
       if (messageId !== 'newsletter-3') {
         await postJson(beforeRestart, '/verdicts', { messageId, decision: 'confirmed' });
@@ -2224,21 +2199,7 @@ describe('backend app', () => {
       filter,
     });
     for (const { messageId, verdict } of decisions) {
-      await postJson(app, '/mail-report', {
-        accountEmail: 'ana@example.com',
-        historyId: '1001',
-        messages: [
-          {
-            id: messageId,
-            threadId: messageId,
-            from: 'Shop <news@shop.example.com>',
-            to: 'ana@example.com',
-            subject: 'This week at the shop',
-            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-            snippet: 'New arrivals',
-          },
-        ],
-      });
+      await reportShopNewsletter(app, messageId);
       await postTriageRun(app);
       await postJson(app, '/verdicts', { messageId, ...verdict });
     }
