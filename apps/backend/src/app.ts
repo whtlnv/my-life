@@ -632,10 +632,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const importedContacts: ListedContact[] = [];
   app.post('/contacts-import', async (context) => {
     const { contacts } = await context.req.json<{
-      contacts: { name: string; emails: string[]; organization: string; starred?: boolean }[];
+      contacts: { name: string; emails: string[]; organization: string; starred?: boolean; lists?: string[] }[];
     }>();
-    for (const { name, emails, organization, starred } of contacts) {
-      contactDetailsStore.save(emails[0]!, { organization });
+    for (const { name, emails, organization, starred, lists } of contacts) {
+      contactDetailsStore.save(emails[0]!, { organization, ...(lists ? { lists } : {}) });
       if (starred) {
         contactDetailsStore.saveMark(emails[0]!, 'vip');
       }

@@ -72,7 +72,7 @@
 - [x] The same person imported from two accounts by the same email ends as one contact holding both accounts' data
 - [x] A starred imported contact is marked `vip`
 - [x] An unstarred imported contact does not remove a `vip` mark the user set in the app
-- [ ] A Google label on an imported contact becomes one of its lists
+- [x] A Google label on an imported contact becomes one of its lists
 - [ ] An imported name or organization does not replace one the user set in the app
 - [ ] A starred imported contact whose `vip` mark the user removed in the app stays unmarked after the next import
 - [ ] Imported contacts, with their names, emails, organization and lists, are still listed after a backend restart
