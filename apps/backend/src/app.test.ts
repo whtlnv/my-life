@@ -2635,4 +2635,71 @@ describe('backend app', () => {
     const vendors = await statementVendors(response);
     expect(vendors).toEqual(['Monday', 'Tuesday']);
   });
+  it('proposes each message once when a second POST /triage-run starts while the first is still waiting on Claude', async () => {
+    const askedMessageIds: string[] = [];
+    let release = (): void => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const triage = {
+      propose: async (message: { id: string }) => {
+        askedMessageIds.push(message.id);
+        await held;
+        return {
+          proposal: { action: 'keep', category: 'unknown', summary: 'A message', extract: {}, reason: 'Unsure' },
+          costInUsd: 0.02,
+          promptVersion: 'triage-v1',
+        };
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [budgetReview, { ...budgetReview, id: 'message-2', threadId: 'thread-2' }],
+    });
+
+    const firstRun = postTriageRun(app);
+    const secondRun = postTriageRun(app);
+    release();
+    await Promise.all([firstRun, secondRun]);
+
+    expect(askedMessageIds.toSorted()).toEqual(['message-1', 'message-2']);
+  });
+  it('shows a message once in GET /triage-queue, with its latest proposal, when the store holds two proposals for it', async () => {
+    const databasePath = temporaryDatabasePath();
+    const before = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(before, '/mail-report', budgetReviewReport);
+    const store = openProposalStore(databasePath);
+    const proposalOf = (summary: string, category: string) => ({
+      action: 'keep',
+      category,
+      summary,
+      extract: {},
+      reason: 'Proposed twice by overlapping runs',
+    });
+    store.save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:00:00.000Z',
+      promptVersion: 'triage-v1',
+      proposal: proposalOf('First proposal', 'unknown'),
+    });
+    store.save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:01:00.000Z',
+      promptVersion: 'triage-v1',
+      proposal: proposalOf('Second proposal', 'unknown'),
+    });
+
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    const queue = (await (await afterRestart.request('/triage-queue')).json()) as {
+      action: { messageId: string; summary: string }[];
+      remaining: number;
+    };
+
+    expect({
+      action: queue.action.map(({ messageId, summary }) => ({ messageId, summary })),
+      remaining: queue.remaining,
+    }).toEqual({ action: [{ messageId: 'message-1', summary: 'Second proposal' }], remaining: 0 });
+  });
 });

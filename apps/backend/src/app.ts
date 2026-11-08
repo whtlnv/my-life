@@ -245,7 +245,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const reportedMessages: ReportedMessage[] = [];
   const accountEmailByMessageId = new Map<string, string>();
   const automaticMessageIds = new Set(proposalStore.loadAutomaticMessageIds());
-  const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => {
+  // Overlapping runs once stored a proposal twice (append-only); the latest row per message is the one that counts.
+  const latestStoredProposals = [
+    ...new Map(proposalStore.loadAll().map((stored) => [stored.messageId, stored])).values(),
+  ];
+  const proposals: Proposal[] = latestStoredProposals.map(({ messageId, proposal }) => {
     const accountEmail = reportedMessageStore.accountEmailOf(messageId);
     return {
       ...withDisplayedCategory(
@@ -339,6 +343,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }),
       verdictExampleLimit,
     );
+  let triageRunInProgress = false;
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
@@ -376,33 +381,43 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (triage === undefined) {
       return context.body(null, 200);
     }
-    for (const message of triageQueue(proposals, [], reportedMessages).remaining) {
-      if (hasReachedDailySpendCeiling()) {
-        break;
+    // One run at a time: a run that outlives the 30-second schedule must not be joined by a second one proposing the
+    // same remaining messages again (each proposal is a paid Claude call).
+    if (triageRunInProgress) {
+      return context.body(null, 409);
+    }
+    triageRunInProgress = true;
+    try {
+      for (const message of triageQueue(proposals, [], reportedMessages).remaining) {
+        if (hasReachedDailySpendCeiling()) {
+          break;
+        }
+        const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
+        const examples = verdictExamplesFor(message);
+        const result = await triage.propose({ ...message, accountEmail }, examples);
+        const costInUsd = result.costInUsd;
+        const answeredAt = clock.now().toISOString();
+        spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });
+        const proposal: Proposal = {
+          action: '',
+          category: '',
+          ...(result.proposal as Proposal | undefined),
+          messageId: message.id,
+          accountEmail,
+        };
+        const displayedProposal = withDisplayedCategory(proposal, message, accountEmail);
+        const madeAutomatic = categoryModeStore.loadAll()[displayedProposal.category ?? ''] === 'automatic';
+        proposalStore.save({
+          messageId: message.id,
+          madeAt: answeredAt,
+          promptVersion: result.promptVersion,
+          proposal: result.proposal,
+          madeAutomatic,
+        });
+        proposals.push({ ...displayedProposal, madeAutomatic });
       }
-      const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
-      const examples = verdictExamplesFor(message);
-      const result = await triage.propose({ ...message, accountEmail }, examples);
-      const costInUsd = result.costInUsd;
-      const answeredAt = clock.now().toISOString();
-      spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });
-      const proposal: Proposal = {
-        action: '',
-        category: '',
-        ...(result.proposal as Proposal | undefined),
-        messageId: message.id,
-        accountEmail,
-      };
-      const displayedProposal = withDisplayedCategory(proposal, message, accountEmail);
-      const madeAutomatic = categoryModeStore.loadAll()[displayedProposal.category ?? ''] === 'automatic';
-      proposalStore.save({
-        messageId: message.id,
-        madeAt: answeredAt,
-        promptVersion: result.promptVersion,
-        proposal: result.proposal,
-        madeAutomatic,
-      });
-      proposals.push({ ...displayedProposal, madeAutomatic });
+    } finally {
+      triageRunInProgress = false;
     }
     return context.body(null, 200);
   });
