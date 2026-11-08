@@ -949,8 +949,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ({ messageId, people = [] }) =>
           messageId === messageIdentifier && people.some((person) => person.email === email),
       );
+    const involvesContact = (message: (typeof reportedMessages)[number]): boolean =>
+      contactFromSender(message.from).email === email || namesContact(message.id);
+    const contactThreadIds = new Set(reportedMessages.filter(involvesContact).map((message) => message.threadId));
     const messages = reportedMessages
-      .filter((message) => contactFromSender(message.from).email === email || namesContact(message.id))
+      .filter(
+        (message) =>
+          involvesContact(message) || (message.sentByUser === true && contactThreadIds.has(message.threadId)),
+      )
       .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
@@ -959,6 +965,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           subject: message.subject,
           accountEmail,
           link: gmailMessageLink({ accountEmail, messageId: message.id }),
+          sentByUser: message.sentByUser === true,
         };
       });
     return context.json({ messages });

@@ -147,6 +147,35 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(messages.map((message) => message.id)).toContain('message-2');
   });
 
+  it("includes in GET /contacts/:email/timeline the user's sent message in a thread with that contact, marked as the user's reply", async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const luisMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMessage,
+        {
+          ...luisMessage,
+          id: 'message-reply',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+          sentByUser: true,
+        },
+      ],
+    });
+
+    const response = await app.request('/contacts/luis@example.com/timeline');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      messages: [
+        { id: 'message-reply', sentByUser: true },
+        { id: 'message-1', sentByUser: false },
+      ],
+    });
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
