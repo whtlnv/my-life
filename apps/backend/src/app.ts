@@ -114,7 +114,7 @@ export interface AppOptions {
     ) => Promise<{ proposal: unknown; costInUsd: number; promptVersion: string }>;
   };
   summary?: {
-    summarize: () => Promise<{ lines: string[]; costInUsd: number }>;
+    summarize: (request: { items: { summary: string }[] }) => Promise<{ lines: string[]; costInUsd: number }>;
   };
 }
 
@@ -577,7 +577,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageIdsAwaitingRetriage.delete(message.id);
         queueProposal({ ...displayedProposal, madeAutomatic });
       }
-      summaryLines = (await options.summary?.summarize())?.lines;
+      const items = waitingOutsideTheActionBlock(verdictStore.loadAll()).map(({ messageId }) => ({
+        summary: latestProposalFor(proposals, messageId)?.summary ?? '',
+      }));
+      summaryLines = (await options.summary?.summarize({ items }))?.lines;
     } finally {
       triageRunInProgress = false;
     }

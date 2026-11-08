@@ -31,7 +31,7 @@
 - [x] Confirming an unknown digest answers 404 and records nothing
 - [x] After a backend restart, a confirmed digest stays confirmed and the fresh digest still holds only its later proposals
 - [x] A digest in `GET /triage-queue` carries the one or two summary lines the summary model wrote for its items
-- [ ] When a proposal joins a digest, its summary lines are rewritten from the new set of items
+- [x] When a proposal joins a digest, its summary lines are rewritten from the new set of items
 - [ ] When no proposal joins a digest, its summary lines are not rewritten on the next triage run
 - [ ] The summary request names the model set in config
 - [ ] Each summary call's cost is logged as spend against the daily ceiling

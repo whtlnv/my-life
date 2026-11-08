@@ -841,6 +841,41 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines })]);
   });
 
+  it('rewrites the summary lines of a digest from its new set of items when a proposal joins it on a later triage run', async () => {
+    const gitHubNotice = (summary: string) => ({
+      action: 'archive',
+      category: 'system-update',
+      summary,
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const summary = {
+      summarize: (request?: { items?: { summary: string }[] }) =>
+        Promise.resolve({
+          lines: [(request?.items ?? []).map((item) => item.summary).join(' and ')],
+          costInUsd: 0.01,
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
+    const [budgetReview] = budgetReviewReport.messages;
+    const reportFromGitHub = (id: string) =>
+      postJson(app, '/mail-report', {
+        ...budgetReviewReport,
+        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
+      });
+    await reportFromGitHub('message-build');
+    await postTriageRun(app);
+
+    await reportFromGitHub('message-deploy');
+    await postTriageRun(app);
+
+    const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+    expect(digests).toEqual([
+      expect.objectContaining({ key: 'GitHub', summaryLines: ['GitHub build passed and GitHub deploy done'] }),
+    ]);
+  });
+
   it('opens in GET /triage-queue a fresh digest, with a new id and only the new proposal, for a proposal of the same account, category and key triaged after its digest was confirmed', async () => {
     const gitHubNotice = (summary: string) => ({
       action: 'archive',
