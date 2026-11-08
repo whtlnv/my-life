@@ -16,6 +16,12 @@ export interface StartupSettings {
   summaryModel: string;
   dailySpendCeilingInUsd: number;
   triage: TriageAvailability;
+  urgency: {
+    timeZone: string;
+    unansweredAskBusinessDays: number;
+    deadlineHours: number;
+    vipWaitingBusinessDays: number;
+  };
 }
 
 const defaultPort = 7777;
@@ -27,6 +33,7 @@ const defaultTriageEscalationModel = 'claude-opus-5-5';
 const defaultSummaryModel = 'claude-haiku-5-5';
 const noEscalation = 'none';
 const defaultDailySpendCeilingInUsd = 20;
+const defaultUnansweredAskBusinessDays = 2;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
 
 export function readStartupSettings(
@@ -49,6 +56,15 @@ export function readStartupSettings(
       defaultDailySpendCeilingInUsd,
     ),
     triage: readTriageAvailability(environment.ANTHROPIC_API_KEY),
+    urgency: {
+      timeZone: 'America/Mexico_City',
+      unansweredAskBusinessDays: parseNumberOrDefault(
+        environment.MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS,
+        defaultUnansweredAskBusinessDays,
+      ),
+      deadlineHours: 48,
+      vipWaitingBusinessDays: 1,
+    },
   };
 }
 

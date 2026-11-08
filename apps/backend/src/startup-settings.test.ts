@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
+import { contactUrgency } from '@my-life/domain';
 import { describe, expect, it } from 'vitest';
 
 import { resolveDatabasePath } from './database-path';
@@ -155,6 +156,25 @@ describe('startup settings', () => {
     expect({ triageModel: settings.triageModel, escalationModel: settings.triageEscalationModel }).toEqual({
       triageModel,
       escalationModel,
+    });
+  });
+
+  it('makes a contact with a 1-business-day-old unanswered ask urgent when MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS is 1', () => {
+    const settings = readStartupSettings({ MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS: '1' }, '/Users/ana');
+    const mondayFivePm = '2026-11-09T23:00:00.000Z';
+    const tuesdayFivePm = '2026-11-10T23:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-budget',
+        receivedAt: mondayFivePm,
+        sentByUser: false,
+        asks: [{ ask: 'Review the Q3 budget spreadsheet and send comments' }],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: tuesdayFivePm, settings: settings.urgency })).toEqual({
+      urgent: true,
+      reasons: ['unanswered ask'],
     });
   });
 });
