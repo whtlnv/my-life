@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { Hono, type MiddlewareHandler } from 'hono';
@@ -945,8 +945,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/people', (context) => {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
-    const alwaysMattersLineOfAccount = (accountEmail: string) =>
-      alwaysMattersLine(readFileSync(join(options.profileDirectory ?? '', profileFileName(accountEmail)), 'utf8'));
+    const alwaysMattersLineOfAccount = (accountEmail: string) => {
+      const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
+      return existsSync(profilePath) ? alwaysMattersLine(readFileSync(profilePath, 'utf8')) : '';
+    };
     const isOnAlwaysMattersLine = (contact: { emails: string[]; messageIds: string[] }) =>
       options.profileDirectory !== undefined &&
       contact.messageIds.some((messageId) =>

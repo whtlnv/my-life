@@ -361,6 +361,22 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(everyoneElse.map(({ emails }) => emails)).toContainEqual(['luis@example.com']);
   });
 
+  it('still answers at GET /people, with no "Always matters" VIPs, when the profile directory has no profile file for the account that received the messages', async () => {
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, profileDirectory });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, everyoneElse } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect(vip).toEqual([]);
+    expect(everyoneElse.map(({ emails }) => emails).toSorted()).toEqual([['luis@example.com'], ['marta@acme.com']]);
+  });
+
   it('lists at GET /people under Everyone else the contact whose most recent message is newest first', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const [luisMessage, martaMessage] = budgetReviewReportWithSecondMessageFromMarta.messages;
