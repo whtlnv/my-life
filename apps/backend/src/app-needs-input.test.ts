@@ -1,3 +1,4 @@
+import { triageCategories } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { createApp, type AppOptions } from './app';
@@ -83,6 +84,26 @@ describe('backend app: GET /needs-input', () => {
         messageId: 'message-1',
         accountEmail: 'ana@example.com',
         choices: ['action', 'cc-thread'],
+      }),
+    ]);
+  });
+
+  it('asks which category is right for a message proposed as unknown, offering every known category', async () => {
+    const triage = triageAnswering({
+      action: 'keep',
+      category: 'unknown',
+      summary: 'Luis writes about the budget',
+      extract: {},
+      reason: 'The message fits no category',
+    });
+    const needsInput = await needsInputAfterTriagingBudgetReview(triage);
+
+    expect(needsInput.questions).toEqual([
+      expect.objectContaining({
+        kind: 'category',
+        messageId: 'message-1',
+        accountEmail: 'ana@example.com',
+        choices: triageCategories.filter((category) => category !== 'unknown'),
       }),
     ]);
   });

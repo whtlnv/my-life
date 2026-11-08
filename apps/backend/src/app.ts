@@ -755,18 +755,29 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
   });
   app.get('/needs-input', (context) => {
-    const questions = proposals.flatMap(({ messageId, accountEmail, disagreement }) =>
-      disagreement === undefined
-        ? []
-        : [
-            {
-              kind: 'category',
-              messageId,
-              accountEmail,
-              choices: [disagreement.firstCategory, disagreement.secondCategory],
-            },
-          ],
-    );
+    const questions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
+      if (disagreement !== undefined) {
+        return [
+          {
+            kind: 'category',
+            messageId,
+            accountEmail,
+            choices: [disagreement.firstCategory, disagreement.secondCategory],
+          },
+        ];
+      }
+      if (category === 'unknown') {
+        return [
+          {
+            kind: 'category',
+            messageId,
+            accountEmail,
+            choices: triageCategories.filter((knownCategory) => knownCategory !== 'unknown'),
+          },
+        ];
+      }
+      return [];
+    });
     return context.json({ questions });
   });
   app.get('/filter-proposals', (context) => {
