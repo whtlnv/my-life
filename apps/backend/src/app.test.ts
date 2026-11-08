@@ -140,6 +140,15 @@ const ccThreadTriage = (action: 'archive' | 'keep') => {
   return triageAnswering(proposal);
 };
 
+const shopNewsletterArchiveTriage = () =>
+  triageAnswering({
+    action: 'archive',
+    category: 'sales',
+    summary: 'A shop newsletter',
+    extract: {},
+    reason: 'Promotional mail',
+  });
+
 const proposeBudgetReview = async (app: App) => {
   await postJson(app, '/mail-report', budgetReviewReport);
   await postTriageRun(app);
@@ -2109,13 +2118,7 @@ describe('backend app', () => {
         return Promise.resolve({ proposal: filterProposal, costInUsd: 0.05, promptVersion: 'filter-v1' });
       },
     };
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    });
+    const triage = shopNewsletterArchiveTriage();
     const databasePath = temporaryDatabasePath();
     const app = createApp({
       allowedEmails: ['ana@example.com'],
@@ -2159,13 +2162,7 @@ describe('backend app', () => {
         });
       },
     };
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    });
+    const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -2215,13 +2212,7 @@ describe('backend app', () => {
         });
       },
     };
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    });
+    const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -2468,13 +2459,7 @@ describe('backend app', () => {
           promptVersion: 'filter-v1',
         }),
     };
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    });
+    const triage = shopNewsletterArchiveTriage();
     return createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
   }
 
@@ -2526,13 +2511,7 @@ describe('backend app', () => {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
       databasePath: temporaryDatabasePath(),
-      triage: triageAnswering({
-        action: 'archive',
-        category: 'sales',
-        summary: 'A shop newsletter',
-        extract: {},
-        reason: 'Promotional mail',
-      }),
+      triage: shopNewsletterArchiveTriage(),
       filter: {
         propose: () =>
           Promise.resolve({
@@ -2627,13 +2606,7 @@ describe('backend app', () => {
       allowedEmails: ['ana@example.com'],
       clock: { now: () => currentTime },
       databasePath: temporaryDatabasePath(),
-      triage: triageAnswering({
-        action: 'archive',
-        category: 'sales',
-        summary: 'A shop newsletter',
-        extract: {},
-        reason: 'Promotional mail',
-      }),
+      triage: shopNewsletterArchiveTriage(),
       filter: {
         propose: () =>
           Promise.resolve({
@@ -2717,13 +2690,7 @@ describe('backend app', () => {
       allowedEmails: ['ana@example.com'],
       clock: { now: () => currentTime },
       databasePath: temporaryDatabasePath(),
-      triage: triageAnswering({
-        action: 'archive',
-        category: 'sales',
-        summary: 'A shop newsletter',
-        extract: {},
-        reason: 'Promotional mail',
-      }),
+      triage: shopNewsletterArchiveTriage(),
       filter: {
         propose: () =>
           Promise.resolve({
@@ -2795,13 +2762,7 @@ describe('backend app', () => {
         });
       },
     };
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    });
+    const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
