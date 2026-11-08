@@ -2961,4 +2961,44 @@ describe('backend app', () => {
     const vendors = await statementVendors(response);
     expect(vendors).toEqual(['Kept']);
   });
+
+  it("still lists in GET /expense-statement the week's expenses, in message-date order, after a backend restart on the same database file", async () => {
+    const expenseOf = (vendor: string, date: string) => ({
+      action: 'archive',
+      category: 'expense',
+      summary: `Invoice from ${vendor}`,
+      extract: { vendor, amount: 100, currency: 'MXN', date },
+      reason: 'An invoice to file',
+    });
+    const proposalByMessageId: Record<string, unknown> = {
+      'message-tuesday': expenseOf('Tuesday', '2026-11-03'),
+      'message-monday': expenseOf('Monday', '2026-11-02'),
+    };
+    const triage = {
+      propose: (message: { id: string }) =>
+        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
+    };
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage,
+    };
+    const beforeRestart = createApp(options);
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(beforeRestart, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-tuesday', threadId: 'thread-tuesday', date: 'Tue, 3 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-monday', threadId: 'thread-monday', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(beforeRestart);
+    const afterRestart = createApp(options);
+
+    const response = await afterRestart.request('/expense-statement?week=2026-11-02');
+
+    const vendors = await statementVendors(response);
+    expect(vendors).toEqual(['Monday', 'Tuesday']);
+  });
 });

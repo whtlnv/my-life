@@ -583,7 +583,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const verdicts = verdictStore.loadAll();
     const expenseProposals = proposals.map((proposal) => ({
       ...(proposal as unknown as ExpenseProposal),
-      date: reportedMessages.find((message) => message.id === proposal.messageId)?.date ?? '',
+      date: reportedMessageStore.dateOf(proposal.messageId),
       link: gmailMessageLink(proposal),
       verdict: latestVerdictFor(proposal.messageId, verdicts),
     }));

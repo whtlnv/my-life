@@ -14,6 +14,10 @@ export interface MessageSubject {
   subject: string;
 }
 
+export interface MessageDate {
+  date: string;
+}
+
 function createTables(database: ReturnType<typeof openDatabase>): void {
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL)',
@@ -26,6 +30,9 @@ function createTables(database: ReturnType<typeof openDatabase>): void {
   );
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_message_subjects (message_id TEXT PRIMARY KEY, subject TEXT NOT NULL)',
+  );
+  database.exec(
+    'CREATE TABLE IF NOT EXISTS reported_message_dates (message_id TEXT PRIMARY KEY, date_header TEXT NOT NULL)',
   );
 }
 
@@ -50,6 +57,12 @@ export function openReportedMessageStore(databasePath: string) {
   const loadSubject = database.prepare<[string], { subject: string }>(
     'SELECT subject FROM reported_message_subjects WHERE message_id = ?',
   );
+  const saveDate = database.prepare(
+    'INSERT OR IGNORE INTO reported_message_dates (message_id, date_header) VALUES (?, ?)',
+  );
+  const loadDate = database.prepare<[string], { date_header: string }>(
+    'SELECT date_header FROM reported_message_dates WHERE message_id = ?',
+  );
   const loadAllMessages = database.prepare<
     [],
     { messageId: string; accountEmail: string; from: string; listId: string | null }
@@ -61,11 +74,12 @@ export function openReportedMessageStore(databasePath: string) {
     'SELECT account_email FROM reported_messages WHERE message_id = ?',
   );
   return {
-    save(messageId: string, accountEmail: string, message: MessageRecipients & MessageSender & MessageSubject): void {
+    save(messageId: string, accountEmail: string, message: MessageRecipients & MessageSender & MessageSubject & MessageDate): void {
       saveMessage.run(messageId, accountEmail);
       saveRecipients.run(messageId, message.to ?? null, message.cc ?? null);
       saveSender.run(messageId, message.from, message.listId ?? null);
       saveSubject.run(messageId, message.subject);
+      saveDate.run(messageId, message.date);
     },
     loadAll() {
       return loadAllMessages.all();
@@ -76,6 +90,9 @@ export function openReportedMessageStore(databasePath: string) {
     },
     subjectOf(messageId: string): string {
       return loadSubject.get(messageId)?.subject ?? '';
+    },
+    dateOf(messageId: string): string {
+      return loadDate.get(messageId)?.date_header ?? '';
     },
     accountEmailOf(messageId: string): string {
       return loadAccountEmail.get(messageId)?.account_email ?? '';
