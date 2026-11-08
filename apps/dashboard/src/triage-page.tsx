@@ -158,6 +158,14 @@ function Key({ children }: { children: ReactNode }) {
   return <kbd>{children}</kbd>;
 }
 
+function Chevron() {
+  return (
+    <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+      <path d="M6 3.5 10.5 8 6 12.5z" />
+    </svg>
+  );
+}
+
 function CorrectionPanel({
   category,
   note,
@@ -438,9 +446,7 @@ function CategoryGroup({ group, onAccepted }: { group: TriageGroup; onAccepted: 
             if (event.key === 'c') confirmAll();
           }}
         >
-          <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
-            <path d="M6 3.5 10.5 8 6 12.5z" />
-          </svg>
+          <Chevron />
           <span className="group-swatch" aria-hidden="true" />
           <span className="group-label">{categoryLabel(group.category)}</span>
           <span className="count">{group.count}</span>
@@ -559,9 +565,7 @@ function HandledForYouSection({
               setExpanded((current) => !current);
             }}
           >
-            <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
-              <path d="M6 3.5 10.5 8 6 12.5z" />
-            </svg>
+            <Chevron />
             <span className="group-label">{sectionTitles.handledForYou}</span>
             <span className="count">{items?.length}</span>
             <span className="group-proposal">done by automatic categories today, labeled my-life/auto</span>
