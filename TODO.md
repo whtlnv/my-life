@@ -10,7 +10,7 @@
 - [x] Lines of a quoted reply (`On … wrote:` and the `>` lines after it) are dropped from the body
 - [x] A body without a quoted reply keeps every line, including a line that contains `wrote:` mid-sentence
 - [x] A signature after a `-- ` delimiter line is dropped from the body
-- [ ] A body under 20 KB is kept whole; a body over 20 KB is cut to 20 KB
+- [x] A body under 20 KB is kept whole; a body over 20 KB is cut to 20 KB
 - [ ] An attachment part (a part with a filename) never contributes text to the body
 - [ ] The Gmail poll reads each message with `format=full` and reports its trimmed body alongside the headers
   - predicted-contradiction: `apps/extension/src/gmail-poll.test.ts::reports each message with its From, To, Cc, Subject, Date and List-Id headers and its snippet, read as metadata` — asserts: each message is read with `format=metadata` (the fake Gmail answers 400 to any other format) — retired-by: "The Gmail poll reads each message with `format=full`"

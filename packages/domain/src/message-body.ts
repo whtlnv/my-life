@@ -13,7 +13,7 @@ export function messageBody(payload: MessagePart): string {
   if (payload.mimeType === 'text/html') {
     return withoutTags(text);
   }
-  return withoutSignature(withoutQuotedReply(text));
+  return withoutSignature(withoutQuotedReply(text)).slice(0, 20 * 1024);
 }
 
 function withoutSignature(text: string): string {

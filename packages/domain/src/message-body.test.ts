@@ -93,4 +93,15 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe('Gracias, lo reviso hoy.\n');
   });
+
+  it('cuts a body over 20 KB to its first 20 KB', () => {
+    const text = 'a'.repeat(30_000);
+    const payload = {
+      mimeType: 'text/plain',
+      headers: [{ name: 'Content-Type', value: 'text/plain; charset="UTF-8"' }],
+      body: { size: 30_000, data: Buffer.from(text, 'utf8').toString('base64url') },
+    };
+
+    expect(messageBody(payload)).toBe(text.slice(0, 20 * 1024));
+  });
 });
