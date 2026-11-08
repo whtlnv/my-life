@@ -622,11 +622,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { accountEmail, category, messageId } = digested[0] ?? {};
     return JSON.stringify([accountEmail, category, key, messageId]);
   }
+  // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
+  const listedDigestMessageIds = new Map<string, string[]>();
   // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
     return digests(waitingOutsideTheActionBlock(verdicts)).map((digest) => {
       const { key, proposals: digested, severityCounts } = digest;
       const { accountEmail, category } = digested[0] ?? {};
+      listedDigestMessageIds.set(
+        identifyDigest(digest),
+        digested.map(({ messageId }) => messageId),
+      );
       return {
         id: identifyDigest(digest),
         accountEmail,
@@ -642,6 +648,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))
       .filter((digest) => identifyDigest(digest) === digestId)
       .flatMap(({ proposals: digested }) => digested)
+      .filter(({ messageId }) => listedDigestMessageIds.get(digestId)?.includes(messageId))
       .forEach(({ messageId }) => {
         verdictStore.save({ messageId, decision: 'confirmed', decidedAt: clock.now().toISOString() });
       });

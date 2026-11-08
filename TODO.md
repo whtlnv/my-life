@@ -27,7 +27,7 @@
 - [x] Confirming a digest leaves another waiting digest of the same category unconfirmed
 - [x] Confirming a digest removes its items from `GET /triage-queue`
 - [x] After a digest is confirmed, a new proposal for the same account, category and key opens a fresh digest holding only that proposal
-- [ ] A proposal that joined a digest after the dashboard loaded it is not confirmed by that confirm and stays in the fresh digest
+- [x] A proposal that joined a digest after the dashboard loaded it is not confirmed by that confirm and stays in the fresh digest
 - [ ] Confirming an unknown digest answers 404 and records nothing
 - [ ] After a backend restart, a confirmed digest stays confirmed and the fresh digest still holds only its later proposals
 - [ ] A digest in `GET /triage-queue` carries the one or two summary lines the summary model wrote for its items

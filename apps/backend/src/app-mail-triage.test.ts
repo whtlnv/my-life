@@ -852,6 +852,40 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(after[0]?.id).not.toEqual(confirmedDigestId);
   });
 
+  it('leaves in GET /triage-queue, as a fresh digest of its own, a proposal that joined a digest after the dashboard loaded it and before that digest was confirmed', async () => {
+    const gitHubNotice = (summary: string) => ({
+      action: 'archive',
+      category: 'system-update',
+      summary,
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    const reportFromGitHub = (id: string) =>
+      postJson(app, '/mail-report', {
+        ...budgetReviewReport,
+        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
+      });
+    await reportFromGitHub('message-build');
+    await postTriageRun(app);
+    const { digests: loaded } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+    const loadedDigestId = loaded[0]?.id ?? '';
+
+    await reportFromGitHub('message-deploy');
+    await postTriageRun(app);
+    await app.request(`/digests/${encodeURIComponent(loadedDigestId)}/confirmation`, { method: 'POST' });
+
+    const { digests: after } = await getJson<{ digests: { id: string; key: string; count: number }[] }>(
+      app,
+      '/triage-queue',
+    );
+    expect(loadedDigestId).toEqual(expect.any(String));
+    expect(after).toEqual([expect.objectContaining({ key: 'GitHub', count: 1 })]);
+    expect(after[0]?.id).not.toEqual(loadedDigestId);
+  });
+
   it('lists at GET /commands an archive command for each item of a digest confirmed at POST /digests/:id/confirmation whose own proposal is archive', async () => {
     const commandedMessageIds = await commandedMessageIdsAfterConfirmingGitHubDigest([
       { id: 'message-build', action: 'archive', summary: 'GitHub build passed' },
