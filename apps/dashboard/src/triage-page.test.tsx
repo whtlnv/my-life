@@ -31,6 +31,17 @@ const answerGetTriageQueueWith = (body: unknown, acceptedPostPath?: string) => {
 
 const queueOfActionItems = (action: unknown[]) => ({ action, groups: [], remaining: 0, paused: false });
 
+const handledItem = (messageId: string, summary: string) => ({
+  messageId,
+  accountEmail: 'francisco@psmutuus.com',
+  action: 'archive',
+  category: 'sales',
+  summary,
+  extract: {},
+  reason: 'A sales pitch',
+  link: `https://mail.google.com/mail/?authuser=francisco%40psmutuus.com#all/${messageId}`,
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -1305,16 +1316,6 @@ describe('TriagePage', () => {
   });
 
   it('shows Handled for you collapsed with how many items it holds', async () => {
-    const handledItem = (messageId: string, summary: string) => ({
-      messageId,
-      accountEmail: 'francisco@psmutuus.com',
-      action: 'archive',
-      category: 'sales',
-      summary,
-      extract: {},
-      reason: 'A sales pitch',
-      link: `https://mail.google.com/mail/?authuser=francisco%40psmutuus.com#all/${messageId}`,
-    });
     answerGetTriageQueueWith({
       action: [],
       groups: [],
@@ -1373,16 +1374,6 @@ describe('TriagePage', () => {
   });
 
   it('posts the undo for only the handled item whose Undo button is clicked, and removes it from the list once accepted', async () => {
-    const handledItem = (messageId: string, summary: string) => ({
-      messageId,
-      accountEmail: 'francisco@psmutuus.com',
-      action: 'archive',
-      category: 'sales',
-      summary,
-      extract: {},
-      reason: 'A sales pitch',
-      link: `https://mail.google.com/mail/?authuser=francisco%40psmutuus.com#all/${messageId}`,
-    });
     answerGetTriageQueueWith(
       {
         action: [],
