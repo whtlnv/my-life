@@ -817,11 +817,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
             requestedAt,
           })),
       );
-    const undoAutomaticCommands = undoneHandledForYouMessageIds
-      .filter((messageId) =>
-        proposals.some((proposal) => proposal.messageId === messageId && proposal.accountEmail === accountEmail),
-      )
-      .map((messageId) => ({
+    const isMessageOfAccount = (messageId: string) =>
+      proposals.some((proposal) => proposal.messageId === messageId && proposal.accountEmail === accountEmail);
+    const undoAutomaticCommands = undoneHandledForYouMessageIds.filter(isMessageOfAccount).map((messageId) => ({
       id: `undo-automatic-${messageId}`,
       type: 'undo-automatic',
       messageId,
