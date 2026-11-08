@@ -16,6 +16,15 @@ const answerGetNowWith = (body: unknown) => {
   );
 };
 
+const nowWithNoAccountsAndNothingToTriage = {
+  current: [],
+  next: [],
+  laterToday: [],
+  accounts: [],
+  badgeCount: 0,
+  sources: [],
+};
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -62,7 +71,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
   it('has a Categories tab linking to the categories page, marked current on that route', async () => {
-    answerGetNowWith({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0, sources: [] });
+    answerGetNowWith(nowWithNoAccountsAndNothingToTriage);
 
     render(<AppShell route="#/categories">{null}</AppShell>);
 
@@ -72,7 +81,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
   it('has a Filters tab linking to the filters page, marked current on that route', async () => {
-    answerGetNowWith({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0, sources: [] });
+    answerGetNowWith(nowWithNoAccountsAndNothingToTriage);
 
     render(<AppShell route="#/filters">{null}</AppShell>);
 
@@ -82,7 +91,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
   it('has a Statement tab linking to the statement page, marked current on that route', async () => {
-    answerGetNowWith({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0, sources: [] });
+    answerGetNowWith(nowWithNoAccountsAndNothingToTriage);
 
     render(<AppShell route="#/statement">{null}</AppShell>);
 
