@@ -16,9 +16,12 @@ interface Triage<Message> {
 
 const escalatedCategories = new Set(['action', 'unknown']);
 
+function categoryOf(outcome: TriageOutcome): string | undefined {
+  return (outcome.proposal as { category?: string } | undefined)?.category;
+}
+
 function needsSecondOpinion(outcome: TriageOutcome): boolean {
-  const proposal = outcome.proposal as { category?: string } | undefined;
-  return proposal === undefined || escalatedCategories.has(proposal.category ?? '');
+  return outcome.proposal === undefined || escalatedCategories.has(categoryOf(outcome) ?? '');
 }
 
 export function createEscalatingTriage<Message>({
@@ -33,11 +36,12 @@ export function createEscalatingTriage<Message>({
       const firstOpinion = await first.propose(message, examples);
       if (!needsSecondOpinion(firstOpinion)) return firstOpinion;
       const secondOpinion = await second.propose(message, examples);
-      const firstCategory = (firstOpinion.proposal as { category?: string } | undefined)?.category;
-      const secondCategory = (secondOpinion.proposal as { category?: string } | undefined)?.category;
       return {
         ...secondOpinion,
-        proposal: { ...(secondOpinion.proposal as object), disagreement: { firstCategory, secondCategory } },
+        proposal: {
+          ...(secondOpinion.proposal as object),
+          disagreement: { firstCategory: categoryOf(firstOpinion), secondCategory: categoryOf(secondOpinion) },
+        },
         costInUsd: firstOpinion.costInUsd + secondOpinion.costInUsd,
       };
     },
