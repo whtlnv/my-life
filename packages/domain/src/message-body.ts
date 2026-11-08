@@ -14,7 +14,7 @@ export function messageBody(payload: MessagePart): string {
   }
   const text = Buffer.from(payload.body.data ?? '', 'base64url').toString('utf8');
   if (payload.mimeType === 'text/html') {
-    return withoutTags(text);
+    return htmlText(text);
   }
   return withoutSignature(withoutQuotedReply(text)).slice(0, maximumBodyLength);
 }
@@ -35,10 +35,16 @@ function withoutQuotedReply(text: string): string {
   return text.replace(/\n\nOn .* wrote:\n(?:>.*\n)+/, '\n');
 }
 
+function htmlText(html: string): string {
+  return decodeEntities(withoutTags(withoutStylesAndScripts(html)));
+}
+
+function withoutStylesAndScripts(html: string): string {
+  return html.replace(/<(style|script)[^>]*>[\s\S]*?<\/\1>/g, '');
+}
+
 function withoutTags(html: string): string {
-  return decodeEntities(
-    html.replace(/<(style|script)[^>]*>[\s\S]*?<\/\1>/g, '').replace(/<[^>]*>/g, ''),
-  );
+  return html.replace(/<[^>]*>/g, '');
 }
 
 const entities: Record<string, string> = {
