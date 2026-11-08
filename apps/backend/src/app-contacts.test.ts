@@ -234,6 +234,35 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     });
   });
 
+  it('lists at GET /organizations/:name/timeline the messages of every contact in that organization, newest first', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const luisMessage = { ...budgetReviewReport.messages[0], from: 'Luis <luis@acme.com>' };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMessage,
+        {
+          ...luisMessage,
+          id: 'message-2',
+          threadId: 'thread-2',
+          from: 'Marta <marta@acme.com>',
+          subject: 'Contract renewal',
+          date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+        },
+      ],
+    });
+
+    const response = await app.request('/organizations/acme.com/timeline');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      messages: [
+        { id: 'message-2', subject: 'Contract renewal', accountEmail: 'ana@example.com' },
+        { id: 'message-1', subject: 'Budget review', accountEmail: 'ana@example.com' },
+      ],
+    });
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);

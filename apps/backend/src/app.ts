@@ -1046,6 +1046,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/organizations', (context) => {
     return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });
   });
+  app.get('/organizations/:name/timeline', (context) => {
+    const name = context.req.param('name');
+    const messageIds =
+      organizationsByName(reportedSenders(), proposals).find((organization) => organization.name === name)
+        ?.messageIds ?? [];
+    const messages = reportedMessages
+      .filter((message) => messageIds.includes(message.id))
+      .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
+      .map((message) => ({
+        id: message.id,
+        subject: message.subject,
+        accountEmail: accountEmailByMessageId.get(message.id) ?? '',
+      }));
+    return context.json({ messages });
+  });
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
     const category = context.req.param('category');
