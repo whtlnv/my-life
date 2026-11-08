@@ -188,4 +188,18 @@ describe('backend app: GET /needs-input', () => {
       }),
     ]);
   });
+
+  it('asks nothing about a sender with no earlier message when their message asks the user nothing', async () => {
+    const triage = triageAnswering({
+      action: 'keep',
+      category: 'action',
+      summary: 'Luis shares the budget',
+      extract: {},
+      reason: 'Luis writes to the user directly',
+      asks: [],
+    });
+    const needsInput = await needsInputAfterTriagingBudgetReview(triage);
+
+    expect(needsInput.questions).toEqual([]);
+  });
 });
