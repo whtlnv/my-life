@@ -313,6 +313,36 @@ const messages: DemoMessage[] = [
     },
   },
   {
+    id: 'm-aws-3',
+    accountEmail: accounts.icona,
+    from: 'AWS Notifications <no-reply@sns.amazonaws.com>',
+    subject: 'Cost anomaly resolved',
+    minutesAgo: 180,
+    snippet: 'The cost anomaly detected on EC2 in us-east-1 has been resolved.',
+    proposal: {
+      action: 'archive',
+      category: 'system-update',
+      summary: 'EC2 cost anomaly in us-east-1 resolved',
+      extract: { system: 'AWS', severity: 'info', significant: false },
+      reason: 'Resolved on its own, nothing to do',
+    },
+  },
+  {
+    id: 'm-aws-4',
+    accountEmail: accounts.icona,
+    from: 'AWS Trusted Advisor <no-reply@trustedadvisor.amazonaws.com>',
+    subject: 'Weekly Trusted Advisor summary',
+    minutesAgo: 420,
+    snippet: 'Two IAM access keys are older than 90 days.',
+    proposal: {
+      action: 'archive',
+      category: 'system-update',
+      summary: 'Two IAM access keys are older than 90 days',
+      extract: { system: 'AWS', severity: 'info', significant: false },
+      reason: 'A weekly summary',
+    },
+  },
+  {
     id: 'm-sentry-1',
     accountEmail: accounts.erlia,
     from: 'Sentry <noreply@md.getsentry.com>',
@@ -496,6 +526,18 @@ const thisWeekExpenses: DemoMessage[] = [
 ];
 messages.push(...thisWeekExpenses);
 
+const digestHeadings: { when: string; lines: (count: number) => string[] }[] = [
+  {
+    when: '85% of the monthly budget',
+    lines: (count) => [`AWS: ${String(count)} notices since this morning`, '1 significant: production budget at 85%'],
+  },
+  { when: 'TypeError in CheckoutForm', lines: () => ['Sentry: new TypeError in CheckoutForm, 212 events in an hour'] },
+  { when: 'Deploy of main failed', lines: () => ['GitHub: the deploy of main failed on the lint wall'] },
+  { when: 'Meetwise', lines: () => ['Meetwise: an AI scheduling assistant pitch'] },
+  { when: 'Ledgerly', lines: () => ['Ledgerly: automated month-end close pitch'] },
+  { when: 'ShieldOps', lines: () => ['ShieldOps: AWS cost optimisation pitch'] },
+];
+
 const proposalByMessageId = new Map(messages.map((message) => [message.id, message.proposal]));
 
 const app = createApp({
@@ -510,6 +552,15 @@ const app = createApp({
         costInUsd: 0.018,
         promptVersion: currentTriagePromptVersion,
       }),
+  },
+  // Scripted digest headings, as Haiku would write them: matched on an item summary, else a plain count.
+  summary: {
+    summarize: ({ items }) => {
+      const summaries = items.map(({ summary }) => summary);
+      const scripted = digestHeadings.find(({ when }) => summaries.some((summary) => summary.includes(when)));
+      const lines = scripted?.lines(items.length) ?? [`${String(items.length)} notices, nothing that needs you`];
+      return Promise.resolve({ lines, costInUsd: 0.002, model: 'claude-haiku-5-5' });
+    },
   },
   filter: {
     propose: (candidate) => {
@@ -588,6 +639,8 @@ async function seed(): Promise<void> {
       gmailFilterId: 'ANe1BmjDemoFilter',
     });
   }
+  // A closing run rewrites the headings of the digests the verdicts above took items from.
+  await app.request('/triage-run', { method: 'POST' });
 }
 
 // Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).

@@ -50,6 +50,10 @@ interface TriageGroup {
 
 interface Digest {
   id: string;
+  accountEmail: string;
+  category: string;
+  key?: string;
+  count: number;
   severityCounts: Record<string, number>;
   summaryLines: string[];
   significantItems: { messageId: string; summary: string; accountEmail: string; link: string }[];
@@ -295,15 +299,25 @@ function ActionCard({ item, autoFocus, onAccepted }: { item: TriageItem; autoFoc
   );
 }
 
-function Row({ title, detail, side }: { title: ReactNode; detail?: ReactNode; side?: ReactNode }) {
+function Row({
+  title,
+  detail,
+  side,
+  as: Element = 'div',
+}: {
+  title: ReactNode;
+  detail?: ReactNode;
+  side?: ReactNode;
+  as?: 'div' | 'li';
+}) {
   return (
-    <div className="row">
+    <Element className="row">
       <div className="row-main">
         <p className="row-title">{title}</p>
         {detail && <p className="row-detail">{detail}</p>}
       </div>
       {side && <div className="row-side">{side}</div>}
-    </div>
+    </Element>
   );
 }
 
@@ -453,34 +467,70 @@ function confirmDigest(id: Digest['id']) {
   return fetch(`/digests/${encodeURIComponent(id)}/confirmation`, { method: 'POST' });
 }
 
+const severityPillClasses: Record<string, string> = {
+  critical: 'pill pill-danger',
+  error: 'pill pill-danger',
+  high: 'pill pill-danger',
+  warning: 'pill pill-warning',
+  medium: 'pill pill-warning',
+};
+
 function DigestCard({ digest, onAccepted }: { digest: Digest; onAccepted: () => void }) {
+  const [headline, ...rest] = digest.summaryLines;
+  const style = { '--swatch': categorySwatches[digest.category] } as CSSProperties;
   return (
-    <article className="card">
-      {digest.summaryLines.map((line) => (
-        <p key={line}>{line}</p>
-      ))}
-      {Object.entries(digest.severityCounts).map(([severity, count]) => (
-        <span key={severity} className="pill">
-          {severityCountText(severity, count)}
+    <article className="card digest" style={style}>
+      <div className="card-head">
+        <span className="group-swatch" aria-hidden="true" />
+        <span className="card-who">{digest.key ?? categoryLabel(digest.category)}</span>
+        <span className="count">{digest.count}</span>
+        <span className="pill pill-muted">{categoryLabel(digest.category)}</span>
+        <span className="pill" title={digest.accountEmail}>
+          {accountName(digest.accountEmail)}
         </span>
+      </div>
+      {headline && <p className="card-ask">{headline}</p>}
+      {rest.map((line) => (
+        <p key={line} className="card-summary">
+          {line}
+        </p>
       ))}
-      <ul>
-        {digest.significantItems.map((item) => (
-          <li key={item.messageId}>
-            <a href={item.link}>{item.summary}</a>
-            <span>{accountName(item.accountEmail)}</span>
-          </li>
+      {digest.significantItems.length > 0 && (
+        <ul className="rows">
+          {digest.significantItems.map((item) => (
+            <Row
+              as="li"
+              key={item.messageId}
+              title={
+                <>
+                  <span className="pill pill-danger">{significantFlagText}</span>{' '}
+                  <a href={item.link} target="_blank" rel="noreferrer">
+                    {item.summary}
+                  </a>
+                </>
+              }
+              side={<span className="muted">{accountName(item.accountEmail)}</span>}
+            />
+          ))}
+        </ul>
+      )}
+      <div className="card-foot">
+        {Object.entries(digest.severityCounts).map(([severity, count]) => (
+          <span key={severity} className={severityPillClasses[severity] ?? 'pill pill-muted'}>
+            {severityCountText(severity, count)}
+          </span>
         ))}
-      </ul>
-      <button
-        type="button"
-        className="button"
-        onClick={() => {
-          whenAccepted(confirmDigest(digest.id), onAccepted);
-        }}
-      >
-        Confirm
-      </button>
+        <span className="spacer" />
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            whenAccepted(confirmDigest(digest.id), onAccepted);
+          }}
+        >
+          Confirm
+        </button>
+      </div>
     </article>
   );
 }
@@ -499,39 +549,56 @@ function HandledForYouSection({
   const [expanded, setExpanded] = useState(false);
   return (
     <section aria-label={sectionTitles.handledForYou} className="section">
-      <h2 className="section-title">
-        <button
-          type="button"
-          aria-expanded={expanded}
-          onClick={() => {
-            setExpanded(true);
-          }}
-        >
-          {sectionTitles.handledForYou} <span className="count">{items?.length}</span>
-        </button>
-      </h2>
-      {expanded && (
-        <ul>
-          {items?.map((item) => (
-            <li key={item.messageId}>
-              <span>{item.summary}</span>
-              <span>{categoryLabel(item.category ?? '')}</span>
-              <span>{accountName(item.accountEmail)}</span>
-              <button
-                type="button"
-                className="button"
-                onClick={() => {
-                  whenAccepted(undoHandledItem(item.messageId), () => {
-                    onUndone(item.messageId);
-                  });
-                }}
-              >
-                Undo
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="group handled">
+        <div className="group-row">
+          <button
+            type="button"
+            className="group-toggle"
+            aria-expanded={expanded}
+            onClick={() => {
+              setExpanded((current) => !current);
+            }}
+          >
+            <svg className="chevron" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+              <path d="M6 3.5 10.5 8 6 12.5z" />
+            </svg>
+            <span className="group-label">{sectionTitles.handledForYou}</span>
+            <span className="count">{items?.length}</span>
+            <span className="group-proposal">done by automatic categories today, labeled my-life/auto</span>
+          </button>
+        </div>
+        {expanded && (
+          <div className="group-body">
+            <ul className="rows">
+              {items?.map((item) => (
+                <Row
+                  as="li"
+                  key={item.messageId}
+                  title={item.summary}
+                  detail={
+                    <>
+                      <span>{categoryLabel(item.category ?? '')}</span> · <span>{accountName(item.accountEmail)}</span>
+                    </>
+                  }
+                  side={
+                    <button
+                      type="button"
+                      className="button button-quiet"
+                      onClick={() => {
+                        whenAccepted(undoHandledItem(item.messageId), () => {
+                          onUndone(item.messageId);
+                        });
+                      }}
+                    >
+                      Undo
+                    </button>
+                  }
+                />
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
