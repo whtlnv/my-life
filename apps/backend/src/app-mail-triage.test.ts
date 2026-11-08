@@ -846,14 +846,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('adds a proposal triaged after a digest was listed in GET /triage-queue to that same digest, which keeps its id, when it has the same account, category and key', async () => {
-    const gitHubNotice = (summary: string) => ({
-      action: 'archive',
-      category: 'system-update',
-      summary,
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
-    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     const reportFromGitHub = (id: string) =>
@@ -899,14 +895,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('rewrites the summary lines of a digest from its new set of items when a proposal joins it on a later triage run', async () => {
-    const gitHubNotice = (summary: string) => ({
-      action: 'archive',
-      category: 'system-update',
-      summary,
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
-    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
     const summary = {
       summarize: (request?: { items?: { summary: string }[] }) =>
         Promise.resolve({
@@ -1023,14 +1015,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('rewrites the summary lines of a digest from the items left in it on the next triage run after the user gives one of its items its own verdict', async () => {
-    const gitHubNotice = (summary: string) => ({
-      action: 'archive',
-      category: 'system-update',
-      summary,
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
-    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
     const summary = {
       summarize: (request?: { items?: { summary: string }[] }) =>
         Promise.resolve({
@@ -1237,14 +1225,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('opens in GET /triage-queue a fresh digest, with a new id and only the new proposal, for a proposal of the same account, category and key triaged after its digest was confirmed', async () => {
-    const gitHubNotice = (summary: string) => ({
-      action: 'archive',
-      category: 'system-update',
-      summary,
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
-    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     const reportFromGitHub = (id: string) =>
@@ -1271,14 +1255,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('leaves in GET /triage-queue, as a fresh digest of its own, a proposal that joined a digest after the dashboard loaded it and before that digest was confirmed', async () => {
-    const gitHubNotice = (summary: string) => ({
-      action: 'archive',
-      category: 'system-update',
-      summary,
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
-    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     const reportFromGitHub = (id: string) =>
@@ -1336,14 +1316,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('confirms after a backend restart on the same database file a digest the dashboard loaded before it, reaching only the proposals it held then and leaving the later one in a fresh digest', async () => {
-    const gitHubNotice = (summary: string) => ({
-      action: 'archive',
-      category: 'system-update',
-      summary,
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
-    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, databasePath };
     const beforeRestart = createApp(options);
@@ -1971,4 +1947,14 @@ async function commandedMessageIdsAfterConfirmingGitHubDigest(
     '/commands?accountEmail=ana%40example.com',
   );
   return commands.map(({ messageId }) => messageId);
+}
+
+function systemUpdateNotice(system: string, summary: string) {
+  return {
+    action: 'archive',
+    category: 'system-update',
+    summary,
+    extract: { system, severity: 'low', significant: false },
+    reason: 'A routine notification',
+  };
 }
