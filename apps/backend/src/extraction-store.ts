@@ -23,6 +23,8 @@ function toStoredExtraction(row: ExtractionRow): StoredExtraction {
   };
 }
 
+const selectExtractions = 'SELECT message_id, prompt_version, extracted_at, extraction FROM extractions';
+
 export function openExtractionStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec(
@@ -31,11 +33,9 @@ export function openExtractionStore(databasePath: string) {
   const saveExtraction = database.prepare(
     'INSERT INTO extractions (message_id, prompt_version, extracted_at, extraction) VALUES (?, ?, ?, ?)',
   );
-  const loadExtractions = database.prepare<[], ExtractionRow>(
-    'SELECT message_id, prompt_version, extracted_at, extraction FROM extractions ORDER BY rowid',
-  );
+  const loadExtractions = database.prepare<[], ExtractionRow>(`${selectExtractions} ORDER BY rowid`);
   const loadExtractionsForMessage = database.prepare<[string], ExtractionRow>(
-    'SELECT message_id, prompt_version, extracted_at, extraction FROM extractions WHERE message_id = ? ORDER BY rowid',
+    `${selectExtractions} WHERE message_id = ? ORDER BY rowid`,
   );
   return {
     save(stored: StoredExtraction): void {
