@@ -239,6 +239,14 @@ interface ListedContact {
   messageIds: string[];
 }
 
+interface ImportedContact {
+  name: string;
+  emails: string[];
+  organization: string;
+  starred?: boolean;
+  lists?: string[];
+}
+
 function withUnlistedImportedContacts<Contact extends ListedContact>(
   messageContacts: Contact[],
   importedContacts: ListedContact[],
@@ -631,13 +639,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const importedContacts: ListedContact[] = [];
   app.post('/contacts-import', async (context) => {
-    const { contacts } = await context.req.json<{
-      contacts: { name: string; emails: string[]; organization: string; starred?: boolean; lists?: string[] }[];
-    }>();
+    const { contacts } = await context.req.json<{ contacts: ImportedContact[] }>();
     for (const { name, emails, organization, starred, lists } of contacts) {
-      contactDetailsStore.save(emails[0]!, { organization, ...(lists ? { lists } : {}) });
+      const primaryEmail = emails[0]!;
+      contactDetailsStore.save(primaryEmail, { organization, ...(lists ? { lists } : {}) });
       if (starred) {
-        contactDetailsStore.saveMark(emails[0]!, 'vip');
+        contactDetailsStore.saveMark(primaryEmail, 'vip');
       }
       recordImportedContact(importedContacts, { displayName: name, emails });
     }
