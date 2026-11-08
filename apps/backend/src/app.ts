@@ -659,6 +659,7 @@ function organizationsFromProposals(proposals: Proposal[], senderByMessageId: Ma
   const messageIdsByName = new Map<string, string[]>();
   for (const { organization, messageId } of proposals) {
     const name = organization ?? senderDomain(senderByMessageId.get(messageId) ?? '');
+    if (name === 'gmail.com') continue;
     messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
   }
   return [...messageIdsByName].map(([name, messageIds]) => ({ name, messageIds }));
