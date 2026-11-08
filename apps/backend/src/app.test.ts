@@ -160,6 +160,23 @@ const triageAnsweringByMessageId = (proposalByMessageId: Record<string, unknown>
     Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
 });
 
+const budgetReviewReportWithSecondMessageFromMarta = {
+  ...budgetReviewReport,
+  messages: [
+    budgetReviewReport.messages[0],
+    { ...budgetReviewReport.messages[0], id: 'message-2', threadId: 'thread-2', from: 'Marta <marta@acme.com>' },
+  ],
+};
+
+const keepProposalExtracting = (extraction: Record<string, unknown> = {}) => ({
+  action: 'keep',
+  category: 'unknown',
+  summary: 'A budget review',
+  extract: {},
+  reason: 'Unsure',
+  ...extraction,
+});
+
 const filterAnswering = (proposal: unknown) => ({
   propose: () => Promise.resolve({ proposal, costInUsd: 0.05, promptVersion: 'filter-v1' }),
 });
@@ -2795,16 +2812,7 @@ describe('backend app', () => {
 
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const fromMarta = {
-      ...budgetReviewReport.messages[0],
-      id: 'message-2',
-      threadId: 'thread-2',
-      from: 'Marta <marta@acme.com>',
-    };
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [budgetReviewReport.messages[0], fromMarta],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
 
     const response = await app.request('/contacts');
 
@@ -2818,21 +2826,9 @@ describe('backend app', () => {
   });
 
   it('lists at GET /contacts, once a message is triaged with an extraction naming a person with an email, that person as a contact linked to the message', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-            people: [{ name: 'Marta Díaz', email: 'marta@acme.com', role: 'copied' }],
-          },
-          costInUsd: 0,
-          promptVersion: 'triage-v2',
-        }),
-    };
+    const triage = triageAnswering(
+      keepProposalExtracting({ people: [{ name: 'Marta Díaz', email: 'marta@acme.com', role: 'copied' }] }),
+    );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -2849,21 +2845,7 @@ describe('backend app', () => {
   });
 
   it('lists at GET /contacts no contact for a person in a triaged extraction who has no email', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-            people: [{ name: 'Marta Díaz', role: 'mentioned' }],
-          },
-          costInUsd: 0,
-          promptVersion: 'triage-v2',
-        }),
-    };
+    const triage = triageAnswering(keepProposalExtracting({ people: [{ name: 'Marta Díaz', role: 'mentioned' }] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -2876,28 +2858,11 @@ describe('backend app', () => {
   });
 
   it('lists at GET /contacts one contact, holding every message, for a person who sent one message and is named by email in two triaged extractions', async () => {
-    const extractionNamingLuis = {
-      action: 'keep',
-      category: 'unknown',
-      summary: 'A budget review',
-      extract: {},
-      reason: 'Unsure',
-      people: [{ name: 'Luis Pérez', email: 'luis@example.com', role: 'mentioned' }],
-    };
-    const triage = {
-      propose: () => Promise.resolve({ proposal: extractionNamingLuis, costInUsd: 0, promptVersion: 'triage-v2' }),
-    };
+    const triage = triageAnswering(
+      keepProposalExtracting({ people: [{ name: 'Luis Pérez', email: 'luis@example.com', role: 'mentioned' }] }),
+    );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const fromMarta = {
-      ...budgetReviewReport.messages[0],
-      id: 'message-2',
-      threadId: 'thread-2',
-      from: 'Marta <marta@acme.com>',
-    };
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [budgetReviewReport.messages[0], fromMarta],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
     await postTriageRun(app);
 
     const response = await app.request('/contacts');
@@ -2909,7 +2874,7 @@ describe('backend app', () => {
     expect(luisContacts[0]?.messageIds).toEqual(['message-1', 'message-2']);
   });
 
-  it('lists a reported message that is not yet triaged under both parties it links to: its sender contact and the organization of its sender\'s domain', async () => {
+  it("lists a reported message that is not yet triaged under both parties it links to: its sender contact and the organization of its sender's domain", async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReport);
 
@@ -2928,29 +2893,14 @@ describe('backend app', () => {
   });
 
   it('lists a message under no contact it does not link to: a second message from another sender, whose extraction names nobody, appears under its sender alone, not under the first sender or the person the first message names', async () => {
-    const triage = {
-      propose: (message: { id: string }) =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-            people: message.id === 'message-1' ? [{ name: 'Pedro Soto', email: 'pedro@acme.com', role: 'copied' }] : [],
-          },
-          costInUsd: 0,
-          promptVersion: 'triage-v2',
-        }),
-    };
+    const triage = triageAnsweringByMessageId({
+      'message-1': keepProposalExtracting({
+        people: [{ name: 'Pedro Soto', email: 'pedro@acme.com', role: 'copied' }],
+      }),
+      'message-2': keepProposalExtracting({ people: [] }),
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const fromMarta = {
-      ...budgetReviewReport.messages[0],
-      id: 'message-2',
-      threadId: 'thread-2',
-      from: 'Marta <marta@acme.com>',
-    };
-    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [budgetReviewReport.messages[0], fromMarta] });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
     await postTriageRun(app);
 
     const { contacts } = (await (await app.request('/contacts')).json()) as {
@@ -2964,21 +2914,7 @@ describe('backend app', () => {
   });
 
   it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-            organization: 'Mutuus',
-          },
-          costInUsd: 0,
-          promptVersion: 'triage-v2',
-        }),
-    };
+    const triage = triageAnswering(keepProposalExtracting({ organization: 'Mutuus' }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -2990,20 +2926,7 @@ describe('backend app', () => {
   });
 
   it("lists at GET /organizations, once a message is triaged with an extraction that names no organization, the organization of its sender's domain with the message linked to it", async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-          },
-          costInUsd: 0,
-          promptVersion: 'triage-v2',
-        }),
-    };
+    const triage = triageAnswering(keepProposalExtracting());
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -3017,20 +2940,7 @@ describe('backend app', () => {
   it.each(['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'])(
     'lists at GET /organizations no organization for a message from the free-mail domain %s whose extraction names no organization',
     async (freeMailDomain) => {
-      const triage = {
-        propose: () =>
-          Promise.resolve({
-            proposal: {
-              action: 'keep',
-              category: 'unknown',
-              summary: 'A budget review',
-              extract: {},
-              reason: 'Unsure',
-            },
-            costInUsd: 0,
-            promptVersion: 'triage-v2',
-          }),
-      };
+      const triage = triageAnswering(keepProposalExtracting());
       const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
       const fromGmail = { ...budgetReviewReport.messages[0], from: `Luis <luis@${freeMailDomain}>` };
       await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [fromGmail] });
@@ -3044,32 +2954,9 @@ describe('backend app', () => {
   );
 
   it('lists at GET /organizations one organization holding both messages when two messages are triaged with extractions naming the same organization', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-            organization: 'Mutuus',
-          },
-          costInUsd: 0,
-          promptVersion: 'triage-v2',
-        }),
-    };
+    const triage = triageAnswering(keepProposalExtracting({ organization: 'Mutuus' }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const fromMarta = {
-      ...budgetReviewReport.messages[0],
-      id: 'message-2',
-      threadId: 'thread-2',
-      from: 'Marta <marta@acme.com>',
-    };
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [budgetReviewReport.messages[0], fromMarta],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
     await postTriageRun(app);
 
     const response = await app.request('/organizations');
