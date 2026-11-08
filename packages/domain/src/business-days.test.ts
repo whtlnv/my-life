@@ -9,4 +9,11 @@ describe('businessDaysBetween', () => {
 
     expect(businessDaysBetween(fridayFivePm, tuesdayFivePm, 'America/Mexico_City')).toBe(2);
   });
+
+  it('counts every day between two instants on weekdays only: Monday 17:00 to Thursday 17:00 is 3 business days', () => {
+    const mondayFivePm = '2026-11-09T23:00:00.000Z';
+    const thursdayFivePm = '2026-11-12T23:00:00.000Z';
+
+    expect(businessDaysBetween(mondayFivePm, thursdayFivePm, 'America/Mexico_City')).toBe(3);
+  });
 });
