@@ -9,7 +9,7 @@ Phases (locked decision 17):
 - **Phase 2a:** the dashboard redesign (tokens, app shell, _now_ and triage pages) — delivered 2026-11-07 (`DONE.md`, `docs/screenshots/2026-11-07-phase-2a-*.jpg`); new pages reuse `apps/dashboard/src/styles.css` and are screenshot-verified over `scripts/demo.sh`.
 - **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters, the weekly expense statement — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through is `docs/phase-2-walkthrough.md`.
 - **Phase 2b:** capture: bodies kept locally, extraction v2, contacts and organizations, the Google Contacts import, body backfill and retriage, `GET /search` — code delivered 2026-11-08 (`DONE.md`); the real-account walk-through is `docs/phase-2b-walkthrough.md`.
-- **Phase 2c:** rolling digests replace per-message groups in triage; a _Handled for you_ strip shows automatic work.
+- **Phase 2c:** rolling digests (system updates, sales, calendar and Drive) with Haiku-written summary lines and one confirm per digest; a _Handled for you_ strip with undo — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-2c-*.jpg`); the real-account walk-through is `docs/phase-2c-walkthrough.md`.
 - **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contacts and organizations with a merged timeline), the Needs input queue, tasks and the prioritizer, waiting-on.
 - **Phase 4:** the in-app agent: chat over mail, contacts, calendar and tasks on Opus, with tools; acts within safeguards (archive, label, draft, task; never delete, never send).
 - **Phase 5:** Slack, as a channel in the People view.
@@ -21,29 +21,19 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
-## Start here (handoff 2026-11-08, after Phase 2b)
+## Start here (handoff 2026-11-08, after Phase 2c)
 
-Read `CLAUDE.md` first. **Phase 2b's code is delivered** (`DONE.md`): the body parser (`packages/domain/src/message-body.ts`), `format=full` polling and the body backfill, `prompts/triage-v2.md` with the v2 extraction stored in the proposal store under its prompt version, retriage of messages whose body arrives (verdicts kept), contacts and organizations derived from senders and extractions plus the Google Contacts import (stored, merged by email, starred → `vip`, labels → lists, nothing imported overrides the app), and `GET /search`. `scripts/demo.sh` seeds all of it. **Not yet seen over the real accounts**: the contacts scopes and one re-consent per profile (`PENDING_TASKS.md` § 9, `docs/phase-2b-walkthrough.md`), which also clears the Gmail 403 three profiles answer since Phase 2. The launchd backend still runs the pre-2b build until it is restarted. Phase 0's three-day token check is due 2026-11-09.
+Read `CLAUDE.md` first. **Phases 2b and 2c are delivered** (`DONE.md`). 2c: `packages/domain/src/digests.ts` groups waiting system-update, sales and calendar-drive proposals per account, category and key (the system, or the sender address); `GET /triage-queue` returns `digests` (id, count, severity counts, significant items, summary lines) and `handledForYou`; `POST /digests/:id/confirmation` confirms only the items the page was shown (stored per listing); summary lines come from `apps/backend/src/claude-summary.ts` (`prompts/digest-summary-v1.md`, `MY_LIFE_SUMMARY_MODEL`, default Haiku 5.5, validated by `digestSummary` in contracts, spend logged) and are rewritten when a digest gains or loses an item; `POST /handled-for-you/:messageId/undo` queues an `undo-automatic` command the extension applies. The `createApp` route tests are split by route group (`apps/backend/src/app*.test.ts`, staging in `app.test-support.ts`). **Not yet seen over the real accounts**: everything since 2b waits on `PENDING_TASKS.md` § 9 and one re-consent per profile (`docs/phase-2b-walkthrough.md`, then `docs/phase-2c-walkthrough.md`); the launchd backend runs the pre-2b build until restarted.
 
-**Next:** `/tdd-supervise` on Phase 2c. The `createApp` route tests are split by route group (`apps/backend/src/app*.test.ts`, shared staging in `app.test-support.ts`); a new route's tests go in its group's file. Pass `--model` to every `claude -p` subprocess: the TDD skills pin none, so leaves inherit the user's default.
+**Next:** `/tdd-supervise` on Phase 3. Its first planning question: what "not yet opened" means for the urgent alert rule (moved from 2c; see the Phase 3 bullet). Export `ANTHROPIC_MODEL` as well as passing `--model` to every `claude -p`: `/tdd-cycle` starts nested `claude -p` leaves that only inherit the environment.
 
-What the supervision showed in Phase 2b — check these every cycle:
+What the supervision showed in Phase 2c — check these every cycle:
 
-- **Minimal greens fake lists and stores:** the free-mail set held only `gmail.com`; marks were hard-coded to `vip` and kept in memory; user-removed marks, imported contacts and pending retriages each lived in a `Set` or array until a restart keystone forced a table. Plan the restart item and the triangulating case beside every item from the start.
-- **Code that runs in the extension must not use Node globals:** `Buffer` passed every test under Node and would have thrown in the service worker; it is lint-banned in the domain now.
-- **Adding a column to an existing table breaks the live database** (`CREATE TABLE IF NOT EXISTS` never alters it); a keystone covers databases created before the change.
-- **Real-world inputs the fakes never send:** Other Contacts without a name, phone-only contacts without an email. Each would have failed the whole import on a real account.
-- **A store built only for its tests** (the extraction store) was never opened by the app; the wiring item exposed it. Check every new store has a production caller.
-- **Cycles stall when the wrapper's 60 s idle kill fires** while `/tdd-cycle` waits on its own leaf; `RUN_LOGGED_IDLE_GRACE=300` stops it. Shape-pinning `toEqual` assertions still had to be migrated to field subsets six times.
-
-## Phase 2c — Digests
-
-Outcome: system updates, calendar and Drive, and sales never appear one message at a time.
-
-- A digest is a rolling group per (account, category, system or sender) that accumulates until confirmed; confirming archives or keeps its items by their own proposals and starts a fresh group. Significant items stay listed inside the group.
-- Each digest carries one or two Haiku-written lines, rewritten whenever the group changes ("AWS: 5 notices since Tuesday, 1 significant: production budget at 85%"), and the count by severity.
-- `Handled for you`: a collapsed strip on the triage page listing what automatic categories did today, each item one click from undo (remove `my-life/auto`, back to the inbox).
-- Triage page becomes: Needs you · digests · Needs input (Phase 3 fills it) · Handled for you.
+- **Minimal greens still fake keys and stores:** the digest key left out the category; one `summaryLines` variable served every digest and was asked about every waiting item; the dashboard's "listed" snapshot started in memory. A triangulating item fixed each.
+- **A port's real adapter can stay a stub behind a green wiring item:** `createClaudeSummary` ignored its items, had no prompt file, reported no cost and validated nothing until the keystone was split. Read the adapter, not just `main.ts`.
+- **Dashboard items pass on mocked responses the backend never sends:** the digest card's significant items had no backend field. Check each field a page reads against the route.
+- **Plan defaults drift:** the summary model defaulted to Opus while the plan said Haiku; a settings test pins it now.
+- **`/reconcile` refuses to delete a test that also covers unchanged behavior:** migrate it by hand (four triage-queue tests moved to digests).
 
 ## Phase 3 — People, Needs input, tasks
 

@@ -22,7 +22,8 @@ demo (`scripts/demo.sh`, port 7778) shows every page with seeded data without to
 - [ ] Each category shows its agreement rate (or _no proposals yet_) before its switch; expanding one lists its five
       most recent proposals with a working Gmail link.
 - [ ] Switch `calendar-drive` to _automatic_: the next calendar or Drive notice leaves the inbox on its own, carrying
-      the Gmail label `my-life/auto`, and never appears in the triage queue.
+      the Gmail label `my-life/auto`, and appears on the triage page only under _Handled for you_, where undo
+      returns it to the inbox.
 - [ ] A proposal made while the category was _advise_ still waits for your confirmation after the switch.
 - [ ] The kill switch returns every category to _advise_; a new proposal in that category waits again.
 - [ ] Restart the backend (`launchctl kickstart -k gui/$(id -u)/mx.erlia.my-life.backend`): the modes and the
