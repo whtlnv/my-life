@@ -92,6 +92,13 @@ const filter =
         createMessage: claude.createMessage,
       });
 
+// The digest summary's tool input: one or two lines of text, checked again by the adapter.
+const summaryToolInputSchema = {
+  type: 'object',
+  properties: { lines: { type: 'array', items: { type: 'string' } } },
+  required: ['lines'],
+  additionalProperties: false,
+};
 const summary =
   claude === undefined
     ? undefined
@@ -106,12 +113,7 @@ const summary =
             tools: request.tools.map(({ name }) => ({
               name,
               strict: true,
-              input_schema: {
-                type: 'object',
-                properties: { lines: { type: 'array', items: { type: 'string' } } },
-                required: ['lines'],
-                additionalProperties: false,
-              },
+              input_schema: summaryToolInputSchema,
             })),
           }),
       });
