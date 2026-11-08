@@ -3550,6 +3550,22 @@ describe('backend app', () => {
     ]);
   });
 
+  it('hands the triage port no contact record for a message whose sender was never imported, marked or given details', async () => {
+    const askedMessages: { id: string; contact?: unknown }[] = [];
+    const triage = {
+      propose: (message: { id: string; contact?: unknown }) => {
+        askedMessages.push({ id: message.id, contact: message.contact });
+        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    await postTriageRun(app);
+
+    expect(askedMessages).toEqual([{ id: 'message-1', contact: undefined }]);
+  });
+
   it('lists at GET /search?q= the message whose body contains the query word', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);

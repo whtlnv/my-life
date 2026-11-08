@@ -97,7 +97,7 @@ export interface AppOptions {
   gmailPollingIntervalInMilliseconds?: number;
   triage?: {
     propose: (
-      message: ReportedMessage & { accountEmail: string; contact?: TriageContact },
+      message: ReportedMessage & { accountEmail: string; contact?: TriageContact | undefined },
       examples?: unknown[],
     ) => Promise<TriageResult>;
   };
@@ -486,12 +486,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     proposals[existingIndex] = queuedProposal;
   }
-  function triageContactFor(from: string): TriageContact {
+  function triageContactFor(from: string): TriageContact | undefined {
     const sender = contactFromSender(from);
+    const details = contactDetailsStore.loadAll()[sender.email];
+    const marked = contactDetailsStore.markedEmails().has(sender.email);
+    if (details === undefined && !marked) {
+      return undefined;
+    }
     return {
       displayName: sender.displayName,
-      marks: contactDetailsStore.markedEmails().has(sender.email) ? ['vip'] : [],
-      ...contactDetailsStore.loadAll()[sender.email],
+      marks: marked ? ['vip'] : [],
+      ...details,
     };
   }
   app.post('/triage-run', async (context) => {
