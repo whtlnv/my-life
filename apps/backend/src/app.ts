@@ -463,7 +463,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   // A message already proposed under the current prompt gains nothing from a retriage when its body arrives.
   function wasProposedUnderAnOlderPrompt(messageId: string): boolean {
-    const latestStoredProposal = proposalStore.loadAll().findLast((stored) => stored.messageId === messageId);
+    const latestStoredProposal = latestProposalFor(proposalStore.loadAll(), messageId);
     return latestStoredProposal !== undefined && latestStoredProposal.promptVersion !== currentTriagePromptVersion;
   }
   // A retriage replaces the message's open proposal; a proposal the user has already decided on is left alone.
@@ -827,10 +827,12 @@ function messagesWhoseBodyOrSummaryContainsWord(
 ): ReportedMessage[] {
   const containsWord = (text: string | undefined): boolean => text !== undefined && text.split(/\W+/).includes(word);
   return messages.filter(
-    (message) =>
-      containsWord(message.body) ||
-      containsWord(proposals.findLast((proposal) => proposal.messageId === message.id)?.summary),
+    (message) => containsWord(message.body) || containsWord(latestProposalFor(proposals, message.id)?.summary),
   );
+}
+
+function latestProposalFor<T extends { messageId: string }>(proposals: T[], messageId: string): T | undefined {
+  return proposals.findLast((proposal) => proposal.messageId === messageId);
 }
 
 // One organization per name: each reported message lists under the organization its latest proposal names, or
@@ -838,7 +840,7 @@ function messagesWhoseBodyOrSummaryContainsWord(
 function organizationsByName(senders: { messageId: string; from: string }[], proposals: Proposal[]) {
   const messageIdsByName = new Map<string, string[]>();
   for (const { messageId, from } of senders) {
-    const organization = proposals.findLast((proposal) => proposal.messageId === messageId)?.organization;
+    const organization = latestProposalFor(proposals, messageId)?.organization;
     const name = organization ?? senderDomain(from);
     if (freeMailDomains.has(name)) continue;
     messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
