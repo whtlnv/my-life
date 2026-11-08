@@ -2396,9 +2396,7 @@ describe('backend app', () => {
     await reportTriageAndConfirmShopNewsletters(app);
     const proposalId = await firstPendingFilterProposalId(app);
 
-    const approval = await app.request(`/filter-proposals/${proposalId}/approval`, {
-      method: 'POST',
-    });
+    const approval = await approveFilterProposal(app, proposalId);
     const commands = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
 
     expect({ status: approval.status, commands: commands.commands }).toMatchObject({
@@ -2640,9 +2638,7 @@ describe('backend app', () => {
     await reportTriageAndConfirmShopNewsletters(app);
     const proposalId = await firstPendingFilterProposalId(app);
 
-    const approval = await app.request(`/filter-proposals/${proposalId}/approval`, {
-      method: 'POST',
-    });
+    const approval = await approveFilterProposal(app, proposalId);
     const afterApproval = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
 
     expect({ status: approval.status, proposals: afterApproval.proposals }).toEqual({ status: 200, proposals: [] });
