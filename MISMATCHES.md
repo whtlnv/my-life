@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 11:42 · `packages/domain/src/digests.test.ts::does not list its items that are not significant`
+- Behavior: A digest does not list its items that are not significant
+- Predicted: pass on first run: the previous green computed `significantItems` as `proposals.filter(isSignificant)`, which already drops items whose extract is not `significant: true`
+- Actual: pass (1 passed, 11 skipped)
+- Type: passed unexpectedly
+- Resolution: the previous green built the filter, not just the listing; the test is kept as a pin for the negative case, because no honest rewrite can fail without removing production code
+
 ## 2026-11-08 11:33 · `packages/domain/src/digests.test.ts::places two calendar-drive proposals from the same account and different sender addresses in two digests even when they name the same item`
 - Behavior: Two calendar-drive proposals from the same account and different sender addresses are in two digests
 - Predicted: pass on first run, and tsc clean: `digestKey` keys every non-`system` extract on the sender address, and the previous green already added `{ item, change }` to `DigestableExtract`

@@ -13,7 +13,7 @@
 - [x] An expense or cc-thread proposal is never placed in a digest
 - [x] A digest reports how many of its items carry each severity (two `high` and one `low` give high 2, low 1)
 - [x] A digest lists its significant items by name
-- [ ] A digest does not list its items that are not significant
+- [x] A digest does not list its items that are not significant
 - [ ] `GET /triage-queue` returns the waiting system-update, sales and calendar-drive proposals as digests, each with its account, category, key, item count and severity counts
 - [ ] `GET /triage-queue` no longer lists a digested proposal one message at a time
   - predicted-contradiction: `apps/backend/src/app-mail-triage.test.ts::carries in each GET /triage-queue group its items, and in a system-update group its sending-system sub-groups with their items` — asserts: a waiting system-update proposal appears as an item of a `system-update` group with `systems` sub-groups — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"

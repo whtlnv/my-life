@@ -228,4 +228,25 @@ describe('digests', () => {
       expect.objectContaining({ messageId: 'message-1', summary: 'Production budget at 85%' }),
     ]);
   });
+
+  it('does not list its items that are not significant', () => {
+    const budgetAlert = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'system-update',
+      summary: 'Production budget at 85%',
+      extract: { system: 'AWS', severity: 'high', significant: true },
+    };
+    const maintenanceNotice = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      summary: 'Scheduled maintenance',
+      extract: { system: 'AWS', severity: 'low', significant: false },
+    };
+    const result = digests([budgetAlert, maintenanceNotice]);
+    expect(result[0]?.significantItems.map((item) => item.messageId)).toEqual(['message-1']);
+  });
 });
