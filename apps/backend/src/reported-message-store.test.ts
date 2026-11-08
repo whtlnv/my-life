@@ -34,6 +34,24 @@ describe('reported message store', () => {
       },
     ]);
   });
+  it('still reads back the body of a reported message after it is reopened on the same database', () => {
+    const databasePath = temporaryDatabasePath();
+    const message = {
+      id: 'message-1',
+      from: 'Luis <luis@example.com>',
+      subject: 'Budget review',
+      date: '2026-11-07T10:00:00Z',
+      to: 'ana@example.com',
+      threadId: 'thread-1',
+      snippet: 'Can you review the budget by Friday?',
+      body: 'Hi Ana,\n\nCan you review the budget by Friday? The sheet is attached.\n\nLuis',
+    };
+    openReportedMessageStore(databasePath).save(message.id, 'ana@example.com', message);
+
+    const reopened = openReportedMessageStore(databasePath);
+
+    expect(reopened.loadReportedMessages()).toMatchObject([{ id: 'message-1', body: message.body }]);
+  });
   it('refuses to answer about a message it never saw instead of inventing blank headers', () => {
     const store = openReportedMessageStore(':memory:');
 
