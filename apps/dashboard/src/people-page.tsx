@@ -25,9 +25,8 @@ interface Timeline {
   messages: TimelineMessage[];
 }
 
-interface SelectedTimeline {
+interface SelectedTimeline extends Timeline {
   displayName: string;
-  messages: TimelineMessage[];
 }
 
 const emptyLists: PeopleLists = { vip: [], urgent: [], everyoneElse: [] };
@@ -63,6 +62,16 @@ const PeopleList = ({
   </section>
 );
 
+const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
+  <ul aria-label={`Timeline of ${timeline.displayName}`}>
+    {timeline.messages.map((message) => (
+      <li key={message.id}>
+        <a href={message.link}>{message.subject}</a> {message.accountEmail}
+      </li>
+    ))}
+  </ul>
+);
+
 export const PeoplePage = () => {
   const [lists, setLists] = useState<PeopleLists>(emptyLists);
   const [selected, setSelected] = useState<SelectedTimeline | undefined>(undefined);
@@ -76,7 +85,7 @@ export const PeoplePage = () => {
   const showTimeline = (person: PersonRow) => {
     void fetch(`/contacts/${encodeURIComponent(person.emails[0] as string)}/timeline`)
       .then((response) => response.json() as Promise<Timeline>)
-      .then((timeline) => setSelected({ displayName: person.displayName, messages: timeline.messages }));
+      .then((timeline) => setSelected({ ...timeline, displayName: person.displayName }));
   };
 
   return (
@@ -84,15 +93,7 @@ export const PeoplePage = () => {
       <PeopleList title="VIP" people={lists.vip} onSelect={showTimeline} />
       <PeopleList title="Urgent" people={lists.urgent} onSelect={showTimeline} />
       <PeopleList title="Everyone else" people={lists.everyoneElse} onSelect={showTimeline} />
-      {selected && (
-        <ul aria-label={`Timeline of ${selected.displayName}`}>
-          {selected.messages.map((message) => (
-            <li key={message.id}>
-              <a href={message.link}>{message.subject}</a> {message.accountEmail}
-            </li>
-          ))}
-        </ul>
-      )}
+      {selected && <ContactTimeline timeline={selected} />}
     </main>
   );
 };
