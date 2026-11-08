@@ -34,18 +34,14 @@ describe('FiltersPage', () => {
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         if (input === '/filter-proposals') {
-          return Promise.resolve(
-            new Response(JSON.stringify({ proposals }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ proposals }));
         }
         if (typeof input === 'string' && input.startsWith('/filter-proposals/')) {
           decisionRequests.push({ url: input, method: init?.method });
           return Promise.resolve(new Response(null, { status: 200 }));
         }
         if (input === '/filters') {
-          return Promise.resolve(
-            new Response(JSON.stringify({ filters: [] }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ filters: [] }));
         }
         return Promise.resolve(new Response(null, { status: 404 }));
       }),
@@ -89,14 +85,10 @@ describe('FiltersPage', () => {
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         if (input === '/filter-proposals') {
-          return Promise.resolve(
-            new Response(JSON.stringify({ proposals: [] }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ proposals: [] }));
         }
         if (input === '/filters') {
-          return Promise.resolve(
-            new Response(JSON.stringify({ filters }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ filters }));
         }
         if (typeof input === 'string' && input.startsWith('/filters/')) {
           deletionRequests.push({ url: input, method: init?.method });
@@ -127,14 +119,10 @@ describe('FiltersPage', () => {
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
         if (input === '/filter-proposals') {
-          return Promise.resolve(
-            new Response(JSON.stringify({ proposals: [] }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ proposals: [] }));
         }
         if (input === '/filters') {
-          return Promise.resolve(
-            new Response(JSON.stringify({ filters: [] }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ filters: [] }));
         }
         return Promise.resolve(new Response(null, { status: 404 }));
       }),
