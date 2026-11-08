@@ -571,9 +571,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
-  const markedEmails = new Set<string>();
   app.put('/contacts/:email/marks/:mark', (context) => {
-    markedEmails.add(context.req.param('email'));
+    contactDetailsStore.saveMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
   app.patch('/contacts/:email', async (context) => {
@@ -582,6 +581,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/contacts', (context) => {
     const contactDetails = contactDetailsStore.loadAll();
+    const markedEmails = contactDetailsStore.markedEmails();
     return context.json({
       contacts: contactsByEmail(reportedSenders(), proposals).map((contact) => {
         const primaryEmail = contact.emails[0]!;
