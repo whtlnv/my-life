@@ -534,7 +534,6 @@ async function seed(): Promise<void> {
   await postJson('/verdicts', { messageId: 'm-exp-week-1', decision: 'confirmed' });
   // The third confirmed archive per sender made a filter proposal at POST /verdicts; the forum one is approved and
   // created in Gmail.
-  await app.request('/triage-run', { method: 'POST' });
   const proposals = (await (await app.request('/filter-proposals')).json()) as { proposals: { id: string }[] };
   const forumProposal = proposals.proposals.at(-1);
   if (forumProposal !== undefined) {
