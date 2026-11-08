@@ -193,4 +193,17 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe('Ana & Luis: el total es <$500 > "OK" \'ya\'');
   });
+
+  it('drops the quoted reply and the signature of an HTML body, like a plain-text body', () => {
+    const html =
+      '<div>Perfecto, ahí estaré.</div>\n\nOn Wed, Nov 4, 2026 at 9:12 AM Ana López &lt;ana@example.com&gt; wrote:\n' +
+      '<blockquote>&gt; Hola,\n&gt; Nos vemos el miércoles a las 10:00?\n</blockquote>\n-- \n<div>Ana López</div>\n';
+    const payload = {
+      mimeType: 'text/html',
+      headers: [{ name: 'Content-Type', value: 'text/html; charset="UTF-8"' }],
+      body: { size: html.length, data: Buffer.from(html, 'utf8').toString('base64url') },
+    };
+
+    expect(messageBody(payload)).toBe('Perfecto, ahí estaré.\n');
+  });
 });

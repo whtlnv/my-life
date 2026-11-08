@@ -12,10 +12,8 @@ export function messageBody(payload: MessagePart): string {
   if (bodyPart) {
     return messageBody(bodyPart);
   }
-  const text = Buffer.from(payload.body.data ?? '', 'base64url').toString('utf8');
-  if (payload.mimeType === 'text/html') {
-    return htmlText(text);
-  }
+  const decoded = Buffer.from(payload.body.data ?? '', 'base64url').toString('utf8');
+  const text = payload.mimeType === 'text/html' ? htmlText(decoded) : decoded;
   return withoutSignature(withoutQuotedReply(text)).slice(0, maximumBodyLength);
 }
 
