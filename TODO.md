@@ -56,7 +56,7 @@
 - [x] `GET /triage-queue` lists in each digest its significant items, each with its message id, summary, account and Gmail link, and none of its items that are not significant
 - [x] The Needs input section shows that nothing needs input when it is empty
 - [x] A digest card shows its summary lines and its count by severity
-- [ ] A digest card lists its significant items, each linked to its message and naming its account
+- [x] A digest card lists its significant items, each linked to its message and naming its account
 - [ ] Confirming a digest card from the page posts the confirm for that digest only and removes the card
 - [ ] Handled for you starts collapsed and shows how many items it holds
 - [ ] Expanding Handled for you lists each item with its summary, category and account

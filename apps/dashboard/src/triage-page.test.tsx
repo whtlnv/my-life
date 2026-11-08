@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { accountName } from './account-name';
 
 import {
   fetchedAtText,
@@ -1215,5 +1216,44 @@ describe('TriagePage', () => {
     expect(within(digestsSection).getByText('One dependency alert')).toBeInTheDocument();
     expect(within(digestsSection).getByText(severityCountText('high', 2))).toBeInTheDocument();
     expect(within(digestsSection).getByText(severityCountText('low', 1))).toBeInTheDocument();
+  });
+
+  it('lists on a digest card its significant items, each linked to its message and naming its account', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      digests: [
+        {
+          id: 'digest-1',
+          accountEmail: 'francisco@psmutuus.com',
+          category: 'system-update',
+          key: 'GitHub',
+          count: 3,
+          severityCounts: { high: 1 },
+          summaryLines: ['One failed deploy on main'],
+          significantItems: [
+            {
+              messageId: 'message-9',
+              summary: 'Deploy to production failed',
+              accountEmail: 'francisco@erlia.com',
+              link: 'https://mail.google.com/mail/?authuser=francisco%40erlia.com#all/message-9',
+            },
+          ],
+        },
+      ],
+      handledForYou: [],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const digestsSection = await screen.findByRole('region', { name: sectionTitles.digests });
+    const item = within(digestsSection).getByRole('listitem');
+    expect(within(item).getByRole('link', { name: /Deploy to production failed/ })).toHaveAttribute(
+      'href',
+      'https://mail.google.com/mail/?authuser=francisco%40erlia.com#all/message-9',
+    );
+    expect(within(item).getByText(accountName('francisco@erlia.com'))).toBeInTheDocument();
   });
 });

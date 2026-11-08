@@ -52,6 +52,7 @@ interface Digest {
   id: string;
   severityCounts: Record<string, number>;
   summaryLines: string[];
+  significantItems: { messageId: string; summary: string; accountEmail: string; link: string }[];
 }
 
 interface TriageQueueResponse {
@@ -458,6 +459,14 @@ function DigestCard({ digest }: { digest: Digest }) {
           {severityCountText(severity, count)}
         </span>
       ))}
+      <ul>
+        {digest.significantItems.map((item) => (
+          <li key={item.messageId}>
+            <a href={item.link}>{item.summary}</a>
+            <span>{accountName(item.accountEmail)}</span>
+          </li>
+        ))}
+      </ul>
     </article>
   );
 }
