@@ -2865,4 +2865,39 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ organizations: [{ name: 'example.com', messageIds: ['message-1'] }] });
   });
+
+  it('lists at GET /organizations one organization holding both messages when two messages are triaged with extractions naming the same organization', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+            organization: 'Mutuus',
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v2',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const fromMarta = {
+      ...budgetReviewReport.messages[0],
+      id: 'message-2',
+      threadId: 'thread-2',
+      from: 'Marta <marta@acme.com>',
+    };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [budgetReviewReport.messages[0], fromMarta],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/organizations');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1', 'message-2'] }] });
+  });
 });

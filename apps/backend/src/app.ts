@@ -656,10 +656,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
 const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 
 function organizationsFromProposals(proposals: Proposal[], senderByMessageId: Map<string, string>) {
-  return proposals.map(({ organization, messageId }) => ({
-    name: organization ?? senderDomain(senderByMessageId.get(messageId) ?? ''),
-    messageIds: [messageId],
-  }));
+  const messageIdsByName = new Map<string, string[]>();
+  for (const { organization, messageId } of proposals) {
+    const name = organization ?? senderDomain(senderByMessageId.get(messageId) ?? '');
+    messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
+  }
+  return [...messageIdsByName].map(([name, messageIds]) => ({ name, messageIds }));
 }
 
 function senderDomain(from: string): string {
