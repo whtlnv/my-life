@@ -47,4 +47,16 @@ describe('expenseStatement', () => {
       },
     ]);
   });
+
+  it('leaves out an expense proposal whose message date falls outside the requested business week', () => {
+    const proposals = [
+      expenseProposal('message-previous-sunday', '2026-11-02T05:59:00.000Z', 'Netflix', 299, '2026-11-01'),
+      expenseProposal('message-tuesday', '2026-11-03T18:00:00.000Z', 'Uber', 154.5, '2026-11-03'),
+      expenseProposal('message-next-monday', '2026-11-09T06:00:00.000Z', 'Telmex', 899, '2026-11-09'),
+    ];
+
+    expect(
+      expenseStatement(proposals, { week: '2026-11-02', timeZone: 'America/Mexico_City' }).map((entry) => entry.link),
+    ).toEqual(['https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-tuesday']);
+  });
 });
