@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, ty
 import { triageCategories } from '@my-life/contracts';
 
 import { accountName } from './account-name';
+import { categoryLabel, categorySwatches } from './category-labels';
 
 type TriageCategory = (typeof triageCategories)[number];
 type TriageAction = 'archive' | 'keep' | 'act';
@@ -70,29 +71,7 @@ export const fetchedAtText = (fetchedAt: string) =>
 
 const queueRefreshIntervalMilliseconds = 30_000;
 
-const categoryLabels: Record<TriageCategory, string> = {
-  action: 'Needs you',
-  'cc-thread': 'Cc threads',
-  expense: 'Expenses',
-  'system-update': 'System updates',
-  sales: 'Sales pitches',
-  'calendar-drive': 'Calendar & Drive',
-  unknown: 'Unknown',
-};
-
-const categorySwatches: Partial<Record<TriageCategory, string>> = {
-  'cc-thread': '#8b5cf6',
-  expense: '#10b981',
-  'system-update': '#f59e0b',
-  sales: '#ec4899',
-  'calendar-drive': '#06b6d4',
-};
-
 const actionLabels: Record<TriageAction, string> = { archive: 'archive', keep: 'keep', act: 'make a task' };
-
-function categoryLabel(category: TriageCategory): string {
-  return categoryLabels[category];
-}
 
 function formatAmount({ amount, currency }: TriageItem['extract']): string {
   const formatted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
