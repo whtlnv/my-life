@@ -32,6 +32,7 @@ const emptyStatus: ShellStatus = { badgeCount: 0, accounts: [], sources: [] };
 
 export const routes = {
   now: '#/',
+  people: '#/people',
   triage: '#/triage',
   categories: '#/categories',
   filters: '#/filters',
@@ -118,6 +119,9 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
           <nav className="tabs" aria-label="Pages">
             <Tab href={routes.now} current={onNow}>
               Now
+            </Tab>
+            <Tab href={routes.people} current={route === routes.people}>
+              People
             </Tab>
             <Tab href={routes.triage} current={route === routes.triage}>
               Triage
