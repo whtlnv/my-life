@@ -2769,4 +2769,16 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ contacts: [{ displayName: 'Ana Ruiz', emails: ['ana@acme.com'] }] });
   });
+
+  it('lists at GET /contacts one contact for two messages from the same email reported on different accounts', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com', 'bob@example.com'] });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    const sameSenderToBob = { ...budgetReviewReport.messages[0], id: 'message-2', threadId: 'thread-2', to: 'bob@example.com' };
+    await postJson(app, '/mail-report', { ...budgetReviewReport, accountEmail: 'bob@example.com', messages: [sameSenderToBob] });
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
+  });
 });

@@ -564,7 +564,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   app.get('/contacts', (context) => {
-    const contacts = reportedMessageStore.loadAll().map(({ from }) => contactFromSender(from));
+    const sendersByEmail = new Map<string, string>();
+    for (const { from } of reportedMessageStore.loadAll()) {
+      const { displayName, email } = contactFromSender(from);
+      sendersByEmail.set(email, displayName);
+    }
+    const contacts = [...sendersByEmail].map(([email, displayName]) => ({ displayName, emails: [email] }));
     return context.json({ contacts });
   });
   app.put('/categories/:category/mode', async (context) => {
@@ -650,8 +655,8 @@ const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 function contactFromSender(from: string) {
   const match = quotedOrBareDisplayNameThenAngleBracketedEmail.exec(from);
   if (match === null) {
-    return { displayName: from, emails: [from] };
+    return { displayName: from, email: from };
   }
-  const [, displayName, email] = match;
-  return { displayName, emails: [email] };
+  const [, displayName, email] = match as unknown as [string, string, string];
+  return { displayName, email };
 }
