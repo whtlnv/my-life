@@ -564,13 +564,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   app.get('/contacts', (context) => {
-    const sendersByEmail = new Map<string, string>();
-    for (const { from } of reportedMessageStore.loadAll()) {
-      const { displayName, email } = contactFromSender(from);
-      sendersByEmail.set(email, displayName);
-    }
-    const contacts = [...sendersByEmail].map(([email, displayName]) => ({ displayName, emails: [email] }));
-    return context.json({ contacts });
+    const senders = reportedMessageStore.loadAll().map(({ from }) => from);
+    return context.json({ contacts: contactsFromSenders(senders) });
   });
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
@@ -651,6 +646,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
 }
 
 const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
+
+function contactsFromSenders(senders: string[]) {
+  const displayNamesByEmail = new Map<string, string>();
+  for (const from of senders) {
+    const { displayName, email } = contactFromSender(from);
+    displayNamesByEmail.set(email, displayName);
+  }
+  return [...displayNamesByEmail].map(([email, displayName]) => ({ displayName, emails: [email] }));
+}
 
 function contactFromSender(from: string) {
   const match = quotedOrBareDisplayNameThenAngleBracketedEmail.exec(from);
