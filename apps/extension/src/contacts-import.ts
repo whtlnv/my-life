@@ -1,15 +1,8 @@
 import type { ContactsImport } from '@my-life/contracts';
-import type { FetchFunction } from './fetch-function';
+import type { AccountRequestOptions } from './fetch-function';
 
 const peopleApi = 'https://people.googleapis.com/v1';
 const starredGroup = 'contactGroups/starred';
-
-interface ImportContactsOptions {
-  fetch: FetchFunction;
-  accessToken: string;
-  accountEmail: string;
-  backendUrl: string;
-}
 
 interface GoogleConnection {
   names?: { displayName: string }[];
@@ -32,7 +25,7 @@ interface GoogleContactGroupsResponse {
   contactGroups: { resourceName: string; name: string; groupType: string }[];
 }
 
-async function fetchPeopleJson<ResponseBody>(options: ImportContactsOptions, url: URL): Promise<ResponseBody> {
+async function fetchPeopleJson<ResponseBody>(options: AccountRequestOptions, url: URL): Promise<ResponseBody> {
   const response = await options.fetch(url, { headers: { Authorization: `Bearer ${options.accessToken}` } });
   return (await response.json()) as ResponseBody;
 }
@@ -64,7 +57,7 @@ async function fetchAllPages(
   return items;
 }
 
-function fetchAllConnections(options: ImportContactsOptions): Promise<GoogleConnection[]> {
+function fetchAllConnections(options: AccountRequestOptions): Promise<GoogleConnection[]> {
   return fetchAllPages(
     'people/me/connections',
     { personFields: 'names,emailAddresses,organizations,memberships' },
@@ -75,14 +68,14 @@ function fetchAllConnections(options: ImportContactsOptions): Promise<GoogleConn
   );
 }
 
-function fetchAllOtherContacts(options: ImportContactsOptions): Promise<GoogleConnection[]> {
+function fetchAllOtherContacts(options: AccountRequestOptions): Promise<GoogleConnection[]> {
   return fetchAllPages('otherContacts', { readMask: 'names,emailAddresses' }, async (url) => {
     const page = await fetchPeopleJson<GoogleOtherContactsResponse>(options, url);
     return { items: page.otherContacts, nextPageToken: page.nextPageToken };
   });
 }
 
-async function fetchUserGroupNames(options: ImportContactsOptions): Promise<Map<string, string>> {
+async function fetchUserGroupNames(options: AccountRequestOptions): Promise<Map<string, string>> {
   const groups = await fetchPeopleJson<GoogleContactGroupsResponse>(options, new URL(`${peopleApi}/contactGroups`));
   return new Map(
     groups.contactGroups
@@ -110,7 +103,7 @@ function toImportedContact(
   };
 }
 
-export async function importContactsOnce(options: ImportContactsOptions): Promise<void> {
+export async function importContactsOnce(options: AccountRequestOptions): Promise<void> {
   const userGroupNames = await fetchUserGroupNames(options);
   const connections = await fetchAllConnections(options);
   const otherContacts = await fetchAllOtherContacts(options);
