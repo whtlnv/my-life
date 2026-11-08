@@ -89,8 +89,8 @@ function Tab({ href, current, children }: { href: string; current: boolean; chil
   );
 }
 
-// The frame every page shares (CLAUDE.md locked decision 10): the wordmark, the page tabs, and one chip per reporting
-// source so a stale account is visible from anywhere.
+// The frame every page shares (CLAUDE.md locked decision 10): the wordmark, the page tabs, and one chip per account
+// so a stale account is visible from anywhere.
 export function AppShell({ route, children }: { route: string; children: ReactNode }) {
   const [status, setStatus] = useState<ShellStatus>(emptyStatus);
 
