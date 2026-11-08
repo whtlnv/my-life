@@ -34,6 +34,9 @@ const defaultSummaryModel = 'claude-haiku-5-5';
 const noEscalation = 'none';
 const defaultDailySpendCeilingInUsd = 20;
 const defaultUnansweredAskBusinessDays = 2;
+const businessTimeZone = 'America/Mexico_City';
+const defaultDeadlineHours = 48;
+const defaultVipWaitingBusinessDays = 1;
 const defaultDashboardDirectory = fileURLToPath(new URL('../../dashboard/dist', import.meta.url));
 
 export function readStartupSettings(
@@ -57,13 +60,13 @@ export function readStartupSettings(
     ),
     triage: readTriageAvailability(environment.ANTHROPIC_API_KEY),
     urgency: {
-      timeZone: 'America/Mexico_City',
+      timeZone: businessTimeZone,
       unansweredAskBusinessDays: parseNumberOrDefault(
         environment.MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS,
         defaultUnansweredAskBusinessDays,
       ),
-      deadlineHours: 48,
-      vipWaitingBusinessDays: 1,
+      deadlineHours: defaultDeadlineHours,
+      vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     },
   };
 }
