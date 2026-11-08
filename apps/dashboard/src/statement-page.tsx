@@ -34,13 +34,15 @@ const StatementRow = ({ label, amount, currency }: { label: string; amount: numb
 
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
+const mondayOf = (day: Date) => new Date(day.getTime() - ((day.getUTCDay() + 6) % 7) * millisecondsPerDay);
+
+const addWeeks = (day: Date, weeks: number) => new Date(day.getTime() + weeks * 7 * millisecondsPerDay);
+
 const statementUrl = (weekOffset: number) => {
   if (weekOffset === 0) {
     return '/expense-statement';
   }
-  const today = new Date();
-  const monday = new Date(today.getTime() - ((today.getUTCDay() + 6) % 7) * millisecondsPerDay);
-  const week = new Date(monday.getTime() + weekOffset * 7 * millisecondsPerDay).toISOString().slice(0, 10);
+  const week = addWeeks(mondayOf(new Date()), weekOffset).toISOString().slice(0, 10);
   return `/expense-statement?week=${week}`;
 };
 
