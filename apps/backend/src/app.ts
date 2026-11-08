@@ -486,6 +486,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     proposals[existingIndex] = queuedProposal;
   }
+  function triageContactFor(from: string): TriageContact {
+    const sender = contactFromSender(from);
+    return {
+      displayName: sender.displayName,
+      marks: contactDetailsStore.markedEmails().has(sender.email) ? ['vip'] : [],
+      ...contactDetailsStore.loadAll()[sender.email],
+    };
+  }
   app.post('/triage-run', async (context) => {
     const triage = options.triage;
     if (triage === undefined) {
@@ -505,12 +513,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         }
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
         const examples = verdictExamplesFor(message);
-        const sender = contactFromSender(message.from);
-        const contact: TriageContact = {
-          displayName: sender.displayName,
-          marks: contactDetailsStore.markedEmails().has(sender.email) ? ['vip'] : [],
-          ...contactDetailsStore.loadAll()[sender.email],
-        };
+        const contact = triageContactFor(message.from);
         const result = await triage.propose({ ...message, accountEmail, contact }, examples);
         const costInUsd = result.costInUsd;
         const answeredAt = clock.now().toISOString();
