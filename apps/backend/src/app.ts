@@ -222,13 +222,10 @@ function awaitingTheUser(proposals: Proposal[]): Proposal[] {
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(awaitingTheUser(proposals), verdicts);
   const withLink = (proposal: Proposal) => ({ ...proposal, link: gmailMessageLink(proposal) });
-  const describeGroup = ({ category, proposals: grouped, systems }: (typeof groups)[number]) => ({
+  const describeGroup = ({ category, proposals: grouped }: (typeof groups)[number]) => ({
     category,
     count: grouped.length,
     items: grouped.map(withLink),
-    ...(systems && {
-      systems: systems.map(({ system, proposals: inSystem }) => ({ system, items: inSystem.map(withLink) })),
-    }),
   });
   return {
     action: groups
