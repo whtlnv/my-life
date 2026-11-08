@@ -14,7 +14,7 @@ import { readStartupSettings } from './startup-settings';
 // the built dashboard at /, and Claude behind the Triage port. Localhost only (CLAUDE.md locked decision 19): the
 // extension and the dashboard are the only clients.
 const settings = readStartupSettings(process.env, homedir());
-const promptPath = fileURLToPath(new URL('../prompts/triage-v1.md', import.meta.url));
+const promptPath = fileURLToPath(new URL('../prompts/triage-v2.md', import.meta.url));
 const filterPromptPath = fileURLToPath(new URL('../prompts/filter-v1.md', import.meta.url));
 const profileDirectory = fileURLToPath(new URL('../../../profile', import.meta.url));
 const triageRunIntervalInMilliseconds = 30_000;
