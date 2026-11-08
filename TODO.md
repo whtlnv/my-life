@@ -62,7 +62,7 @@
 - [x] Expanding Handled for you lists each item with its summary, category and account
 - [x] Clicking undo on a handled item posts the undo for that item and removes it from the strip
 - [x] The Claude summary adapter sends the model every item summary of the digest under a versioned prompt file (`apps/backend/prompts/digest-summary-v1.md`) and requires its `write_summary` tool
-- [ ] The Claude summary adapter reports each call's cost from the response usage and the configured pricing
+- [x] The Claude summary adapter reports each call's cost from the response usage and the configured pricing
 - [ ] The Claude summary adapter treats output that is not one or two lines of text as a failed summary, so the digest is listed without lines
 - [ ] The shipped backend (`main.ts`) builds the Claude summary adapter on the configured summary model and the app writes digest summaries with it (the extension half, undo commands from the command poll, is pinned by `extension-start.test.ts`)
 - [ ] `scripts/demo.sh` seeds digests (one with a significant item) and handled-for-you items; screenshots of the triage page, expanded and collapsed, are saved to `docs/screenshots/`

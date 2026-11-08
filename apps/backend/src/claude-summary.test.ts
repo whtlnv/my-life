@@ -57,6 +57,22 @@ describe('Claude summary', () => {
     expect(written).toMatchObject({ lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed'] });
   });
 
+  it('reports the cost of the call in USD from the input and output tokens the answer reports at their configured prices', async () => {
+    const summary = createClaudeSummary({
+      model: 'claude-haiku-5-5',
+      pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } }],
+          usage: { input_tokens: 2_000_000, output_tokens: 400_000 },
+        }),
+    });
+
+    const written = await summary.summarize({ items: [{ summary: 'GitHub build passed' }] });
+
+    expect(written).toMatchObject({ costInUsd: 4 });
+  });
+
   it('sends every item summary of the digest under the versioned prompt file and requires its write_summary tool', async () => {
     const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'digest-summary-v1.md');
     writeFileSync(promptPath, 'Summarize the digest in one or two lines by calling write_summary.');

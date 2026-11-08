@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { type ClaudePricing, type ClaudeResponse, readToolUseInput } from './claude-triage';
+import { type ClaudePricing, type ClaudeResponse, computeCostInUsd, readToolUseInput } from './claude-triage';
 
 const summaryToolName = 'write_summary';
 
@@ -19,7 +19,7 @@ interface ClaudeSummaryDependencies {
   createMessage: (request: ClaudeSummaryRequest) => Promise<ClaudeResponse>;
 }
 
-export function createClaudeSummary({ model, promptPath, createMessage }: ClaudeSummaryDependencies) {
+export function createClaudeSummary({ model, promptPath, pricing, createMessage }: ClaudeSummaryDependencies) {
   return {
     summarize: async ({ items }: { items: { summary: string }[] }) => {
       const response = await createMessage({
@@ -29,7 +29,7 @@ export function createClaudeSummary({ model, promptPath, createMessage }: Claude
         tool_choice: { type: 'tool', name: summaryToolName },
         messages: [{ role: 'user', content: items.map(({ summary }) => summary).join('\n') }],
       });
-      return readToolUseInput(response);
+      return { ...(readToolUseInput(response) as object), costInUsd: computeCostInUsd(response.usage, pricing) };
     },
   };
 }
