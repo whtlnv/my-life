@@ -114,7 +114,7 @@ export interface AppOptions {
     ) => Promise<{ proposal: unknown; costInUsd: number; promptVersion: string }>;
   };
   summary?: {
-    summarize: (request: { items: { summary: string }[] }) => Promise<{ lines: string[]; costInUsd: number }>;
+    summarize: (request: { items: { summary: string }[] }) => Promise<{ lines: string[]; costInUsd: number; model?: string }>;
   };
 }
 
@@ -615,7 +615,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         summary: latestProposalFor(proposals, messageId)?.summary ?? '',
       }));
       const summary = await options.summary?.summarize({ items });
-      if (summary) spendStore.save({ spentAt: clock.now().toISOString(), model: '', costInUsd: summary.costInUsd });
+      if (summary) spendStore.save({ spentAt: clock.now().toISOString(), model: summary.model ?? '', costInUsd: summary.costInUsd });
       summaryLinesByDigest.set(identifyDigest(digest), summary?.lines);
     }
   }

@@ -995,6 +995,42 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     ]);
   });
 
+  it('logs each summary spend at POST /triage-run with the model the summary call ran on, not an empty string', async () => {
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const summary = {
+      summarize: () =>
+        Promise.resolve({ lines: ['GitHub: 1 notice'], costInUsd: 0.25, model: 'claude-summary-model-from-settings' }),
+    };
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+      summary,
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+    });
+
+    await postTriageRun(app);
+
+    expect(
+      openSpendStore(databasePath)
+        .loadAll()
+        .filter(({ costInUsd }) => costInUsd === 0.25)
+        .map(({ model }) => model),
+    ).toEqual(['claude-summary-model-from-settings']);
+  });
+
   it('opens in GET /triage-queue a fresh digest, with a new id and only the new proposal, for a proposal of the same account, category and key triaged after its digest was confirmed', async () => {
     const gitHubNotice = (summary: string) => ({
       action: 'archive',
