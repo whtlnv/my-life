@@ -16,6 +16,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
+  `mondayOf` / `weekStart` (and a second `millisecondsPerDay`) work out the week's Monday from the browser clock in UTC, while
+  `GET /expense-statement` in `apps/backend/src/app.ts` uses `mondayOfBusinessWeek` in `America/Mexico_City`; the two must
+  agree on which week a `week=` key names, and nothing ties them. Deferred because they disagree on Sunday evenings in
+  Mexico City (already Monday in UTC), so unifying them changes which week the previous / next controls request.
 - **[apps/extension/src/gmail-archive.ts:4] The extension's fallback archive label is coupled to the backend's** (added: 2026-11-07)
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
