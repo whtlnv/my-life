@@ -6,6 +6,7 @@ import { serve } from '@hono/node-server';
 
 import { createApp, currentTriagePromptVersion } from './app';
 import { createClaudeFilter } from './claude-filter';
+import { createClaudeSummary } from './claude-summary';
 import { createClaudeTriage, type ClaudePricing, type ClaudeRequest } from './claude-triage';
 import { createEscalatingTriage } from './escalating-triage';
 import { readStartupSettings } from './startup-settings';
@@ -91,6 +92,30 @@ const filter =
         createMessage: claude.createMessage,
       });
 
+const summary =
+  claude === undefined
+    ? undefined
+    : createClaudeSummary({
+        model: settings.summaryModel,
+        pricing: pricingFor(settings.summaryModel),
+        createMessage: (request) =>
+          claude.createMessage({
+            model: request.model,
+            system: request.system ?? '',
+            messages: request.messages,
+            tools: request.tools.map(({ name }) => ({
+              name,
+              strict: true,
+              input_schema: {
+                type: 'object',
+                properties: { lines: { type: 'array', items: { type: 'string' } } },
+                required: ['lines'],
+                additionalProperties: false,
+              },
+            })),
+          }),
+      });
+
 const app = createApp({
   allowedEmails: settings.allowedEmails,
   databasePath: settings.databasePath,
@@ -99,6 +124,7 @@ const app = createApp({
   dailySpendCeilingInUsd: settings.dailySpendCeilingInUsd,
   ...(triage === undefined ? {} : { triage }),
   ...(filter === undefined ? {} : { filter }),
+  ...(summary === undefined ? {} : { summary }),
 });
 
 function runTriage(): void {
