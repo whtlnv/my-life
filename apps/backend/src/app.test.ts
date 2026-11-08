@@ -146,6 +146,11 @@ const triageRecordingExamplesByMessageId = (examplesByMessageId: Map<string, unk
   },
 });
 
+const triageAnsweringByMessageId = (proposalByMessageId: Record<string, unknown>) => ({
+  propose: (message: { id: string }) =>
+    Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
+});
+
 const filterRecordingAskedCandidates = (askedCandidates: unknown[], proposal: unknown, costInUsd = 0.05) => ({
   propose: (candidate: unknown) => {
     askedCandidates.push(candidate);
@@ -2741,10 +2746,7 @@ describe('backend app', () => {
       'message-acme': expenseOf('Acme, Inc.', 120, '2026-11-02'),
       'message-tacos': expenseOf('Tacos "El Güero"', 85.5, '2026-11-03'),
     };
-    const triage = {
-      propose: (message: { id: string }) =>
-        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringByMessageId(proposalByMessageId);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
@@ -2789,10 +2791,7 @@ describe('backend app', () => {
       'message-last-week': expenseOf('Last week', '2026-10-30'),
       'message-this-week': expenseOf('This week', '2026-11-03'),
     };
-    const triage = {
-      propose: (message: { id: string }) =>
-        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringByMessageId(proposalByMessageId);
     const thursdayInMexicoCity = { now: () => new Date('2026-11-05T18:00:00.000Z') };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: thursdayInMexicoCity, triage });
     const [budgetReview] = budgetReviewReport.messages;
@@ -2823,10 +2822,7 @@ describe('backend app', () => {
       'message-kept': expenseOf('Kept', '2026-11-02'),
       'message-rejected': expenseOf('Rejected', '2026-11-03'),
     };
-    const triage = {
-      propose: (message: { id: string }) =>
-        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringByMessageId(proposalByMessageId);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
@@ -2862,10 +2858,7 @@ describe('backend app', () => {
       'message-tuesday': expenseOf('Tuesday', '2026-11-03'),
       'message-monday': expenseOf('Monday', '2026-11-02'),
     };
-    const triage = {
-      propose: (message: { id: string }) =>
-        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringByMessageId(proposalByMessageId);
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
