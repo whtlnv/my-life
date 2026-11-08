@@ -1,4 +1,5 @@
 import { refreshBadge } from './badge-refresh';
+import { backfillBodiesOnce } from './body-backfill';
 import { pollCalendarOnce } from './calendar-poll';
 import { importContactsOnce } from './contacts-import';
 import { carryOutArchiveCommands } from './gmail-archive';
@@ -53,6 +54,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     const commandOptions = { fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl };
     await carryOutArchiveCommands(commandOptions);
     await carryOutFilterCommands(commandOptions);
+    await backfillBodiesOnce(commandOptions);
   };
   const pollGmailAndLogFailure = logFailure('Gmail poll failed', pollGmail);
   const importContacts = async () => {

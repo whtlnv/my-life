@@ -567,4 +567,76 @@ describe('startExtension', () => {
       { accountEmail: 'francisco@example.com', contacts: [] },
     ]);
   });
+
+  it('after the first Gmail poll, reads in full each message the backend lists as missing a body for the profile account and reports the bodies', async () => {
+    const bodiesReports: unknown[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${gmailApi}/users/me/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '4321' }));
+      }
+      if (url.href === `${gmailApi}/users/me/messages?labelIds=INBOX`) {
+        return Promise.resolve(Response.json({ messages: [] }));
+      }
+      if (url.href === `${gmailApi}/users/me/messages/older?format=full`) {
+        return Promise.resolve(
+          Response.json({
+            id: 'older',
+            threadId: 'thread-older',
+            labelIds: ['INBOX'],
+            snippet: 'Agenda attached.',
+            payload: {
+              headers: [
+                { name: 'From', value: 'Board <board@lists.example.com>' },
+                { name: 'To', value: 'francisco@example.com' },
+                { name: 'Subject', value: 'Weekly board digest' },
+                { name: 'Date', value: 'Fri, 6 Nov 2026 08:00:00 -0600' },
+              ],
+              mimeType: 'text/plain',
+              body: { size: 16, data: Buffer.from('Agenda attached.').toString('base64url') },
+            },
+          }),
+        );
+      }
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(Response.json({ kind: 'calendar#calendarList', items: [] }));
+      }
+      if (url.href.startsWith('http://127.0.0.1:7777/commands?')) {
+        return Promise.resolve(Response.json({ commands: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/bodies-missing?account=francisco%40example.com') {
+        return Promise.resolve(Response.json({ messageIds: ['older'] }));
+      }
+      if (url.href === `${peopleApi}/contactGroups`) {
+        return Promise.resolve(Response.json({ contactGroups: [] }));
+      }
+      if (url.href.startsWith(`${peopleApi}/people/me/connections`)) {
+        return Promise.resolve(Response.json({ connections: [] }));
+      }
+      if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
+        return Promise.resolve(Response.json({ otherContacts: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/bodies-report' && init?.method === 'POST') {
+        bodiesReports.push(JSON.parse(init.body as string));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await startExtension({
+      fetch: fakeFetch,
+      profileAccountEmail: () => Promise.resolve('francisco@example.com'),
+      accessToken: () => Promise.resolve('token-for-francisco'),
+      backendUrl: 'http://127.0.0.1:7777',
+      clock: () => new Date('2026-11-02T10:00:00-06:00'),
+      timeZone: 'America/Mexico_City',
+    });
+
+    expect(bodiesReports).toEqual([
+      { accountEmail: 'francisco@example.com', bodies: [{ messageId: 'older', body: 'Agenda attached.' }] },
+    ]);
+  });
 });
