@@ -133,6 +133,9 @@ const pollingIntervalsInMilliseconds = {
 
 const businessTimeZone = 'America/Mexico_City';
 
+// The label an automatic archive puts on a message and its undo takes off again.
+const automaticLabelName = 'my-life/auto';
+
 // main.ts loads `prompts/<version>.md`, and the Claude adapter reports the file's name as the proposal's version.
 export const currentTriagePromptVersion = 'triage-v2';
 
@@ -811,7 +814,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map(({ messageId, madeAutomatic }) => ({
         id: `archive-${messageId}`,
         messageId,
-        label: madeAutomatic ? 'my-life/auto' : 'my-life/archived',
+        label: madeAutomatic ? automaticLabelName : 'my-life/archived',
       }));
     const filterCommands = filterProposalStore
       .loadAll()
@@ -840,7 +843,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       id: `undo-automatic-${messageId}`,
       type: 'undo-automatic',
       messageId,
-      label: 'my-life/auto',
+      label: automaticLabelName,
     }));
     const pendingCommands = [
       ...archiveCommands,
