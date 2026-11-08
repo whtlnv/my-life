@@ -734,7 +734,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
-      remaining: reportedMessageStore.count() - proposals.length,
+      remaining:
+        reportedMessageStore.count() -
+        proposals.length -
+        reportedMessages.filter((message) => message.sentByUser === true).length,
       paused: hasReachedDailySpendCeiling(),
       fetchedAt: clock.now().toISOString(),
     });
