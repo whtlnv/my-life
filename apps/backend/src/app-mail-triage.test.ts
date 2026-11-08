@@ -8,6 +8,7 @@ import { createApp, currentTriagePromptVersion } from './app';
 import { createClaudeTriage } from './claude-triage';
 import { openDatabase } from './open-database';
 import { openProposalStore } from './proposal-store';
+import { openReportedMessageStore } from './reported-message-store';
 import { openSpendStore } from './spend-store';
 import { openVerdictStore } from './verdict-store';
 
@@ -117,6 +118,26 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
 
     expect(await queueAfterRestart.json()).toMatchObject({ remaining: 1 });
     expect(await queueAfterReportedAgain.json()).toMatchObject({ remaining: 1 });
+  });
+
+  it('keeps for each message reported at POST /mail-report whether the user sent it, read back from the same database file after a backend restart', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(beforeRestart, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-received', sentByUser: false },
+        { ...budgetReview, id: 'message-sent', from: 'Ana <ana@example.com>', to: 'luis@example.com', sentByUser: true },
+      ],
+    });
+
+    const afterRestart = openReportedMessageStore(databasePath);
+
+    expect(afterRestart.loadReportedMessages()).toMatchObject([
+      { id: 'message-received', sentByUser: false },
+      { id: 'message-sent', sentByUser: true },
+    ]);
   });
 
   it("shows in GET /now when an account's mail source last reported, at the time its mail report was received", async () => {

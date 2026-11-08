@@ -24,7 +24,16 @@ export interface MessageBody {
   body?: string;
 }
 
-export type ReportedMessageHeaders = MessageRecipients & MessageSender & MessageSubject & MessageDate & MessageBody;
+export interface MessageAuthorship {
+  sentByUser?: boolean;
+}
+
+export type ReportedMessageHeaders = MessageRecipients &
+  MessageSender &
+  MessageSubject &
+  MessageDate &
+  MessageBody &
+  MessageAuthorship;
 
 export type StoredReportedMessage = ReportedMessageHeaders & { id: string; accountEmail: string };
 
@@ -46,6 +55,9 @@ function createTables(database: ReturnType<typeof openDatabase>): void {
   );
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_message_bodies (message_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, snippet TEXT NOT NULL, body_text TEXT)',
+  );
+  database.exec(
+    'CREATE TABLE IF NOT EXISTS reported_message_authorships (message_id TEXT PRIMARY KEY, sent_by_user INTEGER NOT NULL)',
   );
   addBodyTextColumnIfMissing(database);
 }
@@ -75,6 +87,9 @@ export function openReportedMessageStore(databasePath: string) {
   const insertDate = database.prepare(
     'INSERT OR IGNORE INTO reported_message_dates (message_id, date_header) VALUES (?, ?)',
   );
+  const insertAuthorship = database.prepare(
+    'INSERT OR IGNORE INTO reported_message_authorships (message_id, sent_by_user) VALUES (?, ?)',
+  );
   const loadAllMessages = database.prepare<
     [],
     { messageId: string; accountEmail: string; from: string; listId: string | null }
@@ -100,9 +115,10 @@ export function openReportedMessageStore(databasePath: string) {
       cc: string | null;
       subject: string;
       date: string;
+      sentByUser: number | null;
     }
   >(
-    'SELECT messages.message_id AS id, messages.account_email AS accountEmail, bodies.thread_id AS threadId, bodies.snippet AS snippet, bodies.body_text AS body, senders.from_header AS "from", senders.list_id AS listId, recipients.to_header AS "to", recipients.cc_header AS cc, subjects.subject AS subject, dates.date_header AS date FROM reported_messages AS messages JOIN reported_message_bodies AS bodies ON bodies.message_id = messages.message_id JOIN reported_message_senders AS senders ON senders.message_id = messages.message_id JOIN reported_message_recipients AS recipients ON recipients.message_id = messages.message_id JOIN reported_message_subjects AS subjects ON subjects.message_id = messages.message_id JOIN reported_message_dates AS dates ON dates.message_id = messages.message_id ORDER BY messages.rowid',
+    'SELECT messages.message_id AS id, messages.account_email AS accountEmail, bodies.thread_id AS threadId, bodies.snippet AS snippet, bodies.body_text AS body, senders.from_header AS "from", senders.list_id AS listId, recipients.to_header AS "to", recipients.cc_header AS cc, subjects.subject AS subject, dates.date_header AS date, authorships.sent_by_user AS sentByUser FROM reported_messages AS messages JOIN reported_message_bodies AS bodies ON bodies.message_id = messages.message_id JOIN reported_message_senders AS senders ON senders.message_id = messages.message_id JOIN reported_message_recipients AS recipients ON recipients.message_id = messages.message_id JOIN reported_message_subjects AS subjects ON subjects.message_id = messages.message_id JOIN reported_message_dates AS dates ON dates.message_id = messages.message_id LEFT JOIN reported_message_authorships AS authorships ON authorships.message_id = messages.message_id ORDER BY messages.rowid',
   );
   const updateBody = database.prepare('UPDATE reported_message_bodies SET body_text = ? WHERE message_id = ?');
   const countMessages = database.prepare('SELECT COUNT(*) FROM reported_messages').pluck();
@@ -126,13 +142,15 @@ export function openReportedMessageStore(databasePath: string) {
       insertSubject.run(messageId, message.subject);
       insertDate.run(messageId, message.date);
       insertBody.run(messageId, message.threadId, message.snippet, message.body ?? null);
+      if (message.sentByUser !== undefined) insertAuthorship.run(messageId, message.sentByUser ? 1 : 0);
     },
     saveBody(messageId: string, body: string): void {
       updateBody.run(body, messageId);
     },
     loadReportedMessages(): StoredReportedMessage[] {
-      return loadReportedMessages.all().map(({ listId, cc, body, ...rest }) => ({
+      return loadReportedMessages.all().map(({ listId, cc, body, sentByUser, ...rest }) => ({
         ...rest,
+        ...(sentByUser === null ? {} : { sentByUser: sentByUser === 1 }),
         ...(listId === null ? {} : { listId }),
         ...(cc === null ? {} : { cc }),
         ...(body === null ? {} : { body }),
