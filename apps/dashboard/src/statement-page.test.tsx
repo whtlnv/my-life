@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { noExpensesText, StatementPage } from './statement-page';
 
+const csvResponse = (csv: string) => new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8' } });
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -21,7 +23,7 @@ describe('StatementPage', () => {
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
         if (input === '/expense-statement') {
-          return Promise.resolve(new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8' } }));
+          return Promise.resolve(csvResponse(csv));
         }
         return Promise.resolve(new Response(null, { status: 404 }));
       }),
@@ -68,7 +70,7 @@ describe('StatementPage', () => {
         const week = url.searchParams.get('week') ?? '2026-11-02';
         const csv = url.pathname === '/expense-statement' ? csvByWeek[week] : undefined;
         if (csv !== undefined) {
-          return Promise.resolve(new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8' } }));
+          return Promise.resolve(csvResponse(csv));
         }
         return Promise.resolve(new Response(null, { status: 404 }));
       }),
@@ -90,13 +92,7 @@ describe('StatementPage', () => {
   it('shows an empty state instead of the table for a week with no expenses', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve(
-          new Response('vendor,amount,currency,date,account,link\n', {
-            headers: { 'content-type': 'text/csv; charset=utf-8' },
-          }),
-        ),
-      ),
+      vi.fn(() => Promise.resolve(csvResponse('vendor,amount,currency,date,account,link\n'))),
     );
 
     render(<StatementPage />);
@@ -112,7 +108,7 @@ describe('StatementPage', () => {
     ].join('\n');
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8' } }))),
+      vi.fn(() => Promise.resolve(csvResponse(csv))),
     );
 
     render(<StatementPage />);
