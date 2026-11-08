@@ -44,14 +44,13 @@ Outcome: system updates, calendar and Drive, and sales never appear one message 
 - Each digest carries one or two Haiku-written lines, rewritten whenever the group changes ("AWS: 5 notices since Tuesday, 1 significant: production budget at 85%"), and the count by severity.
 - `Handled for you`: a collapsed strip on the triage page listing what automatic categories did today, each item one click from undo (remove `my-life/auto`, back to the inbox).
 - Triage page becomes: Needs you · digests · Needs input (Phase 3 fills it) · Handled for you.
-- Urgent signals start here for system alerts: a significant alert not yet opened counts as urgent (thresholds in config: see Phase 3).
 
 ## Phase 3 — People, Needs input, tasks
 
 Outcome: the second tab shows the user's world by person and organization across channels; the app asks for help in one place; tasks and waiting-on live in the domain; the _now_ page shows the top 3 tasks.
 
 - People view: three lists, VIP (manual mark, seeded from starred contacts and the profile's "always matters"), Urgent (computed, not a list), Everyone else; each sorted by the most recent message. A contact or organization opens to a merged timeline of everything they sent across channels (email now; Slack, WhatsApp, Telegram as later phases land), with thread states, open asks and the user's replies. A message appears under every contact and organization it links to.
-- Urgent, computed from config defaults: an ask to the user unanswered for 2 business days; any extracted deadline inside 48 hours; a VIP waiting more than 1 business day; a significant system alert not yet opened.
+- Urgent, computed from config defaults: an ask to the user unanswered for 2 business days; any extracted deadline inside 48 hours; a VIP waiting more than 1 business day; a significant system alert not yet opened (moved from Phase 2c, 2026-11-08: needs the extension to report Gmail's `UNREAD` label, or the app to record when an item was seen; decide which when Phase 3 is planned).
 - Needs input: a tab with a count in the shell. Each item is one question answered with one key: a category Haiku and Opus disagreed on or `unknown`; a new sender who asked the user for something (VIP or ordinary?); an identity merge candidate (same person?). No daily cap (user decision): every unsettled case waits until answered. Every answer is written to the contact record or the sender's examples and never asked again. Inline recategorize stays on items.
 - Tasks: the one-time import of the markdown list (`PENDING_TASKS.md` § 4); task state `open` / `done` / `snoozed until`, priority, optional due, waiting-on person, every transition append-only; the extraction's asks become task proposals.
 - Prioritization pass (Opus 5.5 from config, structured output) ranks open tasks given the profile, the calendar, due dates and urgency; on a schedule and on demand; rank and reason shown; the user can pin a task to the top. _Now_ keeps the current event, the top 3 tasks and a short waiting-on list that links into People (locked decision 9 amended).

@@ -1,1 +1,60 @@
 # TODO.md — working set
+
+## Phase 2c — Digests
+
+- [ ] Two system-update proposals from the same account naming the same system are in one digest
+- [ ] Two system-update proposals from the same account naming different systems are in two digests
+- [ ] Two system-update proposals naming the same system from two different accounts are in two digests
+- [ ] Two sales proposals from the same account and the same sender address are in one digest
+- [ ] Two sales proposals from the same account and different sender addresses are in two digests
+- [ ] Two sales proposals whose From headers carry different display names for the same address are in one digest
+- [ ] Two calendar-drive proposals from the same account and the same sender address are in one digest
+- [ ] Two calendar-drive proposals from the same account and different sender addresses are in two digests
+- [ ] An expense or cc-thread proposal is never placed in a digest
+- [ ] A digest reports how many of its items carry each severity (two `high` and one `low` give high 2, low 1)
+- [ ] A digest lists its significant items by name
+- [ ] A digest does not list its items that are not significant
+- [ ] `GET /triage-queue` returns the waiting system-update, sales and calendar-drive proposals as digests, each with its account, category, key, item count and severity counts
+- [ ] `GET /triage-queue` no longer lists a digested proposal one message at a time
+  - predicted-contradiction: `apps/backend/src/app-mail-triage.test.ts::carries in each GET /triage-queue group its items, and in a system-update group its sending-system sub-groups with their items` — asserts: a waiting system-update proposal appears as an item of a `system-update` group with `systems` sub-groups — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
+  - predicted-contradiction: `apps/integration/src/gmail-fake-server.test.ts::polling the sales-pitch scenario shows the pitch with its company in the sales group of GET /triage-queue` — asserts: the sales proposal is listed as one item in the `sales` group — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
+  - predicted-contradiction: `apps/integration/src/gmail-fake-server.test.ts::polling the calendar-notification scenario shows the notification with its item in the calendar-drive group of GET /triage-queue` — asserts: the calendar-drive proposal is listed as one item in the `calendar-drive` group — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
+  - predicted-contradiction: `apps/integration/src/gmail-fake-server.test.ts::polling the system-update-burst scenario groups its notifications by sending system in the system-update group of GET /triage-queue` — asserts: system-update proposals are listed per message under `systems` sub-groups of the `system-update` group — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
+- [ ] A proposal that arrives for an open digest's account, category and key joins that digest
+- [ ] Confirming a digest queues an archive command for each of its items whose own proposal is `archive`
+- [ ] Confirming a digest queues no archive command for its items whose own proposal is `keep`
+- [ ] Confirming a digest leaves another waiting digest of the same category unconfirmed
+- [ ] Confirming a digest removes its items from `GET /triage-queue`
+- [ ] After a digest is confirmed, a new proposal for the same account, category and key opens a fresh digest holding only that proposal
+- [ ] A proposal that joined a digest after the dashboard loaded it is not confirmed by that confirm and stays in the fresh digest
+- [ ] Confirming an unknown digest answers 404 and records nothing
+- [ ] After a backend restart, a confirmed digest stays confirmed and the fresh digest still holds only its later proposals
+- [ ] A digest in `GET /triage-queue` carries the one or two summary lines the summary model wrote for its items
+- [ ] When a proposal joins a digest, its summary lines are rewritten from the new set of items
+- [ ] When no proposal joins a digest, its summary lines are not rewritten on the next triage run
+- [ ] The summary request names the model set in config
+- [ ] Each summary call's cost is logged as spend against the daily ceiling
+- [ ] When the daily spend ceiling is reached, no summary is written and the digest is still returned without one
+- [ ] When the summary model answers with output that fails validation, the digest is returned without summary lines and the triage queue still loads
+- [ ] After a backend restart, a digest's summary lines are still returned without a new summary call
+- [ ] `GET /triage-queue` lists, under handled for you, a proposal an automatic category acted on today in the business time zone
+- [ ] `GET /triage-queue` does not list, under handled for you, a proposal an automatic category acted on before today in the business time zone
+- [ ] `GET /triage-queue` does not list, under handled for you, a proposal the user confirmed in advise mode
+- [ ] Undoing a handled-for-you item queues, for that item's account, a command to remove `my-life/auto` and return the message to the inbox
+- [ ] An undo command is not offered to the extension of a different account
+- [ ] Undoing a message that no automatic category acted on answers 404 and queues nothing
+- [ ] An undone item no longer appears under handled for you
+- [ ] After a backend restart, an undone item still does not appear under handled for you and its undo command is not re-queued once acknowledged
+- [ ] Given an undo command, the extension removes the `my-life/auto` label from the message, adds it back to the inbox and acknowledges the command
+- [ ] The extension acknowledges no undo command whose Gmail request failed
+- [ ] A database created before Phase 2c opens and serves `GET /triage-queue` with digests and handled for you
+- [ ] The triage page shows its sections in the order Needs you, digests, Needs input, Handled for you
+- [ ] The Needs input section shows that nothing needs input when it is empty
+- [ ] A digest card shows its summary lines and its count by severity
+- [ ] A digest card lists its significant items, each linked to its message and naming its account
+- [ ] Confirming a digest card from the page posts the confirm for that digest only and removes the card
+- [ ] Handled for you starts collapsed and shows how many items it holds
+- [ ] Expanding Handled for you lists each item with its summary, category and account
+- [ ] Clicking undo on a handled item posts the undo for that item and removes it from the strip
+- [ ] The shipped backend (`main.ts`) writes digest summaries through the real Claude adapter on the configured summary model, and the shipped extension (`extension-start.ts`) applies undo commands from its command poll
+- [ ] `scripts/demo.sh` seeds digests (one with a significant item) and handled-for-you items; screenshots of the triage page, expanded and collapsed, are saved to `docs/screenshots/`
