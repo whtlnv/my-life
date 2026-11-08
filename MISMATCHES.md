@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 17:28 · `apps/backend/src/app-needs-input.test.ts::still asks the category question of a message whose two triage models disagreed, after a backend restart on the same database file, with no triage call made again`
+- Behavior: `GET /needs-input` keeps the disagreement category question across a backend restart on the same database file, with no new triage call
+- Predicted: AssertionError — `questions` is `[]` after the restart because the disagreement is not persisted with the proposal
+- Actual: test passed on first run
+- Type: passed unexpectedly
+- Resolution: the proposal store saves the whole proposal JSON, `disagreement` included, and `createApp` spreads it back on reload, so the behavior shipped with the original disagreement commit. A mutation check (stripping `disagreement` on reload in `app.ts`, then reverted) makes the test fail, so it is not vacuous. There is no missing behavior to drive, so the test stays as a restart regression pin and the item needs no /green.
+
 ## 2026-11-08 17:24 · `apps/backend/src/app-needs-input.test.ts::asks nothing about a message whose two triage models agreed on its category`
 - Behavior: `GET /needs-input` asks nothing about a message whose two models agreed
 - Predicted: passes on first run, because ee3e830's route only builds questions from proposals that carry a `disagreement`, and `createEscalatingTriage` stores none when the categories match

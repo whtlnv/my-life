@@ -9,6 +9,7 @@ import {
   clockAtTenPastThree,
   budgetReviewReport,
   triageAnswering,
+  temporaryDatabasePath,
 } from './app.test-support';
 
 async function needsInputAfterTriagingBudgetReview(
@@ -57,5 +58,32 @@ describe('backend app: GET /needs-input', () => {
     const needsInput = await needsInputAfterTriagingBudgetReview(triage);
 
     expect(needsInput.questions).toEqual([]);
+  });
+
+  it('still asks the category question of a message whose two triage models disagreed, after a backend restart on the same database file, with no triage call made again', async () => {
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() };
+    const triage = triageAnswering({
+      action: 'keep',
+      category: 'cc-thread',
+      summary: 'Luis copies the user on the budget thread',
+      extract: {},
+      reason: 'The user is only copied',
+      disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
+    });
+    const beforeRestart = createApp({ ...options, triage });
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+    await postTriageRun(beforeRestart);
+
+    const afterRestart = createApp(options);
+    const needsInput = await getJson<{ questions: unknown[] }>(afterRestart, '/needs-input');
+
+    expect(needsInput.questions).toEqual([
+      expect.objectContaining({
+        kind: 'category',
+        messageId: 'message-1',
+        accountEmail: 'ana@example.com',
+        choices: ['action', 'cc-thread'],
+      }),
+    ]);
   });
 });
