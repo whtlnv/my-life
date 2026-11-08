@@ -99,4 +99,71 @@ describe('importContactsOnce', () => {
       },
     ]);
   });
+
+  it("reads every page of the account's Other Contacts and reports each one's name and emails as an unstarred contact without lists", async () => {
+    const otherContactsRequests: URL[] = [];
+    const backendPosts: { body: unknown }[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href.startsWith(`${peopleApi}/people/me/connections`)) {
+        return Promise.resolve(Response.json({ connections: [] }));
+      }
+      if (url.href.startsWith(`${peopleApi}/contactGroups`)) {
+        return Promise.resolve(Response.json({ contactGroups: [] }));
+      }
+      if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
+        otherContactsRequests.push(url);
+        if (url.searchParams.get('pageToken') === 'other-2') {
+          return Promise.resolve(
+            Response.json({
+              otherContacts: [
+                {
+                  resourceName: 'otherContacts/o2',
+                  emailAddresses: [{ value: 'noreply@vendor.io' }],
+                },
+              ],
+            }),
+          );
+        }
+        return Promise.resolve(
+          Response.json({
+            otherContacts: [
+              {
+                resourceName: 'otherContacts/o1',
+                names: [{ displayName: 'Marta Gil' }],
+                emailAddresses: [{ value: 'marta@gil.mx' }, { value: 'marta.gil@work.com' }],
+              },
+            ],
+            nextPageToken: 'other-2',
+          }),
+        );
+      }
+      if (url.href === 'http://127.0.0.1:7777/contacts-import' && init?.method === 'POST') {
+        backendPosts.push({ body: JSON.parse(init.body as string) });
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await importContactsOnce({
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+    });
+
+    expect(otherContactsRequests).toHaveLength(2);
+    expect(otherContactsRequests[1]?.searchParams.get('pageToken')).toBe('other-2');
+    expect(backendPosts).toEqual([
+      {
+        body: {
+          accountEmail: 'francisco@example.com',
+          contacts: [
+            { name: 'Marta Gil', emails: ['marta@gil.mx', 'marta.gil@work.com'], starred: false, lists: [] },
+            { emails: ['noreply@vendor.io'], starred: false, lists: [] },
+          ],
+        },
+      },
+    ]);
+  });
 });

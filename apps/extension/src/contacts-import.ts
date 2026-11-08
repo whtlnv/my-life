@@ -22,6 +22,11 @@ interface GoogleConnectionsResponse {
   nextPageToken?: string;
 }
 
+interface GoogleOtherContactsResponse {
+  otherContacts: GoogleConnection[];
+  nextPageToken?: string;
+}
+
 interface GoogleContactGroupsResponse {
   contactGroups: { resourceName: string; name: string; groupType: string }[];
 }
@@ -45,6 +50,22 @@ async function fetchAllConnections(options: ImportContactsOptions): Promise<Goog
     pageToken = page.nextPageToken;
   } while (pageToken !== undefined);
   return connections;
+}
+
+async function fetchAllOtherContacts(options: ImportContactsOptions): Promise<GoogleConnection[]> {
+  const otherContacts: GoogleConnection[] = [];
+  let pageToken: string | undefined;
+  do {
+    const url = new URL(`${peopleApi}/otherContacts`);
+    url.searchParams.set('readMask', 'names,emailAddresses');
+    if (pageToken !== undefined) {
+      url.searchParams.set('pageToken', pageToken);
+    }
+    const page = await fetchPeopleJson<GoogleOtherContactsResponse>(options, url);
+    otherContacts.push(...page.otherContacts);
+    pageToken = page.nextPageToken;
+  } while (pageToken !== undefined);
+  return otherContacts;
 }
 
 async function fetchUserGroupNames(options: ImportContactsOptions): Promise<Map<string, string>> {
@@ -75,7 +96,10 @@ function toImportedContact(connection: GoogleConnection, userGroupNames: Map<str
 export async function importContactsOnce(options: ImportContactsOptions): Promise<void> {
   const userGroupNames = await fetchUserGroupNames(options);
   const connections = await fetchAllConnections(options);
-  const contacts = connections.map((connection) => toImportedContact(connection, userGroupNames));
+  const otherContacts = await fetchAllOtherContacts(options);
+  const contacts = [...connections, ...otherContacts].map((connection) =>
+    toImportedContact(connection, userGroupNames),
+  );
   await options.fetch(`${options.backendUrl}/contacts-import`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, contacts }),
