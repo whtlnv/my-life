@@ -34,11 +34,14 @@ const isInWeek = (instant: string, period: StatementPeriod): boolean => {
   return period.week <= messageDate && messageDate <= sundayOf(period.week);
 };
 
+const belongsInStatement = (proposal: ExpenseProposal, period: StatementPeriod): boolean =>
+  proposal.category === 'expense' && proposal.verdict?.decision !== 'rejected' && isInWeek(proposal.date, period);
+
 export const expenseStatement = (
   proposals: ExpenseProposal[],
   period: StatementPeriod,
 ): ExpenseStatementEntry[] =>
   proposals
-    .filter((proposal) => proposal.category === 'expense' && proposal.verdict?.decision !== 'rejected' && isInWeek(proposal.date, period))
+    .filter((proposal) => belongsInStatement(proposal, period))
     .sort((left, right) => left.date.localeCompare(right.date))
     .map((proposal) => ({ ...proposal.extract, accountEmail: proposal.accountEmail, link: proposal.link }));
