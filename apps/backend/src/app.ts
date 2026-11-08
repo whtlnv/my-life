@@ -422,7 +422,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
-  let summaryLines: string[] | undefined;
+  const summaryLinesByDigest = new Map<string, string[] | undefined>();
   // A message proposed before its body arrived is asked about once more, this time with the body.
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
     (message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id),
@@ -610,10 +610,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   async function rewriteDigestSummaryLines() {
-    const items = waitingOutsideTheActionBlock(verdictStore.loadAll()).map(({ messageId }) => ({
-      summary: latestProposalFor(proposals, messageId)?.summary ?? '',
-    }));
-    summaryLines = (await options.summary?.summarize({ items }))?.lines;
+    for (const digest of digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))) {
+      const items = digest.proposals.map(({ messageId }) => ({
+        summary: latestProposalFor(proposals, messageId)?.summary ?? '',
+      }));
+      summaryLinesByDigest.set(identifyDigest(digest), (await options.summary?.summarize({ items }))?.lines);
+    }
   }
   // The waiting proposals outside the action block, with the sender each digest groups by.
   function waitingOutsideTheActionBlock(verdicts: StoredVerdict[]) {
@@ -657,7 +659,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         key,
         count: digested.length,
         severityCounts,
-        summaryLines,
+        summaryLines: summaryLinesByDigest.get(id),
       };
     });
   }

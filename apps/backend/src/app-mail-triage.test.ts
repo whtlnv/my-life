@@ -876,6 +876,59 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     ]);
   });
 
+  it('asks the summary model once per digest with only the item summaries of that digest, and carries on each digest its own summary lines', async () => {
+    const proposalsInOrder = [
+      {
+        action: 'archive',
+        category: 'system-update',
+        summary: 'GitHub build passed',
+        extract: { system: 'GitHub', severity: 'low', significant: false },
+        reason: 'A routine notification',
+      },
+      {
+        action: 'archive',
+        category: 'system-update',
+        summary: 'Jenkins job finished',
+        extract: { system: 'Jenkins', severity: 'low', significant: false },
+        reason: 'A routine notification',
+      },
+      { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },
+      { action: 'keep', category: 'cc-thread', summary: 'Luis copied the team', reason: 'A thread the user is copied on' },
+    ];
+    const triage = triageAnsweringInOrder(proposalsInOrder, 1);
+    const summaryRequests: string[][] = [];
+    const summary = {
+      summarize: (request?: { items?: { summary: string }[] }) => {
+        const itemSummaries = (request?.items ?? []).map((item) => item.summary);
+        summaryRequests.push(itemSummaries);
+        return Promise.resolve({ lines: [`Lines for ${itemSummaries.join(', ')}`], costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-github', threadId: 'message-github', from: 'GitHub <noreply@github.com>' },
+        { ...budgetReview, id: 'message-jenkins', threadId: 'message-jenkins', from: 'Jenkins <ci@jenkins.example>' },
+        { ...budgetReview, id: 'message-expense', threadId: 'message-expense', from: 'Acme <billing@acme.example>' },
+        { ...budgetReview, id: 'message-cc', threadId: 'message-cc', from: 'Luis <luis@example.com>' },
+      ],
+    });
+
+    await postTriageRun(app);
+
+    const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+    expect(summaryRequests).toHaveLength(2);
+    expect(summaryRequests).toEqual(expect.arrayContaining([['GitHub build passed'], ['Jenkins job finished']]));
+    expect(digests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: 'GitHub', summaryLines: ['Lines for GitHub build passed'] }),
+        expect.objectContaining({ key: 'Jenkins', summaryLines: ['Lines for Jenkins job finished'] }),
+      ]),
+    );
+  });
+
   it('keeps the summary lines of a digest when a later triage run adds no proposal to it', async () => {
     const triage = triageAnswering({
       action: 'archive',

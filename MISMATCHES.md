@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 12:31 · `apps/backend/src/app-mail-triage.test.ts::asks the summary model once per digest with only the item summaries of that digest, and carries on each digest its own summary lines`
+- Behavior: Two digests each carry their own summary lines: the summary model is asked once per digest, with only that digest's item summaries (no item of another digest, no expense or cc-thread item)
+- Predicted: AssertionError — summarize called once with every non-action-block item, so the request list has length 1, not 2
+- Actual: first run a PARSE_ERROR (an apostrophe in "digest's" closed the single-quoted test name); after the fix, the predicted AssertionError (1 request carrying 4 item summaries)
+- Type: wrong-reason
+- Resolution: reworded the test name to avoid the apostrophe; the re-run fails for the predicted reason, and the 4 items show expense and cc-thread summaries also leak into the one request
+
 ## 2026-11-08 12:18 · `apps/backend/src/app-mail-triage.test.ts::confirms after a backend restart on the same database file a digest the dashboard loaded before it, reaching only the proposals it held then and leaving the later one in a fresh digest`
 - Behavior: After a backend restart, a confirmed digest stays confirmed and the fresh digest still holds only its later proposals
 - Predicted: the literal version (confirm before the restart, read the queue after it) passes, because verdicts, proposals and reported messages are all stored in SQLite
