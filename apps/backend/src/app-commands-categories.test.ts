@@ -573,4 +573,28 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
       now: { badgeCount: 0 },
     });
   });
+  it('lists at GET /triage-queue, under handled for you, a proposal an automatic category acted on today in the business time zone', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await switchCategory(app, 'cc-thread', 'automatic');
+    await proposeBudgetReview(app);
+
+    const queue = await app.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({
+      handledForYou: [
+        {
+          messageId: 'message-1',
+          category: 'cc-thread',
+          action: 'archive',
+          summary: 'Luis shared the budget with the team',
+          accountEmail: 'ana@example.com',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+        },
+      ],
+    });
+  });
 });

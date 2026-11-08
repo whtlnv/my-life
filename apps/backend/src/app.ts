@@ -690,6 +690,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: describeDigests(verdicts),
+      handledForYou: proposals
+        .filter((proposal) => proposal.madeAutomatic === true)
+        .map((proposal) => ({ ...proposal, link: gmailMessageLink(proposal) })),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
       fetchedAt: clock.now().toISOString(),
