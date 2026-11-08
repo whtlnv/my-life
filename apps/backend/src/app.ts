@@ -249,6 +249,19 @@ function withUnlistedImportedContacts<Contact extends ListedContact>(
   return [...messageContacts, ...unlistedImportedContacts];
 }
 
+// A second import of an email the list already holds merges its addresses into that contact instead of adding one.
+function recordImportedContact(
+  importedContacts: ListedContact[],
+  { displayName, emails }: { displayName: string; emails: string[] },
+): void {
+  const alreadyImported = importedContacts.find((imported) => imported.emails[0] === emails[0]);
+  if (alreadyImported) {
+    alreadyImported.emails = [...new Set([...alreadyImported.emails, ...emails])];
+    return;
+  }
+  importedContacts.push({ displayName, emails, messageIds: [] });
+}
+
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
@@ -623,12 +636,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }>();
     for (const { name, emails, organization } of contacts) {
       contactDetailsStore.save(emails[0]!, { organization });
-      const alreadyImported = importedContacts.find((imported) => imported.emails[0] === emails[0]);
-      if (alreadyImported) {
-        alreadyImported.emails = [...new Set([...alreadyImported.emails, ...emails])];
-      } else {
-        importedContacts.push({ displayName: name, emails, messageIds: [] });
-      }
+      recordImportedContact(importedContacts, { displayName: name, emails });
     }
     return context.body(null, 200);
   });
