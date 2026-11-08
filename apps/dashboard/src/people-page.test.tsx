@@ -208,4 +208,49 @@ describe('PeoplePage', () => {
       expect(row).toHaveTextContent(message.accountEmail);
     }
   });
+
+  it('moves a contact into the VIP list when the user marks it VIP through PUT /contacts/:email/marks/vip, and out again when the user removes the mark through DELETE', async () => {
+    const marta = {
+      displayName: 'Marta Soto',
+      emails: ['marta@acme.com'],
+      messageIds: ['m3'],
+      organization: 'Acme',
+      lastMessageAt: '2026-11-04T17:45:00.000Z',
+    };
+    const markPath = `/contacts/${encodeURIComponent('marta@acme.com')}/marks/vip`;
+    let martaIsVip = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        const method = init?.method ?? 'GET';
+        if (path === markPath && (method === 'PUT' || method === 'DELETE')) {
+          martaIsVip = method === 'PUT';
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        if (path === '/people' && method === 'GET') {
+          const lists = martaIsVip
+            ? { vip: [marta], urgent: [], everyoneElse: [] }
+            : { vip: [], urgent: [], everyoneElse: [marta] };
+          return Promise.resolve(
+            new Response(JSON.stringify(lists), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<PeoplePage />);
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    await userEvent.click(await within(everyoneElseList).findByRole('button', { name: /mark.*vip/i }));
+
+    const vipList = screen.getByRole('list', { name: 'VIP' });
+    expect(await within(vipList).findByText('Marta Soto')).toBeInTheDocument();
+    expect(within(everyoneElseList).queryByText('Marta Soto')).not.toBeInTheDocument();
+
+    await userEvent.click(within(vipList).getByRole('button', { name: /remove.*vip/i }));
+
+    expect(await within(everyoneElseList).findByText('Marta Soto')).toBeInTheDocument();
+    expect(within(vipList).queryByText('Marta Soto')).not.toBeInTheDocument();
+  });
 });

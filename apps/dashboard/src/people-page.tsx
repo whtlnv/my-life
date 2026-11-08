@@ -41,11 +41,13 @@ const PeopleList = ({
   people,
   onSelect,
   onSelectOrganization,
+  vipAction,
 }: {
   title: string;
   people: PersonRow[];
   onSelect: (person: PersonRow) => void;
   onSelectOrganization: (organization: string) => void;
+  vipAction: { label: string; onClick: (person: PersonRow) => void };
 }) => (
   <section>
     <h2>{title}</h2>
@@ -59,7 +61,10 @@ const PeopleList = ({
             {person.organization}
           </button>{' '}
           <time dateTime={person.lastMessageAt}>{timeInBusinessZone(person.lastMessageAt)}</time>{' '}
-          {person.reasons?.join(', ')}
+          {person.reasons?.join(', ')}{' '}
+          <button type="button" onClick={() => vipAction.onClick(person)}>
+            {vipAction.label}
+          </button>
         </li>
       ))}
     </ul>
@@ -80,11 +85,19 @@ export const PeoplePage = () => {
   const [lists, setLists] = useState<PeopleLists>(emptyLists);
   const [selected, setSelected] = useState<SelectedTimeline | undefined>(undefined);
 
-  useEffect(() => {
+  const loadPeople = () => {
     void fetch('/people')
       .then((response) => response.json() as Promise<PeopleLists>)
       .then(setLists);
-  }, []);
+  };
+
+  useEffect(loadPeople, []);
+
+  const setVipMark = (method: 'PUT' | 'DELETE') => (person: PersonRow) => {
+    void fetch(`/contacts/${encodeURIComponent(person.emails[0] as string)}/marks/vip`, { method }).then(loadPeople);
+  };
+  const markVip = { label: 'Mark VIP', onClick: setVipMark('PUT') };
+  const removeVip = { label: 'Remove VIP', onClick: setVipMark('DELETE') };
 
   const loadTimeline = (path: string, displayName: string) => {
     void fetch(path)
@@ -107,18 +120,21 @@ export const PeoplePage = () => {
         people={lists.vip}
         onSelect={showTimeline}
         onSelectOrganization={showOrganizationTimeline}
+        vipAction={removeVip}
       />
       <PeopleList
         title="Urgent"
         people={lists.urgent}
         onSelect={showTimeline}
         onSelectOrganization={showOrganizationTimeline}
+        vipAction={markVip}
       />
       <PeopleList
         title="Everyone else"
         people={lists.everyoneElse}
         onSelect={showTimeline}
         onSelectOrganization={showOrganizationTimeline}
+        vipAction={markVip}
       />
       {selected && <ContactTimeline timeline={selected} />}
     </main>
