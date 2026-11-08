@@ -22,7 +22,7 @@
 - [x] `GET /people` lists an urgent non-VIP contact under Urgent, with its reasons, and not under Everyone else
 - [x] `GET /people` lists an urgent VIP contact under both VIP and Urgent
 - [x] `GET /people` lists a contact that is neither VIP nor urgent under Everyone else
-- [ ] `GET /people` does not list as urgent a VIP contact whose latest message the user already answered in the thread, nor one whose message arrived less than 1 business day ago (the route computes urgency through the domain rules, not per mark)
+- [x] `GET /people` does not list as urgent a VIP contact whose latest message the user already answered in the thread, nor one whose message arrived less than 1 business day ago (the route computes urgency through the domain rules, not per mark)
 - [ ] `GET /people` lists as urgent, with the reason "unanswered ask", a non-VIP contact whose ask has waited 2 business days with no reply from the user
 - [ ] `GET /people` does not list as urgent a contact whose only extracted deadline has already passed
 - [ ] The urgency thresholds the backend is created with (from its settings in `main.ts`) decide `GET /people`: with the unanswered-ask threshold at 1 business day, a 1-business-day-old unanswered ask is urgent

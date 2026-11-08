@@ -16,6 +16,7 @@ import {
   badgeCount,
   buildNowView,
   chooseVerdictExamples,
+  contactUrgency,
   currentVerdict,
   describeSourceFreshness,
   digests,
@@ -943,22 +944,35 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
     const isVip = (contact: { emails: string[] }) => markedEmails.has(contact.emails[0] ?? '');
-    const deadlineWindowInMilliseconds = 48 * 60 * 60 * 1000;
-    const isWithinDeadlineWindow = (date: string) =>
-      Date.parse(date) - clock.now().getTime() <= deadlineWindowInMilliseconds;
-    const hasDeadline = (contact: { messageIds: string[] }) =>
-      proposals.some(
-        (proposal) =>
-          contact.messageIds.includes(proposal.messageId) && (proposal.dates ?? []).some(isWithinDeadlineWindow),
-      );
-    const vipContacts = contacts.filter(isVip);
+    const urgencyOf = (contact: { emails: string[]; messageIds: string[] }) =>
+      contactUrgency({
+        messages: reportedMessages
+          .filter((message) => contact.messageIds.includes(message.id) || message.sentByUser === true)
+          .map((message) => ({
+            threadId: message.threadId,
+            receivedAt: new Date(message.date).toISOString(),
+            sentByUser: message.sentByUser === true,
+            dates: proposals.find((proposal) => proposal.messageId === message.id)?.dates ?? [],
+          })),
+        vip: isVip(contact),
+        now: clock.now().toISOString(),
+        settings: {
+          timeZone: businessTimeZone,
+          unansweredAskBusinessDays: 2,
+          deadlineHours: 48,
+          vipWaitingBusinessDays: 1,
+        },
+      });
+    const urgentContacts = contacts.flatMap((contact) => {
+      const { urgent, reasons } = urgencyOf(contact);
+      return urgent ? [{ ...contact, reasons }] : [];
+    });
+    const isUrgent = (contact: { emails: string[] }) =>
+      urgentContacts.some((urgentContact) => urgentContact.emails[0] === contact.emails[0]);
     return context.json({
-      urgent: [
-        ...contacts.filter(hasDeadline).map((contact) => ({ ...contact, reasons: ['deadline'] })),
-        ...vipContacts.map((contact) => ({ ...contact, reasons: ['VIP waiting'] })),
-      ],
-      vip: vipContacts,
-      everyoneElse: contacts.filter((contact) => !isVip(contact) && !hasDeadline(contact)),
+      urgent: urgentContacts,
+      vip: contacts.filter(isVip),
+      everyoneElse: contacts.filter((contact) => !isVip(contact) && !isUrgent(contact)),
     });
   });
   app.get('/organizations', (context) => {

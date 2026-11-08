@@ -369,6 +369,48 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['VIP waiting'] })]);
   });
 
+  it('does not list at GET /people under Urgent a VIP contact whose message the user answered in the thread, nor a VIP contact whose message arrived less than 1 business day ago', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
+    const luisMondayMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMondayMessage,
+        {
+          ...luisMondayMessage,
+          id: 'message-reply',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+          sentByUser: true,
+        },
+        {
+          ...luisMondayMessage,
+          id: 'message-2',
+          threadId: 'thread-2',
+          from: 'Marta <marta@acme.com>',
+          date: 'Wed, 4 Nov 2026 08:00:00 -0600',
+        },
+      ],
+    });
+    await markContact(app, 'luis@example.com', 'vip');
+    await markContact(app, 'marta@acme.com', 'vip');
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, urgent } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      urgent: { emails: string[] }[];
+    };
+    expect(vip.map(({ emails }) => emails)).toEqual(
+      expect.arrayContaining([['luis@example.com'], ['marta@acme.com']]),
+    );
+    expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
+    expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['marta@acme.com']);
+  });
+
   it('lists at GET /contacts, after a backend restart on the same database file, the lists and note set on a contact through PATCH /contacts/:email before it', async () => {
     const options = {
       allowedEmails: ['ana@example.com'],
