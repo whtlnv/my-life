@@ -42,6 +42,9 @@ interface ListedContact {
 
 const getContacts = (app: App) => getJson<{ contacts: ListedContact[] }>(app, '/contacts');
 
+const byPrimaryEmail = (left: ListedContact, right: ListedContact) =>
+  (left.emails[0] ?? '').localeCompare(right.emails[0] ?? '');
+
 const getOrganizations = (app: App) =>
   getJson<{ organizations: { name: string; messageIds: string[] }[] }>(app, '/organizations');
 
@@ -3083,7 +3086,7 @@ describe('backend app', () => {
     const { contacts } = await getContacts(afterRestart);
     const { organizations } = await getOrganizations(afterRestart);
 
-    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
+    expect(contacts.toSorted(byPrimaryEmail)).toMatchObject([
       { displayName: 'Luis', emails: ['luis@example.com'], messageIds: ['message-1'] },
       { displayName: 'Marta', emails: ['marta@acme.com'], messageIds: ['message-2'] },
       { displayName: 'Pedro Soto', emails: ['pedro@acme.com'], messageIds: ['message-1'] },
@@ -3101,7 +3104,7 @@ describe('backend app', () => {
     await markContact(app, 'luis@example.com', 'vip');
     const { contacts } = await getContacts(app);
 
-    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
+    expect(contacts.toSorted(byPrimaryEmail)).toMatchObject([
       { emails: ['luis@example.com'], marks: ['vip'] },
       { emails: ['marta@acme.com'], marks: [] },
     ]);
@@ -3176,7 +3179,7 @@ describe('backend app', () => {
     await setContactDetails(app, 'marta@acme.com', { lists: ['suppliers'] });
     const { contacts } = await getContacts(app);
 
-    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
+    expect(contacts.toSorted(byPrimaryEmail)).toMatchObject([
       { emails: ['luis@example.com'], lists: ['board', 'investors'], note: 'Prefers calls' },
       { emails: ['marta@acme.com'], lists: ['suppliers'], note: 'Answers fast' },
     ]);
