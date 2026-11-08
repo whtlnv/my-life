@@ -87,23 +87,41 @@ describe('Claude triage', () => {
     });
   });
 
-  it("sends the account's profile text read from the profile directory", async () => {
-    const promptPath = promptFile('Classify this email.');
-    const profileDirectory = profileDirectoryWith({
-      'acme.md': 'Ana runs the Acme sales team; invoices always matter.',
-    });
+  it.each([
+    {
+      rule: "the account's profile text read from the profile directory",
+      profileFiles: { 'acme.md': 'Ana runs the Acme sales team; invoices always matter.' },
+      accountEmail: 'ana@acme.com',
+      sentProfileText: 'Ana runs the Acme sales team; invoices always matter.',
+    },
+    {
+      rule: "the shared accounts profile alongside the account's own profile",
+      profileFiles: {
+        'accounts.md': 'Ana has two accounts: Acme for sales, Gmail for family.',
+        'acme.md': 'Ana runs the Acme sales team; invoices always matter.',
+      },
+      accountEmail: 'ana@acme.com',
+      sentProfileText: 'Ana has two accounts: Acme for sales, Gmail for family.',
+    },
+    {
+      rule: 'the shared accounts profile, still, when the account has no profile file of its own',
+      profileFiles: { 'accounts.md': 'Ana has two accounts: Acme for sales, Gmail for family.' },
+      accountEmail: 'ana@gmail.com',
+      sentProfileText: 'Ana has two accounts: Acme for sales, Gmail for family.',
+    },
+  ])('sends $rule', async ({ profileFiles, accountEmail, sentProfileText }) => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
       model: 'claude-opus-5-5',
-      promptPath,
-      profileDirectory,
+      promptPath: promptFile('Classify this email.'),
+      profileDirectory: profileDirectoryWith(profileFiles),
       createMessage,
     });
 
-    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@acme.com' });
+    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail });
 
-    expect(firstSentRequest(sentRequests).system).toContain('Ana runs the Acme sales team; invoices always matter.');
+    expect(firstSentRequest(sentRequests).system).toContain(sentProfileText);
   });
 
   it("sends only the profile file named after the account's domain, not another account's", async () => {
@@ -127,43 +145,6 @@ describe('Claude triage', () => {
       sendsOwnProfile: system?.includes('Francisco runs operations at Psmutuus; claims always matter.'),
       sendsOtherProfile: system?.includes('Ana runs the Acme sales team; invoices always matter.'),
     }).toEqual({ sendsOwnProfile: true, sendsOtherProfile: false });
-  });
-
-  it("sends the shared accounts profile alongside the account's own profile", async () => {
-    const profileDirectory = profileDirectoryWith({
-      'accounts.md': 'Ana has two accounts: Acme for sales, Gmail for family.',
-      'acme.md': 'Ana runs the Acme sales team; invoices always matter.',
-    });
-    const { sentRequests, createMessage } = recordRequests();
-    const triage = createClaudeTriage({
-      pricing: defaultPricing,
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('Classify this email.'),
-      profileDirectory,
-      createMessage,
-    });
-
-    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@acme.com' });
-
-    expect(firstSentRequest(sentRequests).system).toContain('Ana has two accounts: Acme for sales, Gmail for family.');
-  });
-
-  it('still sends the shared accounts profile when the account has no profile file of its own', async () => {
-    const profileDirectory = profileDirectoryWith({
-      'accounts.md': 'Ana has two accounts: Acme for sales, Gmail for family.',
-    });
-    const { sentRequests, createMessage } = recordRequests();
-    const triage = createClaudeTriage({
-      pricing: defaultPricing,
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('Classify this email.'),
-      profileDirectory,
-      createMessage,
-    });
-
-    await triage.propose({ id: 'message-1', date: '2026-11-07T10:00:00Z', accountEmail: 'ana@gmail.com' });
-
-    expect(firstSentRequest(sentRequests).system).toContain('Ana has two accounts: Acme for sales, Gmail for family.');
   });
 
   it("sends the message's headers, snippet and whether it is addressed to the user", async () => {
