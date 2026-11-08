@@ -24,6 +24,10 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/dashboard/src/triage-page.tsx:567] The Handled for you copy spells the backend's automatic label** (added: 2026-11-08)
+  The toggle text says items are "labeled my-life/auto", the label `automaticLabelName` in `apps/backend/src/app.ts` puts on
+  every automatic archive and its undo removes; renaming the backend constant leaves the dashboard naming a label Gmail no
+  longer shows. Deferred for the same reason as the `my-life/archived` entry below: no shared package holds plain constants.
 - **[apps/dashboard/src/triage-page.tsx:48] The triage page still renders system sub-groups and sales and calendar-drive group rows** (added: 2026-11-08)
   `GET /triage-queue` now puts every system-update, sales and calendar-drive proposal in a digest and leaves it out of
   `groups`, so `TriageGroup.systems`, `SystemSection` and the `sales` / `calendar-drive` cases of `GroupRows` never render
