@@ -31,7 +31,7 @@
 - [x] A contact on the profile's "Always matters" line whose VIP mark the user removed is not listed as VIP
 - [x] A later Google Contacts import updates the organization of a contact whose organization the user never edited (backlog: apps/backend/src/app.ts:897 The first imported organization sticks for good)
 - [x] `GET /people` still answers when a contact's account has no profile file: that account adds no "Always matters" VIPs
-- [ ] The shipped backend (`main.ts`) hands the app the profile directory, so a contact on a profile's "Always matters" line is VIP in production (`main.test.ts`)
+- [x] The shipped backend (`main.ts`) hands the app the profile directory, so a contact on a profile's "Always matters" line is VIP in production (`main.test.ts`)
 - [ ] A later Google Contacts import leaves the organization the user set on a contact unchanged (backlog: apps/backend/src/app.ts:897 The first imported organization sticks for good)
 - [ ] A contact's timeline lists every message that contact sent, across every account, newest first, each with its account and source link
 - [ ] A contact's timeline leaves out messages sent by other contacts

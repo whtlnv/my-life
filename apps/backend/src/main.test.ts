@@ -2,8 +2,11 @@
 // startup settings and the Claude adapters is pinned from the outside.
 
 import { type ChildProcess, spawn } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { type AddressInfo, createServer as createNetServer } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -203,5 +206,40 @@ describe('the shipped backend (main.ts)', () => {
     };
 
     expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['unanswered ask'] })]);
+  }, 30_000);
+  it('lists at GET /people under VIP a contact on the "Always matters" line of a profile in MY_LIFE_PROFILE_DIRECTORY', async () => {
+    fakeAnthropic = await startFakeAnthropic([]);
+    const anthropicPort = (fakeAnthropic.address() as AddressInfo).port;
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    writeFileSync(
+      join(profileDirectory, 'example.md'),
+      '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
+    );
+    const port = await freePort();
+    const baseUrl = `http://127.0.0.1:${String(port)}`;
+    backend = spawn('node_modules/.bin/tsx', ['src/main.ts'], {
+      cwd: backendDirectory,
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: 'test-key',
+        ANTHROPIC_BASE_URL: `http://127.0.0.1:${String(anthropicPort)}`,
+        MY_LIFE_PORT: String(port),
+        MY_LIFE_DATABASE_PATH: temporaryDatabasePath(),
+        MY_LIFE_ALLOWED_EMAILS: 'ana@example.com',
+        MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none',
+        MY_LIFE_PROFILE_DIRECTORY: profileDirectory,
+      },
+      stdio: 'ignore',
+    });
+    await waitUntilHealthy(baseUrl);
+    await fetch(`${baseUrl}/mail-report`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(budgetReviewReport),
+    });
+
+    const { vip } = (await (await fetch(`${baseUrl}/people`)).json()) as { vip: { emails: string[] }[] };
+
+    expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
   }, 30_000);
 });
