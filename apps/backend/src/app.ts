@@ -705,11 +705,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const undoAutomaticStore = openUndoAutomaticStore(databasePath);
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
+    const undoneMessageIds = undoAutomaticStore.loadAll();
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: describeDigests(verdicts),
       handledForYou: describeHandledForYou(proposals, clock).filter(
-        ({ messageId }) => !undoAutomaticStore.loadAll().includes(messageId),
+        ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
