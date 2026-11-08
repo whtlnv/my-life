@@ -134,6 +134,19 @@ export interface AppOptions {
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
 type DecidedProposal = Parameters<typeof filterCandidates>[0][number];
 
+function categoryQuestionChoices(
+  category: Proposal['category'],
+  disagreement: Proposal['disagreement'],
+): string[] | undefined {
+  if (disagreement !== undefined) {
+    return [disagreement.firstCategory, disagreement.secondCategory];
+  }
+  if (category === 'unknown') {
+    return triageCategories.filter((knownCategory) => knownCategory !== 'unknown');
+  }
+  return undefined;
+}
+
 const systemClock: Clock = { now: () => new Date() };
 
 const pollingIntervalsInMilliseconds = {
@@ -756,27 +769,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/needs-input', (context) => {
     const questions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
-      if (disagreement !== undefined) {
-        return [
-          {
-            kind: 'category',
-            messageId,
-            accountEmail,
-            choices: [disagreement.firstCategory, disagreement.secondCategory],
-          },
-        ];
-      }
-      if (category === 'unknown') {
-        return [
-          {
-            kind: 'category',
-            messageId,
-            accountEmail,
-            choices: triageCategories.filter((knownCategory) => knownCategory !== 'unknown'),
-          },
-        ];
-      }
-      return [];
+      const choices = categoryQuestionChoices(category, disagreement);
+      return choices === undefined ? [] : [{ kind: 'category', messageId, accountEmail, choices }];
     });
     return context.json({ questions });
   });
