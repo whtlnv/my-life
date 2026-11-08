@@ -22,4 +22,23 @@ describe('digests', () => {
     expect(result).toHaveLength(1);
     expect(result[0]?.proposals).toEqual([firstAwsProposal, secondAwsProposal]);
   });
+
+  it('places two system-update proposals from the same account naming different systems in two digests', () => {
+    const awsProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'AWS', severity: 'info', significant: false },
+    };
+    const githubProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'GitHub', severity: 'info', significant: false },
+    };
+    const result = digests([awsProposal, githubProposal]);
+    expect(result.map((digest) => digest.proposals)).toEqual([[awsProposal], [githubProposal]]);
+  });
 });
