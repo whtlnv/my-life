@@ -16,6 +16,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07)
+  `new URL(input instanceof Request ? input.url : input.toString())` opens about 30 fake `fetch` functions across six
+  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 30 times.
+  Deferred because two of those files (`calendar-poll.test.ts`, `gmail-poll.test.ts`) sit outside 2aaf298..HEAD and the
+  extension has no shared test-helper module to hoist it into.
 - **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
   `mondayOf` / `weekStart` (and a second `millisecondsPerDay`) work out the week's Monday from the browser clock in UTC, while
   `GET /expense-statement` in `apps/backend/src/app.ts` uses `mondayOfBusinessWeek` in `America/Mexico_City`; the two must
