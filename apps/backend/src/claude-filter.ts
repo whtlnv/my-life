@@ -3,7 +3,13 @@ import { basename, extname } from 'node:path';
 
 import { filterProposal } from '@my-life/contracts';
 
-import { computeCostInUsd, type ClaudePricing, type ClaudeRequest, type ClaudeResponse } from './claude-triage';
+import {
+  computeCostInUsd,
+  readToolUseInput,
+  type ClaudePricing,
+  type ClaudeRequest,
+  type ClaudeResponse,
+} from './claude-triage';
 
 interface ClaudeFilterDependencies {
   model: string;
@@ -32,7 +38,7 @@ export function createClaudeFilter({ model, promptPath, pricing, createMessage }
         tools: [proposeFilterTool],
         messages: [{ role: 'user', content: JSON.stringify(candidate) }],
       });
-      const input = response.content.find((block) => block.type === 'tool_use')?.input;
+      const input = readToolUseInput(response);
       return {
         promptVersion,
         proposal: filterProposal.parse(input),

@@ -86,7 +86,7 @@ interface TriageOutcome {
 
 const proposeTriageTool = { name: 'propose_triage', strict: true, input_schema: triageProposal.toJSONSchema() };
 
-function readToolUseInput(response: ClaudeResponse): unknown {
+export function readToolUseInput(response: ClaudeResponse): unknown {
   return response.content.find((block) => block.type === 'tool_use')?.input;
 }
 
