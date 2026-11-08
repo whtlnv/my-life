@@ -90,4 +90,24 @@ describe('contactUrgency', () => {
       reasons: ['deadline'],
     });
   });
+
+  it('is not urgent when a message from the contact carries an extracted deadline more than 48 hours away', () => {
+    const mondayNineAm = '2026-11-09T15:00:00.000Z';
+    const mondayTenAm = '2026-11-09T16:00:00.000Z';
+    const thursdayNoon = '2026-11-12T18:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-contract',
+        receivedAt: mondayNineAm,
+        sentByUser: false,
+        asks: [{ ask: 'Sign the renewal contract' }],
+        dates: [thursdayNoon],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: mondayTenAm, settings: urgencySettings })).toEqual({
+      urgent: false,
+      reasons: [],
+    });
+  });
 });

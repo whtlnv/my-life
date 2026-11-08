@@ -14,7 +14,7 @@
 - [x] A contact whose ask to the user has gone unanswered for less than 2 business days is not urgent
 - [x] A contact whose ask the user answered in the same thread (a sent message after it) is not urgent, however old the ask
 - [x] A contact whose message carries an extracted deadline inside the next 48 hours is urgent, with the reason "deadline"
-- [ ] A contact whose message carries an extracted deadline more than 48 hours away is not urgent
+- [x] A contact whose message carries an extracted deadline more than 48 hours away is not urgent
 - [ ] A VIP contact whose message has waited for a reply more than 1 business day is urgent, with the reason "VIP waiting"
 - [ ] A non-VIP contact whose message has waited for a reply more than 1 business day (and asks nothing) is not urgent
 - [ ] Setting the unanswered-ask threshold to 1 business day in the backend settings makes a contact with a 1-business-day-old unanswered ask urgent

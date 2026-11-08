@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 15:23 · `packages/domain/src/contact-urgency.test.ts::is not urgent when a message from the contact carries an extracted deadline more than 48 hours away`
+- Behavior: a contact whose message carries an extracted deadline more than 48 hours away is not urgent
+- Predicted: passes on first run, because `hasDeadlineSoon` already bounds the window with `date - now <= deadlineHours`
+- Actual: passes (1 passed, 4 skipped)
+- Type: passed unexpectedly
+- Resolution: the previous green step built the upper bound in when it added the `<=` window comparison, so this TODO item has no missing behavior. The test stays as a regression pin on the boundary and was not rewritten, because any failing rewrite would be driving a different behavior (for example, a deadline already in the past) that this item does not cover.
+
 ## 2026-11-08 13:25 · `apps/backend/src/app-mail-triage.test.ts::opens a database created before Phase 2c and serves GET /triage-queue with its waiting system-update proposal as a digest and its automatic proposal of today under handled for you`
 - Behavior: A database created before Phase 2c opens and serves `GET /triage-queue` with digests and handled for you
 - Predicted: passes on first run, because Phase 2c only added new tables (`listed_digests`, `digest_summaries`, `undone_automatic_messages`) through `CREATE TABLE IF NOT EXISTS` and altered no existing table or stored proposal shape
