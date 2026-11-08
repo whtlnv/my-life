@@ -84,6 +84,10 @@ interface TriageResult {
   promptVersion: string;
 }
 
+// What the triage port learns about the sender: the display name from the From header plus the record the user and
+// the contacts import keep on that email.
+type TriageContact = { displayName: string; marks: string[] } & ContactDetails;
+
 export interface AppOptions {
   allowedEmails: string[];
   clock?: Clock;
@@ -92,7 +96,10 @@ export interface AppOptions {
   dashboardDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
   triage?: {
-    propose: (message: ReportedMessage & { accountEmail: string }, examples?: unknown[]) => Promise<TriageResult>;
+    propose: (
+      message: ReportedMessage & { accountEmail: string; contact?: TriageContact },
+      examples?: unknown[],
+    ) => Promise<TriageResult>;
   };
   filter?: {
     propose: (
@@ -498,7 +505,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         }
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
         const examples = verdictExamplesFor(message);
-        const result = await triage.propose({ ...message, accountEmail }, examples);
+        const sender = contactFromSender(message.from);
+        const contact: TriageContact = {
+          displayName: sender.displayName,
+          marks: contactDetailsStore.markedEmails().has(sender.email) ? ['vip'] : [],
+          ...contactDetailsStore.loadAll()[sender.email],
+        };
+        const result = await triage.propose({ ...message, accountEmail, contact }, examples);
         const costInUsd = result.costInUsd;
         const answeredAt = clock.now().toISOString();
         spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });

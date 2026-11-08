@@ -3523,6 +3523,33 @@ describe('backend app', () => {
     expect(askedMessages).toEqual([{ id: 'message-1', body }]);
   });
 
+  it("hands the triage port, for a message from a contact the user marked vip and gave an organization, lists and a note, that contact's record with the display name from the From header", async () => {
+    const askedMessages: { id: string; contact?: unknown }[] = [];
+    const triage = {
+      propose: (message: { id: string; contact?: unknown }) => {
+        askedMessages.push({ id: message.id, contact: message.contact });
+        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
+    });
+    await markContact(app, 'luis@example.com', 'vip');
+    await setContactDetails(app, 'luis@example.com', { lists: ['board'], note: 'Prefers calls' });
+
+    await postTriageRun(app);
+
+    expect(askedMessages).toEqual([
+      {
+        id: 'message-1',
+        contact: { displayName: 'Luis', organization: 'Acme', marks: ['vip'], lists: ['board'], note: 'Prefers calls' },
+      },
+    ]);
+  });
+
   it('lists at GET /search?q= the message whose body contains the query word', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);

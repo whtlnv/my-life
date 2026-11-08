@@ -100,7 +100,7 @@
 
 ### Structured context in the prompt
 
-- [ ] The triage request for a message from a known contact carries that contact's record (name, organization, `vip`, lists, note)
+- [x] The triage request for a message from a known contact carries that contact's record (name, organization, `vip`, lists, note)
 - [ ] The triage request for a message from an unknown sender carries no contact record
 - [ ] The triage request for a message in a thread with an earlier extraction carries that thread state
 - [ ] The triage request for the first message of a thread carries no thread state
