@@ -2,14 +2,15 @@ export interface Digest<Proposal> {
   readonly proposals: readonly Proposal[];
 }
 
-export function digests<Proposal extends { readonly extract: { readonly system: string } }>(
-  proposals: readonly Proposal[],
-): Digest<Proposal>[] {
-  const bySystem = new Map<string, Proposal[]>();
+export function digests<
+  Proposal extends { readonly accountEmail: string; readonly extract: { readonly system: string } },
+>(proposals: readonly Proposal[]): Digest<Proposal>[] {
+  const byAccountAndSystem = new Map<string, Proposal[]>();
   for (const proposal of proposals) {
-    const group = bySystem.get(proposal.extract.system) ?? [];
+    const key = JSON.stringify([proposal.accountEmail, proposal.extract.system]);
+    const group = byAccountAndSystem.get(key) ?? [];
     group.push(proposal);
-    bySystem.set(proposal.extract.system, group);
+    byAccountAndSystem.set(key, group);
   }
-  return [...bySystem.values()].map((group) => ({ proposals: group }));
+  return [...byAccountAndSystem.values()].map((group) => ({ proposals: group }));
 }
