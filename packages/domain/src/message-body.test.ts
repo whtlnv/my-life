@@ -105,6 +105,17 @@ describe('messageBody', () => {
     expect(messageBody(payload)).toBe(text.slice(0, 20 * 1024));
   });
 
+  it('cuts a body of non-ASCII text so its UTF-8 encoding is at most 20 KB, never mid-character', () => {
+    const text = '€'.repeat(10_000);
+    const payload = {
+      mimeType: 'text/plain',
+      headers: [{ name: 'Content-Type', value: 'text/plain; charset="UTF-8"' }],
+      body: { size: 30_000, data: Buffer.from(text, 'utf8').toString('base64url') },
+    };
+
+    expect(messageBody(payload)).toBe('€'.repeat(Math.floor((20 * 1024) / 3)));
+  });
+
   it('never takes text from an attachment part, even a text/plain one', () => {
     const payload = {
       mimeType: 'multipart/mixed',

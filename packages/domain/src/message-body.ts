@@ -14,7 +14,20 @@ export function messageBody(payload: MessagePart): string {
   }
   const decoded = Buffer.from(payload.body.data ?? '', 'base64url').toString('utf8');
   const text = payload.mimeType === 'text/html' ? htmlText(decoded) : decoded;
-  return withoutSignature(withoutQuotedReply(text)).slice(0, maximumBodyLength);
+  return cappedToMaximumBodyBytes(withoutSignature(withoutQuotedReply(text)));
+}
+
+function cappedToMaximumBodyBytes(text: string): string {
+  let byteLength = 0;
+  let capped = '';
+  for (const character of text) {
+    byteLength += Buffer.byteLength(character, 'utf8');
+    if (byteLength > maximumBodyLength) {
+      break;
+    }
+    capped += character;
+  }
+  return capped;
 }
 
 function chooseBodyPart(parts: MessagePart[]): MessagePart | undefined {
