@@ -16,6 +16,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/extension/src/gmail-archive.ts:6] `CommandOptions` re-declares `AccountRequestOptions`** (added: 2026-11-08)
+  Its four fields (`fetch`, `accessToken`, `accountEmail`, `backendUrl`) are the ones `AccountRequestOptions` in
+  `apps/extension/src/fetch-function.ts` declares for the body backfill and the contacts import, and `extension-start.ts`
+  hands one object to all of them, so a new field is added in two places. Deferred because `gmail-archive.ts` and its
+  importer `gmail-filter.ts` are outside b6267f0..HEAD.
 - **[apps/backend/src/app.ts:51] The `/bodies-missing` and `/bodies-report` bodies are declared apart from the extension that sends and reads them** (added: 2026-11-08)
   `BodiesReport` here and the `{ accountEmail, bodies }` post and `BodiesMissing` read in `apps/extension/src/body-backfill.ts`
   must change together, and nothing ties them: a renamed field compiles and the backfill silently stores nothing. Deferred for
