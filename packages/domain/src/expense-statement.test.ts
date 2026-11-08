@@ -59,4 +59,19 @@ describe('expenseStatement', () => {
       expenseStatement(proposals, { week: '2026-11-02', timeZone: 'America/Mexico_City' }).map((entry) => entry.link),
     ).toEqual(['https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-tuesday']);
   });
+
+  it('leaves out a proposal of another category dated inside the week, even when its extract carries an amount', () => {
+    const proposals = [
+      { ...expenseProposal('message-sales', '2026-11-03T18:00:00.000Z', 'Acme CRM', 4999, '2026-11-03'), category: 'sales' },
+      expenseProposal('message-expense', '2026-11-04T18:00:00.000Z', 'Uber', 154.5, '2026-11-04'),
+      {
+        ...expenseProposal('message-system-update', '2026-11-05T18:00:00.000Z', 'GitHub', 21, '2026-11-05'),
+        category: 'system-update',
+      },
+    ];
+
+    expect(
+      expenseStatement(proposals, { week: '2026-11-02', timeZone: 'America/Mexico_City' }).map((entry) => entry.link),
+    ).toEqual(['https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-expense']);
+  });
 });

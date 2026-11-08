@@ -38,6 +38,6 @@ export const expenseStatement = (
   period: StatementPeriod,
 ): ExpenseStatementEntry[] =>
   proposals
-    .filter((proposal) => isInWeek(proposal.date, period))
+    .filter((proposal) => proposal.category === 'expense' && isInWeek(proposal.date, period))
     .sort((left, right) => left.date.localeCompare(right.date))
     .map((proposal) => ({ ...proposal.extract, accountEmail: proposal.accountEmail, link: proposal.link }));
