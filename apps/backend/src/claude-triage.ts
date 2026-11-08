@@ -59,6 +59,7 @@ interface TriageMessage {
   cc?: string;
   subject?: string;
   snippet?: string;
+  body?: string;
   listId?: string;
 }
 
@@ -71,6 +72,7 @@ function describeMessage(message: TriageMessage, examples: unknown[] | undefined
     date: message.date,
     listId: message.listId,
     snippet: message.snippet,
+    body: message.body,
     addressedToUser: isAddressedToUser({ to: message.to ?? '' }, message.accountEmail ?? ''),
     examples,
   });

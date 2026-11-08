@@ -21,7 +21,7 @@
   - predicted-contradiction: `apps/extension/src/gmail-poll.test.ts::reports each message with its From, To, Cc, Subject, Date and List-Id headers and its snippet, read as metadata` — asserts: each message is read with `format=metadata` (the fake Gmail answers 400 to any other format) — retired-by: "The Gmail poll reads each message with `format=full`"
 - [x] A mail report whose message carries a body is accepted, and one without a body is still accepted
 - [x] A body reported for a message is stored and is still there after the backend restarts
-- [ ] The triage request for a message with a stored body carries the body
+- [x] The triage request for a message with a stored body carries the body
 - [ ] The triage request for a message without a stored body carries the snippet
 
 ### Extraction v2

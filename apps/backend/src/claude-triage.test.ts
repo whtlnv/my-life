@@ -181,6 +181,32 @@ describe('Claude triage', () => {
     });
   });
 
+  it('sends the stored body of a message that has one', async () => {
+    const { sentRequests, createMessage } = recordRequests();
+    const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      promptPath: promptFile(),
+      model: 'claude-opus-5-5',
+      createMessage,
+    });
+
+    await triage.propose({
+      id: 'message-7',
+      threadId: 'thread-7',
+      accountEmail: 'ana@acme.com',
+      from: 'Bruno <bruno@supplier.com>',
+      to: 'Ana <ana@acme.com>',
+      subject: 'Quote for November',
+      date: '2026-11-07T10:00:00Z',
+      snippet: 'Could you approve the attached quote by Friday?',
+      body: 'Hi Ana,\n\nCould you approve the attached quote by Friday? The prices hold until the 15th.\n\nBruno',
+    });
+
+    expect(firstUserContent(sentRequests)).toMatchObject({
+      body: 'Hi Ana,\n\nCould you approve the attached quote by Friday? The prices hold until the 15th.\n\nBruno',
+    });
+  });
+
   it('says a message is not addressed to the user when the account is only in Cc', async () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
