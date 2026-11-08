@@ -1,7 +1,14 @@
 import { openDatabase } from './open-database';
 
-export type ContactDetails = { lists?: string[]; note?: string; organization?: string };
-export type ImportedContactRecord = { displayName: string; emails: string[] };
+export interface ContactDetails {
+  lists?: string[];
+  note?: string;
+  organization?: string;
+}
+export interface ImportedContactRecord {
+  displayName: string;
+  emails: string[];
+}
 
 export function openContactDetailsStore(databasePath: string) {
   const database = openDatabase(databasePath);
