@@ -2745,7 +2745,7 @@ describe('backend app', () => {
     const response = await app.request('/contacts');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
+    expect(await response.json()).toMatchObject({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
   });
 
   it('lists at GET /contacts a sender whose From header is a bare address as a contact named by that address', async () => {
@@ -2756,7 +2756,9 @@ describe('backend app', () => {
     const response = await app.request('/contacts');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ contacts: [{ displayName: 'ana@acme.com', emails: ['ana@acme.com'] }] });
+    expect(await response.json()).toMatchObject({
+      contacts: [{ displayName: 'ana@acme.com', emails: ['ana@acme.com'] }],
+    });
   });
 
   it('lists at GET /contacts a sender whose display name is quoted in its From header as a contact named without the quotes', async () => {
@@ -2767,7 +2769,7 @@ describe('backend app', () => {
     const response = await app.request('/contacts');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ contacts: [{ displayName: 'Ana Ruiz', emails: ['ana@acme.com'] }] });
+    expect(await response.json()).toMatchObject({ contacts: [{ displayName: 'Ana Ruiz', emails: ['ana@acme.com'] }] });
   });
 
   it('lists at GET /contacts one contact for two messages from the same email reported on different accounts', async () => {
@@ -2788,7 +2790,7 @@ describe('backend app', () => {
     const response = await app.request('/contacts');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
+    expect(await response.json()).toMatchObject({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
   });
 
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
@@ -2807,7 +2809,7 @@ describe('backend app', () => {
     const response = await app.request('/contacts');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       contacts: [
         { displayName: 'Luis', emails: ['luis@example.com'] },
         { displayName: 'Marta', emails: ['marta@acme.com'] },
@@ -2871,6 +2873,40 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     const { contacts } = (await response.json()) as { contacts: { displayName: string }[] };
     expect(contacts.map(({ displayName }) => displayName)).toEqual(['Luis']);
+  });
+
+  it('lists at GET /contacts one contact, holding every message, for a person who sent one message and is named by email in two triaged extractions', async () => {
+    const extractionNamingLuis = {
+      action: 'keep',
+      category: 'unknown',
+      summary: 'A budget review',
+      extract: {},
+      reason: 'Unsure',
+      people: [{ name: 'Luis Pérez', email: 'luis@example.com', role: 'mentioned' }],
+    };
+    const triage = {
+      propose: () => Promise.resolve({ proposal: extractionNamingLuis, costInUsd: 0, promptVersion: 'triage-v2' }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const fromMarta = {
+      ...budgetReviewReport.messages[0],
+      id: 'message-2',
+      threadId: 'thread-2',
+      from: 'Marta <marta@acme.com>',
+    };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [budgetReviewReport.messages[0], fromMarta],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    const { contacts } = (await response.json()) as { contacts: { emails: string[]; messageIds?: string[] }[] };
+    const luisContacts = contacts.filter(({ emails }) => emails.includes('luis@example.com'));
+    expect(luisContacts).toHaveLength(1);
+    expect(luisContacts[0]?.messageIds).toEqual(['message-1', 'message-2']);
   });
 
   it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {

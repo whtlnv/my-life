@@ -569,8 +569,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   app.get('/contacts', (context) => {
-    const senders = reportedMessageStore.loadAll().map(({ from }) => from);
-    return context.json({ contacts: [...contactsFromSenders(senders), ...contactsFromProposals(proposals)] });
+    const senders = reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
+    return context.json({ contacts: contactsByEmail(senders, proposals) });
   });
   app.get('/organizations', (context) => {
     const senderByMessageId = new Map(reportedMessageStore.loadAll().map(({ messageId, from }) => [messageId, from]));
@@ -673,21 +673,25 @@ function senderDomain(from: string): string {
   return email.slice(email.indexOf('@') + 1);
 }
 
-function contactsFromSenders(senders: string[]) {
-  const displayNamesByEmail = new Map<string, string>();
-  for (const from of senders) {
+// One contact per email: a message's sender and every person its extraction names with an email, each listing the
+// messages they sent or appear in. The sender's own display name wins over a name the extraction gives.
+function contactsByEmail(senders: { messageId: string; from: string }[], proposals: Proposal[]) {
+  const contacts = new Map<string, { displayName: string; emails: string[]; messageIds: string[] }>();
+  const link = (email: string, displayName: string, messageId: string) => {
+    const contact = contacts.get(email) ?? { displayName, emails: [email], messageIds: [] };
+    if (!contact.messageIds.includes(messageId)) contact.messageIds.push(messageId);
+    contacts.set(email, contact);
+  };
+  for (const { messageId, from } of senders) {
     const { displayName, email } = contactFromSender(from);
-    displayNamesByEmail.set(email, displayName);
+    link(email, displayName, messageId);
   }
-  return [...displayNamesByEmail].map(([email, displayName]) => ({ displayName, emails: [email] }));
-}
-
-function contactsFromProposals(proposals: Proposal[]) {
-  return proposals.flatMap(({ people = [], messageId }) =>
-    people
-      .filter(({ email }) => email !== undefined)
-      .map(({ name, email }) => ({ displayName: name, emails: [email], messageIds: [messageId] })),
-  );
+  for (const { people = [], messageId } of proposals) {
+    for (const { name, email } of people) {
+      if (email !== undefined) link(email, name, messageId);
+    }
+  }
+  return [...contacts.values()].map((contact) => ({ ...contact, messageIds: contact.messageIds.toSorted() }));
 }
 
 function contactFromSender(from: string) {
