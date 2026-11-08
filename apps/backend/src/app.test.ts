@@ -28,6 +28,14 @@ const postRegistration = (app: App, email: string) => postJson(app, '/register',
 
 const postTriageRun = (app: App) => app.request('/triage-run', { method: 'POST' });
 
+const getJson = async <T>(app: App, path: string) => (await (await app.request(path)).json()) as T;
+
+const getContacts = (app: App) =>
+  getJson<{ contacts: { displayName: string; emails: string[]; messageIds: string[] }[] }>(app, '/contacts');
+
+const getOrganizations = (app: App) =>
+  getJson<{ organizations: { name: string; messageIds: string[] }[] }>(app, '/organizations');
+
 const getCommands = (app: App, accountEmail: string) =>
   app.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`);
 
@@ -2878,12 +2886,8 @@ describe('backend app', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReport);
 
-    const { contacts } = (await (await app.request('/contacts')).json()) as {
-      contacts: { emails: string[]; messageIds: string[] }[];
-    };
-    const { organizations } = (await (await app.request('/organizations')).json()) as {
-      organizations: { name: string; messageIds: string[] }[];
-    };
+    const { contacts } = await getContacts(app);
+    const { organizations } = await getOrganizations(app);
 
     const partiesListingTheMessage = [
       ...contacts.filter(({ messageIds }) => messageIds.includes('message-1')).flatMap(({ emails }) => emails),
@@ -2903,9 +2907,7 @@ describe('backend app', () => {
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
     await postTriageRun(app);
 
-    const { contacts } = (await (await app.request('/contacts')).json()) as {
-      contacts: { emails: string[]; messageIds: string[] }[];
-    };
+    const { contacts } = await getContacts(app);
 
     const contactsListingTheSecondMessage = contacts
       .filter(({ messageIds }) => messageIds.includes('message-2'))
@@ -3008,23 +3010,18 @@ describe('backend app', () => {
       }),
       'message-2': keepProposalExtracting({ people: [] }),
     });
-    const databasePath = temporaryDatabasePath();
-    const beforeRestart = createApp({
+    const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
-      databasePath,
-      triage,
-    });
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp({ ...options, triage });
     await postJson(beforeRestart, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
     await postTriageRun(beforeRestart);
 
-    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
-    const { contacts } = (await (await afterRestart.request('/contacts')).json()) as {
-      contacts: { displayName: string; emails: string[]; messageIds: string[] }[];
-    };
-    const { organizations } = (await (await afterRestart.request('/organizations')).json()) as {
-      organizations: { name: string; messageIds: string[] }[];
-    };
+    const afterRestart = createApp(options);
+    const { contacts } = await getContacts(afterRestart);
+    const { organizations } = await getOrganizations(afterRestart);
 
     expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toEqual([
       { displayName: 'Luis', emails: ['luis@example.com'], messageIds: ['message-1'] },
