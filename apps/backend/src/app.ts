@@ -73,6 +73,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number] & {
   dates?: string[];
   asks?: { ask: string }[];
   threadState?: string;
+  disagreement?: { firstCategory: string; secondCategory: string };
 };
 type TriageProposal = Parameters<typeof triageEffects>[0];
 type TriageVerdict = Parameters<typeof triageEffects>[1];
@@ -752,6 +753,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       paused: hasReachedDailySpendCeiling(),
       fetchedAt: clock.now().toISOString(),
     });
+  });
+  app.get('/needs-input', (context) => {
+    const questions = proposals.flatMap(({ messageId, accountEmail, disagreement }) =>
+      disagreement === undefined
+        ? []
+        : [
+            {
+              kind: 'category',
+              messageId,
+              accountEmail,
+              choices: [disagreement.firstCategory, disagreement.secondCategory],
+            },
+          ],
+    );
+    return context.json({ questions });
   });
   app.get('/filter-proposals', (context) => {
     const decidedFilterProposalIds = new Set([
