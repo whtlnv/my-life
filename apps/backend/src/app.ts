@@ -455,6 +455,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
     return context.body(null, 200);
   });
+  // A retriage replaces the message's open proposal; a proposal the user has already decided on is left alone.
+  function queueProposal(queuedProposal: Proposal): void {
+    const existingIndex = proposals.findIndex((proposal) => proposal.messageId === queuedProposal.messageId);
+    if (existingIndex === -1) {
+      proposals.push(queuedProposal);
+      return;
+    }
+    const userHasAlreadyDecided = latestVerdictFor(queuedProposal.messageId, verdictStore.loadAll()) !== undefined;
+    if (userHasAlreadyDecided) {
+      return;
+    }
+    proposals[existingIndex] = queuedProposal;
+  }
   app.post('/triage-run', async (context) => {
     const triage = options.triage;
     if (triage === undefined) {
@@ -495,12 +508,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           madeAutomatic,
         });
         messageIdsAwaitingRetriage.delete(message.id);
-        const existingIndex = proposals.findIndex((proposal) => proposal.messageId === message.id);
-        if (existingIndex === -1) {
-          proposals.push({ ...displayedProposal, madeAutomatic });
-        } else if (latestVerdictFor(message.id, verdictStore.loadAll()) === undefined) {
-          proposals[existingIndex] = { ...displayedProposal, madeAutomatic };
-        }
+        queueProposal({ ...displayedProposal, madeAutomatic });
       }
     } finally {
       triageRunInProgress = false;
