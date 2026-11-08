@@ -6,7 +6,7 @@
 - [x] Two system-update proposals from the same account naming different systems are in two digests
 - [x] Two system-update proposals naming the same system from two different accounts are in two digests
 - [x] Two sales proposals from the same account and the same sender address are in one digest
-- [ ] Two sales proposals from the same account and different sender addresses are in two digests
+- [x] Two sales proposals from the same account and different sender addresses are in two digests
 - [ ] Two sales proposals whose From headers carry different display names for the same address are in one digest
 - [ ] Two calendar-drive proposals from the same account and the same sender address are in one digest
 - [ ] Two calendar-drive proposals from the same account and different sender addresses are in two digests
