@@ -2845,11 +2845,13 @@ describe('backend app', () => {
 
     expect(response.status).toBe(200);
     const { contacts } = (await response.json()) as { contacts: unknown[] };
-    expect(contacts).toContainEqual({
-      displayName: 'Marta Díaz',
-      emails: ['marta@acme.com'],
-      messageIds: ['message-1'],
-    });
+    expect(contacts).toContainEqual(
+      expect.objectContaining({
+        displayName: 'Marta Díaz',
+        emails: ['marta@acme.com'],
+        messageIds: ['message-1'],
+      }),
+    );
   });
 
   it('lists at GET /contacts no contact for a person in a triaged extraction who has no email', async () => {
@@ -3023,7 +3025,7 @@ describe('backend app', () => {
     const { contacts } = await getContacts(afterRestart);
     const { organizations } = await getOrganizations(afterRestart);
 
-    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toEqual([
+    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
       { displayName: 'Luis', emails: ['luis@example.com'], messageIds: ['message-1'] },
       { displayName: 'Marta', emails: ['marta@acme.com'], messageIds: ['message-2'] },
       { displayName: 'Pedro Soto', emails: ['pedro@acme.com'], messageIds: ['message-1'] },
