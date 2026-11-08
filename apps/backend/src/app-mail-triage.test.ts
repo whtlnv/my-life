@@ -13,6 +13,7 @@ import { openVerdictStore } from './verdict-store';
 import {
   postJson,
   postTriageRun,
+  getJson,
   temporaryDatabasePath,
   clockAtTenPastThree,
   budgetReviewReport,
@@ -787,6 +788,34 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
         }),
       ]),
     );
+  });
+
+  it('adds a proposal triaged after a digest was listed in GET /triage-queue to that same digest, which keeps its id, when it has the same account, category and key', async () => {
+    const gitHubNotice = (summary: string) => ({
+      action: 'archive',
+      category: 'system-update',
+      summary,
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    const reportFromGitHub = (id: string) =>
+      postJson(app, '/mail-report', {
+        ...budgetReviewReport,
+        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
+      });
+    await reportFromGitHub('message-build');
+    await postTriageRun(app);
+    const { digests: before } = await getJson<{ digests: { id: unknown }[] }>(app, '/triage-queue');
+
+    await reportFromGitHub('message-deploy');
+    await postTriageRun(app);
+
+    const { digests: after } = await getJson<{ digests: { id: unknown; count: number }[] }>(app, '/triage-queue');
+    expect(before[0]?.id).toEqual(expect.any(String));
+    expect(after).toEqual([expect.objectContaining({ id: before[0]?.id, count: 2 })]);
   });
 
   it('lists in GET /triage-queue groups no waiting system-update, sales or calendar-drive proposal, which come back in digests only, while an expense proposal stays in its group', async () => {

@@ -614,6 +614,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
     return digests(waitingOutsideTheActionBlock(verdicts)).map(({ key, proposals: digested, severityCounts }) => ({
+      id: JSON.stringify([digested[0]?.accountEmail, digested[0]?.category, key]),
       accountEmail: digested[0]?.accountEmail,
       category: digested[0]?.category,
       key,
