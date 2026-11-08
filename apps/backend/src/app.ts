@@ -594,18 +594,26 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.save(context.req.param('email'), details);
     return context.body(null, 200);
   });
+  const importedContacts: { displayName: string; emails: string[]; messageIds: string[] }[] = [];
   app.post('/contacts-import', async (context) => {
-    const { contacts } = await context.req.json<{ contacts: { emails: string[]; organization: string }[] }>();
-    for (const { emails, organization } of contacts) {
+    const { contacts } = await context.req.json<{
+      contacts: { name: string; emails: string[]; organization: string }[];
+    }>();
+    for (const { name, emails, organization } of contacts) {
       contactDetailsStore.save(emails[0]!, { organization });
+      importedContacts.push({ displayName: name, emails, messageIds: [] });
     }
     return context.body(null, 200);
   });
   app.get('/contacts', (context) => {
     const contactDetails = contactDetailsStore.loadAll();
     const markedEmails = contactDetailsStore.markedEmails();
+    const messageContacts = contactsByEmail(reportedSenders(), proposals);
+    const unlistedImportedContacts = importedContacts.filter(
+      (imported) => !messageContacts.some((contact) => contact.emails[0] === imported.emails[0]),
+    );
     return context.json({
-      contacts: contactsByEmail(reportedSenders(), proposals).map((contact) => {
+      contacts: [...messageContacts, ...unlistedImportedContacts].map((contact) => {
         const primaryEmail = contact.emails[0]!;
         return {
           ...contact,
