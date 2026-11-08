@@ -52,4 +52,17 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe('Hola Ana,\nNos vemos a las 10:00?\n');
   });
+
+  it('drops the lines of a quoted reply, from its "On … wrote:" line to the ">" lines after it', () => {
+    const payload = {
+      mimeType: 'text/plain',
+      headers: [{ name: 'Content-Type', value: 'text/plain; charset="UTF-8"' }],
+      body: {
+        size: 139,
+        data: 'UGVyZmVjdG8sIGFow60gZXN0YXLDqS4KCk9uIFdlZCwgTm92IDQsIDIwMjYgYXQgOToxMiBBTSBBbmEgTMOzcGV6IDxhbmFAZXhhbXBsZS5jb20-IHdyb3RlOgo-IEhvbGEsCj4gTm9zIHZlbW9zIGVsIG1pw6lyY29sZXMgYSBsYXMgMTA6MDA_Cg',
+      },
+    };
+
+    expect(messageBody(payload)).toBe('Perfecto, ahí estaré.\n');
+  });
 });

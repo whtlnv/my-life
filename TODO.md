@@ -7,7 +7,7 @@
 - [x] The body of a plain-text Gmail message (`format=full`, one `text/plain` part) comes out as its decoded text
 - [x] The body of a message with only an HTML part comes out as its text with every tag removed
 - [x] The body of a `multipart/alternative` message comes out from its `text/plain` part, not its HTML part
-- [ ] Lines of a quoted reply (`On … wrote:` and the `>` lines after it) are dropped from the body
+- [x] Lines of a quoted reply (`On … wrote:` and the `>` lines after it) are dropped from the body
 - [ ] A body without a quoted reply keeps every line, including a line that contains `wrote:` mid-sentence
 - [ ] A signature after a `-- ` delimiter line is dropped from the body
 - [ ] A body under 20 KB is kept whole; a body over 20 KB is cut to 20 KB
