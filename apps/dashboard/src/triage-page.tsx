@@ -59,6 +59,7 @@ interface TriageQueueResponse {
   action: TriageItem[];
   groups: TriageGroup[];
   digests?: Digest[];
+  handledForYou?: unknown[];
   remaining: number;
   paused?: boolean;
   fetchedAt?: string;
@@ -605,7 +606,11 @@ export function TriagePage() {
         <p className="empty">{nothingNeedsInputText}</p>
       </section>
       <section aria-label={sectionTitles.handledForYou} className="section">
-        <h2 className="section-title">{sectionTitles.handledForYou}</h2>
+        <h2 className="section-title">
+          <button type="button" aria-expanded={false}>
+            {sectionTitles.handledForYou} <span className="count">{queue.handledForYou?.length}</span>
+          </button>
+        </h2>
       </section>
       <section className="section">
         <h2 className="section-title">Everything else</h2>

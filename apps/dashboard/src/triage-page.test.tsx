@@ -1302,4 +1302,38 @@ describe('TriagePage', () => {
     );
     expect(within(digestsSection).getByText('Initech pitches')).toBeInTheDocument();
   });
+
+  it('shows Handled for you collapsed with how many items it holds', async () => {
+    const handledItem = (messageId: string, summary: string) => ({
+      messageId,
+      accountEmail: 'francisco@psmutuus.com',
+      action: 'archive',
+      category: 'sales',
+      summary,
+      extract: {},
+      reason: 'A sales pitch',
+      link: `https://mail.google.com/mail/?authuser=francisco%40psmutuus.com#all/${messageId}`,
+    });
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      digests: [],
+      handledForYou: [
+        handledItem('message-1', 'Initech pitches a CRM'),
+        handledItem('message-2', 'Globex pitches a webinar'),
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const handledSection = await screen.findByRole('region', { name: sectionTitles.handledForYou });
+    const toggle = await within(handledSection).findByRole('button', {
+      name: new RegExp(`${sectionTitles.handledForYou}.*2`),
+    });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(within(handledSection).queryByText(/Initech pitches a CRM/)).not.toBeInTheDocument();
+    expect(within(handledSection).queryByText(/Globex pitches a webinar/)).not.toBeInTheDocument();
+  });
 });

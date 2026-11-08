@@ -58,7 +58,7 @@
 - [x] A digest card shows its summary lines and its count by severity
 - [x] A digest card lists its significant items, each linked to its message and naming its account
 - [x] Confirming a digest card from the page posts the confirm for that digest only and removes the card
-- [ ] Handled for you starts collapsed and shows how many items it holds
+- [x] Handled for you starts collapsed and shows how many items it holds
 - [ ] Expanding Handled for you lists each item with its summary, category and account
 - [ ] Clicking undo on a handled item posts the undo for that item and removes it from the strip
 - [ ] The shipped backend (`main.ts`) writes digest summaries through the real Claude adapter on the configured summary model, and the shipped extension (`extension-start.ts`) applies undo commands from its command poll
