@@ -24,6 +24,14 @@ const totalsByCurrency = (entries: StatementEntry[]) => {
   return [...totals];
 };
 
+const StatementRow = ({ label, amount, currency }: { label: string; amount: number; currency: string }) => (
+  <tr>
+    <td>{label}</td>
+    <td>{amount}</td>
+    <td>{currency}</td>
+  </tr>
+);
+
 export const StatementPage = () => {
   const [entries, setEntries] = useState<StatementEntry[]>([]);
 
@@ -41,18 +49,10 @@ export const StatementPage = () => {
       <table>
         <tbody>
           {entries.map((entry, index) => (
-            <tr key={index}>
-              <td>{entry.vendor}</td>
-              <td>{entry.amount}</td>
-              <td>{entry.currency}</td>
-            </tr>
+            <StatementRow key={index} label={entry.vendor} amount={entry.amount} currency={entry.currency} />
           ))}
           {totalsByCurrency(entries).map(([currency, total]) => (
-            <tr key={currency}>
-              <td>Total</td>
-              <td>{total}</td>
-              <td>{currency}</td>
-            </tr>
+            <StatementRow key={currency} label="Total" amount={total} currency={currency} />
           ))}
         </tbody>
       </table>
