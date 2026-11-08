@@ -166,4 +166,26 @@ describe('backend app: GET /needs-input', () => {
       expect.objectContaining({ messageId: 'message-1', category: 'action' }),
     ]);
   });
+
+  it('asks whether a sender with no earlier message is VIP or ordinary when their message asks the user for something', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks the user to review the budget',
+      extract: {},
+      reason: 'Luis asks the user directly',
+      asks: [{ ask: 'Review the budget', due: '2026-11-06' }],
+    });
+    const needsInput = await needsInputAfterTriagingBudgetReview(triage);
+
+    expect(needsInput.questions).toEqual([
+      expect.objectContaining({
+        kind: 'new-sender',
+        senderEmail: 'luis@example.com',
+        messageId: 'message-1',
+        accountEmail: 'ana@example.com',
+        choices: ['vip', 'ordinary'],
+      }),
+    ]);
+  });
 });

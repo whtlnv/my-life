@@ -780,7 +780,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (alreadyAnswered || choices === undefined) return [];
       return [{ kind: 'category', messageId, accountEmail, choices }];
     });
-    return context.json({ questions });
+    const newSenderQuestions = proposals.flatMap(({ messageId, accountEmail, asks }) => {
+      const message = reportedMessages.find((reported) => reported.id === messageId);
+      if (asks === undefined || message === undefined) return [];
+      const senderEmail = contactFromSender(message.from).email;
+      return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
+    });
+    return context.json({ questions: [...questions, ...newSenderQuestions] });
   });
   app.post('/needs-input/answers', async (context) => {
     const { messageId, answer } = await context.req.json<{ messageId: string; answer: string }>();

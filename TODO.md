@@ -55,7 +55,7 @@
 - [x] `GET /needs-input` asks which category is right for a message proposed as `unknown`
 - [x] Answering a category question records the chosen category as the message's verdict, and the question is not asked again
 - [x] An answered category question is fed back as an example for later messages from the same sender
-- [ ] `GET /needs-input` asks "VIP or ordinary?" about a sender with no earlier message whose message asks the user for something
+- [x] `GET /needs-input` asks "VIP or ordinary?" about a sender with no earlier message whose message asks the user for something
 - [ ] `GET /needs-input` asks nothing about a new sender whose message asks the user nothing
 - [ ] `GET /needs-input` asks nothing about a sender with earlier messages whose message asks the user for something
 - [ ] Answering "VIP" to a new-sender question marks the contact VIP, and the question is not asked again
