@@ -113,6 +113,7 @@ interface DemoMessage {
   subject: string;
   minutesAgo: number;
   snippet: string;
+  body?: string;
   listId?: string;
   proposal: unknown;
 }
@@ -125,10 +126,14 @@ const messages: DemoMessage[] = [
     subject: 'Q4 budget review',
     minutesAgo: 35,
     snippet: 'Can you review the Q4 budget before Friday? Finance needs your sign-off on the headcount line.',
+    body:
+      'Can you review the Q4 budget before Friday? Finance needs your sign-off on the headcount line.\n\n' +
+      'The two open roles push us 6% over plan. Sofía (finance) will hold the board deck until you decide whether ' +
+      'we cut one role or move the hire to Q1. I will send her the revised sheet on Thursday morning.\n',
     proposal: {
       action: 'act',
       category: 'action',
-      summary: 'Luis asks you to review the Q4 budget before Friday',
+      summary: 'Luis needs your sign-off on Q4 headcount by Friday: two open roles put the budget 6% over plan',
       extract: {
         asker: 'Luis Pérez',
         ask: 'Review the Q4 budget and sign off the headcount line',
@@ -136,6 +141,15 @@ const messages: DemoMessage[] = [
       },
       reason: 'Addressed to you directly with a dated ask',
       taskDraft: { title: 'Review the Q4 budget' },
+      people: [
+        { name: 'Luis Pérez', email: 'luis@psmutuus.com', role: 'sender' },
+        { name: 'Sofía Méndez', email: 'sofia@psmutuus.com', role: 'mentioned' },
+      ],
+      organization: 'Mutuus',
+      asks: [{ ask: 'Decide: cut one open role or move the hire to Q1', due: todayAt(18).slice(0, 10) }],
+      commitments: [{ who: 'Luis Pérez', commitment: 'Send Sofía the revised sheet on Thursday morning' }],
+      dates: [todayAt(18).slice(0, 10)],
+      threadState: 'Luis and finance wait on your headcount decision; the board deck is on hold until then',
     },
   },
   {
@@ -145,13 +159,23 @@ const messages: DemoMessage[] = [
     subject: 'Signed contract',
     minutesAgo: 140,
     snippet: 'Hola Francisco, ¿me mandas el contrato firmado? Lo necesitamos mañana al mediodía.',
+    body:
+      'Hola Francisco, ¿me mandas el contrato firmado? Lo necesitamos mañana al mediodía.\n\n' +
+      'Legal ya aprobó la cláusula de confidencialidad que cambiamos; solo falta tu firma en la página 4. ' +
+      'En cuanto lo tengamos, liberamos el primer pago.\n',
     proposal: {
       action: 'act',
       category: 'action',
-      summary: 'Marta needs the signed contract by tomorrow noon',
+      summary: 'Marta needs your signature on page 4 by tomorrow noon; the first payment is released once she has it',
       extract: { asker: 'Marta Gil', ask: 'Send the signed contract', due: 'Tomorrow noon' },
       reason: 'A client asks you for a document with a deadline',
       taskDraft: { title: 'Send Marta the signed contract' },
+      people: [{ name: 'Marta Gil', email: 'marta@cliente.mx', role: 'sender' }],
+      organization: 'Cliente MX',
+      asks: [{ ask: 'Sign page 4 of the contract and send it back', due: todayAt(12).slice(0, 10) }],
+      commitments: [{ who: 'Marta Gil', commitment: 'Release the first payment once the contract is signed' }],
+      dates: [todayAt(12).slice(0, 10)],
+      threadState: 'Marta waits on your signature; legal already approved the confidentiality clause',
     },
   },
   {
@@ -161,12 +185,20 @@ const messages: DemoMessage[] = [
     subject: 'Quick question',
     minutesAgo: 400,
     snippet: 'Hey, remember the pallet thing we talked about at the conference? Do you still have the contact?',
+    body:
+      'Hey, remember the pallet thing we talked about at the conference? Do you still have the contact?\n\n' +
+      'We are moving 40 pallets a week out of Monterrey now and the current carrier keeps missing pickups.\n',
     proposal: {
       action: 'keep',
       category: 'unknown',
-      summary: 'A note from an unfamiliar sender about a pallet contact',
+      summary: 'Pedro, met at the conference, wants your carrier contact: he moves 40 pallets a week out of Monterrey',
       extract: {},
       reason: 'Personal mail, no profile context to classify it',
+      people: [{ name: 'Pedro Alcántara', email: 'pedro.alcantara@gmail.com', role: 'sender' }],
+      asks: [{ ask: 'Share the carrier contact from the conference' }],
+      commitments: [],
+      dates: [],
+      threadState: 'Pedro waits on the contact you mentioned at the conference',
     },
   },
   {
@@ -473,7 +505,7 @@ const app = createApp({
   dailySpendCeilingInUsd: 20,
   triage: {
     propose: (message) =>
-      Promise.resolve({ proposal: proposalByMessageId.get(message.id), costInUsd: 0.018, promptVersion: 'triage-v1' }),
+      Promise.resolve({ proposal: proposalByMessageId.get(message.id), costInUsd: 0.018, promptVersion: 'triage-v2' }),
   },
   filter: {
     propose: (candidate) => {
@@ -511,10 +543,20 @@ async function seed(): Promise<void> {
           subject: message.subject,
           date: minutesFromNow(-message.minutesAgo),
           snippet: message.snippet,
+          ...(message.body === undefined ? {} : { body: message.body }),
           ...(message.listId === undefined ? {} : { listId: message.listId }),
         })),
     });
   }
+  // Google Contacts, as the psmutuus profile imports them: Luis is starred (VIP), Marta carries a label.
+  await postJson('/contacts-import', {
+    accountEmail: accounts.psmutuus,
+    contacts: [
+      { name: 'Luis Pérez', emails: ['luis@psmutuus.com'], organization: 'Mutuus', starred: true, lists: [] },
+      { name: 'Marta Gil', emails: ['marta@cliente.mx'], organization: 'Cliente MX', lists: ['Clients'] },
+      { name: 'Sofía Méndez', emails: ['sofia@psmutuus.com'], organization: 'Mutuus', lists: ['Finance'] },
+    ],
+  });
   // Calendar & Drive notices run automatically; everything else still asks.
   await app.request('/categories/calendar-drive/mode', {
     method: 'PUT',

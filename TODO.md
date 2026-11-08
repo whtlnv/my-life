@@ -107,5 +107,5 @@
 
 ### Wiring and acceptance
 
-- [ ] The shipped backend (`main.ts`) and extension (`background.ts`) store bodies, triage under `triage-v2`, link contacts, import Google Contacts daily, backfill bodies and answer `GET /search`
-- [ ] `scripts/demo.sh` seeds bodies, v2 extractions and contacts, and a screenshot of the triage page over it shows the body-driven summaries
+- [x] The shipped backend (`main.ts`) and extension (`background.ts`) store bodies, triage under `triage-v2`, link contacts, import Google Contacts daily, backfill bodies and answer `GET /search`
+- [x] `scripts/demo.sh` seeds bodies, v2 extractions and contacts, and a screenshot of the triage page over it shows the body-driven summaries
