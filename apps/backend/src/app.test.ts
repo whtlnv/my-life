@@ -2294,10 +2294,7 @@ describe('backend app', () => {
       extract: { system: 'GitHub', severity: 'info', significant: false },
       reason: 'A routine notification',
     };
-    const proposalsInOrder = [expenseProposal, systemUpdateProposal];
-    const triage = {
-      propose: () => Promise.resolve({ proposal: proposalsInOrder.shift(), costInUsd: 1, promptVersion: 'triage-v1' }),
-    };
+    const triage = triageAnsweringInOrder([expenseProposal, systemUpdateProposal], 1);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
