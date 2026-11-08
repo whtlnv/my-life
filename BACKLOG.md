@@ -22,6 +22,12 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   it as set by the user and a later import (a contact who changed jobs) never updates it. Fix by storing imported and
   user-set fields apart; the user-set one wins.
 
+- **[apps/backend/src/app.ts:243] _Handled for you_ lists automatic `keep` proposals, where nothing was done** (added: 2026-11-08)
+  `describeHandledForYou` keeps every `madeAutomatic` proposal made today, so an automatic category's `keep` shows in the
+  strip and its Undo queues an `undo-automatic` command for a message that was never labeled or archived. List only the
+  proposals that produced an archive command or a task. A digest's listed message ids are also overwritten by every
+  `GET /triage-queue`, so a second open tab widens what the first tab's confirm reaches.
+
 ## Out of Scope
 
 - **[apps/dashboard/src/triage-page.tsx:567] The Handled for you copy spells the backend's automatic label** (added: 2026-11-08)
