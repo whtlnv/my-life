@@ -60,19 +60,19 @@ function addBodyTextColumnIfMissing(database: ReturnType<typeof openDatabase>): 
 export function openReportedMessageStore(databasePath: string) {
   const database = openDatabase(databasePath);
   createTables(database);
-  const saveRecipients = database.prepare(
+  const insertRecipients = database.prepare(
     'INSERT OR IGNORE INTO reported_message_recipients (message_id, to_header, cc_header) VALUES (?, ?, ?)',
   );
-  const saveMessage = database.prepare(
+  const insertMessage = database.prepare(
     'INSERT OR IGNORE INTO reported_messages (message_id, account_email) VALUES (?, ?)',
   );
-  const saveSender = database.prepare(
+  const insertSender = database.prepare(
     'INSERT OR IGNORE INTO reported_message_senders (message_id, from_header, list_id) VALUES (?, ?, ?)',
   );
-  const saveSubject = database.prepare(
+  const insertSubject = database.prepare(
     'INSERT OR IGNORE INTO reported_message_subjects (message_id, subject) VALUES (?, ?)',
   );
-  const saveDate = database.prepare(
+  const insertDate = database.prepare(
     'INSERT OR IGNORE INTO reported_message_dates (message_id, date_header) VALUES (?, ?)',
   );
   const loadAllMessages = database.prepare<
@@ -81,7 +81,7 @@ export function openReportedMessageStore(databasePath: string) {
   >(
     'SELECT messages.message_id AS messageId, messages.account_email AS accountEmail, senders.from_header AS "from", senders.list_id AS listId FROM reported_messages AS messages JOIN reported_message_senders AS senders ON senders.message_id = messages.message_id',
   );
-  const saveBody = database.prepare(
+  const insertBody = database.prepare(
     'INSERT OR IGNORE INTO reported_message_bodies (message_id, thread_id, snippet, body_text) VALUES (?, ?, ?, ?)',
   );
   // Every message the store has seen, with every header the triage prompt needs, in report order. A message
@@ -120,12 +120,12 @@ export function openReportedMessageStore(databasePath: string) {
   };
   return {
     save(messageId: string, accountEmail: string, message: ReportedMessageHeaders): void {
-      saveMessage.run(messageId, accountEmail);
-      saveRecipients.run(messageId, message.to, message.cc ?? null);
-      saveSender.run(messageId, message.from, message.listId ?? null);
-      saveSubject.run(messageId, message.subject);
-      saveDate.run(messageId, message.date);
-      saveBody.run(messageId, message.threadId, message.snippet, message.body ?? null);
+      insertMessage.run(messageId, accountEmail);
+      insertRecipients.run(messageId, message.to, message.cc ?? null);
+      insertSender.run(messageId, message.from, message.listId ?? null);
+      insertSubject.run(messageId, message.subject);
+      insertDate.run(messageId, message.date);
+      insertBody.run(messageId, message.threadId, message.snippet, message.body ?? null);
     },
     saveBody(messageId: string, body: string): void {
       updateBody.run(body, messageId);
