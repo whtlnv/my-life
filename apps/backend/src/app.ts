@@ -296,6 +296,10 @@ interface ListedContact {
 
 type ImportedContact = ContactsImport['contacts'][number];
 
+function newestFirst(first: { date: string }, second: { date: string }): number {
+  return new Date(second.date).getTime() - new Date(first.date).getTime();
+}
+
 function sharePrimaryEmail(left: { emails: string[] }, right: { emails: string[] }): boolean {
   return left.emails[0] === right.emails[0];
 }
@@ -961,7 +965,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       new Date(other.date).getTime() > new Date(message.date).getTime();
     const messages = reportedMessages
       .filter((message) => involvesContact(message) || isUserReplyInContactThread(message))
-      .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
+      .toSorted(newestFirst)
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
         const proposal = proposals.find((candidate) => candidate.messageId === message.id);
@@ -1053,7 +1057,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ?.messageIds ?? [];
     const messages = reportedMessages
       .filter((message) => messageIds.includes(message.id))
-      .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
+      .toSorted(newestFirst)
       .map((message) => ({
         id: message.id,
         subject: message.subject,
