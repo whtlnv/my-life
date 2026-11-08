@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 00:46 · `apps/backend/src/app.test.ts::lists at GET /organizations a message once, under the organization its latest proposal names, when the store holds two proposals for it`
+- Behavior: a message proposed twice lists once at `GET /organizations`, under the organization its latest proposal names
+- Predicted: pass — startup already collapses the stored proposals to the latest row per message before the route sees them
+- Actual: pass
+- Type: passed unexpectedly
+- Resolution: the behavior already exists (the startup dedupe added for the triage queue covers the organizations route too) and the backend has no in-process path that proposes a message twice before the retriage items, so the test could not be rewritten to fail without inventing retriage; kept as a pin of the latest-proposal-wins keystone for `/organizations`.
+
 ## 2026-11-08 00:31 · `apps/backend/src/app.test.ts::lists at GET /contacts two contacts for two messages from different emails`
 - Behavior: two messages from different emails link to two contacts
 - Predicted: AssertionError — one contact received instead of two, the sender map collapsing senders

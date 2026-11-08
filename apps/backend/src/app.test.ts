@@ -2900,4 +2900,37 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1', 'message-2'] }] });
   });
+
+  it('lists at GET /organizations a message once, under the organization its latest proposal names, when the store holds two proposals for it', async () => {
+    const databasePath = temporaryDatabasePath();
+    const before = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(before, '/mail-report', budgetReviewReport);
+    const store = openProposalStore(databasePath);
+    const proposalNaming = (organization: string) => ({
+      action: 'keep',
+      category: 'unknown',
+      summary: 'A budget review',
+      extract: {},
+      reason: 'Proposed twice',
+      organization,
+    });
+    store.save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:00:00.000Z',
+      promptVersion: 'triage-v2',
+      proposal: proposalNaming('Acme'),
+    });
+    store.save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:01:00.000Z',
+      promptVersion: 'triage-v2',
+      proposal: proposalNaming('Mutuus'),
+    });
+
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    const response = await afterRestart.request('/organizations');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1'] }] });
+  });
 });
