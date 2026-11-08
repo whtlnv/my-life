@@ -22,7 +22,7 @@
   - predicted-contradiction: `apps/integration/src/gmail-fake-server.test.ts::polling the calendar-notification scenario shows the notification with its item in the calendar-drive group of GET /triage-queue` — asserts: the calendar-drive proposal is listed as one item in the `calendar-drive` group — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
   - predicted-contradiction: `apps/integration/src/gmail-fake-server.test.ts::polling the system-update-burst scenario groups its notifications by sending system in the system-update group of GET /triage-queue` — asserts: system-update proposals are listed per message under `systems` sub-groups of the `system-update` group — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
 - [x] A proposal that arrives for an open digest's account, category and key joins that digest
-- [ ] Confirming a digest queues an archive command for each of its items whose own proposal is `archive`
+- [x] Confirming a digest queues an archive command for each of its items whose own proposal is `archive`
 - [ ] Confirming a digest queues no archive command for its items whose own proposal is `keep`
 - [ ] Confirming a digest leaves another waiting digest of the same category unconfirmed
 - [ ] Confirming a digest removes its items from `GET /triage-queue`

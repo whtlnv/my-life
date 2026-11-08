@@ -818,6 +818,38 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(after).toEqual([expect.objectContaining({ id: before[0]?.id, count: 2 })]);
   });
 
+  it('lists at GET /commands an archive command for each item of a digest confirmed at POST /digests/:id/confirmation whose own proposal is archive', async () => {
+    const gitHubNotice = (summary: string) => ({
+      action: 'archive',
+      category: 'system-update',
+      summary,
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder([gitHubNotice('GitHub build passed'), gitHubNotice('GitHub deploy done')], 1);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: ['message-build', 'message-deploy'].map((id) => ({
+        ...budgetReview,
+        id,
+        threadId: id,
+        from: 'GitHub <noreply@github.com>',
+      })),
+    });
+    await postTriageRun(app);
+    const { digests } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+
+    await app.request(`/digests/${encodeURIComponent(digests[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+
+    const { commands } = await getJson<{ commands: { messageId: string }[] }>(
+      app,
+      '/commands?accountEmail=ana%40example.com',
+    );
+    expect(commands.map(({ messageId }) => messageId).sort()).toEqual(['message-build', 'message-deploy']);
+  });
+
   it('lists in GET /triage-queue groups no waiting system-update, sales or calendar-drive proposal, which come back in digests only, while an expense proposal stays in its group', async () => {
     const proposalsInOrder = [
       { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },

@@ -625,6 +625,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       };
     });
   }
+  app.post('/digests/:id/confirmation', (context) => {
+    const digestId = context.req.param('id');
+    digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))
+      .filter(({ key, proposals: digested }) => {
+        const { accountEmail, category } = digested[0] ?? {};
+        return JSON.stringify([accountEmail, category, key]) === digestId;
+      })
+      .flatMap(({ proposals: digested }) => digested)
+      .forEach(({ messageId }) => {
+        verdictStore.save({ messageId, decision: 'confirmed', decidedAt: clock.now().toISOString() });
+      });
+    return context.body(null, 200);
+  });
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
     return context.json({
