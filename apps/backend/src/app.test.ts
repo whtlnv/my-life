@@ -2824,39 +2824,38 @@ describe('backend app', () => {
     ]);
   });
 
-  it('lists at GET /contacts, once a message is reported at POST /mail-report, its sender as a contact with the display name and email from its From header', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    await postJson(app, '/mail-report', budgetReviewReport);
+  it.each([
+    {
+      rule: 'a display name and an address',
+      from: 'Luis <luis@example.com>',
+      displayName: 'Luis',
+      email: 'luis@example.com',
+    },
+    {
+      rule: 'a bare address, named by that address',
+      from: 'ana@acme.com',
+      displayName: 'ana@acme.com',
+      email: 'ana@acme.com',
+    },
+    {
+      rule: 'a quoted display name, named without the quotes',
+      from: '"Ana Ruiz" <ana@acme.com>',
+      displayName: 'Ana Ruiz',
+      email: 'ana@acme.com',
+    },
+  ])(
+    'lists at GET /contacts, once a message is reported at POST /mail-report, its sender as a contact named from a From header with $rule',
+    async ({ from, displayName, email }) => {
+      const app = createApp({ allowedEmails: ['ana@example.com'] });
+      const message = { ...budgetReviewReport.messages[0], from };
+      await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [message] });
 
-    const response = await app.request('/contacts');
+      const response = await app.request('/contacts');
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
-  });
-
-  it('lists at GET /contacts a sender whose From header is a bare address as a contact named by that address', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const bareAddressMessage = { ...budgetReviewReport.messages[0], from: 'ana@acme.com' };
-    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [bareAddressMessage] });
-
-    const response = await app.request('/contacts');
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      contacts: [{ displayName: 'ana@acme.com', emails: ['ana@acme.com'] }],
-    });
-  });
-
-  it('lists at GET /contacts a sender whose display name is quoted in its From header as a contact named without the quotes', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const quotedNameMessage = { ...budgetReviewReport.messages[0], from: '"Ana Ruiz" <ana@acme.com>' };
-    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [quotedNameMessage] });
-
-    const response = await app.request('/contacts');
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ contacts: [{ displayName: 'Ana Ruiz', emails: ['ana@acme.com'] }] });
-  });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ contacts: [{ displayName, emails: [email] }] });
+    },
+  );
 
   it('lists at GET /contacts one contact for two messages from the same email reported on different accounts', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com', 'bob@example.com'] });
