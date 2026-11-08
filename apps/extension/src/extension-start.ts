@@ -54,10 +54,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     await carryOutArchiveCommands(commandOptions);
     await carryOutFilterCommands(commandOptions);
   };
-  const pollGmailAndLogFailure = () =>
-    pollGmail().catch((error: unknown) => {
-      console.error('Gmail poll failed', error);
-    });
+  const pollGmailAndLogFailure = logFailure('Gmail poll failed', pollGmail);
   const importContacts = async () => {
     await importContactsOnce({
       fetch: options.fetch,
@@ -66,14 +63,18 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       backendUrl: options.backendUrl,
     });
   };
-  const importContactsAndLogFailure = () =>
-    importContacts().catch((error: unknown) => {
-      console.error('Contacts import failed', error);
-    });
+  const importContactsAndLogFailure = logFailure('Contacts import failed', importContacts);
   await pollCalendar();
   await pollGmailAndLogFailure();
   await importContactsAndLogFailure();
   options.every?.(gmailPollIntervalMilliseconds, pollGmailAndLogFailure);
   options.every?.(contactsImportIntervalMilliseconds, importContactsAndLogFailure);
   options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
+}
+
+function logFailure(message: string, task: () => Promise<void>): () => Promise<void> {
+  return () =>
+    task().catch((error: unknown) => {
+      console.error(message, error);
+    });
 }
