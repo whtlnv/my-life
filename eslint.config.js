@@ -53,6 +53,11 @@ export default tseslint.config(
           selector: "CallExpression[callee.object.name='Math'][callee.property.name='random']",
           message: 'Inject a random source; the domain is deterministic.',
         },
+        {
+          selector: "Identifier[name='Buffer']",
+          message:
+            'The extension imports the domain into a service worker, which has no Buffer; use atob, TextEncoder and TextDecoder.',
+        },
       ],
       'no-restricted-imports': [
         'error',

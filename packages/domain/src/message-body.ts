@@ -12,16 +12,24 @@ export function messageBody(payload: MessagePart): string {
   if (bodyPart) {
     return messageBody(bodyPart);
   }
-  const decoded = Buffer.from(payload.body?.data ?? '', 'base64url').toString('utf8');
+  const decoded = decodeBase64Url(payload.body?.data ?? '');
   const text = payload.mimeType === 'text/html' ? htmlText(decoded) : decoded;
   return cappedToMaximumBodyBytes(withoutSignature(withoutQuotedReply(text)));
 }
+
+// Gmail encodes part data as base64url; atob and TextDecoder exist in both Node and a Chrome service worker, Buffer only in Node.
+function decodeBase64Url(data: string): string {
+  const binary = atob(data.replace(/-/g, '+').replace(/_/g, '/'));
+  return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
+}
+
+const utf8Encoder = new TextEncoder();
 
 function cappedToMaximumBodyBytes(text: string): string {
   let byteLength = 0;
   let capped = '';
   for (const character of text) {
-    byteLength += Buffer.byteLength(character, 'utf8');
+    byteLength += utf8Encoder.encode(character).length;
     if (byteLength > maximumBodyBytes) {
       break;
     }
