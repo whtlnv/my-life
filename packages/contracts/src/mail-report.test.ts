@@ -36,6 +36,12 @@ describe('mailReport', () => {
     expect(mailReport.parse(report)).toEqual(report);
   });
 
+  it('accepts a report whose message carries a body', () => {
+    const report = reportWith([{ ...message, body: 'Hi Francisco,\n\nthe numbers are attached.' }]);
+
+    expect(mailReport.parse(report)).toEqual(report);
+  });
+
   it('rejects a report whose message has no id', () => {
     const report = reportWith([{ ...message, id: undefined }]);
 
