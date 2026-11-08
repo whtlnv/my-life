@@ -34,7 +34,7 @@
 - [x] A `propose_triage` answer without the v2 fields is still accepted with the v1 category extract (already pinned by the v1 cases in `triage-proposal.test.ts`)
 - [x] Triage proposals are made under prompt version `triage-v2`, which asks for the v2 fields
 - [x] A message's extraction is stored under its prompt version and survives a backend restart
-- [ ] A second extraction of the same message under another prompt version is stored beside the first, not over it
+- [x] A second extraction of the same message under another prompt version is stored beside the first, not over it
 
 ### Contacts and organizations
 

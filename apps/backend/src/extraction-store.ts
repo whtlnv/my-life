@@ -7,6 +7,22 @@ export interface StoredExtraction {
   extraction: unknown;
 }
 
+interface ExtractionRow {
+  message_id: string;
+  prompt_version: string;
+  extracted_at: string;
+  extraction: string;
+}
+
+function toStoredExtraction(row: ExtractionRow): StoredExtraction {
+  return {
+    messageId: row.message_id,
+    promptVersion: row.prompt_version,
+    extractedAt: row.extracted_at,
+    extraction: JSON.parse(row.extraction) as unknown,
+  };
+}
+
 export function openExtractionStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec(
@@ -15,21 +31,21 @@ export function openExtractionStore(databasePath: string) {
   const saveExtraction = database.prepare(
     'INSERT INTO extractions (message_id, prompt_version, extracted_at, extraction) VALUES (?, ?, ?, ?)',
   );
-  const loadExtractions = database.prepare<
-    [],
-    { message_id: string; prompt_version: string; extracted_at: string; extraction: string }
-  >('SELECT message_id, prompt_version, extracted_at, extraction FROM extractions ORDER BY rowid');
+  const loadExtractions = database.prepare<[], ExtractionRow>(
+    'SELECT message_id, prompt_version, extracted_at, extraction FROM extractions ORDER BY rowid',
+  );
+  const loadExtractionsForMessage = database.prepare<[string], ExtractionRow>(
+    'SELECT message_id, prompt_version, extracted_at, extraction FROM extractions WHERE message_id = ? ORDER BY rowid',
+  );
   return {
     save(stored: StoredExtraction): void {
       saveExtraction.run(stored.messageId, stored.promptVersion, stored.extractedAt, JSON.stringify(stored.extraction));
     },
     loadAll(): StoredExtraction[] {
-      return loadExtractions.all().map((row) => ({
-        messageId: row.message_id,
-        promptVersion: row.prompt_version,
-        extractedAt: row.extracted_at,
-        extraction: JSON.parse(row.extraction) as unknown,
-      }));
+      return loadExtractions.all().map(toStoredExtraction);
+    },
+    loadForMessage(messageId: string): StoredExtraction[] {
+      return loadExtractionsForMessage.all(messageId).map(toStoredExtraction);
     },
   };
 }

@@ -33,4 +33,24 @@ describe('extraction store', () => {
 
     expect(reopened.loadAll()).toEqual([stored]);
   });
+
+  it('reads back both extractions of a message, each under its own prompt version, after a second one is saved under another version', () => {
+    const store = openExtractionStore(temporaryDatabasePath());
+    const first = {
+      messageId: 'message-1',
+      promptVersion: 'triage-v2',
+      extractedAt: '2026-11-08T15:10:00.000Z',
+      extraction: { threadState: 'Luis is waiting for Ana to review the budget' },
+    };
+    const second = {
+      messageId: 'message-1',
+      promptVersion: 'triage-v3',
+      extractedAt: '2026-11-09T09:00:00.000Z',
+      extraction: { threadState: 'Ana reviewed the budget; Luis owes the final sheet' },
+    };
+    store.save(first);
+    store.save(second);
+
+    expect(store.loadForMessage('message-1')).toEqual([first, second]);
+  });
 });
