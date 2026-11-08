@@ -48,6 +48,11 @@ import { openSpendStore } from './spend-store';
 import { defaultGmailPollingIntervalInMilliseconds } from './startup-settings';
 import { openVerdictStore, type StoredVerdict } from './verdict-store';
 
+interface BodiesReport {
+  accountEmail: string;
+  bodies: { messageId: string; body: string }[];
+}
+
 interface ReportedMessage extends ReportedMessageHeaders {
   id: string;
 }
@@ -439,7 +444,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ messageIds });
   });
   app.post('/bodies-report', async (context) => {
-    const report = await context.req.json<{ accountEmail: string; bodies: { messageId: string; body: string }[] }>();
+    const report = await context.req.json<BodiesReport>();
     report.bodies.forEach(({ messageId, body }) => {
       reportedMessageStore.saveBody(messageId, body);
       const reportedMessage = reportedMessages.find((message) => message.id === messageId);
