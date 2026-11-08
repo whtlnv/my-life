@@ -235,24 +235,65 @@ describe('Claude triage', () => {
     expect(firstUserContent(sentRequests)).toMatchObject({ examples });
   });
 
-  it('turns a valid tool-use answer into a proposal', async () => {
-    const answeredProposal = {
-      action: 'act',
-      category: 'action',
-      summary: 'Bruno asks Ana to approve the November quote.',
-      extract: { asker: 'Bruno', ask: 'Approve the November quote' },
-      reason: 'A supplier asks Ana directly for an approval.',
-      taskDraft: { title: 'Approve the November quote from Bruno' },
-    };
+  const approvalProposal = {
+    action: 'act',
+    category: 'action',
+    summary: 'Bruno asks Ana to approve the November quote.',
+    extract: { asker: 'Bruno', ask: 'Approve the November quote' },
+    reason: 'A supplier asks Ana directly for an approval.',
+    taskDraft: { title: 'Approve the November quote from Bruno' },
+  };
+  const inputFailingTheContract = {
+    action: 'delete',
+    category: 'action',
+    summary: 'Bruno asks Ana to approve the November quote.',
+    extract: { asker: 'Bruno', ask: 'Approve the November quote' },
+    reason: 'A supplier asks Ana directly for an approval.',
+  };
+  const toolUse = (input: unknown) => [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input }];
+
+  it.each([
+    {
+      rule: 'turns a valid tool-use answer into a proposal',
+      content: toolUse(approvalProposal),
+      usage: { input_tokens: 0, output_tokens: 0 },
+      proposal: approvalProposal,
+      expected: {},
+    },
+    {
+      rule: 'turns a tool-use answer that fails the shared contract into no proposal and records the failure',
+      content: toolUse(inputFailingTheContract),
+      usage: { input_tokens: 0, output_tokens: 0 },
+      proposal: undefined,
+      expected: { failure: { input: inputFailingTheContract } },
+    },
+    {
+      rule: 'computes the cost of a call from the tokens the answer reports',
+      content: [],
+      usage: { input_tokens: 1_000_000, output_tokens: 200_000 },
+      proposal: undefined,
+      expected: { costInUsd: 10 },
+    },
+    {
+      rule: 'reports the cost of a valid tool-use answer from its input and output tokens at their separate prices',
+      content: toolUse(approvalProposal),
+      usage: { input_tokens: 3_000_000, output_tokens: 100_000 },
+      proposal: approvalProposal,
+      expected: { costInUsd: 17.5 },
+    },
+    {
+      rule: 'turns a tool-use answer that fails the shared contract into no proposal, records the failure and reports its cost',
+      content: toolUse(inputFailingTheContract),
+      usage: { input_tokens: 1_000_000, output_tokens: 40_000 },
+      proposal: undefined,
+      expected: { failure: { input: inputFailingTheContract }, costInUsd: 6 },
+    },
+  ])('$rule', async ({ content, usage, proposal, expected }) => {
     const triage = createClaudeTriage({
-      pricing: defaultPricing,
-      promptPath: promptFile(),
       model: 'claude-opus-5-5',
-      createMessage: () =>
-        Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        }),
+      promptPath: promptFile(),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: () => Promise.resolve({ content, usage }),
     });
 
     const result = await triage.propose({
@@ -261,116 +302,8 @@ describe('Claude triage', () => {
       date: '2026-11-07T10:00:00Z',
     });
 
-    expect(result).toMatchObject({ proposal: answeredProposal });
-  });
-
-  it('turns a tool-use answer that fails the shared contract into no proposal and records the failure', async () => {
-    const answeredInput = {
-      action: 'delete',
-      category: 'action',
-      summary: 'Bruno asks Ana to approve the November quote.',
-      extract: { asker: 'Bruno', ask: 'Approve the November quote' },
-      reason: 'A supplier asks Ana directly for an approval.',
-    };
-    const triage = createClaudeTriage({
-      pricing: defaultPricing,
-      promptPath: promptFile(),
-      model: 'claude-opus-5-5',
-      createMessage: () =>
-        Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredInput }],
-          usage: { input_tokens: 0, output_tokens: 0 },
-        }),
-    });
-
-    const result = await triage.propose({
-      id: 'message-5',
-      accountEmail: 'ana@acme.com',
-      date: '2026-11-07T10:00:00Z',
-    });
-
-    expect(result).toMatchObject({ failure: { input: answeredInput } });
-  });
-
-  it('computes the cost of a call from the tokens the answer reports', async () => {
-    const triage = createClaudeTriage({
-      promptPath: promptFile(),
-      model: 'claude-opus-5-5',
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: () =>
-        Promise.resolve({
-          content: [],
-          usage: { input_tokens: 1_000_000, output_tokens: 200_000 },
-        }),
-    });
-
-    const result = await triage.propose({
-      id: 'message-7',
-      accountEmail: 'ana@acme.com',
-      date: '2026-11-07T10:00:00Z',
-    });
-
-    expect(result).toMatchObject({ costInUsd: 10 });
-  });
-
-  it('reports the cost of a valid tool-use answer to a prompted request from its input and output tokens at their separate prices', async () => {
-    const promptPath = promptFile('Classify this email and answer by calling propose_triage.');
-    const answeredProposal = {
-      action: 'act',
-      category: 'action',
-      summary: 'Bruno asks Ana to approve the November quote.',
-      extract: { asker: 'Bruno', ask: 'Approve the November quote' },
-      reason: 'A supplier asks Ana directly for an approval.',
-      taskDraft: { title: 'Approve the November quote from Bruno' },
-    };
-    const triage = createClaudeTriage({
-      model: 'claude-opus-5-5',
-      promptPath,
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: () =>
-        Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredProposal }],
-          usage: { input_tokens: 3_000_000, output_tokens: 100_000 },
-        }),
-    });
-
-    const result = await triage.propose({
-      id: 'message-8',
-      accountEmail: 'ana@acme.com',
-      date: '2026-11-07T10:00:00Z',
-    });
-
-    expect(result).toMatchObject({ proposal: answeredProposal, costInUsd: 17.5 });
-  });
-
-  it('turns a tool-use answer to a prompted request that fails the shared contract into no proposal, records the failure and reports its cost', async () => {
-    const promptPath = promptFile('Classify this email and answer by calling propose_triage.');
-    const answeredInput = {
-      action: 'delete',
-      category: 'action',
-      summary: 'Bruno asks Ana to approve the November quote.',
-      extract: { asker: 'Bruno', ask: 'Approve the November quote' },
-      reason: 'A supplier asks Ana directly for an approval.',
-    };
-    const triage = createClaudeTriage({
-      model: 'claude-opus-5-5',
-      promptPath,
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
-      createMessage: () =>
-        Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'propose_triage', input: answeredInput }],
-          usage: { input_tokens: 1_000_000, output_tokens: 40_000 },
-        }),
-    });
-
-    const result = await triage.propose({
-      id: 'message-9',
-      accountEmail: 'ana@acme.com',
-      date: '2026-11-07T10:00:00Z',
-    });
-
-    expect(result.proposal).toBeUndefined();
-    expect(result).toMatchObject({ failure: { input: answeredInput }, costInUsd: 6 });
+    expect(result.proposal).toEqual(proposal);
+    expect(result).toMatchObject(expected);
   });
 
   it('declares exactly one strict propose_triage tool built from the shared contract, leaves tool choice on auto and keeps the call instruction in the prompt file', async () => {
