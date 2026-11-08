@@ -579,13 +579,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         queueProposal({ ...displayedProposal, madeAutomatic });
         proposedInThisRun = true;
       }
-      if (!proposedInThisRun) {
-        return context.body(null, 200);
+      if (proposedInThisRun) {
+        await rewriteDigestSummaryLines();
       }
-      const items = waitingOutsideTheActionBlock(verdictStore.loadAll()).map(({ messageId }) => ({
-        summary: latestProposalFor(proposals, messageId)?.summary ?? '',
-      }));
-      summaryLines = (await options.summary?.summarize({ items }))?.lines;
     } finally {
       triageRunInProgress = false;
     }
@@ -613,6 +609,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
+  async function rewriteDigestSummaryLines() {
+    const items = waitingOutsideTheActionBlock(verdictStore.loadAll()).map(({ messageId }) => ({
+      summary: latestProposalFor(proposals, messageId)?.summary ?? '',
+    }));
+    summaryLines = (await options.summary?.summarize({ items }))?.lines;
+  }
   // The waiting proposals outside the action block, with the sender each digest groups by.
   function waitingOutsideTheActionBlock(verdicts: StoredVerdict[]) {
     return triageQueue(awaitingTheUser(proposals), verdicts)
