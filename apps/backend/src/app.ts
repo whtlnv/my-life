@@ -583,11 +583,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/contacts', (context) => {
     const contactDetails = contactDetailsStore.loadAll();
     return context.json({
-      contacts: contactsByEmail(reportedSenders(), proposals).map((contact) => ({
-        ...contact,
-        marks: markedEmails.has(contact.emails[0]!) ? ['vip'] : [],
-        ...contactDetails[contact.emails[0]!],
-      })),
+      contacts: contactsByEmail(reportedSenders(), proposals).map((contact) => {
+        const primaryEmail = contact.emails[0]!;
+        return {
+          ...contact,
+          marks: markedEmails.has(primaryEmail) ? ['vip'] : [],
+          ...contactDetails[primaryEmail],
+        };
+      }),
     });
   });
   app.get('/organizations', (context) => {
