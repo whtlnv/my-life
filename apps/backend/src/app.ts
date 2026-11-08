@@ -224,9 +224,16 @@ function awaitingTheUser(proposals: Proposal[]): Proposal[] {
   return proposals.filter((proposal) => proposal.madeAutomatic !== true);
 }
 
+function withLink(proposal: Proposal) {
+  return { ...proposal, link: gmailMessageLink(proposal) };
+}
+
+function describeHandledForYou(proposals: Proposal[]) {
+  return proposals.filter((proposal) => proposal.madeAutomatic === true).map(withLink);
+}
+
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
   const { groups } = triageQueue(awaitingTheUser(proposals), verdicts);
-  const withLink = (proposal: Proposal) => ({ ...proposal, link: gmailMessageLink(proposal) });
   const describeGroup = ({ category, proposals: grouped }: (typeof groups)[number]) => ({
     category,
     count: grouped.length,
@@ -690,9 +697,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: describeDigests(verdicts),
-      handledForYou: proposals
-        .filter((proposal) => proposal.madeAutomatic === true)
-        .map((proposal) => ({ ...proposal, link: gmailMessageLink(proposal) })),
+      handledForYou: describeHandledForYou(proposals),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
       fetchedAt: clock.now().toISOString(),
