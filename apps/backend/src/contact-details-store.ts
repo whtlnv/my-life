@@ -18,9 +18,11 @@ export function openContactDetailsStore(databasePath: string) {
       insertDetails.run(email, JSON.stringify(details));
     },
     loadAll(): Record<string, ContactDetails> {
-      return Object.fromEntries(
-        loadDetails.all().map((row) => [row.email, JSON.parse(row.details) as ContactDetails]),
-      );
+      const merged: Record<string, ContactDetails> = {};
+      for (const row of loadDetails.all()) {
+        merged[row.email] = { ...merged[row.email], ...(JSON.parse(row.details) as ContactDetails) };
+      }
+      return merged;
     },
     saveMark(email: string, mark: string): void {
       insertMark.run(email, mark);

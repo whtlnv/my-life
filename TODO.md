@@ -58,7 +58,7 @@
 - [x] A contact's lists and note, set in the app, read back as set and survive a restart
 - [x] A contact's `vip` mark survives a backend restart
 - [x] Removing a contact's `vip` mark leaves it unmarked, and a mark other than `vip` is answered 400
-- [ ] Setting a contact's note after its lists keeps its lists, and setting its lists after its note keeps its note
+- [x] Setting a contact's note after its lists keeps its lists, and setting its lists after its note keeps its note
 - [ ] A contact update whose note is not text or whose lists are not a list of text is answered 400 and changes nothing
 
 ### Google Contacts import

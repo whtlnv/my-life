@@ -3119,4 +3119,20 @@ describe('backend app', () => {
     expect(marked.status).toBe(400);
     expect(unmarked.status).toBe(400);
   });
+
+  it('lists at GET /contacts, for a contact whose note was set through PATCH /contacts/:email after its lists, both the lists and the note; and for one whose lists were set after its note, both the note and the lists', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+
+    await setContactDetails(app, 'luis@example.com', { lists: ['board', 'investors'] });
+    await setContactDetails(app, 'luis@example.com', { note: 'Prefers calls' });
+    await setContactDetails(app, 'marta@acme.com', { note: 'Answers fast' });
+    await setContactDetails(app, 'marta@acme.com', { lists: ['suppliers'] });
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; lists?: string[]; note?: string }[] };
+
+    expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
+      { emails: ['luis@example.com'], lists: ['board', 'investors'], note: 'Prefers calls' },
+      { emails: ['marta@acme.com'], lists: ['suppliers'], note: 'Answers fast' },
+    ]);
+  });
 });
