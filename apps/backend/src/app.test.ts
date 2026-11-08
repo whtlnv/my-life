@@ -265,62 +265,54 @@ describe('backend app', () => {
     expect(response.status).toBe(403);
   });
 
-  it('answers success to a calendar snapshot from an allow-listed account and shows its events in GET /now', async () => {
-    const app = createApp({
-      allowedEmails: ['ana@example.com'],
-      clock: clockAtTenPastThree,
-    });
-
-    const posted = await postCalendarSnapshot(app, 'ana@example.com', [weeklySync]);
-    const now = await app.request('/now');
-
-    expect(posted.status).toBe(200);
-    expect(now.status).toBe(200);
-    expect(await now.json()).toMatchObject({
+  it.each([
+    {
+      rule: 'answers success to a calendar snapshot from an allow-listed account and shows its events',
+      accountEmail: 'ana@example.com',
+      event: weeklySync,
+      status: 200,
       current: [{ ...weeklySync, accounts: ['ana@example.com'] }],
-    });
-  });
-
-  it('refuses a calendar snapshot from an account outside the allow-list and shows none of its events in GET /now', async () => {
+    },
+    {
+      rule: 'refuses a calendar snapshot from an account outside the allow-list and shows none of its events',
+      accountEmail: 'stranger@example.com',
+      event: {
+        id: 'event-9',
+        iCalUID: 'event-9@google.com',
+        title: 'Intruder meeting',
+        start: '2026-11-02T15:00:00.000Z',
+        end: '2026-11-02T15:30:00.000Z',
+        meetLink: null,
+        attendees: [],
+      },
+      status: 403,
+      current: [],
+    },
+    {
+      rule: 'refuses a calendar snapshot that fails the shared contract with a client error and shows none of its events',
+      accountEmail: 'ana@example.com',
+      event: {
+        id: 'event-3',
+        iCalUID: 'event-3@google.com',
+        title: 'Meeting without start',
+        end: '2026-11-02T15:30:00.000Z',
+        attendees: [],
+      },
+      status: 400,
+      current: [],
+    },
+  ])('$rule in GET /now', async ({ accountEmail, event, status, current }) => {
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
     });
-    const intruderMeeting = {
-      id: 'event-9',
-      iCalUID: 'event-9@google.com',
-      title: 'Intruder meeting',
-      start: '2026-11-02T15:00:00.000Z',
-      end: '2026-11-02T15:30:00.000Z',
-      meetLink: null,
-      attendees: [],
-    };
 
-    const posted = await postCalendarSnapshot(app, 'stranger@example.com', [intruderMeeting]);
+    const posted = await postCalendarSnapshot(app, accountEmail, [event]);
     const now = await app.request('/now');
 
-    expect(posted.status).toBe(403);
-    expect(await now.json()).toMatchObject({ current: [] });
-  });
-
-  it('refuses a calendar snapshot that fails the shared contract with a client error', async () => {
-    const app = createApp({
-      allowedEmails: ['ana@example.com'],
-      clock: clockAtTenPastThree,
-    });
-    const meetingWithoutStart = {
-      id: 'event-3',
-      iCalUID: 'event-3@google.com',
-      title: 'Meeting without start',
-      end: '2026-11-02T15:30:00.000Z',
-      attendees: [],
-    };
-
-    const posted = await postCalendarSnapshot(app, 'ana@example.com', [meetingWithoutStart]);
-    const now = await app.request('/now');
-
-    expect(posted.status).toBe(400);
-    expect(await now.json()).toMatchObject({ current: [] });
+    expect(posted.status).toBe(status);
+    expect(now.status).toBe(200);
+    expect(await now.json()).toMatchObject({ current });
   });
 
   it('merges the snapshots of two accounts in GET /now, showing a cross-account duplicate once', async () => {
