@@ -99,3 +99,19 @@ describe('expenseStatement', () => {
     ]);
   });
 });
+
+describe('expenseStatement ordering', () => {
+  it('lists entries in message-date order as instants when the dates are RFC 2822 headers, a Tuesday message before a Saturday one', () => {
+    const proposals = [
+      expenseProposal('message-saturday', 'Sat, 07 Nov 2026 10:00:00 -0600', 'Telmex', 899, '2026-11-07'),
+      expenseProposal('message-tuesday', 'Tue, 03 Nov 2026 10:00:00 -0600', 'Uber', 154.5, '2026-11-03'),
+    ];
+
+    expect(
+      expenseStatement(proposals, { week: '2026-11-02', timeZone: 'America/Mexico_City' }).map((entry) => entry.link),
+    ).toEqual([
+      'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-tuesday',
+      'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-saturday',
+    ]);
+  });
+});

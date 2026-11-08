@@ -43,5 +43,5 @@ export const expenseStatement = (
 ): ExpenseStatementEntry[] =>
   proposals
     .filter((proposal) => belongsInStatement(proposal, period))
-    .sort((left, right) => left.date.localeCompare(right.date))
+    .sort((left, right) => Date.parse(left.date) - Date.parse(right.date))
     .map((proposal) => ({ ...proposal.extract, accountEmail: proposal.accountEmail, link: proposal.link }));
