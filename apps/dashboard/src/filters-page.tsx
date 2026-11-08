@@ -2,22 +2,22 @@ import { useEffect, useState } from 'react';
 
 import { accountName } from './account-name';
 
-interface FilterProposal {
-  id: string;
+interface FilterDefinition {
   criteria: Record<string, string>;
   labelName: string;
   accountEmail: string;
+}
+
+interface FilterProposal extends FilterDefinition {
+  id: string;
 }
 
 interface FilterProposalsResponse {
   proposals: FilterProposal[];
 }
 
-interface CreatedFilter {
+interface CreatedFilter extends FilterDefinition {
   gmailFilterId: string;
-  criteria: Record<string, string>;
-  labelName: string;
-  accountEmail: string;
 }
 
 interface FiltersResponse {
@@ -29,6 +29,20 @@ export const approveLabel = 'Approve';
 export const rejectLabel = 'Reject';
 
 export const deleteLabel = 'Delete';
+
+interface FilterSummaryProps {
+  filter: FilterDefinition;
+}
+
+const FilterSummary = ({ filter }: FilterSummaryProps) => (
+  <>
+    {Object.values(filter.criteria).map((value) => (
+      <span key={value}>{value}</span>
+    ))}
+    <span>{filter.labelName}</span>
+    <span>{accountName(filter.accountEmail)}</span>
+  </>
+);
 
 export const FiltersPage = () => {
   const [proposals, setProposals] = useState<FilterProposal[]>([]);
@@ -56,11 +70,7 @@ export const FiltersPage = () => {
       <ul aria-label="Filter proposals">
         {proposals.map((proposal) => (
           <li key={proposal.id}>
-            {Object.values(proposal.criteria).map((value) => (
-              <span key={value}>{value}</span>
-            ))}
-            <span>{proposal.labelName}</span>
-            <span>{accountName(proposal.accountEmail)}</span>
+            <FilterSummary filter={proposal} />
             <button
               type="button"
               onClick={() => {
@@ -83,11 +93,7 @@ export const FiltersPage = () => {
       <ul aria-label="Created filters">
         {filters.map((filter) => (
           <li key={filter.gmailFilterId}>
-            {Object.values(filter.criteria).map((value) => (
-              <span key={value}>{value}</span>
-            ))}
-            <span>{filter.labelName}</span>
-            <span>{accountName(filter.accountEmail)}</span>
+            <FilterSummary filter={filter} />
             <button
               type="button"
               onClick={() => {
