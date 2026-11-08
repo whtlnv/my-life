@@ -762,7 +762,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.get('/contacts', (context) => {
-    const contactDetails = contactDetailsStore.loadAll();
+    const detailsByEmail = contactDetailsStore.loadAll();
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = withUnlistedImportedContacts(
       contactsByEmail(reportedSenders(), proposals),
@@ -774,7 +774,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         return {
           ...contact,
           marks: markedEmails.has(primaryEmail) ? ['vip'] : [],
-          ...contactDetails[primaryEmail],
+          ...detailsByEmail[primaryEmail],
         };
       }),
     });
