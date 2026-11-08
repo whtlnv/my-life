@@ -17,7 +17,7 @@ export function messageBody(payload: MessagePart): string {
 }
 
 function withoutQuotedReply(text: string): string {
-  return text.replace(/\n\nOn .* wrote:\n(?:>.*\n)*/, '\n');
+  return text.replace(/\n\nOn .* wrote:\n(?:>.*\n)+/, '\n');
 }
 
 function withoutTags(html: string): string {

@@ -65,4 +65,19 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe('Perfecto, ahí estaré.\n');
   });
+
+  it('keeps every line of a body without a quoted reply, including a wrapped line with "wrote:" mid-sentence', () => {
+    const payload = {
+      mimeType: 'text/plain',
+      headers: [{ name: 'Content-Type', value: 'text/plain; charset="UTF-8"' }],
+      body: {
+        size: 81,
+        data: 'SG9sYSBlcXVpcG8sCgpPbiBGcmlkYXksIGp1c3QgYXMgQW5hIHdyb3RlOgp0aGUgdmVudWUgbW92ZWQgdG8gdGhlIHNlY29uZCBmbG9vci4K',
+      },
+    };
+
+    expect(messageBody(payload)).toBe(
+      'Hola equipo,\n\nOn Friday, just as Ana wrote:\nthe venue moved to the second floor.\n',
+    );
+  });
 });
