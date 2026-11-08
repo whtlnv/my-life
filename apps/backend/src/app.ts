@@ -3,7 +3,13 @@ import { join } from 'node:path';
 
 import { Hono, type MiddlewareHandler } from 'hono';
 
-import { calendarSnapshot, contactDetails, mailReport, triageCategories, type HealthResponse } from '@my-life/contracts';
+import {
+  calendarSnapshot,
+  contactDetails,
+  mailReport,
+  triageCategories,
+  type HealthResponse,
+} from '@my-life/contracts';
 import {
   badgeCount,
   buildNowView,
@@ -225,6 +231,22 @@ function createFilterCommandId(filterProposalId: string): string {
 
 function deleteFilterCommandId(gmailFilterId: string): string {
   return `delete-filter-${gmailFilterId}`;
+}
+
+interface ListedContact {
+  displayName: string;
+  emails: string[];
+  messageIds: string[];
+}
+
+function withUnlistedImportedContacts<Contact extends ListedContact>(
+  messageContacts: Contact[],
+  importedContacts: ListedContact[],
+): (Contact | ListedContact)[] {
+  const unlistedImportedContacts = importedContacts.filter(
+    (imported) => !messageContacts.some((contact) => contact.emails[0] === imported.emails[0]),
+  );
+  return [...messageContacts, ...unlistedImportedContacts];
 }
 
 // The HTTP app, built without a port so tests call it directly through `app.request`.
@@ -594,7 +616,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.save(context.req.param('email'), details);
     return context.body(null, 200);
   });
-  const importedContacts: { displayName: string; emails: string[]; messageIds: string[] }[] = [];
+  const importedContacts: ListedContact[] = [];
   app.post('/contacts-import', async (context) => {
     const { contacts } = await context.req.json<{
       contacts: { name: string; emails: string[]; organization: string }[];
@@ -608,12 +630,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/contacts', (context) => {
     const contactDetails = contactDetailsStore.loadAll();
     const markedEmails = contactDetailsStore.markedEmails();
-    const messageContacts = contactsByEmail(reportedSenders(), proposals);
-    const unlistedImportedContacts = importedContacts.filter(
-      (imported) => !messageContacts.some((contact) => contact.emails[0] === imported.emails[0]),
-    );
+    const contacts = withUnlistedImportedContacts(contactsByEmail(reportedSenders(), proposals), importedContacts);
     return context.json({
-      contacts: [...messageContacts, ...unlistedImportedContacts].map((contact) => {
+      contacts: contacts.map((contact) => {
         const primaryEmail = contact.emails[0]!;
         return {
           ...contact,
