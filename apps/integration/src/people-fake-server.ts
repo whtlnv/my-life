@@ -41,10 +41,14 @@ const scenarios: Record<PeopleScenario, { contactGroups: unknown; connections: u
 
 export async function startPeopleFakeServer(scenario: PeopleScenario) {
   const { contactGroups, connections, otherContacts } = scenarios[scenario];
+  const responseByPath: Record<string, unknown> = {
+    '/v1/contactGroups': contactGroups,
+    '/v1/otherContacts': otherContacts,
+    '/v1/people/me/connections': connections,
+  };
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fake').pathname;
-    const body =
-      path === '/v1/contactGroups' ? contactGroups : path === '/v1/otherContacts' ? otherContacts : connections;
+    const body = responseByPath[path] ?? connections;
     response.writeHead(200, { 'Content-Type': 'application/json' });
     response.end(JSON.stringify(body));
   });
