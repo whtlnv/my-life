@@ -3314,7 +3314,13 @@ describe('backend app', () => {
 
     const afterRestart = createApp(options);
     const { contacts } = (await getContacts(afterRestart)) as {
-      contacts: { displayName: string; emails: string[]; messageIds: string[]; organization?: string; lists?: string[] }[];
+      contacts: {
+        displayName: string;
+        emails: string[];
+        messageIds: string[];
+        organization?: string;
+        lists?: string[];
+      }[];
     };
 
     expect(contacts).toMatchObject([
@@ -3359,7 +3365,10 @@ describe('backend app', () => {
     const bodyLessMessage = budgetReviewReport.messages[0];
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [bodyLessMessage, { ...bodyLessMessage, id: 'message-2', body: 'Can you review the budget by Friday?' }],
+      messages: [
+        bodyLessMessage,
+        { ...bodyLessMessage, id: 'message-2', body: 'Can you review the budget by Friday?' },
+      ],
     });
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
@@ -3370,5 +3379,34 @@ describe('backend app', () => {
     const bodiesMissing = await getBodiesMissing(app, 'ana@example.com');
 
     expect(bodiesMissing).toEqual({ messageIds: ['message-1'] });
+  });
+
+  it('asks the triage port again, with the body, for a message proposed under triage-v1 whose body arrives at POST /bodies-report, on the next POST /triage-run', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
+    openProposalStore(databasePath).save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:00:00.000Z',
+      promptVersion: 'triage-v1',
+      proposal: keepProposalExtracting(),
+    });
+    const askedMessages: { id: string; body?: string | undefined }[] = [];
+    const triage = {
+      propose: (message: { id: string; body?: string }) => {
+        askedMessages.push({ id: message.id, body: message.body });
+        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    const body = 'Hi Ana, can you review the budget by Friday? Luis';
+
+    await postJson(app, '/bodies-report', {
+      accountEmail: 'ana@example.com',
+      bodies: [{ messageId: 'message-1', body }],
+    });
+    await postTriageRun(app);
+
+    expect(askedMessages).toEqual([{ id: 'message-1', body }]);
   });
 });

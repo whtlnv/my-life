@@ -85,9 +85,10 @@
 - [x] `GET /bodies-missing?account=` lists no message of another account, and no message that has a body
 - [x] On its poll, the extension fetches each listed message with `format=full` and reports its body
 - [x] The backfill, from the extension against the fake Gmail server, ends with the body stored for every listed message
-- [ ] A message whose body arrives by backfill is retriaged under `triage-v2` with the Haiku-first setup
+- [x] A message whose body arrives by backfill is retriaged under `triage-v2` with the Haiku-first setup
 - [ ] A retriage replaces the message's open proposal and keeps every verdict already given on it
 - [ ] A message already proposed under `triage-v2` is not retriaged when its body arrives again
+- [ ] A message whose body arrived before a backend restart, and was not yet retriaged, is retriaged on the first triage run after the restart
 
 ### Search
 

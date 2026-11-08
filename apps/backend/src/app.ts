@@ -403,6 +403,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
+  // A message proposed before its body arrived is asked about once more, this time with the body.
+  const messageIdsAwaitingRetriage = new Set<string>();
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
@@ -449,6 +451,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       reportedMessageStore.saveBody(messageId, body);
       const reportedMessage = reportedMessages.find((message) => message.id === messageId);
       if (reportedMessage !== undefined) reportedMessage.body = body;
+      if (proposals.some((proposal) => proposal.messageId === messageId)) messageIdsAwaitingRetriage.add(messageId);
     });
     return context.body(null, 200);
   });
@@ -464,7 +467,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     triageRunInProgress = true;
     try {
-      for (const message of triageQueue(proposals, [], reportedMessages).remaining) {
+      const awaitingRetriage = reportedMessages.filter((message) => messageIdsAwaitingRetriage.has(message.id));
+      for (const message of [...triageQueue(proposals, [], reportedMessages).remaining, ...awaitingRetriage]) {
         if (hasReachedDailySpendCeiling()) {
           break;
         }
@@ -490,7 +494,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           proposal: result.proposal,
           madeAutomatic,
         });
-        proposals.push({ ...displayedProposal, madeAutomatic });
+        messageIdsAwaitingRetriage.delete(message.id);
+        const existingIndex = proposals.findIndex((proposal) => proposal.messageId === message.id);
+        if (existingIndex === -1) {
+          proposals.push({ ...displayedProposal, madeAutomatic });
+        } else {
+          proposals[existingIndex] = { ...displayedProposal, madeAutomatic };
+        }
       }
     } finally {
       triageRunInProgress = false;
