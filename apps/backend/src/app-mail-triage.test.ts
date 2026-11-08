@@ -960,6 +960,41 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     ]);
   });
 
+  it('still carries on a digest in GET /triage-queue, after a backend restart on the same database file, the summary lines written before it, without a new summary call', async () => {
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    let summaryCalls = 0;
+    const summary = {
+      summarize: () => {
+        summaryCalls += 1;
+        return Promise.resolve({ lines: [`Summary written on call ${summaryCalls}`], costInUsd: 0.01 });
+      },
+    };
+    const databasePath = temporaryDatabasePath();
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary, databasePath };
+    const beforeRestart = createApp(options);
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(beforeRestart, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+    });
+    await postTriageRun(beforeRestart);
+
+    const afterRestart = createApp(options);
+    await postTriageRun(afterRestart);
+    const { digests } = await getJson<{ digests: unknown[] }>(afterRestart, '/triage-queue');
+
+    expect(summaryCalls).toBe(1);
+    expect(digests).toEqual([
+      expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] }),
+    ]);
+  });
+
   it('logs the cost of each summary call made at POST /triage-run as spend, with its time, next to the triage spend', async () => {
     const triage = triageAnswering({
       action: 'archive',

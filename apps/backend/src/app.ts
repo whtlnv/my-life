@@ -43,6 +43,7 @@ import { openFilterDeletionRequestStore } from './filter-deletion-request-store'
 import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
 import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
 import { openFilterProposalStore } from './filter-proposal-store';
+import { openDigestSummaryStore } from './digest-summary-store';
 import { openListedDigestStore } from './listed-digest-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
@@ -422,7 +423,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
-  const summaryLinesByDigest = new Map<string, string[] | undefined>();
+  const digestSummaryStore = openDigestSummaryStore(databasePath);
   // A message proposed before its body arrived is asked about once more, this time with the body.
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
     (message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id),
@@ -615,7 +616,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         summary: latestProposalFor(proposals, messageId)?.summary ?? '',
       }));
       const summary = await summarizeWithinTheSpendCeiling(items);
-      summaryLinesByDigest.set(identifyDigest(digest), summary?.lines);
+      digestSummaryStore.save(identifyDigest(digest), summary?.lines);
     }
   }
   // Summarizes one digest and logs its spend; writes nothing once the daily ceiling is reached.
@@ -667,7 +668,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         key,
         count: digested.length,
         severityCounts,
-        summaryLines: summaryLinesByDigest.get(id),
+        summaryLines: digestSummaryStore.load(id),
       };
     });
   }

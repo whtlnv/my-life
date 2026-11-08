@@ -40,7 +40,7 @@
 - [x] When the daily spend ceiling is reached, no summary is written and the digest is still returned without one
   - note: the response is JSON, which drops a key whose value is undefined — assert the digest has no `summaryLines` property (`not.toHaveProperty`) and that the summary model was called 0 times
 - [x] When the summary model answers with output that fails validation, the digest is returned without summary lines and the triage queue still loads
-- [ ] After a backend restart, a digest's summary lines are still returned without a new summary call
+- [x] After a backend restart, a digest's summary lines are still returned without a new summary call
 - [ ] `GET /triage-queue` lists, under handled for you, a proposal an automatic category acted on today in the business time zone
 - [ ] `GET /triage-queue` does not list, under handled for you, a proposal an automatic category acted on before today in the business time zone
 - [ ] `GET /triage-queue` does not list, under handled for you, a proposal the user confirmed in advise mode
