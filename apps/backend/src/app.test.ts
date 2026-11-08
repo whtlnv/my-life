@@ -39,6 +39,9 @@ const firstPendingFilterProposalId = async (app: App) => {
 const approveFilterProposal = (app: App, proposalId: string) =>
   app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
 
+const postAcknowledgement = (app: App, commandId: string) =>
+  app.request(`/commands/${commandId}/acknowledgement`, { method: 'POST' });
+
 const acknowledgeFilterCreation = (app: App, proposalId: string, gmailFilterId: string) =>
   app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
     method: 'POST',
@@ -1621,7 +1624,7 @@ describe('backend app', () => {
       commands: [command],
     } = (await pendingResponse.json()) as { commands: { id: string; messageId: string }[] };
 
-    await app.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
+    await postAcknowledgement(app, command?.id ?? '');
 
     const response = await getCommands(app, 'ana@example.com');
     expect(await response.json()).toEqual({ commands: [] });
@@ -1640,7 +1643,7 @@ describe('backend app', () => {
     const {
       commands: [command],
     } = (await pendingResponse.json()) as { commands: { id: string; messageId: string }[] };
-    await beforeRestart.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
+    await postAcknowledgement(beforeRestart, command?.id ?? '');
 
     const afterRestart = createApp(options);
     const response = await getCommands(afterRestart, 'ana@example.com');
@@ -2517,7 +2520,7 @@ describe('backend app', () => {
       ).commands.filter(({ type }) => type === 'create-filter');
 
     const [command] = await createFilterCommands();
-    await app.request(`/commands/${command?.id ?? ''}/acknowledgement`, { method: 'POST' });
+    await postAcknowledgement(app, command?.id ?? '');
 
     expect({ id: command?.id, afterAcknowledgement: await createFilterCommands() }).toEqual({
       id: `create-filter-${proposalId}`,
@@ -2628,7 +2631,7 @@ describe('backend app', () => {
       (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { id: string; type?: string }[] }
     ).commands.find(({ type }) => type === 'delete-filter');
 
-    await app.request(`/commands/${deleteFilterCommand?.id ?? ''}/acknowledgement`, { method: 'POST' });
+    await postAcknowledgement(app, deleteFilterCommand?.id ?? '');
 
     expect({
       filters: ((await (await app.request('/filters')).json()) as { filters: unknown[] }).filters,
