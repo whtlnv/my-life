@@ -57,7 +57,7 @@ const markContact = (app: App, email: string, mark: string) =>
 const unmarkContact = (app: App, email: string, mark: string) =>
   app.request(`/contacts/${encodeURIComponent(email)}/marks/${mark}`, { method: 'DELETE' });
 
-const setContactDetails = (app: App, email: string, details: { lists?: string[]; note?: string }) =>
+const setContactDetails = (app: App, email: string, details: Record<string, unknown>) =>
   app.request(`/contacts/${encodeURIComponent(email)}`, {
     method: 'PATCH',
     headers: { 'content-type': 'application/json' },
@@ -3189,16 +3189,10 @@ describe('backend app', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReport);
     await setContactDetails(app, 'luis@example.com', { lists: ['board'], note: 'Prefers calls' });
-    const patchRaw = (body: unknown) =>
-      app.request(`/contacts/${encodeURIComponent('luis@example.com')}`, {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      });
 
-    const numericNote = await patchRaw({ note: 42 });
-    const textLists = await patchRaw({ lists: 'investors' });
-    const numericLists = await patchRaw({ lists: ['board', 7] });
+    const numericNote = await setContactDetails(app, 'luis@example.com', { note: 42 });
+    const textLists = await setContactDetails(app, 'luis@example.com', { lists: 'investors' });
+    const numericLists = await setContactDetails(app, 'luis@example.com', { lists: ['board', 7] });
     const { contacts } = await getContacts(app);
 
     expect([numericNote.status, textLists.status, numericLists.status]).toEqual([400, 400, 400]);
@@ -3297,11 +3291,7 @@ describe('backend app', () => {
 
   it('lists at GET /contacts, after POST /contacts-import brings an organization for a contact whose organization the user set through PATCH /contacts/:email, that contact still with the organization the user set', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
-    await app.request('/contacts/luis%40example.com', {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ organization: 'Mutuus' }),
-    });
+    await setContactDetails(app, 'luis@example.com', { organization: 'Mutuus' });
 
     await postJson(app, '/contacts-import', {
       accountEmail: 'ana@example.com',
