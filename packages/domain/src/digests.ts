@@ -3,11 +3,13 @@ export interface Digest<Proposal> {
   readonly proposals: readonly Proposal[];
 }
 
+type DigestableExtract =
+  { readonly system: string } | { readonly company: string } | { readonly item: string; readonly change: string };
+
 interface DigestableProposal {
   readonly accountEmail: string;
   readonly from?: string;
-  readonly extract:
-    { readonly system: string } | { readonly company: string } | { readonly item: string; readonly change: string };
+  readonly extract: DigestableExtract;
 }
 
 function digestKey(proposal: DigestableProposal): string | undefined {
