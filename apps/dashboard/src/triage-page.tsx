@@ -63,6 +63,7 @@ export const sectionTitles = {
   handledForYou: 'Handled for you',
 };
 export const noDueTimeText = 'No due time';
+export const nothingNeedsInputText = 'No questions waiting';
 export const significantFlagText = 'Significant';
 export const remainingMessagesText = (count: number) =>
   count === 1 ? '1 message remaining' : `${String(count)} messages remaining`;
@@ -541,6 +542,7 @@ export function TriagePage() {
       </section>
       <section aria-label={sectionTitles.needsInput} className="section">
         <h2 className="section-title">{sectionTitles.needsInput}</h2>
+        <p className="empty">{nothingNeedsInputText}</p>
       </section>
       <section aria-label={sectionTitles.handledForYou} className="section">
         <h2 className="section-title">{sectionTitles.handledForYou}</h2>

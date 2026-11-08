@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchedAtText,
   noDueTimeText,
+  nothingNeedsInputText,
   pausedNoticeText,
   remainingMessagesText,
   sectionTitles,
@@ -1174,5 +1175,14 @@ describe('TriagePage', () => {
       sectionTitles.needsInput,
       sectionTitles.handledForYou,
     ]);
+  });
+
+  it('says nothing needs input when the Needs input section is empty', async () => {
+    answerGetTriageQueueWith({ action: [], groups: [], digests: [], handledForYou: [], remaining: 0, paused: false });
+
+    render(<TriagePage />);
+
+    const needsInput = await screen.findByRole('region', { name: sectionTitles.needsInput });
+    expect(within(needsInput).getByText(nothingNeedsInputText)).toBeInTheDocument();
   });
 });
