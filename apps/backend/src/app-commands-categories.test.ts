@@ -625,4 +625,27 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
 
     expect(await queue.json()).toMatchObject({ handledForYou: [] });
   });
+  it('lists at GET /commands, for the account of an undone handled-for-you item, a command to remove my-life/auto from its message and return it to the inbox', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await switchCategory(app, 'cc-thread', 'automatic');
+    await proposeBudgetReview(app);
+
+    await app.request('/handled-for-you/message-1/undo', { method: 'POST' });
+    const response = await getCommands(app, 'ana@example.com');
+
+    expect(await response.json()).toMatchObject({
+      commands: expect.arrayContaining([
+        {
+          id: expect.any(String) as unknown,
+          type: 'undo-automatic',
+          messageId: 'message-1',
+          label: 'my-life/auto',
+        },
+      ]) as unknown,
+    });
+  });
 });

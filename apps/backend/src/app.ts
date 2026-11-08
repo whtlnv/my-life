@@ -777,6 +777,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     filterDeletionRequestStore.save(context.req.param('id'), clock.now().toISOString());
     return context.body(null, 200);
   });
+  const undoneHandledForYouMessageIds: string[] = [];
+  app.post('/handled-for-you/:messageId/undo', (context) => {
+    undoneHandledForYouMessageIds.push(context.req.param('messageId'));
+    return context.body(null, 200);
+  });
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
@@ -812,7 +817,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
             requestedAt,
           })),
       );
-    const pendingCommands = [...archiveCommands, ...filterCommands, ...deleteFilterCommands].filter(
+    const undoAutomaticCommands = undoneHandledForYouMessageIds.map((messageId) => ({
+      id: `undo-automatic-${messageId}`,
+      type: 'undo-automatic',
+      messageId,
+      label: 'my-life/auto',
+    }));
+    const pendingCommands = [
+      ...archiveCommands,
+      ...filterCommands,
+      ...deleteFilterCommands,
+      ...undoAutomaticCommands,
+    ].filter(
       (command) => !acknowledgedCommandIds.includes(command.id),
     );
     return context.json({ commands: pendingCommands });
