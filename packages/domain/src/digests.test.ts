@@ -167,4 +167,24 @@ describe('digests', () => {
     const result = digests([calendarChange, driveShare]);
     expect(result.map((digest) => digest.proposals)).toEqual([[calendarChange], [driveShare]]);
   });
+
+  it('places no expense or cc-thread proposal in a digest', () => {
+    const receipt = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'receipts@uber.example',
+      action: 'archive',
+      category: 'expense',
+      extract: { vendor: 'Uber', amount: 182.5, currency: 'MXN', date: '2026-11-07' },
+    };
+    const copiedThread = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'ana@acme.example',
+      action: 'archive',
+      category: 'cc-thread',
+      extract: { sinceLastMessage: 'Ana confirmed the delivery date' },
+    };
+    expect(digests([receipt, copiedThread])).toEqual([]);
+  });
 });
