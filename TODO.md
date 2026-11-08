@@ -42,7 +42,7 @@
 - [x] An organization's timeline lists the messages of every contact in that organization, newest first
 - [x] An organization's timeline leaves out messages from contacts outside it
 - [x] The dashboard shell shows a People tab that opens the People page
-- [ ] The People page shows the VIP, Urgent and Everyone else lists, each row with the contact's name, organization and the time of its last message
+- [x] The People page shows the VIP, Urgent and Everyone else lists, each row with the contact's name, organization and the time of its last message
 - [ ] An urgent row on the People page says why the contact is urgent
 - [ ] Selecting a contact on the People page shows its merged timeline
 - [ ] Selecting an organization on the People page shows its timeline
