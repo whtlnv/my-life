@@ -906,7 +906,7 @@ function senderDomain(from: string): string {
 // One contact per email: a message's sender and every person its extraction names with an email, each listing the
 // messages they sent or appear in. The sender's own display name wins over a name the extraction gives.
 function contactsByEmail(senders: { messageId: string; from: string }[], proposals: Proposal[]) {
-  const contacts = new Map<string, { displayName: string; emails: string[]; messageIds: string[] }>();
+  const contacts = new Map<string, ListedContact>();
   const link = (email: string, displayName: string, messageId: string) => {
     const contact = contacts.get(email) ?? { displayName, emails: [email], messageIds: [] };
     if (!contact.messageIds.includes(messageId)) contact.messageIds.push(messageId);
