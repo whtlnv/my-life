@@ -2387,7 +2387,7 @@ describe('backend app', () => {
         { ...budgetReview, id: 'message-system', date: 'Mon, 2 Nov 2026 09:00:00 -0600' },
       ],
     });
-    await app.request('/triage-run', { method: 'POST' });
+    await postTriageRun(app);
 
     const queue = await app.request('/triage-queue');
 
