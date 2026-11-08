@@ -21,7 +21,7 @@
 - [x] `GET /people` lists a VIP contact under VIP and not under Everyone else
 - [x] `GET /people` lists an urgent non-VIP contact under Urgent, with its reasons, and not under Everyone else
 - [x] `GET /people` lists an urgent VIP contact under both VIP and Urgent
-- [ ] `GET /people` lists a contact that is neither VIP nor urgent under Everyone else
+- [x] `GET /people` lists a contact that is neither VIP nor urgent under Everyone else
 - [ ] `GET /people` sorts each list by the contact's most recent message, newest first
 - [ ] A contact whose email is on the profile's "Always matters" line is listed as VIP
 - [ ] A contact on the profile's "Always matters" line whose VIP mark the user removed is not listed as VIP

@@ -945,7 +945,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const isVip = (contact: { emails: string[] }) => markedEmails.has(contact.emails[0] ?? '');
     const hasDeadline = (contact: { messageIds: string[] }) =>
       proposals.some(
-        (proposal) => contact.messageIds.includes(proposal.messageId) && (proposal.dates ?? []).length > 0,
+        (proposal) =>
+          contact.messageIds.includes(proposal.messageId) &&
+          (proposal.dates ?? []).some((date) => Date.parse(date) - clock.now().getTime() <= 48 * 60 * 60 * 1000),
       );
     return context.json({
       urgent: [
