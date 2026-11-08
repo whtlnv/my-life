@@ -704,13 +704,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
         extract: { system: 'GitHub', severity: 'high', significant: true },
         reason: 'A failed build',
       },
-      {
-        action: 'archive',
-        category: 'system-update',
-        summary: 'GitHub build passed',
-        extract: { system: 'GitHub', severity: 'low', significant: false },
-        reason: 'A routine notification',
-      },
+      systemUpdateNotice('GitHub', 'GitHub build passed'),
       {
         action: 'archive',
         category: 'sales',
@@ -801,13 +795,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
           extract: { system: 'GitHub', severity: 'high', significant: true },
           reason: 'A failed build',
         },
-        {
-          action: 'archive',
-          category: 'system-update',
-          summary: 'GitHub build passed',
-          extract: { system: 'GitHub', severity: 'low', significant: false },
-          reason: 'A routine notification',
-        },
+        systemUpdateNotice('GitHub', 'GitHub build passed'),
       ],
       1,
     );
@@ -864,13 +852,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('carries on each digest in GET /triage-queue the summary lines the summary model wrote for its items during the triage run', async () => {
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'system-update',
-      summary: 'GitHub build passed',
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     const summaryLines = ['GitHub: 1 notice since Monday, none significant'];
     const summary = { summarize: () => Promise.resolve({ lines: summaryLines, costInUsd: 0.01 }) };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
@@ -909,20 +891,8 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
 
   it('asks the summary model once per digest with only the item summaries of that digest, and carries on each digest its own summary lines', async () => {
     const proposalsInOrder = [
-      {
-        action: 'archive',
-        category: 'system-update',
-        summary: 'GitHub build passed',
-        extract: { system: 'GitHub', severity: 'low', significant: false },
-        reason: 'A routine notification',
-      },
-      {
-        action: 'archive',
-        category: 'system-update',
-        summary: 'Jenkins job finished',
-        extract: { system: 'Jenkins', severity: 'low', significant: false },
-        reason: 'A routine notification',
-      },
+      systemUpdateNotice('GitHub', 'GitHub build passed'),
+      systemUpdateNotice('Jenkins', 'Jenkins job finished'),
       { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },
       {
         action: 'keep',
@@ -966,13 +936,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('keeps the summary lines of a digest when a later triage run adds no proposal to it', async () => {
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'system-update',
-      summary: 'GitHub build passed',
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     let summaryCalls = 0;
     const summary = {
       summarize: () => {
@@ -1021,13 +985,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('still carries on a digest in GET /triage-queue, after a backend restart on the same database file, the summary lines written before it, without a new summary call', async () => {
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'system-update',
-      summary: 'GitHub build passed',
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     let summaryCalls = 0;
     const summary = {
       summarize: () => {
@@ -1050,13 +1008,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('logs the cost of each summary call made at POST /triage-run as spend, with its time, next to the triage spend', async () => {
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'system-update',
-      summary: 'GitHub build passed',
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     const summary = { summarize: () => Promise.resolve({ lines: ['GitHub: 1 notice'], costInUsd: 0.25 }) };
     const databasePath = temporaryDatabasePath();
     const app = createApp({
@@ -1081,13 +1033,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('logs each summary spend at POST /triage-run with the model the summary call ran on, not an empty string', async () => {
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'system-update',
-      summary: 'GitHub build passed',
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     const summary = {
       summarize: () =>
         Promise.resolve({ lines: ['GitHub: 1 notice'], costInUsd: 0.25, model: 'claude-summary-model-from-settings' }),
@@ -1113,13 +1059,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it("writes no summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines", async () => {
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'system-update',
-      summary: 'GitHub build passed',
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     let summaryCalls = 0;
     const summary = {
       summarize: () => {
@@ -1146,13 +1086,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('answers POST /triage-run with 200 when the summary model answers with output that fails validation, and still returns the digest in GET /triage-queue without summary lines', async () => {
-    const triage = triageAnswering({
-      action: 'archive',
-      category: 'system-update',
-      summary: 'GitHub build passed',
-      extract: { system: 'GitHub', severity: 'low', significant: false },
-      reason: 'A routine notification',
-    });
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     const summary = {
       summarize: () => Promise.reject(new Error('The summary model answered with output that fails validation')),
     };
@@ -1220,18 +1154,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
 
   it('refuses a confirmation posted at POST /digests/:id/confirmation for an unknown digest as not found, and stores no verdict', async () => {
     const databasePath = temporaryDatabasePath();
-    const triage = triageAnsweringInOrder(
-      [
-        {
-          action: 'archive',
-          category: 'system-update',
-          summary: 'GitHub build passed',
-          extract: { system: 'GitHub', severity: 'low', significant: false },
-          reason: 'A routine notification',
-        },
-      ],
-      1,
-    );
+    const triage = triageAnsweringInOrder([systemUpdateNotice('GitHub', 'GitHub build passed')], 1);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, databasePath });
     await reportFromGitHub(app, 'message-build');
     await postTriageRun(app);
@@ -1334,18 +1257,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('no longer lists in GET /triage-queue a digest confirmed at POST /digests/:id/confirmation, nor its items in any group', async () => {
-    const triage = triageAnsweringInOrder(
-      [
-        {
-          action: 'archive',
-          category: 'system-update',
-          summary: 'GitHub build passed',
-          extract: { system: 'GitHub', severity: 'low', significant: false },
-          reason: 'A routine notification',
-        },
-      ],
-      1,
-    );
+    const triage = triageAnsweringInOrder([systemUpdateNotice('GitHub', 'GitHub build passed')], 1);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await reportFromGitHub(app, 'message-github');
     await postTriageRun(app);
