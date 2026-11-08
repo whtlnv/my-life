@@ -3273,4 +3273,19 @@ describe('backend app', () => {
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], organization: 'Mutuus' }]);
   });
+
+  it('lists at GET /contacts, after POST /contacts-import brings starred again a contact whose vip mark the user removed through DELETE /contacts/:email/marks/vip, that contact still with no marks', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const starredLuis = {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: true, lists: [] }],
+    };
+    await postJson(app, '/contacts-import', starredLuis);
+    await unmarkContact(app, 'luis@example.com', 'vip');
+
+    await postJson(app, '/contacts-import', starredLuis);
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; marks?: string[] }[] };
+
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
+  });
 });
