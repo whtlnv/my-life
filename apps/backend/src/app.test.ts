@@ -541,15 +541,61 @@ describe('backend app', () => {
     expect(await response.text()).toBe(stylesheet);
   });
 
-  it('accepts a mail report from an allow-listed account at POST /mail-report and counts its message as remaining in GET /triage-queue', async () => {
+  it.each([
+    {
+      rule: 'accepts a mail report from an allow-listed account at POST /mail-report and counts its message as remaining',
+      report: budgetReviewReport,
+      status: 200,
+      remaining: 1,
+    },
+    {
+      rule: 'refuses a mail report from an account outside the allow-list and counts none of its messages as remaining',
+      report: {
+        accountEmail: 'stranger@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: 'message-9',
+            threadId: 'thread-9',
+            from: 'Luis <luis@example.com>',
+            to: 'stranger@example.com',
+            subject: 'Intruder mail',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'This should never reach the queue.',
+          },
+        ],
+      },
+      status: 403,
+      remaining: 0,
+    },
+    {
+      rule: 'refuses a mail report that fails the shared contract with a client error and counts none of its messages as remaining',
+      report: {
+        accountEmail: 'ana@example.com',
+        historyId: '1001',
+        messages: [
+          {
+            id: 'message-3',
+            threadId: 'thread-3',
+            from: 'Luis <luis@example.com>',
+            to: 'ana@example.com',
+            date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+            snippet: 'This message has no subject.',
+          },
+        ],
+      },
+      status: 400,
+      remaining: 0,
+    },
+  ])('$rule in GET /triage-queue', async ({ report, status, remaining }) => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
 
-    const posted = await postJson(app, '/mail-report', budgetReviewReport);
+    const posted = await postJson(app, '/mail-report', report);
     const queue = await app.request('/triage-queue');
 
-    expect(posted.status).toBe(200);
+    expect(posted.status).toBe(status);
     expect(queue.status).toBe(200);
-    expect(await queue.json()).toMatchObject({ remaining: 1 });
+    expect(await queue.json()).toMatchObject({ remaining });
   });
 
   it('says when GET /triage-queue was fetched, from the clock', async () => {
@@ -558,52 +604,6 @@ describe('backend app', () => {
     const queue = await app.request('/triage-queue');
 
     expect(await queue.json()).toMatchObject({ fetchedAt: '2026-11-02T15:10:00.000Z' });
-  });
-
-  it('refuses a mail report from an account outside the allow-list and counts none of its messages as remaining in GET /triage-queue', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-
-    const posted = await postJson(app, '/mail-report', {
-      accountEmail: 'stranger@example.com',
-      historyId: '1001',
-      messages: [
-        {
-          id: 'message-9',
-          threadId: 'thread-9',
-          from: 'Luis <luis@example.com>',
-          to: 'stranger@example.com',
-          subject: 'Intruder mail',
-          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-          snippet: 'This should never reach the queue.',
-        },
-      ],
-    });
-    const queue = await app.request('/triage-queue');
-
-    expect(posted.status).toBe(403);
-    expect(await queue.json()).toMatchObject({ remaining: 0 });
-  });
-
-  it('refuses a mail report that fails the shared contract with a client error and counts none of its messages as remaining in GET /triage-queue', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const messageWithoutSubject = {
-      id: 'message-3',
-      threadId: 'thread-3',
-      from: 'Luis <luis@example.com>',
-      to: 'ana@example.com',
-      date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-      snippet: 'This message has no subject.',
-    };
-
-    const posted = await postJson(app, '/mail-report', {
-      accountEmail: 'ana@example.com',
-      historyId: '1001',
-      messages: [messageWithoutSubject],
-    });
-    const queue = await app.request('/triage-queue');
-
-    expect(posted.status).toBe(400);
-    expect(await queue.json()).toMatchObject({ remaining: 0 });
   });
 
   it('counts a message reported twice at POST /mail-report once in GET /triage-queue', async () => {
