@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 05:02 · `apps/backend/src/app.test.ts::lists at GET /search?q= a message stored after an earlier search, without a rebuild`
+- Behavior: a message stored after the search index was built is found by `GET /search?q=` without a rebuild
+- Predicted: pass — the handler scans the live in-memory message array on every request and `/mail-report` pushes into that same array; there is no index to rebuild
+- Actual: pass — 1 passed
+- Type: passed unexpectedly
+- Resolution: the TODO item presumed a built index that does not exist yet (search is a linear scan); the test stays as a pin so a future stored index keeps finding late messages, and `/green` has nothing to write.
+
 ## 2026-11-08 03:56 · `apps/backend/src/app.test.ts::lists at GET /bodies-missing?account= neither a message of that account reported with a body nor a body-less message of another account`
 - Behavior: `GET /bodies-missing?account=` lists no message of another account and no message that has a body
 - Predicted: pass on first run — the previous Green (`5ac425f`) already filtered on `accountEmail` and `body === undefined`, beyond what its own test required
