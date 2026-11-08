@@ -655,11 +655,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
 
 const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 
+const freeMailDomains = new Set(['gmail.com']);
+
 function organizationsFromProposals(proposals: Proposal[], senderByMessageId: Map<string, string>) {
   const messageIdsByName = new Map<string, string[]>();
   for (const { organization, messageId } of proposals) {
     const name = organization ?? senderDomain(senderByMessageId.get(messageId) ?? '');
-    if (name === 'gmail.com') continue;
+    if (freeMailDomains.has(name)) continue;
     messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
   }
   return [...messageIdsByName].map(([name, messageIds]) => ({ name, messageIds }));
