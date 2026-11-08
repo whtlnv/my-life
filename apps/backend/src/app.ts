@@ -671,7 +671,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
   const listedDigestStore = openListedDigestStore(databasePath);
-  // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
     return digests(waitingOutsideTheActionBlock(verdicts)).map((digest) => {
       const { key, proposals: digested, severityCounts, significantItems } = digest;
