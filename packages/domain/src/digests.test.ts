@@ -213,4 +213,19 @@ describe('digests', () => {
     const result = digests([budgetAlert, outageNotice, maintenanceNotice]);
     expect(result[0]?.severityCounts).toEqual({ high: 2, low: 1 });
   });
+
+  it('lists its significant items by name', () => {
+    const budgetAlert = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'keep',
+      category: 'system-update',
+      summary: 'Production budget at 85%',
+      extract: { system: 'AWS', severity: 'high', significant: true },
+    };
+    const result = digests([budgetAlert]);
+    expect(result[0]?.significantItems).toEqual([
+      expect.objectContaining({ messageId: 'message-1', summary: 'Production budget at 85%' }),
+    ]);
+  });
 });

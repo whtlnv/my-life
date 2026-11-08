@@ -2,6 +2,7 @@ export interface Digest<Proposal> {
   readonly key: string | undefined;
   readonly proposals: readonly Proposal[];
   readonly severityCounts: Readonly<Record<string, number>>;
+  readonly significantItems: readonly Proposal[];
 }
 
 type DigestableExtract =
@@ -34,6 +35,10 @@ function severityCounts(proposals: readonly DigestableProposal[]): Record<string
   return counts;
 }
 
+function isSignificant({ extract }: DigestableProposal): boolean {
+  return 'significant' in extract && extract.significant === true;
+}
+
 function senderAddress(from: string | undefined): string | undefined {
   return from?.match(/<([^>]+)>/)?.[1] ?? from;
 }
@@ -47,5 +52,9 @@ export function digests<Proposal extends DigestableProposal>(proposals: readonly
     group.proposals.push(proposal);
     byAccountAndKey.set(groupKey, group);
   }
-  return [...byAccountAndKey.values()].map((group) => ({ ...group, severityCounts: severityCounts(group.proposals) }));
+  return [...byAccountAndKey.values()].map((group) => ({
+    ...group,
+    severityCounts: severityCounts(group.proposals),
+    significantItems: group.proposals.filter(isSignificant),
+  }));
 }
