@@ -108,10 +108,8 @@ describe('the shipped backend (main.ts)', () => {
     fakeAnthropic?.close();
   });
 
-  it('writes digest summary lines with the Claude summary adapter on the configured summary model', async () => {
-    const recorded: RecordedAnthropicRequest[] = [];
-    fakeAnthropic = await startFakeAnthropic(recorded);
-    const anthropicPort = (fakeAnthropic.address() as AddressInfo).port;
+  async function startShippedBackend(anthropic: Server, environment: Record<string, string>): Promise<string> {
+    const anthropicPort = (anthropic.address() as AddressInfo).port;
     const port = await freePort();
     const baseUrl = `http://127.0.0.1:${String(port)}`;
     backend = spawn('node_modules/.bin/tsx', ['src/main.ts'], {
@@ -123,28 +121,45 @@ describe('the shipped backend (main.ts)', () => {
         MY_LIFE_PORT: String(port),
         MY_LIFE_DATABASE_PATH: temporaryDatabasePath(),
         MY_LIFE_ALLOWED_EMAILS: 'ana@example.com',
-        MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
         MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none',
-        MY_LIFE_SUMMARY_MODEL: 'claude-sonnet-5-5',
+        ...environment,
       },
       stdio: 'ignore',
     });
     await waitUntilHealthy(baseUrl);
-    const [budgetReview] = budgetReviewReport.messages;
+    return baseUrl;
+  }
+
+  async function postMailReport(baseUrl: string, report: unknown): Promise<void> {
     await fetch(`${baseUrl}/mail-report`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        ...budgetReviewReport,
-        messages: [
-          { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
-        ],
-      }),
+      body: JSON.stringify(report),
+    });
+  }
+
+  async function getJson<Body>(url: string): Promise<Body> {
+    return (await (await fetch(url)).json()) as Body;
+  }
+
+  it('writes digest summary lines with the Claude summary adapter on the configured summary model', async () => {
+    const recorded: RecordedAnthropicRequest[] = [];
+    fakeAnthropic = await startFakeAnthropic(recorded);
+    const baseUrl = await startShippedBackend(fakeAnthropic, {
+      MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
+      MY_LIFE_SUMMARY_MODEL: 'claude-sonnet-5-5',
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postMailReport(baseUrl, {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
 
     await fetch(`${baseUrl}/triage-run`, { method: 'POST' });
 
-    const { digests } = (await (await fetch(`${baseUrl}/triage-queue`)).json()) as { digests: unknown[] };
+    const { digests } = await getJson<{ digests: unknown[] }>(`${baseUrl}/triage-queue`);
     expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: writtenSummaryLines })]);
     expect(recorded).toContainEqual(
       expect.objectContaining({
@@ -173,72 +188,32 @@ describe('the shipped backend (main.ts)', () => {
         },
       ],
     }));
-    const anthropicPort = (fakeAnthropic.address() as AddressInfo).port;
-    const port = await freePort();
-    const baseUrl = `http://127.0.0.1:${String(port)}`;
-    backend = spawn('node_modules/.bin/tsx', ['src/main.ts'], {
-      cwd: backendDirectory,
-      env: {
-        ...process.env,
-        ANTHROPIC_API_KEY: 'test-key',
-        ANTHROPIC_BASE_URL: `http://127.0.0.1:${String(anthropicPort)}`,
-        MY_LIFE_PORT: String(port),
-        MY_LIFE_DATABASE_PATH: temporaryDatabasePath(),
-        MY_LIFE_ALLOWED_EMAILS: 'ana@example.com',
-        MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
-        MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none',
-        MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS: '1',
-      },
-      stdio: 'ignore',
+    const baseUrl = await startShippedBackend(fakeAnthropic, {
+      MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
+      MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS: '1',
     });
-    await waitUntilHealthy(baseUrl);
     const askedAt = oneBusinessDayAgo().toISOString();
     const [budgetReview] = budgetReviewReport.messages;
-    await fetch(`${baseUrl}/mail-report`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ...budgetReviewReport, messages: [{ ...budgetReview, date: askedAt }] }),
-    });
+    await postMailReport(baseUrl, { ...budgetReviewReport, messages: [{ ...budgetReview, date: askedAt }] });
     await fetch(`${baseUrl}/triage-run`, { method: 'POST' });
 
-    const { urgent } = (await (await fetch(`${baseUrl}/people`)).json()) as {
-      urgent: { emails: string[]; reasons: string[] }[];
-    };
+    const { urgent } = await getJson<{ urgent: { emails: string[]; reasons: string[] }[] }>(`${baseUrl}/people`);
 
     expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['unanswered ask'] })]);
   }, 30_000);
   it('lists at GET /people under VIP a contact on the "Always matters" line of a profile in MY_LIFE_PROFILE_DIRECTORY', async () => {
     fakeAnthropic = await startFakeAnthropic([]);
-    const anthropicPort = (fakeAnthropic.address() as AddressInfo).port;
     const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
     writeFileSync(
       join(profileDirectory, 'example.md'),
       '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
     );
-    const port = await freePort();
-    const baseUrl = `http://127.0.0.1:${String(port)}`;
-    backend = spawn('node_modules/.bin/tsx', ['src/main.ts'], {
-      cwd: backendDirectory,
-      env: {
-        ...process.env,
-        ANTHROPIC_API_KEY: 'test-key',
-        ANTHROPIC_BASE_URL: `http://127.0.0.1:${String(anthropicPort)}`,
-        MY_LIFE_PORT: String(port),
-        MY_LIFE_DATABASE_PATH: temporaryDatabasePath(),
-        MY_LIFE_ALLOWED_EMAILS: 'ana@example.com',
-        MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none',
-        MY_LIFE_PROFILE_DIRECTORY: profileDirectory,
-      },
-      stdio: 'ignore',
+    const baseUrl = await startShippedBackend(fakeAnthropic, {
+      MY_LIFE_PROFILE_DIRECTORY: profileDirectory,
     });
-    await waitUntilHealthy(baseUrl);
-    await fetch(`${baseUrl}/mail-report`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(budgetReviewReport),
-    });
+    await postMailReport(baseUrl, budgetReviewReport);
 
-    const { vip } = (await (await fetch(`${baseUrl}/people`)).json()) as { vip: { emails: string[] }[] };
+    const { vip } = await getJson<{ vip: { emails: string[] }[] }>(`${baseUrl}/people`);
 
     expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
   }, 30_000);
