@@ -19,6 +19,14 @@ function promptFile(
   return promptPath;
 }
 
+function profileDirectoryWith(profileFiles: Record<string, string>): string {
+  const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+  for (const [fileName, contents] of Object.entries(profileFiles)) {
+    writeFileSync(join(profileDirectory, fileName), contents);
+  }
+  return profileDirectory;
+}
+
 interface SentRequest {
   model: string;
   system?: string;
@@ -81,8 +89,9 @@ describe('Claude triage', () => {
 
   it("sends the account's profile text read from the profile directory", async () => {
     const promptPath = promptFile('Classify this email.');
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
+    const profileDirectory = profileDirectoryWith({
+      'acme.md': 'Ana runs the Acme sales team; invoices always matter.',
+    });
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
@@ -98,12 +107,10 @@ describe('Claude triage', () => {
   });
 
   it("sends only the profile file named after the account's domain, not another account's", async () => {
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(
-      join(profileDirectory, 'psmutuus.md'),
-      'Francisco runs operations at Psmutuus; claims always matter.',
-    );
-    writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
+    const profileDirectory = profileDirectoryWith({
+      'psmutuus.md': 'Francisco runs operations at Psmutuus; claims always matter.',
+      'acme.md': 'Ana runs the Acme sales team; invoices always matter.',
+    });
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
@@ -123,9 +130,10 @@ describe('Claude triage', () => {
   });
 
   it("sends the shared accounts profile alongside the account's own profile", async () => {
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(join(profileDirectory, 'accounts.md'), 'Ana has two accounts: Acme for sales, Gmail for family.');
-    writeFileSync(join(profileDirectory, 'acme.md'), 'Ana runs the Acme sales team; invoices always matter.');
+    const profileDirectory = profileDirectoryWith({
+      'accounts.md': 'Ana has two accounts: Acme for sales, Gmail for family.',
+      'acme.md': 'Ana runs the Acme sales team; invoices always matter.',
+    });
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
@@ -141,8 +149,9 @@ describe('Claude triage', () => {
   });
 
   it('still sends the shared accounts profile when the account has no profile file of its own', async () => {
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(join(profileDirectory, 'accounts.md'), 'Ana has two accounts: Acme for sales, Gmail for family.');
+    const profileDirectory = profileDirectoryWith({
+      'accounts.md': 'Ana has two accounts: Acme for sales, Gmail for family.',
+    });
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
