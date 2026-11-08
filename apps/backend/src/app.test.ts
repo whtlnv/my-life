@@ -2977,28 +2977,35 @@ describe('backend app', () => {
     expect(contactsListingTheSecondMessage).toEqual(['marta@acme.com']);
   });
 
-  it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {
-    const triage = triageAnswering(keepProposalExtracting({ organization: 'Mutuus' }));
+  it.each([
+    {
+      rule: 'a message triaged with an extraction that names an organization, that organization with the message linked to it',
+      extraction: { organization: 'Mutuus' },
+      report: budgetReviewReport,
+      organizations: [{ name: 'Mutuus', messageIds: ['message-1'] }],
+    },
+    {
+      rule: "a message triaged with an extraction that names no organization, the organization of its sender's domain with the message linked to it",
+      extraction: {},
+      report: budgetReviewReport,
+      organizations: [{ name: 'example.com', messageIds: ['message-1'] }],
+    },
+    {
+      rule: 'two messages triaged with extractions naming the same organization, one organization holding both messages',
+      extraction: { organization: 'Mutuus' },
+      report: budgetReviewReportWithSecondMessageFromMarta,
+      organizations: [{ name: 'Mutuus', messageIds: ['message-1', 'message-2'] }],
+    },
+  ])('lists at GET /organizations, for $rule', async ({ extraction, report, organizations }) => {
+    const triage = triageAnswering(keepProposalExtracting(extraction));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
+    await postJson(app, '/mail-report', report);
     await postTriageRun(app);
 
     const response = await app.request('/organizations');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1'] }] });
-  });
-
-  it("lists at GET /organizations, once a message is triaged with an extraction that names no organization, the organization of its sender's domain with the message linked to it", async () => {
-    const triage = triageAnswering(keepProposalExtracting());
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
-
-    const response = await app.request('/organizations');
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ organizations: [{ name: 'example.com', messageIds: ['message-1'] }] });
+    expect(await response.json()).toEqual({ organizations });
   });
 
   it.each(['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'])(
@@ -3016,20 +3023,6 @@ describe('backend app', () => {
       expect(await response.json()).toEqual({ organizations: [] });
     },
   );
-
-  it('lists at GET /organizations one organization holding both messages when two messages are triaged with extractions naming the same organization', async () => {
-    const triage = triageAnswering(keepProposalExtracting({ organization: 'Mutuus' }));
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
-    await postTriageRun(app);
-
-    const response = await app.request('/organizations');
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      organizations: [{ name: 'Mutuus', messageIds: ['message-1', 'message-2'] }],
-    });
-  });
 
   it('lists at GET /organizations a message once, under the organization its latest proposal names, when the store holds two proposals for it', async () => {
     const databasePath = temporaryDatabasePath();
