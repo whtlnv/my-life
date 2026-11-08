@@ -129,6 +129,23 @@ const triageRecordingAskedMessageIds = (askedMessageIds: string[], costInUsd = 0
   },
 });
 
+const triageRecordingExamplesByMessageId = (examplesByMessageId: Map<string, unknown[] | undefined>) => ({
+  propose: (message: { id: string }, examples?: unknown[]) => {
+    examplesByMessageId.set(message.id, examples);
+    return Promise.resolve({
+      proposal: {
+        action: 'archive',
+        category: 'cc-thread',
+        summary: 'Luis shared the budget with the team',
+        extract: { sinceLastMessage: 'Luis shared the budget' },
+        reason: 'The user is only copied',
+      },
+      costInUsd: 0,
+      promptVersion: 'triage-v1',
+    });
+  },
+});
+
 const ccThreadTriage = (action: 'archive' | 'keep') => {
   const proposal = {
     action,
@@ -702,19 +719,7 @@ describe('backend app', () => {
 
   it('hands triage at POST /triage-run the verdict on an earlier message from the same sender domain as an example when the sender has no verdicts', async () => {
     const examplesByMessageId = new Map<string, unknown[] | undefined>();
-    const proposal = {
-      action: 'archive',
-      category: 'cc-thread',
-      summary: 'Luis shared the budget with the team',
-      extract: { sinceLastMessage: 'Luis shared the budget' },
-      reason: 'The user is only copied',
-    };
-    const triage = {
-      propose: (message: { id: string }, examples?: unknown[]) => {
-        examplesByMessageId.set(message.id, examples);
-        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
-      },
-    };
+    const triage = triageRecordingExamplesByMessageId(examplesByMessageId);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await confirmBudgetReviewProposal(app);
@@ -734,19 +739,7 @@ describe('backend app', () => {
 
   it('does not hand triage at POST /triage-run the verdict on a same-domain message from another List-Id as an example', async () => {
     const examplesByMessageId = new Map<string, unknown[] | undefined>();
-    const proposal = {
-      action: 'archive',
-      category: 'cc-thread',
-      summary: 'Luis shared the budget with the team',
-      extract: { sinceLastMessage: 'Luis shared the budget' },
-      reason: 'The user is only copied',
-    };
-    const triage = {
-      propose: (message: { id: string }, examples?: unknown[]) => {
-        examplesByMessageId.set(message.id, examples);
-        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
-      },
-    };
+    const triage = triageRecordingExamplesByMessageId(examplesByMessageId);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
@@ -776,19 +769,7 @@ describe('backend app', () => {
 
   it('hands triage at POST /triage-run the same-sender verdicts as examples newest first, as the domain chooses them', async () => {
     const examplesByMessageId = new Map<string, unknown[] | undefined>();
-    const proposal = {
-      action: 'archive',
-      category: 'cc-thread',
-      summary: 'Luis shared the budget with the team',
-      extract: { sinceLastMessage: 'Luis shared the budget' },
-      reason: 'The user is only copied',
-    };
-    const triage = {
-      propose: (message: { id: string }, examples?: unknown[]) => {
-        examplesByMessageId.set(message.id, examples);
-        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
-      },
-    };
+    const triage = triageRecordingExamplesByMessageId(examplesByMessageId);
     let now = new Date('2026-11-02T15:10:00.000Z');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => now }, triage });
     const [budgetReview] = budgetReviewReport.messages;
@@ -813,19 +794,7 @@ describe('backend app', () => {
 
   it('hands triage at POST /triage-run only the newest eight of ten same-sender verdicts as examples', async () => {
     const examplesByMessageId = new Map<string, unknown[] | undefined>();
-    const proposal = {
-      action: 'archive',
-      category: 'cc-thread',
-      summary: 'Luis shared the budget with the team',
-      extract: { sinceLastMessage: 'Luis shared the budget' },
-      reason: 'The user is only copied',
-    };
-    const triage = {
-      propose: (message: { id: string }, examples?: unknown[]) => {
-        examplesByMessageId.set(message.id, examples);
-        return Promise.resolve({ proposal, costInUsd: 0, promptVersion: 'triage-v1' });
-      },
-    };
+    const triage = triageRecordingExamplesByMessageId(examplesByMessageId);
     let now = new Date('2026-11-02T15:00:00.000Z');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: { now: () => now }, triage });
     const [budgetReview] = budgetReviewReport.messages;
