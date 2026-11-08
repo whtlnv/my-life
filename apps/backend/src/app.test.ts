@@ -2590,7 +2590,7 @@ describe('backend app', () => {
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     const listFilters = async () => {
       const response = await app.request('/filters');
-      return { status: response.status, body: response.ok ? ((await response.json()) as unknown) : undefined };
+      return { status: response.status, body: response.ok ? await response.json() : undefined };
     };
 
     const beforeAcknowledgement = await listFilters();

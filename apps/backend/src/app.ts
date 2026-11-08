@@ -44,7 +44,7 @@ interface ReportedMessage {
   from: string;
   subject: string;
   date: string;
-  to?: string;
+  to: string;
   cc?: string;
   listId?: string;
 }
@@ -58,7 +58,7 @@ function withDisplayedCategory(
   message: Pick<ReportedMessage, 'to'>,
   accountEmail: string,
 ): Proposal {
-  const isAddressedToAccount = isAddressedToUser({ to: message.to ?? '' }, accountEmail);
+  const isAddressedToAccount = isAddressedToUser({ to: message.to }, accountEmail);
   return proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal;
 }
 

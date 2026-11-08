@@ -32,4 +32,9 @@ describe('reported message store', () => {
       },
     ]);
   });
+  it('refuses to answer about a message it never saw instead of inventing blank headers', () => {
+    const store = openReportedMessageStore(':memory:');
+
+    expect(() => store.subjectOf('never-reported')).toThrow(/unknown message never-reported/);
+  });
 });

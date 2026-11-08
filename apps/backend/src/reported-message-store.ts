@@ -1,7 +1,7 @@
 import { openDatabase } from './open-database';
 
 export interface MessageRecipients {
-  to?: string;
+  to: string;
   cc?: string;
 }
 
@@ -44,9 +44,6 @@ export function openReportedMessageStore(databasePath: string) {
   const saveRecipients = database.prepare(
     'INSERT OR IGNORE INTO reported_message_recipients (message_id, to_header, cc_header) VALUES (?, ?, ?)',
   );
-  const loadRecipients = database.prepare<[string], { to_header: string | null; cc_header: string | null }>(
-    'SELECT to_header, cc_header FROM reported_message_recipients WHERE message_id = ?',
-  );
   const saveMessage = database.prepare(
     'INSERT OR IGNORE INTO reported_messages (message_id, account_email) VALUES (?, ?)',
   );
@@ -56,14 +53,8 @@ export function openReportedMessageStore(databasePath: string) {
   const saveSubject = database.prepare(
     'INSERT OR IGNORE INTO reported_message_subjects (message_id, subject) VALUES (?, ?)',
   );
-  const loadSubject = database.prepare<[string], { subject: string }>(
-    'SELECT subject FROM reported_message_subjects WHERE message_id = ?',
-  );
   const saveDate = database.prepare(
     'INSERT OR IGNORE INTO reported_message_dates (message_id, date_header) VALUES (?, ?)',
-  );
-  const loadDate = database.prepare<[string], { date_header: string }>(
-    'SELECT date_header FROM reported_message_dates WHERE message_id = ?',
   );
   const loadAllMessages = database.prepare<
     [],
@@ -71,14 +62,23 @@ export function openReportedMessageStore(databasePath: string) {
   >(
     'SELECT messages.message_id AS messageId, messages.account_email AS accountEmail, senders.from_header AS "from", senders.list_id AS listId FROM reported_messages AS messages JOIN reported_message_senders AS senders ON senders.message_id = messages.message_id',
   );
-  const countMessages = database.prepare<[], { count: number }>('SELECT COUNT(*) AS count FROM reported_messages');
-  const loadAccountEmail = database.prepare<[string], { account_email: string }>(
-    'SELECT account_email FROM reported_messages WHERE message_id = ?',
+  const countMessages = database.prepare('SELECT COUNT(*) FROM reported_messages').pluck();
+  const loadHeaders = database.prepare<
+    [string],
+    { accountEmail: string; to: string; cc: string | null; subject: string; date: string }
+  >(
+    'SELECT messages.account_email AS accountEmail, recipients.to_header AS "to", recipients.cc_header AS cc, subjects.subject AS subject, dates.date_header AS date FROM reported_messages AS messages JOIN reported_message_recipients AS recipients ON recipients.message_id = messages.message_id JOIN reported_message_subjects AS subjects ON subjects.message_id = messages.message_id JOIN reported_message_dates AS dates ON dates.message_id = messages.message_id WHERE messages.message_id = ?',
   );
+  // Every reader asks about a message the store has seen; an unknown id is a programming error, not an empty answer.
+  const headersOf = (messageId: string) => {
+    const row = loadHeaders.get(messageId);
+    if (row === undefined) throw new Error(`reported message store: unknown message ${messageId}`);
+    return row;
+  };
   return {
     save(messageId: string, accountEmail: string, message: ReportedMessageHeaders): void {
       saveMessage.run(messageId, accountEmail);
-      saveRecipients.run(messageId, message.to ?? null, message.cc ?? null);
+      saveRecipients.run(messageId, message.to, message.cc ?? null);
       saveSender.run(messageId, message.from, message.listId ?? null);
       saveSubject.run(messageId, message.subject);
       saveDate.run(messageId, message.date);
@@ -87,20 +87,20 @@ export function openReportedMessageStore(databasePath: string) {
       return loadAllMessages.all();
     },
     recipientsOf(messageId: string): MessageRecipients {
-      const row = loadRecipients.get(messageId);
-      return { to: row?.to_header ?? '', cc: row?.cc_header ?? '' };
+      const { to, cc } = headersOf(messageId);
+      return { to, cc: cc ?? '' };
     },
     subjectOf(messageId: string): string {
-      return loadSubject.get(messageId)?.subject ?? '';
+      return headersOf(messageId).subject;
     },
     dateOf(messageId: string): string {
-      return loadDate.get(messageId)?.date_header ?? '';
+      return headersOf(messageId).date;
     },
     accountEmailOf(messageId: string): string {
-      return loadAccountEmail.get(messageId)?.account_email ?? '';
+      return headersOf(messageId).accountEmail;
     },
     count(): number {
-      return countMessages.get()?.count ?? 0;
+      return countMessages.get() as number;
     },
   };
 }
