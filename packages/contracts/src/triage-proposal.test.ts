@@ -141,6 +141,15 @@ describe('triageProposal', () => {
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
 
+  it('rejects a proposal whose person has a role other than sender, asked, mentioned or copied', () => {
+    const proposal = {
+      ...archiveCcThreadProposal,
+      people: [{ name: 'Luis Ortega', email: 'luis@mutuus.mx', role: 'replied' }],
+    };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
+
   it.each([
     {
       rule: 'a proposal whose category is not one of the seven categories',

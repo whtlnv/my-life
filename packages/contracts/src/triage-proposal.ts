@@ -19,7 +19,11 @@ const salesExtract = z.object({ company: z.string(), solution: z.string(), probl
 const calendarDriveExtract = z.object({ item: z.string(), change: z.string() });
 const unknownExtract = z.strictObject({});
 
-const person = z.object({ name: z.string(), email: z.string().optional(), role: z.string() });
+const person = z.object({
+  name: z.string(),
+  email: z.string().optional(),
+  role: z.enum(['sender', 'asked', 'mentioned', 'copied']),
+});
 const ask = z.object({ ask: z.string(), due: z.string().optional() });
 const commitment = z.object({ who: z.string(), commitment: z.string() });
 
