@@ -6,7 +6,7 @@ line; save the screenshot under `docs/screenshots/` with the date in its name.
 ## Backend
 
 - [x] (2026-11-07) `.env` holds `ANTHROPIC_API_KEY`; the launchd backend's startup line ends with
-      `· triage with claude-opus-5-5, ceiling USD 20/day`. Without the key it says `triage disabled: ANTHROPIC_API_KEY is not set`.
+      `· triage and filter proposals with claude-opus-5-5, ceiling USD 20/day`. Without the key it says `triage disabled: ANTHROPIC_API_KEY is not set`.
 - [x] (2026-11-07) One live call through the real adapter on a synthetic AWS budget email returned a valid `system-update`
       proposal flagged `significant` for USD 0.018 (strict `propose_triage` tool accepted by the API).
 

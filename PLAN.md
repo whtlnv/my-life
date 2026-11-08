@@ -7,7 +7,7 @@ Phases (locked decision 17):
 - **Phase 0:** tooling, the Google auth spike, and the calendar walking skeleton — code delivered 2026-11-02 (`DONE.md`); four profiles report since 2026-11-06; the three-day token check is due 2026-11-09 (`docs/phase-0-walkthrough.md`).
 - **Phase 1:** Gmail triage on `franciscoc@psmutuus.com`, _advise_ mode, category groups — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through (`docs/phase-1-walkthrough.md`) waits on the extension reload.
 - **Phase 2a:** the dashboard redesign (tokens, app shell, _now_ and triage pages) — delivered 2026-11-07 (`DONE.md`, `docs/screenshots/2026-11-07-phase-2a-*.jpg`); new pages reuse `apps/dashboard/src/styles.css` and are screenshot-verified over `scripts/demo.sh`.
-- **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters, the weekly expense statement.
+- **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters, the weekly expense statement — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through is `docs/phase-2-walkthrough.md`.
 - **Phase 3:** tasks and the prioritizer: import, _now_ / _later today_, waiting-on.
 - **Phase 4:** Slack.
 - **Phase 5:** WhatsApp and Telegram, read and reply.
@@ -18,31 +18,18 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
-## Start here (handoff 2026-11-07, after Phase 1)
+## Start here (handoff 2026-11-08, after Phase 2)
 
-Read `CLAUDE.md` first. **Phase 1's code is delivered** (`DONE.md`): the mail-report and triage-proposal contracts, the domain rules (addressed-to-user, displayed category, verdict effects, queue grouping and ordering, spend ceiling, verdict examples, badge), the backend (mail ingestion, triage runs on a 30-second schedule behind the `Triage` port, append-only proposals, verdicts, spend, archive commands, tasks, check-later, every store in SQLite and restart-safe), the Claude adapter (`prompts/triage-v1.md`, strict `propose_triage` tool from the contract, Opus 5.5, cost from usage), the extension's Gmail poll with history ids, bounded parallel metadata reads, retries, and archive commands carried out and acknowledged, the dashboard's `#/triage` page (action block, groups, keys `t` `k` `a` `r` `c`, removal on accepted verdicts), and the fake Gmail server suite. One live call through the real adapter succeeded. **Not yet seen over the real inbox**: the extension in the psmutuus profile still needs a reload to pick up the `gmail.modify` scope; `docs/phase-1-walkthrough.md` is the checklist and the screenshot item in `NOT_DONE.md` waits on it. Phase 0's three-day token check is due 2026-11-09.
+Read `CLAUDE.md` first. **Phase 2's code is delivered** (`DONE.md`, 100 items): per-account profile selection in the triage prompt, the Cc demotion through the domain rule, the latest verdict deciding every effect, the spend ceiling resetting at business midnight, sender-domain and List-Id verdict examples, category modes (`advise` / `automatic`, persisted, automatic decisions recorded per proposal, `my-life/auto` label, kill switch) with their page, filter candidates (three decided archives per sender or List-Id per account) → Claude filter proposals (`prompts/filter-v1.md`, strict `propose_filter`, spend logged) → approval → `create-filter` commands carried out by the extension through the fake-Gmail-proven path → `GET /filters` with times → deletion; the weekly expense statement (domain rule, CSV route, page); `scripts/demo.sh` seeds all of it. **Not yet seen over the real inbox**: the extensions still need a reload for the `gmail.settings.basic` scope; `docs/phase-2-walkthrough.md` is the checklist. Phase 0's three-day token check is due 2026-11-09.
 
-What the supervision showed — check these every cycle:
+What the supervision showed this phase — check these every cycle:
 
-- **The same four fakes recur:** a constant where a lookup belongs, a list-order shortcut where a date order belongs, an input the green never reads (category, verdict, account email), and two code paths kept alive by test fakes that omit a dependency. Each cost one inserted item; the two-path case (the Claude adapter) was collapsed by hand with a test migration.
-- **A contract field or a route the other side already uses must be named in the item** (`/mail-report`, `/commands?accountEmail=…`, `/commands/:id/acknowledgement`, the `due` field): the planner cannot see what the sibling package expects.
-- **Persistence is never implied.** Every store started in memory; one restart keystone per store (messages, report times, proposals, spend, verdicts, acknowledgements) made them SQLite.
-- **Idle kills after a green commit are routine** (eight this phase): the work was on disk and green each time; commit by hand, tick, move on.
-- **The refactor loop needed nine passes** (23 applied) because each extraction exposed the next medium; the test-quality loop four (17 applied, all table folds); complexity one (0).
-- Three items were delivered one clause at a time and honestly left open or re-scoped (bundled items, including two of the supervisor's own).
-
----
-
-## Phase 2 — Every account, categories, Gmail filters
-
-Outcome: all inboxes are triaged, trusted categories run automatically, and recurring trivial mail never reaches the inbox again.
-
-- Every profile's extension polls Gmail; the queue is merged and shows the account.
-- Every new page (categories, filters, statement) is a route in the app shell (`apps/dashboard/src/app-shell.tsx`), built from the existing tokens and component classes (`styles.css`: `.card`, `.group`, `.row`, `.table`, `.pill`, `.button`, `.banner`, `.empty`), with a `Now` / `Triage` / … tab; `scripts/demo.sh` seeds enough data to screenshot it.
-- Category settings page: each category's `advise` / `automatic` switch, with its recent proposals and the agreement rate (confirmed ÷ proposed) shown before the switch. Automatic actions are labeled `my-life/auto`.
-- Filter proposals: after K confirmed archives from the same sender or list-id, Claude proposes a Gmail filter (criteria + label + skip inbox); the user approves; the extension creates it through `users.settings.filters.create` (`gmail.settings.basic`). Approvals are stored before creation. A filter page lists what was created and lets the user delete one.
-- Kill switch: one toggle returns every category to `advise`.
-- Weekly expense statement: every `expense` extract of the week (vendor, amount, currency, date, link to the message) as one file the user sends to accounting.
+- **Every store started in memory again** (category modes, automatic decisions, filter approvals, rejections, deletion requests, candidate keys, message dates): one restart keystone each. Plan restart items next to every new store from the start.
+- **Mode-at-request-time is the new constant fake:** the first automatic green derived "automatic" from the current mode when `GET /commands` was called; three keystones (recorded decision, later verdict wins, new proposals only) fixed it. Any "setting" that changes behavior needs an item saying _when_ it applies.
+- **Items that name two sides get one side:** the adapter clause landed without the backend clause twice (filter candidate messages, delete-filter). Split such items up front.
+- **Shape-pinning tests block additive greens:** six `toEqual` on whole response bodies had to be migrated to `toMatchObject` (categories, commands, candidates). Prefer field-subset assertions in route tests.
+- **The integration suite catches contract drift the unit tests cannot** (`label` vs `labelName`): one integration item per command type that crosses the backend–extension line.
+- **The refactor loop took 15 passes** (39 applied, mostly test-helper extraction in `app.test.ts`); the test-quality loop six (9 applied); complexity one (0). `app.test.ts` is past 3,000 lines: split it by route group before Phase 3 adds tasks.
 
 ## Phase 3 — Tasks and the prioritizer
 
