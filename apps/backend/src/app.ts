@@ -27,6 +27,7 @@ import {
 import { openAcknowledgementStore } from './acknowledgement-store';
 import { openCreatedFilterStore } from './created-filter-store';
 import { openCategoryModeStore } from './category-mode-store';
+import { openContactDetailsStore, type ContactDetails } from './contact-details-store';
 import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calendar-snapshot-store';
 import { openFilterDeletionRequestStore } from './filter-deletion-request-store';
 import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
@@ -247,6 +248,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const createdFilterStore = openCreatedFilterStore(databasePath);
   const filterDeletionRequestStore = openFilterDeletionRequestStore(databasePath);
   const categoryModeStore = openCategoryModeStore(databasePath);
+  const contactDetailsStore = openContactDetailsStore(databasePath);
   // Messages reported before this process started are reloaded, so a restart never strands a message untriaged.
   const storedMessages = reportedMessageStore.loadReportedMessages();
   const reportedMessages: ReportedMessage[] = storedMessages;
@@ -574,11 +576,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     markedEmails.add(context.req.param('email'));
     return context.body(null, 200);
   });
+  app.patch('/contacts/:email', async (context) => {
+    contactDetailsStore.save(context.req.param('email'), await context.req.json<ContactDetails>());
+    return context.body(null, 200);
+  });
   app.get('/contacts', (context) => {
+    const contactDetails = contactDetailsStore.loadAll();
     return context.json({
       contacts: contactsByEmail(reportedSenders(), proposals).map((contact) => ({
         ...contact,
         marks: markedEmails.has(contact.emails[0]!) ? ['vip'] : [],
+        ...contactDetails[contact.emails[0]!],
       })),
     });
   });

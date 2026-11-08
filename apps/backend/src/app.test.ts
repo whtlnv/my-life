@@ -39,6 +39,13 @@ const getOrganizations = (app: App) =>
 const markContact = (app: App, email: string, mark: string) =>
   app.request(`/contacts/${encodeURIComponent(email)}/marks/${mark}`, { method: 'PUT' });
 
+const setContactDetails = (app: App, email: string, details: { lists?: string[]; note?: string }) =>
+  app.request(`/contacts/${encodeURIComponent(email)}`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(details),
+  });
+
 const getCommands = (app: App, accountEmail: string) =>
   app.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`);
 
@@ -3049,6 +3056,26 @@ describe('backend app', () => {
     expect(contacts.toSorted((left, right) => left.emails[0]!.localeCompare(right.emails[0]!))).toMatchObject([
       { emails: ['luis@example.com'], marks: ['vip'] },
       { emails: ['marta@acme.com'], marks: [] },
+    ]);
+  });
+
+  it('lists at GET /contacts, after a backend restart on the same database file, the lists and note set on a contact through PATCH /contacts/:email before it', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+    await setContactDetails(beforeRestart, 'luis@example.com', { lists: ['board', 'investors'], note: 'Prefers calls' });
+
+    const afterRestart = createApp(options);
+    const { contacts } = (await getContacts(afterRestart)) as {
+      contacts: { emails: string[]; lists?: string[]; note?: string }[];
+    };
+
+    expect(contacts).toMatchObject([
+      { emails: ['luis@example.com'], lists: ['board', 'investors'], note: 'Prefers calls' },
     ]);
   });
 });
