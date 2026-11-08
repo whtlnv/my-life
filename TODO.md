@@ -35,7 +35,7 @@
 - [x] A later Google Contacts import leaves the organization the user set on a contact unchanged (backlog: apps/backend/src/app.ts:897 The first imported organization sticks for good)
 - [x] A contact's timeline lists every message that contact sent, across every account, newest first, each with its account and source link
 - [x] A contact's timeline leaves out messages sent by other contacts
-- [ ] A contact's timeline includes a message that names them in its extracted people (asked, mentioned or copied) although someone else sent it
+- [x] A contact's timeline includes a message that names them in its extracted people (asked, mentioned or copied) although someone else sent it
 - [ ] A contact's timeline includes the user's sent messages in threads with that contact, marked as the user's replies
 - [ ] A timeline message shows its thread state and the asks the user has not answered as open
 - [ ] A timeline message whose thread has a later message sent by the user shows its asks as answered, not open

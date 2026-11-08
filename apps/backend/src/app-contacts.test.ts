@@ -129,6 +129,24 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(messages.map((message) => message.id)).toEqual(['message-1']);
   });
 
+  it('includes in GET /contacts/:email/timeline a message another contact sent whose triaged extraction names that contact', async () => {
+    const triage = triageAnsweringByMessageId({
+      'message-1': keepProposalExtracting({ people: [] }),
+      'message-2': keepProposalExtracting({
+        people: [{ name: 'Luis Pérez', email: 'luis@example.com', role: 'copied' }],
+      }),
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+    await postTriageRun(app);
+
+    const response = await app.request('/contacts/luis@example.com/timeline');
+
+    expect(response.status).toBe(200);
+    const { messages } = (await response.json()) as { messages: { id: string }[] };
+    expect(messages.map((message) => message.id)).toContain('message-2');
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);

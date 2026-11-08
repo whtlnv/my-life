@@ -945,7 +945,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/contacts/:email/timeline', (context) => {
     const email = context.req.param('email');
     const messages = reportedMessages
-      .filter((message) => contactFromSender(message.from).email === email)
+      .filter(
+        (message) =>
+          contactFromSender(message.from).email === email ||
+          proposals.some(
+            ({ messageId, people = [] }) =>
+              messageId === message.id && people.some((person) => person.email === email),
+          ),
+      )
       .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
