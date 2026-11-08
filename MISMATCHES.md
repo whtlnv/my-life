@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 12:02 · `apps/backend/src/app-mail-triage.test.ts::lists at GET /commands no archive command for an item of a digest confirmed at POST /digests/:id/confirmation whose own proposal is keep`
+- Behavior: Confirming a digest queues no archive command for its items whose own proposal is `keep`
+- Predicted: passes on first run — `GET /commands` already filters proposals to `action === 'archive'` (apps/backend/src/app.ts:726), and the previous cycle's digest confirmation only saves verdicts
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: The behavior came with the previous item's green step. A rewrite cannot make it fail without changing the behavior, so the test stays as a guard. A temporary mutation that dropped the archive filter made it fail (`message-advisory` listed), so the pass is not vacuous; the mutation was reverted.
+
 ## 2026-11-08 11:42 · `packages/domain/src/digests.test.ts::does not list its items that are not significant`
 - Behavior: A digest does not list its items that are not significant
 - Predicted: pass on first run: the previous green computed `significantItems` as `proposals.filter(isSignificant)`, which already drops items whose extract is not `significant: true`

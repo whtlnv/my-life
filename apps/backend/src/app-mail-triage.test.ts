@@ -850,6 +850,41 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(commands.map(({ messageId }) => messageId).sort()).toEqual(['message-build', 'message-deploy']);
   });
 
+  it('lists at GET /commands no archive command for an item of a digest confirmed at POST /digests/:id/confirmation whose own proposal is keep', async () => {
+    const gitHubNotice = (action: string, summary: string) => ({
+      action,
+      category: 'system-update',
+      summary,
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder(
+      [gitHubNotice('archive', 'GitHub build passed'), gitHubNotice('keep', 'GitHub security advisory')],
+      1,
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: ['message-build', 'message-advisory'].map((id) => ({
+        ...budgetReview,
+        id,
+        threadId: id,
+        from: 'GitHub <noreply@github.com>',
+      })),
+    });
+    await postTriageRun(app);
+    const { digests } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+
+    await app.request(`/digests/${encodeURIComponent(digests[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+
+    const { commands } = await getJson<{ commands: { messageId: string }[] }>(
+      app,
+      '/commands?accountEmail=ana%40example.com',
+    );
+    expect(commands.map(({ messageId }) => messageId)).toEqual(['message-build']);
+  });
+
   it('lists in GET /triage-queue groups no waiting system-update, sales or calendar-drive proposal, which come back in digests only, while an expense proposal stays in its group', async () => {
     const proposalsInOrder = [
       { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },
