@@ -13,11 +13,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
-- **[apps/backend/src/app.ts:839] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08)
+- **[apps/backend/src/app.ts:990] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08)
   Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
   scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
   agent (Phase 4) needs ranking.
-- **[apps/backend/src/app.ts:746] The first imported organization sticks for good** (added: 2026-11-08)
+- **[apps/backend/src/app.ts:897] The first imported organization sticks for good** (added: 2026-11-08; location corrected 2026-11-08)
   An imported organization is saved in the same details record a user edit writes, so `organizationAlreadyStored` treats
   it as set by the user and a later import (a contact who changed jobs) never updates it. Fix by storing imported and
   user-set fields apart; the user-set one wins.
@@ -39,11 +39,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `groups`, so `TriageGroup.systems`, `SystemSection` and the `sales` / `calendar-drive` cases of `GroupRows` never render
   live data but read as live. Deferred because `triage-page.test.tsx` pins each of them with a hand-built response, and a
   refactor pass never deletes a test; it is a `/test-quality` matter (the domain's `systems` in `triage-queue.ts` goes with it).
-- **[apps/extension/src/gmail-archive.ts:6] `CommandOptions` re-declares `AccountRequestOptions`** (added: 2026-11-08)
-  Its four fields (`fetch`, `accessToken`, `accountEmail`, `backendUrl`) are the ones `AccountRequestOptions` in
-  `apps/extension/src/fetch-function.ts` declares for the body backfill and the contacts import, and `extension-start.ts`
-  hands one object to all of them, so a new field is added in two places. Deferred because `gmail-archive.ts` and its
-  importer `gmail-filter.ts` are outside b6267f0..HEAD.
 - **[apps/backend/src/app.ts:51] The `/bodies-missing` and `/bodies-report` bodies are declared apart from the extension that sends and reads them** (added: 2026-11-08)
   `BodiesReport` here and the `{ accountEmail, bodies }` post and `BodiesMissing` read in `apps/extension/src/body-backfill.ts`
   must change together, and nothing ties them: a renamed field compiles and the backfill silently stores nothing. Deferred for
@@ -55,9 +50,9 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   reordered or added column compiles and shows amounts under the wrong heading. Deferred for the same reason as the
   `/triage-queue` and `/now` entries below: there is no statement contract to share the column list from, and adding one is
   new `packages/contracts` surface delivered test-first.
-- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
-  `new URL(input instanceof Request ? input.url : input.toString())` opens 29 fake `fetch` functions across eight
-  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 29 times.
+- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08)
+  `new URL(input instanceof Request ? input.url : input.toString())` opens 30 fake `fetch` functions across eight
+  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 30 times.
   Deferred because two of those files (`calendar-poll.test.ts`, `gmail-poll.test.ts`) sit outside 2aaf298..HEAD and the
   extension has no shared test-helper module to hoist it into.
 - **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
@@ -69,14 +64,14 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:293] `createApp` is one 575-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
-  The file is 934 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:320] `createApp` is one 736-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08)
+  The file is 1085 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
-- **[packages/domain/src/expense-statement.ts:26] `localCalendarDate` is defined four times** (added: 2026-11-07)
+- **[packages/domain/src/expense-statement.ts:26] `localCalendarDate` is defined four times** (added: 2026-11-07; location corrected 2026-11-08)
   Identical `Intl.DateTimeFormat('en-CA', …)` helpers sit in `expense-statement.ts`, `now-view.ts`, `triage-spend.ts` and
-  inline in `apps/backend/src/app.ts` `mondayOfBusinessWeek`, so a fix to the business-date rule has to be made four
+  as `businessDateOf` in `apps/backend/src/app.ts`, so a fix to the business-date rule has to be made four
   times. Deferred because the domain has no shared date module and `now-view.ts` and `triage-spend.ts` are outside
   2aaf298..HEAD.
 - **[apps/dashboard/src/filters-page.tsx:46] A fourth dashboard copy of the business time zone** (added: 2026-11-07)
@@ -92,7 +87,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Nothing in `apps/*` imports it (the backend tests stub `propose` inline), so it reads as a live Triage adapter while being dead.
   Deferred because deleting it deletes `scripted-triage.test.ts`, and a refactor pass never deletes a test; it is a
   `/test-quality` matter.
-- **[apps/backend/src/app.ts:317] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
+- **[apps/backend/src/app.ts:348] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08)
   `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
   the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
   same message id (the map keeps the last account, the store's `INSERT OR IGNORE` the first), so dropping either changes behavior.
