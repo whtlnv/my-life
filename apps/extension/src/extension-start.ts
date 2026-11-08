@@ -51,10 +51,10 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       backendUrl: options.backendUrl,
       storedHistoryId,
     });
-    const commandOptions = { fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl };
-    await carryOutArchiveCommands(commandOptions);
-    await carryOutFilterCommands(commandOptions);
-    await backfillBodiesOnce(commandOptions);
+    const accountRequestOptions = { fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl };
+    await carryOutArchiveCommands(accountRequestOptions);
+    await carryOutFilterCommands(accountRequestOptions);
+    await backfillBodiesOnce(accountRequestOptions);
   };
   const pollGmailAndLogFailure = logFailure('Gmail poll failed', pollGmail);
   const importContacts = async () => {
