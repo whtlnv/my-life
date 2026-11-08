@@ -873,7 +873,7 @@ function messagesWhoseBodyOrSummaryContainsWord(
   proposals: Proposal[],
   word: string,
 ): ReportedMessage[] {
-  const containsWord = (text: string | undefined): boolean => text !== undefined && text.split(/\W+/).includes(word);
+  const containsWord = (text: string | undefined): boolean => text?.split(/\W+/).includes(word) ?? false;
   return messages.filter(
     (message) => containsWord(message.body) || containsWord(latestProposalFor(proposals, message.id)?.summary),
   );
