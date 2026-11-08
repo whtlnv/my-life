@@ -950,17 +950,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ({ messageId, people = [] }) =>
           messageId === messageIdentifier && people.some((person) => person.email === email),
       );
-    const involvesContact = (message: (typeof reportedMessages)[number]): boolean =>
+    const involvesContact = (message: ReportedMessage): boolean =>
       contactFromSender(message.from).email === email || namesContact(message.id);
     const contactThreadIds = new Set(reportedMessages.filter(involvesContact).map((message) => message.threadId));
-    const isUserReplyInContactThread = (message: (typeof reportedMessages)[number]): boolean =>
+    const isUserReplyInContactThread = (message: ReportedMessage): boolean =>
       message.sentByUser === true && contactThreadIds.has(message.threadId);
+    const isLaterUserReplyTo = (message: ReportedMessage, other: ReportedMessage): boolean =>
+      other.sentByUser === true &&
+      other.threadId === message.threadId &&
+      new Date(other.date).getTime() > new Date(message.date).getTime();
     const messages = reportedMessages
       .filter((message) => involvesContact(message) || isUserReplyInContactThread(message))
       .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
         const proposal = proposals.find((candidate) => candidate.messageId === message.id);
+        const userRepliedLater = reportedMessages.some((other) => isLaterUserReplyTo(message, other));
         return {
           id: message.id,
           subject: message.subject,
@@ -968,17 +973,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           link: gmailMessageLink({ accountEmail, messageId: message.id }),
           sentByUser: message.sentByUser === true,
           threadState: proposal?.threadState,
-          asks: (proposal?.asks ?? []).map((ask) => ({
-            ...ask,
-            status: reportedMessages.some(
-              (other) =>
-                other.sentByUser === true &&
-                other.threadId === message.threadId &&
-                new Date(other.date).getTime() > new Date(message.date).getTime(),
-            )
-              ? 'answered'
-              : 'open',
-          })),
+          asks: (proposal?.asks ?? []).map((ask) => ({ ...ask, status: userRepliedLater ? 'answered' : 'open' })),
         };
       });
     return context.json({ messages });
