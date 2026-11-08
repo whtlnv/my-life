@@ -6,6 +6,7 @@ import { Hono, type MiddlewareHandler } from 'hono';
 import {
   calendarSnapshot,
   contactDetails,
+  contactsImport,
   mailReport,
   triageCategories,
   type HealthResponse,
@@ -658,8 +659,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.saveImported({ displayName: name, emails });
   };
   app.post('/contacts-import', async (context) => {
-    const { contacts } = await context.req.json<{ contacts: ImportedContact[] }>();
-    contacts.forEach(importContact);
+    const body = await context.req.json<{ contacts: ImportedContact[] }>();
+    if (!contactsImport.safeParse(body).success) {
+      return context.body(null, 400);
+    }
+    body.contacts.forEach(importContact);
     return context.body(null, 200);
   });
   app.get('/contacts', (context) => {

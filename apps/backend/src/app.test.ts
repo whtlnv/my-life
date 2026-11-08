@@ -3324,4 +3324,20 @@ describe('backend app', () => {
       },
     ]);
   });
+
+  it('answers 400 to POST /contacts-import whose body does not match the contract and lists at GET /contacts none of its contacts, not even the well-formed one', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    const response = await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [
+        { name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] },
+        { name: 'Ana Ruiz', emails: 'ana@acme.com', organization: 'Acme', starred: false, lists: [] },
+      ],
+    });
+    const { contacts } = await getContacts(app);
+
+    expect(response.status).toBe(400);
+    expect(contacts).toEqual([]);
+  });
 });
