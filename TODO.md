@@ -50,6 +50,7 @@
 - [x] A message from a free-mail domain (`gmail.com`, `outlook.com`, `hotmail.com`, `yahoo.com`, `icloud.com`) links to no domain organization
 - [x] Every person in a message's extraction with an email becomes a contact linked to that message
 - [x] A person in a message's extraction without an email links to no contact
+- [ ] A person who appears in two messages' extractions, or is also a message's sender, is one contact (by email) listing every message they sent or appear in
 - [ ] One message lists under every contact and organization it links to
 - [ ] A message lists under no contact it does not link to
 - [ ] Contacts, organizations and message links survive a backend restart
