@@ -27,4 +27,22 @@ describe('contactUrgency', () => {
       reasons: ['unanswered ask'],
     });
   });
+
+  it('is not urgent when the contact asked the user something only 1 business day ago and nobody answered', () => {
+    const mondayFivePm = '2026-11-09T23:00:00.000Z';
+    const tuesdayFivePm = '2026-11-10T23:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-budget',
+        receivedAt: mondayFivePm,
+        sentByUser: false,
+        asks: [{ ask: 'Review the Q3 budget spreadsheet and send comments' }],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: tuesdayFivePm, settings: urgencySettings })).toEqual({
+      urgent: false,
+      reasons: [],
+    });
+  });
 });
