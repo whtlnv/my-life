@@ -204,6 +204,24 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(askedMessageIds).toEqual(['message-newest', 'message-middle', 'message-older']);
   });
 
+  it('never hands triage at POST /triage-run a message the user sent', async () => {
+    const askedMessageIds: string[] = [];
+    const triage = triageRecordingAskedMessageIds(askedMessageIds);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-received', sentByUser: false },
+        { ...budgetReview, id: 'message-sent', from: 'Ana <ana@example.com>', to: 'luis@example.com', sentByUser: true },
+      ],
+    });
+
+    await postTriageRun(app);
+
+    expect(askedMessageIds).toEqual(['message-received']);
+  });
+
   it('leaves every reported message untriaged and logs no spend at POST /triage-run when no triage port is configured', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     await postJson(app, '/mail-report', budgetReviewReport);

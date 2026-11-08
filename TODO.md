@@ -7,7 +7,7 @@
 - [x] When the extension polls Gmail, a message received in the inbox is reported marked as not sent by the user
   - hand-driven 2026-11-08: the exact-fields poll test was migrated to expect `sentByUser: false`, not deleted
 - [x] `POST /mail-report` keeps whether each message was sent by the user (the shared contract accepts the field), also after a backend restart on the same database file
-- [ ] A message the user sent is never handed to the triage port and never appears in `GET /triage-queue`, digests or the badge count
+- [x] A message the user sent is never handed to the triage port and never appears in `GET /triage-queue`, digests or the badge count
 - [ ] The business days between two instants skip Saturday and Sunday in the business time zone: Friday 17:00 to Tuesday 17:00 is 2 business days
 - [ ] The business days between two instants on weekdays only count every day: Monday 17:00 to Wednesday 17:00 is 2 business days
 - [ ] A contact whose ask to the user has gone unanswered for 2 business days is urgent, with the reason "unanswered ask"

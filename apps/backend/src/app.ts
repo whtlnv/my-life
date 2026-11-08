@@ -576,7 +576,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     try {
       const awaitingRetriage = reportedMessages.filter((message) => messageIdsAwaitingRetriage.has(message.id));
       let proposedInThisRun = false;
-      for (const message of [...triageQueue(proposals, [], reportedMessages).remaining, ...awaitingRetriage]) {
+      const messagesToTriage = [...triageQueue(proposals, [], reportedMessages).remaining, ...awaitingRetriage].filter(
+        (message) => message.sentByUser !== true,
+      );
+      for (const message of messagesToTriage) {
         if (hasReachedDailySpendCeiling()) {
           break;
         }
