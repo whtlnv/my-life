@@ -768,11 +768,24 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
   });
   app.get('/needs-input', (context) => {
+    const verdicts = verdictStore.loadAll();
     const questions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
       const choices = categoryQuestionChoices(category, disagreement);
-      return choices === undefined ? [] : [{ kind: 'category', messageId, accountEmail, choices }];
+      return choices === undefined || latestVerdictFor(messageId, verdicts) !== undefined
+        ? []
+        : [{ kind: 'category', messageId, accountEmail, choices }];
     });
     return context.json({ questions });
+  });
+  app.post('/needs-input/answers', async (context) => {
+    const { messageId, answer } = await context.req.json<{ messageId: string; answer: string }>();
+    verdictStore.save({
+      messageId,
+      decision: 'confirmed',
+      correction: { category: answer },
+      decidedAt: clock.now().toISOString(),
+    });
+    return context.body(null, 200);
   });
   app.get('/filter-proposals', (context) => {
     const decidedFilterProposalIds = new Set([

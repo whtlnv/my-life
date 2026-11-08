@@ -12,6 +12,7 @@ import {
   triageAnswering,
   temporaryDatabasePath,
 } from './app.test-support';
+import { openVerdictStore } from './verdict-store';
 
 async function needsInputAfterTriagingBudgetReview(
   triage: NonNullable<AppOptions['triage']>,
@@ -106,5 +107,27 @@ describe('backend app: GET /needs-input', () => {
         choices: triageCategories.filter((category) => category !== 'unknown'),
       }),
     ]);
+  });
+
+  it('records the category chosen in answer to a category question as the message verdict, and asks the question no more', async () => {
+    const databasePath = temporaryDatabasePath();
+    const triage = triageAnswering({
+      action: 'keep',
+      category: 'cc-thread',
+      summary: 'Luis copies the user on the budget thread',
+      extract: {},
+      reason: 'The user is only copied',
+      disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    await postJson(app, '/needs-input/answers', { kind: 'category', messageId: 'message-1', answer: 'action' });
+
+    expect(openVerdictStore(databasePath).loadAll()).toEqual([
+      expect.objectContaining({ messageId: 'message-1', correction: { category: 'action' } }),
+    ]);
+    expect((await getJson<{ questions: unknown[] }>(app, '/needs-input')).questions).toEqual([]);
   });
 });

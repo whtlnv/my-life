@@ -53,7 +53,7 @@
 - [x] `GET /needs-input` asks nothing about a message whose two models agreed
 - [x] `GET /needs-input` still asks the category question of a message whose two models disagreed, after a backend restart on the same database file, with no triage call made again
 - [x] `GET /needs-input` asks which category is right for a message proposed as `unknown`
-- [ ] Answering a category question records the chosen category as the message's verdict, and the question is not asked again
+- [x] Answering a category question records the chosen category as the message's verdict, and the question is not asked again
 - [ ] An answered category question is fed back as an example for later messages from the same sender
 - [ ] `GET /needs-input` asks "VIP or ordinary?" about a sender with no earlier message whose message asks the user for something
 - [ ] `GET /needs-input` asks nothing about a new sender whose message asks the user nothing
