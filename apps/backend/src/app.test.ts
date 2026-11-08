@@ -36,6 +36,9 @@ const getContacts = (app: App) =>
 const getOrganizations = (app: App) =>
   getJson<{ organizations: { name: string; messageIds: string[] }[] }>(app, '/organizations');
 
+const getBodiesMissing = (app: App, account: string) =>
+  getJson<{ messageIds: string[] }>(app, `/bodies-missing?account=${encodeURIComponent(account)}`);
+
 const markContact = (app: App, email: string, mark: string) =>
   app.request(`/contacts/${encodeURIComponent(email)}/marks/${mark}`, { method: 'PUT' });
 
@@ -3364,8 +3367,8 @@ describe('backend app', () => {
       messages: [{ ...bodyLessMessage, id: 'message-3', to: 'bea@example.com' }],
     });
 
-    const response = await app.request('/bodies-missing?account=ana%40example.com');
+    const bodiesMissing = await getBodiesMissing(app, 'ana@example.com');
 
-    expect(await response.json()).toEqual({ messageIds: ['message-1'] });
+    expect(bodiesMissing).toEqual({ messageIds: ['message-1'] });
   });
 });
