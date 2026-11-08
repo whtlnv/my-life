@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     "./calendar-poll": "./src/calendar-poll.ts",
+    "./contacts-import": "./src/contacts-import.ts",
     "./gmail-archive": "./src/gmail-archive.ts",
     "./gmail-filter": "./src/gmail-filter.ts",
     "./gmail-poll": "./src/gmail-poll.ts"

@@ -77,7 +77,7 @@
 - [x] A starred imported contact whose `vip` mark the user removed in the app stays unmarked after the next import
 - [x] Imported contacts, with their names, emails, organization and lists, are still listed after a backend restart
 - [x] A contacts import whose body does not match the contract is answered 400 and stores nothing
-- [ ] The contacts import, from the extension against the fake People server to the stored contacts, ends with the contacts readable from the backend
+- [x] The contacts import, from the extension against the fake People server to the stored contacts, ends with the contacts readable from the backend
 
 ### Backfill and retriage
 

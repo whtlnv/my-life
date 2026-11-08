@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 03:47 · `apps/integration/src/people-fake-server.test.ts::importing the starred-client-and-other-contact scenario lists at GET /contacts the starred client as vip with its organization and list, and the other contact by name and email`
+- Behavior: the contacts import, from the extension against the fake People server to the stored contacts, ends with the contacts readable from the backend
+- Predicted: module-load error, `./people-fake-server` cannot be found because the fake People server does not exist yet
+- Actual: module-load error one import earlier, `"./contacts-import" is not exported` from `@my-life/extension` (the package's `exports` map lists only `calendar-poll`, `gmail-archive`, `gmail-filter` and `gmail-poll`)
+- Type: right-reason mismatch
+- Resolution: the extension package exposes its pollers to the integration suite through an explicit `exports` allow-list, which every fake-server test before this one extended; exposing `contacts-import` there is part of the wiring this item drives, so the test stands as written and the actual failure is accepted; the missing fake server surfaces next.
+
 ## 2026-11-08 03:13 · `apps/backend/src/app.test.ts::lists at GET /contacts, after POST /contacts-import brings unstarred a contact the user marked vip through PUT /contacts/:email/marks/vip, that contact still with the vip mark`
 - Behavior: An unstarred imported contact does not remove a `vip` mark the user set in the app
 - Predicted: pass — the import handler only calls `saveMark` when `starred` is true and never removes a mark, and marks live in `contact_marks`, which the details `save` does not touch
