@@ -701,6 +701,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
+  const undoneHandledForYouMessageIds: string[] = [];
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
     return context.json({
@@ -779,7 +780,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     filterDeletionRequestStore.save(context.req.param('id'), clock.now().toISOString());
     return context.body(null, 200);
   });
-  const undoneHandledForYouMessageIds: string[] = [];
   app.post('/handled-for-you/:messageId/undo', (context) => {
     const messageId = context.req.param('messageId');
     const wasHandledForYou = proposals.some(
