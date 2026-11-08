@@ -146,6 +146,13 @@ const triageRecordingExamplesByMessageId = (examplesByMessageId: Map<string, unk
   },
 });
 
+const filterRecordingAskedCandidates = (askedCandidates: unknown[], proposal: unknown, costInUsd = 0.05) => ({
+  propose: (candidate: unknown) => {
+    askedCandidates.push(candidate);
+    return Promise.resolve({ proposal, costInUsd, promptVersion: 'filter-v1' });
+  },
+});
+
 const ccThreadTriage = (action: 'archive' | 'keep') => {
   const proposal = {
     action,
@@ -2081,12 +2088,7 @@ describe('backend app', () => {
       skipInbox: true,
     };
     const askedCandidates: unknown[] = [];
-    const filter = {
-      propose: (candidate: unknown) => {
-        askedCandidates.push(candidate);
-        return Promise.resolve({ proposal: filterProposal, costInUsd: 0.05, promptVersion: 'filter-v1' });
-      },
-    };
+    const filter = filterRecordingAskedCandidates(askedCandidates, filterProposal);
     const triage = shopNewsletterArchiveTriage();
     const databasePath = temporaryDatabasePath();
     const app = createApp({
@@ -2121,16 +2123,11 @@ describe('backend app', () => {
 
   it('does not ask the filter port again after a backend restart on the same database file about a candidate whose filter proposal was stored before it', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = {
-      propose: (candidate: unknown) => {
-        askedCandidates.push(candidate);
-        return Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-          costInUsd: 0.05,
-          promptVersion: 'filter-v1',
-        });
-      },
-    };
+    const filter = filterRecordingAskedCandidates(askedCandidates, {
+      criteria: { from: 'news@shop.example.com' },
+      labelName: 'Shop newsletters',
+      skipInbox: true,
+    });
     const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
@@ -2171,16 +2168,11 @@ describe('backend app', () => {
 
   it('asks the filter port, also after a backend restart on the same database file, with each candidate message carrying its sender and subject as reported', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = {
-      propose: (candidate: unknown) => {
-        askedCandidates.push(candidate);
-        return Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-          costInUsd: 0.05,
-          promptVersion: 'filter-v1',
-        });
-      },
-    };
+    const filter = filterRecordingAskedCandidates(askedCandidates, {
+      criteria: { from: 'news@shop.example.com' },
+      labelName: 'Shop newsletters',
+      skipInbox: true,
+    });
     const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
@@ -2229,16 +2221,11 @@ describe('backend app', () => {
 
   it('counts toward a filter candidate only archives: a confirmed keep proposal does not count, while a rejected proposal corrected to archive does', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = {
-      propose: (candidate: unknown) => {
-        askedCandidates.push(candidate);
-        return Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop', skipInbox: true },
-          costInUsd: 0.05,
-          promptVersion: 'filter-v1',
-        });
-      },
-    };
+    const filter = filterRecordingAskedCandidates(askedCandidates, {
+      criteria: { from: 'news@shop.example.com' },
+      labelName: 'Shop',
+      skipInbox: true,
+    });
     const proposalWith = (action: string) => ({
       action,
       category: 'sales',
@@ -2390,16 +2377,11 @@ describe('backend app', () => {
 
   it('does not ask the filter port for a proposal when a filter candidate appears while triage is paused by the daily spend ceiling', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = {
-      propose: (candidate: unknown) => {
-        askedCandidates.push(candidate);
-        return Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop', skipInbox: true },
-          costInUsd: 1,
-          promptVersion: 'filter-v1',
-        });
-      },
-    };
+    const filter = filterRecordingAskedCandidates(
+      askedCandidates,
+      { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop', skipInbox: true },
+      1,
+    );
     const archiveProposal = {
       action: 'archive',
       category: 'sales',
@@ -2721,16 +2703,11 @@ describe('backend app', () => {
 
   it('neither asks the filter port again nor lists a proposal at GET /filter-proposals for further confirmed archives from a sender whose filter proposal was rejected, also after a backend restart on the same database file', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = {
-      propose: (candidate: unknown) => {
-        askedCandidates.push(candidate);
-        return Promise.resolve({
-          proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
-          costInUsd: 0.05,
-          promptVersion: 'filter-v1',
-        });
-      },
-    };
+    const filter = filterRecordingAskedCandidates(askedCandidates, {
+      criteria: { from: 'news@shop.example.com' },
+      labelName: 'Shop newsletters',
+      skipInbox: true,
+    });
     const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
