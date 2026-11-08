@@ -851,17 +851,11 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       1,
     );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const [budgetReview] = budgetReviewReport.messages;
-    const reportFromGitHub = (id: string) =>
-      postJson(app, '/mail-report', {
-        ...budgetReviewReport,
-        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
-      });
-    await reportFromGitHub('message-build');
+    await reportFromGitHub(app, 'message-build');
     await postTriageRun(app);
     const { digests: before } = await getJson<{ digests: { id: unknown }[] }>(app, '/triage-queue');
 
-    await reportFromGitHub('message-deploy');
+    await reportFromGitHub(app, 'message-deploy');
     await postTriageRun(app);
 
     const { digests: after } = await getJson<{ digests: { id: unknown; count: number }[] }>(app, '/triage-queue');
@@ -907,16 +901,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
         }),
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
-    const [budgetReview] = budgetReviewReport.messages;
-    const reportFromGitHub = (id: string) =>
-      postJson(app, '/mail-report', {
-        ...budgetReviewReport,
-        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
-      });
-    await reportFromGitHub('message-build');
+    await reportFromGitHub(app, 'message-build');
     await postTriageRun(app);
 
-    await reportFromGitHub('message-deploy');
+    await reportFromGitHub(app, 'message-deploy');
     await postTriageRun(app);
 
     const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
@@ -1230,19 +1218,13 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       1,
     );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const [budgetReview] = budgetReviewReport.messages;
-    const reportFromGitHub = (id: string) =>
-      postJson(app, '/mail-report', {
-        ...budgetReviewReport,
-        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
-      });
-    await reportFromGitHub('message-build');
+    await reportFromGitHub(app, 'message-build');
     await postTriageRun(app);
     const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
     const confirmedDigestId = before[0]?.id ?? '';
     await app.request(`/digests/${encodeURIComponent(confirmedDigestId)}/confirmation`, { method: 'POST' });
 
-    await reportFromGitHub('message-deploy');
+    await reportFromGitHub(app, 'message-deploy');
     await postTriageRun(app);
 
     const { digests: after } = await getJson<{ digests: { id: string; key: string; count: number }[] }>(
@@ -1260,18 +1242,12 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       1,
     );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const [budgetReview] = budgetReviewReport.messages;
-    const reportFromGitHub = (id: string) =>
-      postJson(app, '/mail-report', {
-        ...budgetReviewReport,
-        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
-      });
-    await reportFromGitHub('message-build');
+    await reportFromGitHub(app, 'message-build');
     await postTriageRun(app);
     const { digests: loaded } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
     const loadedDigestId = loaded[0]?.id ?? '';
 
-    await reportFromGitHub('message-deploy');
+    await reportFromGitHub(app, 'message-deploy');
     await postTriageRun(app);
     await app.request(`/digests/${encodeURIComponent(loadedDigestId)}/confirmation`, { method: 'POST' });
 
@@ -1323,17 +1299,11 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, databasePath };
     const beforeRestart = createApp(options);
-    const [budgetReview] = budgetReviewReport.messages;
-    const reportFromGitHub = (id: string) =>
-      postJson(beforeRestart, '/mail-report', {
-        ...budgetReviewReport,
-        messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
-      });
-    await reportFromGitHub('message-build');
+    await reportFromGitHub(beforeRestart, 'message-build');
     await postTriageRun(beforeRestart);
     const { digests: loaded } = await getJson<{ digests: { id: string }[] }>(beforeRestart, '/triage-queue');
     const confirmedDigestId = loaded[0]?.id ?? '';
-    await reportFromGitHub('message-deploy');
+    await reportFromGitHub(beforeRestart, 'message-deploy');
     await postTriageRun(beforeRestart);
 
     const afterRestart = createApp(options);
@@ -1957,4 +1927,12 @@ function systemUpdateNotice(system: string, summary: string) {
     extract: { system, severity: 'low', significant: false },
     reason: 'A routine notification',
   };
+}
+
+async function reportFromGitHub(app: ReturnType<typeof createApp>, id: string) {
+  const [budgetReview] = budgetReviewReport.messages;
+  return postJson(app, '/mail-report', {
+    ...budgetReviewReport,
+    messages: [{ ...budgetReview, id, threadId: id, from: 'GitHub <noreply@github.com>' }],
+  });
 }
