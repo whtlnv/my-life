@@ -147,7 +147,7 @@ const automaticLabelName = 'my-life/auto';
 // main.ts loads `prompts/<version>.md`, and the Claude adapter reports the file's name as the proposal's version.
 export const currentTriagePromptVersion = 'triage-v2';
 
-function gmailMessageLink({ accountEmail, messageId }: Proposal): string {
+function gmailMessageLink({ accountEmail, messageId }: Pick<Proposal, 'accountEmail' | 'messageId'>): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
 }
 
@@ -941,6 +941,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         };
       }),
     });
+  });
+  app.get('/contacts/:email/timeline', (context) => {
+    const email = context.req.param('email');
+    const messages = reportedMessages
+      .filter((message) => contactFromSender(message.from).email === email)
+      .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
+      .map((message) => {
+        const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
+        return {
+          id: message.id,
+          subject: message.subject,
+          accountEmail,
+          link: gmailMessageLink({ accountEmail, messageId: message.id }),
+        };
+      });
+    return context.json({ messages });
   });
   app.get('/people', (context) => {
     const markedEmails = contactDetailsStore.markedEmails();

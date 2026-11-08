@@ -80,6 +80,44 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(await response.json()).toMatchObject({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
   });
 
+  it('lists at GET /contacts/:email/timeline every message that contact sent, across every account, newest first, each with its account and Gmail link', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com', 'bob@example.com'] });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    const laterToBob = {
+      ...budgetReviewReport.messages[0],
+      id: 'message-2',
+      threadId: 'thread-2',
+      to: 'bob@example.com',
+      subject: 'Budget follow-up',
+      date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+    };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      accountEmail: 'bob@example.com',
+      messages: [laterToBob],
+    });
+
+    const response = await app.request('/contacts/luis@example.com/timeline');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      messages: [
+        {
+          id: 'message-2',
+          subject: 'Budget follow-up',
+          accountEmail: 'bob@example.com',
+          link: 'https://mail.google.com/mail/?authuser=bob%40example.com#all/message-2',
+        },
+        {
+          id: 'message-1',
+          subject: 'Budget review',
+          accountEmail: 'ana@example.com',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+        },
+      ],
+    });
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
