@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 13:25 · `apps/backend/src/app-mail-triage.test.ts::opens a database created before Phase 2c and serves GET /triage-queue with its waiting system-update proposal as a digest and its automatic proposal of today under handled for you`
+- Behavior: A database created before Phase 2c opens and serves `GET /triage-queue` with digests and handled for you
+- Predicted: passes on first run, because Phase 2c only added new tables (`listed_digests`, `digest_summaries`, `undone_automatic_messages`) through `CREATE TABLE IF NOT EXISTS` and altered no existing table or stored proposal shape
+- Actual: passed
+- Type: passed unexpectedly
+- Resolution: No migration is missing, so a failing test would have to assert wrong behavior. The test hand-builds the pre-2c schema and rows. A mutation check (the `listed_digests` table not created → `SqliteError: no such table: listed_digests`) shows it is not vacuous. It is kept as a keystone pin; /green has nothing to implement.
+
 ## 2026-11-08 13:21 · `apps/extension/src/gmail-archive.test.ts::does not acknowledge an undo-automatic command whose Gmail request failed`
 - Behavior: The extension acknowledges no undo command whose Gmail request failed
 - Predicted: passes on first run — the `!labelResponse.ok` → `continue` guard in `carryOutArchiveCommands` already covers undo, since commit 8f93cde routed undo through the same loop as archive
