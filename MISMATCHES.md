@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 03:13 · `apps/backend/src/app.test.ts::lists at GET /contacts, after POST /contacts-import brings unstarred a contact the user marked vip through PUT /contacts/:email/marks/vip, that contact still with the vip mark`
+- Behavior: An unstarred imported contact does not remove a `vip` mark the user set in the app
+- Predicted: pass — the import handler only calls `saveMark` when `starred` is true and never removes a mark, and marks live in `contact_marks`, which the details `save` does not touch
+- Actual: pass
+- Type: passed unexpectedly (predicted, but not a right-reason failure)
+- Resolution: the item had no missing behavior, so the test stays as a guardrail pin after proving it non-vacuous (temporarily removing the `vip` mark on an unstarred import makes it fail with `marks: []`; production restored, `git diff` touches only the test file).
+
 ## 2026-11-08 01:31 · `apps/backend/src/app.test.ts::still lists at GET /contacts and GET /organizations, after a backend restart on the same database file, every contact and organization with the messages linked to them before it: the senders, the person the extraction named and the organization it named, with nothing reported or triaged again`
 - Behavior: Contacts, organizations and message links survive a backend restart
 - Predicted: pass — senders come from the reported-message store and the proposals array is reloaded at startup from the proposal store, whose JSON already carries `people` and `organization`
