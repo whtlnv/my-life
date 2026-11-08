@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
-import { StatementPage } from './statement-page';
+import { noExpensesText, StatementPage } from './statement-page';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -77,5 +77,23 @@ describe('StatementPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /next week/i }));
     expect(await within(screen.getByRole('table')).findByText('Telmex')).toBeInTheDocument();
     expect(within(screen.getByRole('table')).queryByText('Uber')).not.toBeInTheDocument();
+  });
+
+  it('shows an empty state instead of the table for a week with no expenses', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response('vendor,amount,currency,date,account,link\n', {
+            headers: { 'content-type': 'text/csv; charset=utf-8' },
+          }),
+        ),
+      ),
+    );
+
+    render(<StatementPage />);
+
+    expect(await screen.findByText(noExpensesText)).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 });

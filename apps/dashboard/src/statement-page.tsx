@@ -46,6 +46,8 @@ const statementUrl = (weekOffset: number) => {
   return `/expense-statement?week=${week}`;
 };
 
+export const noExpensesText = 'No expenses this week';
+
 export const StatementPage = () => {
   const [entries, setEntries] = useState<StatementEntry[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -77,16 +79,20 @@ export const StatementPage = () => {
         Next week
       </button>
       <a href="/expense-statement">Download</a>
-      <table>
-        <tbody>
-          {entries.map((entry, index) => (
-            <StatementRow key={index} label={entry.vendor} amount={entry.amount} currency={entry.currency} />
-          ))}
-          {totalsByCurrency(entries).map(([currency, total]) => (
-            <StatementRow key={currency} label="Total" amount={total} currency={currency} />
-          ))}
-        </tbody>
-      </table>
+      {entries.length === 0 ? (
+        <p className="empty">{noExpensesText}</p>
+      ) : (
+        <table>
+          <tbody>
+            {entries.map((entry, index) => (
+              <StatementRow key={index} label={entry.vendor} amount={entry.amount} currency={entry.currency} />
+            ))}
+            {totalsByCurrency(entries).map(([currency, total]) => (
+              <StatementRow key={currency} label="Total" amount={total} currency={currency} />
+            ))}
+          </tbody>
+        </table>
+      )}
     </section>
   );
 };

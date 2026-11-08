@@ -107,7 +107,7 @@
 - [x] The dashboard app shell has a `Statement` tab linking to `#/statement`, marked current on that route
 - [x] The `#/statement` page shows the current week's entries in a table with their total per currency, and a Download link to that week's CSV
 - [x] The `#/statement` page's previous / next week controls load and show the other week's entries
-- [ ] The `#/statement` page shows an empty state for a week with no expenses
+- [x] The `#/statement` page shows an empty state for a week with no expenses
 
 ### Wiring and acceptance
 
