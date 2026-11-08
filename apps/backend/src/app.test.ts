@@ -2712,6 +2712,58 @@ describe('backend app', () => {
     }).toEqual({ filters: [], deleteFilterCommands: [] });
   });
 
+  it('still lists at GET /commands the delete-filter command of a deletion requested before a backend restart on the same database file, with the time the deletion was requested', async () => {
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      databasePath: temporaryDatabasePath(),
+      triage: triageAnswering({
+        action: 'archive',
+        category: 'sales',
+        summary: 'A shop newsletter',
+        extract: {},
+        reason: 'Promotional mail',
+      }),
+      filter: {
+        propose: () =>
+          Promise.resolve({
+            proposal: { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop newsletters', skipInbox: true },
+            costInUsd: 0.05,
+            promptVersion: 'filter-v1',
+          }),
+      },
+    };
+    const beforeRestart = createApp(options);
+    await reportTriageAndConfirmShopNewsletters(beforeRestart);
+    const listed = (await (await beforeRestart.request('/filter-proposals')).json()) as {
+      proposals: { id?: string }[];
+    };
+    const proposalId = listed.proposals[0]?.id ?? '';
+    await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
+    await beforeRestart.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
+      method: 'POST',
+      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
+    });
+    currentTime = new Date('2026-11-02T15:30:00.000Z');
+    await beforeRestart.request('/filters/gmail-filter-1', { method: 'DELETE' });
+    currentTime = new Date('2026-11-02T16:00:00.000Z');
+    const afterRestart = createApp(options);
+
+    const commands = (await (await getCommands(afterRestart, 'ana@example.com')).json()) as {
+      commands: { type?: string }[];
+    };
+
+    expect(commands.commands.filter(({ type }) => type === 'delete-filter')).toEqual([
+      {
+        id: 'delete-filter-gmail-filter-1',
+        type: 'delete-filter',
+        gmailFilterId: 'gmail-filter-1',
+        requestedAt: '2026-11-02T15:30:00.000Z',
+      },
+    ]);
+  });
+
   it('no longer lists at GET /filter-proposals a filter proposal rejected through POST /filter-proposals/:id/rejection', async () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);

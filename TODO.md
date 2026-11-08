@@ -88,7 +88,7 @@
 - [x] `DELETE /filters/:id` yields a `delete-filter` command for that filter's account only
 - [x] When the extension receives a `delete-filter` command it calls `users.settings.filters.delete` with the Gmail filter id and acknowledges (extension clause, cd065d4; the backend clause is the next item)
 - [x] After a `delete-filter` command is acknowledged through `POST /commands/:id/acknowledgement`, the filter is gone from `GET /filters` and the command is no longer listed
-- [ ] A requested deletion survives a backend restart on the same database: the `delete-filter` command is still listed afterwards, and the deletion request carries the time it was made (supervisor keystone: `DELETE /filters/:id` keeps the request in an in-memory array)
+- [x] A requested deletion survives a backend restart on the same database: the `delete-filter` command is still listed afterwards, and the deletion request carries the time it was made (supervisor keystone: `DELETE /filters/:id` keeps the request in an in-memory array)
 - [ ] The dashboard app shell has a `Filters` tab linking to `#/filters`, marked current on that route
 - [ ] The `#/filters` page lists pending proposals; Approve sends `POST /filter-proposals/:id/approval` and Reject sends `POST /filter-proposals/:id/rejection`
 - [ ] The `#/filters` page lists created filters with account name, criteria and label; Delete sends `DELETE /filters/:id`
