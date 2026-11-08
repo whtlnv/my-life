@@ -24,6 +24,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/dashboard/src/triage-page.tsx:48] The triage page still renders system sub-groups and sales and calendar-drive group rows** (added: 2026-11-08)
+  `GET /triage-queue` now puts every system-update, sales and calendar-drive proposal in a digest and leaves it out of
+  `groups`, so `TriageGroup.systems`, `SystemSection` and the `sales` / `calendar-drive` cases of `GroupRows` never render
+  live data but read as live. Deferred because `triage-page.test.tsx` pins each of them with a hand-built response, and a
+  refactor pass never deletes a test; it is a `/test-quality` matter (the domain's `systems` in `triage-queue.ts` goes with it).
 - **[apps/extension/src/gmail-archive.ts:6] `CommandOptions` re-declares `AccountRequestOptions`** (added: 2026-11-08)
   Its four fields (`fetch`, `accessToken`, `accountEmail`, `backendUrl`) are the ones `AccountRequestOptions` in
   `apps/extension/src/fetch-function.ts` declares for the body backfill and the contacts import, and `extension-start.ts`
