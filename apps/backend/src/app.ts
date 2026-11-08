@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { Hono, type MiddlewareHandler } from 'hono';
 
-import { calendarSnapshot, mailReport, triageCategories, type HealthResponse } from '@my-life/contracts';
+import { calendarSnapshot, contactDetails, mailReport, triageCategories, type HealthResponse } from '@my-life/contracts';
 import {
   badgeCount,
   buildNowView,
@@ -587,7 +587,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.patch('/contacts/:email', async (context) => {
-    contactDetailsStore.save(context.req.param('email'), await context.req.json<ContactDetails>());
+    const details = await context.req.json<ContactDetails>();
+    if (!contactDetails.safeParse(details).success) {
+      return context.body(null, 400);
+    }
+    contactDetailsStore.save(context.req.param('email'), details);
     return context.body(null, 200);
   });
   app.get('/contacts', (context) => {

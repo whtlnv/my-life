@@ -3135,4 +3135,24 @@ describe('backend app', () => {
       { emails: ['marta@acme.com'], lists: ['suppliers'], note: 'Answers fast' },
     ]);
   });
+
+  it('answers 400 to PATCH /contacts/:email whose note is not text or whose lists are not a list of text, and GET /contacts still shows the lists and note set before', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await setContactDetails(app, 'luis@example.com', { lists: ['board'], note: 'Prefers calls' });
+    const patchRaw = (body: unknown) =>
+      app.request(`/contacts/${encodeURIComponent('luis@example.com')}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+    const numericNote = await patchRaw({ note: 42 });
+    const textLists = await patchRaw({ lists: 'investors' });
+    const numericLists = await patchRaw({ lists: ['board', 7] });
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; lists?: string[]; note?: string }[] };
+
+    expect([numericNote.status, textLists.status, numericLists.status]).toEqual([400, 400, 400]);
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], lists: ['board'], note: 'Prefers calls' }]);
+  });
 });
