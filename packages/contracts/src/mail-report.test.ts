@@ -30,14 +30,12 @@ describe('mailReport', () => {
     },
     { rule: 'a report whose message has no Cc header', reported: messageWithout('cc') },
     { rule: 'a report whose message has no List-Id header', reported: messageWithout('listId') },
+    {
+      rule: 'a report whose message carries a body',
+      reported: { ...message, body: 'Hi Francisco,\n\nthe numbers are attached.' },
+    },
   ])('accepts $rule', ({ reported }) => {
     const report = reportWith([reported]);
-
-    expect(mailReport.parse(report)).toEqual(report);
-  });
-
-  it('accepts a report whose message carries a body', () => {
-    const report = reportWith([{ ...message, body: 'Hi Francisco,\n\nthe numbers are attached.' }]);
 
     expect(mailReport.parse(report)).toEqual(report);
   });
