@@ -36,6 +36,12 @@ const firstPendingFilterProposalId = async (app: App) => {
   return proposals[0]?.id ?? '';
 };
 
+const acknowledgeFilterCreation = (app: App, proposalId: string, gmailFilterId: string) =>
+  app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
+    method: 'POST',
+    body: JSON.stringify({ gmailFilterId }),
+  });
+
 const switchCategory = (app: App, category: string, mode: string) =>
   app.request(`/categories/${category}/mode`, {
     method: 'PUT',
@@ -2594,10 +2600,7 @@ describe('backend app', () => {
     };
 
     const beforeAcknowledgement = await listFilters();
-    await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
-      method: 'POST',
-      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
-    });
+    await acknowledgeFilterCreation(app, proposalId, 'gmail-filter-1');
     const afterAcknowledgement = await listFilters();
 
     expect({ beforeAcknowledgement, afterAcknowledgement }).toEqual({
@@ -2646,10 +2649,7 @@ describe('backend app', () => {
     currentTime = new Date('2026-11-02T15:20:00.000Z');
     await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
     currentTime = new Date('2026-11-02T15:25:00.000Z');
-    await beforeRestart.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
-      method: 'POST',
-      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
-    });
+    await acknowledgeFilterCreation(beforeRestart, proposalId, 'gmail-filter-1');
     currentTime = new Date('2026-11-02T16:00:00.000Z');
     const afterRestart = createApp(options);
 
@@ -2671,10 +2671,7 @@ describe('backend app', () => {
     await reportTriageAndConfirmShopNewsletters(app);
     const proposalId = await firstPendingFilterProposalId(app);
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
-    await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
-      method: 'POST',
-      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
-    });
+    await acknowledgeFilterCreation(app, proposalId, 'gmail-filter-1');
     const deleteFilterCommands = async (accountEmail: string) =>
       ((await (await getCommands(app, accountEmail)).json()) as { commands: { type?: string }[] }).commands.filter(
         ({ type }) => type === 'delete-filter',
@@ -2698,10 +2695,7 @@ describe('backend app', () => {
     await reportTriageAndConfirmShopNewsletters(app);
     const proposalId = await firstPendingFilterProposalId(app);
     await app.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
-    await app.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
-      method: 'POST',
-      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
-    });
+    await acknowledgeFilterCreation(app, proposalId, 'gmail-filter-1');
     await app.request('/filters/gmail-filter-1', { method: 'DELETE' });
     const deleteFilterCommand = (
       (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { id: string; type?: string }[] }
@@ -2743,10 +2737,7 @@ describe('backend app', () => {
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
     const proposalId = await firstPendingFilterProposalId(beforeRestart);
     await beforeRestart.request(`/filter-proposals/${proposalId}/approval`, { method: 'POST' });
-    await beforeRestart.request(`/commands/create-filter-${proposalId}/acknowledgement`, {
-      method: 'POST',
-      body: JSON.stringify({ gmailFilterId: 'gmail-filter-1' }),
-    });
+    await acknowledgeFilterCreation(beforeRestart, proposalId, 'gmail-filter-1');
     currentTime = new Date('2026-11-02T15:30:00.000Z');
     await beforeRestart.request('/filters/gmail-filter-1', { method: 'DELETE' });
     currentTime = new Date('2026-11-02T16:00:00.000Z');
