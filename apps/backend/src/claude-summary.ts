@@ -1,15 +1,16 @@
-import type { ClaudePricing } from './claude-triage';
+import { type ClaudePricing, type ClaudeResponse, readToolUseInput } from './claude-triage';
 
 interface ClaudeSummaryDependencies {
   model: string;
   pricing: ClaudePricing;
-  createMessage: (request: { model: string }) => Promise<unknown>;
+  createMessage: (request: { model: string }) => Promise<ClaudeResponse>;
 }
 
 export function createClaudeSummary({ model, createMessage }: ClaudeSummaryDependencies) {
   return {
     summarize: async (_request: { items: { summary: string }[] }) => {
-      await createMessage({ model });
+      const response = await createMessage({ model });
+      return readToolUseInput(response);
     },
   };
 }
