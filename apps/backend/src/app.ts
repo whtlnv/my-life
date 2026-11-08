@@ -614,7 +614,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const items = digest.proposals.map(({ messageId }) => ({
         summary: latestProposalFor(proposals, messageId)?.summary ?? '',
       }));
-      summaryLinesByDigest.set(identifyDigest(digest), (await options.summary?.summarize({ items }))?.lines);
+      const summary = await options.summary?.summarize({ items });
+      summaryLinesByDigest.set(identifyDigest(digest), summary?.lines);
     }
   }
   // The waiting proposals outside the action block, with the sender each digest groups by.
