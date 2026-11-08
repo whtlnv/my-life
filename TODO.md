@@ -39,6 +39,8 @@
 ### Contacts and organizations
 
 - [x] A message's sender becomes a contact with the display name and email from its `From` header
+- [ ] A sender whose `From` header is a bare address (`ana@acme.com`) becomes a contact named by that address, and `GET /contacts` still answers
+- [ ] A sender whose display name is quoted (`"Ana Ruiz" <ana@acme.com>`) becomes a contact named `Ana Ruiz`, without the quotes
 - [ ] Two messages from the same email, on different accounts, link to one contact
 - [ ] Two messages from different emails link to two contacts
 - [ ] A message's organization is the one its extraction names
