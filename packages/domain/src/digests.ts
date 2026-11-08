@@ -1,5 +1,6 @@
 export interface Digest<Proposal> {
   readonly key: string | undefined;
+  readonly category: string;
   readonly proposals: readonly Proposal[];
   readonly severityCounts: Readonly<Record<string, number>>;
   readonly significantItems: readonly Proposal[];
@@ -44,11 +45,11 @@ function senderAddress(from: string | undefined): string | undefined {
 }
 
 export function digests<Proposal extends DigestableProposal>(proposals: readonly Proposal[]): Digest<Proposal>[] {
-  const byAccountAndKey = new Map<string, { key: string | undefined; proposals: Proposal[] }>();
+  const byAccountAndKey = new Map<string, { key: string | undefined; category: string; proposals: Proposal[] }>();
   for (const proposal of proposals.filter(isDigestable)) {
     const key = digestKey(proposal);
-    const groupKey = JSON.stringify([proposal.accountEmail, key]);
-    const group = byAccountAndKey.get(groupKey) ?? { key, proposals: [] };
+    const groupKey = JSON.stringify([proposal.accountEmail, proposal.category, key]);
+    const group = byAccountAndKey.get(groupKey) ?? { key, category: proposal.category, proposals: [] };
     group.proposals.push(proposal);
     byAccountAndKey.set(groupKey, group);
   }

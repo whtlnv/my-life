@@ -168,6 +168,30 @@ describe('digests', () => {
     expect(result.map((digest) => digest.proposals)).toEqual([[calendarChange], [driveShare]]);
   });
 
+  it('places a sales proposal and a calendar-drive proposal from the same account and the same sender address in two digests, each naming its own category', () => {
+    const workspacePitch = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'Google Workspace <workspace-noreply@google.com>',
+      action: 'archive',
+      category: 'sales',
+      extract: { company: 'Google', solution: 'Gemini for Workspace', problem: 'meeting notes' },
+    };
+    const sharedCalendar = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'Google Workspace <workspace-noreply@google.com>',
+      action: 'archive',
+      category: 'calendar-drive',
+      extract: { item: 'Team calendar', change: 'Ana shared the calendar' },
+    };
+    const result = digests([workspacePitch, sharedCalendar]);
+    expect(result).toEqual([
+      expect.objectContaining({ category: 'sales', proposals: [workspacePitch] }),
+      expect.objectContaining({ category: 'calendar-drive', proposals: [sharedCalendar] }),
+    ]);
+  });
+
   it('places no expense or cc-thread proposal in a digest', () => {
     const receipt = {
       messageId: 'message-1',

@@ -15,7 +15,7 @@
 - [x] A digest lists its significant items by name
 - [x] A digest does not list its items that are not significant
 - [x] `GET /triage-queue` returns the waiting system-update, sales and calendar-drive proposals as digests, each with its account, category, key, item count and severity counts
-- [ ] A sales proposal and a calendar-drive proposal from the same account and the same sender address are in two digests, each naming its own category
+- [x] A sales proposal and a calendar-drive proposal from the same account and the same sender address are in two digests, each naming its own category
 - [ ] `GET /triage-queue` no longer lists a digested proposal one message at a time
   - predicted-contradiction: `apps/backend/src/app-mail-triage.test.ts::carries in each GET /triage-queue group its items, and in a system-update group its sending-system sub-groups with their items` — asserts: a waiting system-update proposal appears as an item of a `system-update` group with `systems` sub-groups — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
   - predicted-contradiction: `apps/integration/src/gmail-fake-server.test.ts::polling the sales-pitch scenario shows the pitch with its company in the sales group of GET /triage-queue` — asserts: the sales proposal is listed as one item in the `sales` group — retired-by: "`GET /triage-queue` no longer lists a digested proposal one message at a time"
