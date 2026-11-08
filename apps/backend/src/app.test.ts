@@ -3475,4 +3475,34 @@ describe('backend app', () => {
 
     expect(askedMessages).toEqual([]);
   });
+
+  it('asks the triage port again, with the body, on the first POST /triage-run after a restart for a message whose body arrived at POST /bodies-report before the restart and was not yet retriaged', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
+    openProposalStore(databasePath).save({
+      messageId: 'message-1',
+      madeAt: '2026-11-02T15:00:00.000Z',
+      promptVersion: 'triage-v1',
+      proposal: keepProposalExtracting(),
+    });
+    const body = 'Hi Ana, can you review the budget by Friday? Luis';
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(beforeRestart, '/bodies-report', {
+      accountEmail: 'ana@example.com',
+      bodies: [{ messageId: 'message-1', body }],
+    });
+    const askedMessages: { id: string; body?: string | undefined }[] = [];
+    const triage = {
+      propose: (message: { id: string; body?: string }) => {
+        askedMessages.push({ id: message.id, body: message.body });
+        return Promise.resolve({ proposal: keepProposalExtracting(), costInUsd: 0, promptVersion: 'triage-v2' });
+      },
+    };
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+
+    await postTriageRun(afterRestart);
+
+    expect(askedMessages).toEqual([{ id: 'message-1', body }]);
+  });
 });

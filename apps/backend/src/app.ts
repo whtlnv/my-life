@@ -403,8 +403,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
+  const currentTriagePromptVersion = 'triage-v2';
   // A message proposed before its body arrived is asked about once more, this time with the body.
-  const messageIdsAwaitingRetriage = new Set<string>();
+  const messageIdsAwaitingRetriage = new Set<string>(
+    reportedMessages
+      .filter((message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id))
+      .map((message) => message.id),
+  );
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.post('/register', async (context) => {
@@ -456,7 +461,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   // A message already proposed under the current prompt gains nothing from a retriage when its body arrives.
-  const currentTriagePromptVersion = 'triage-v2';
   function wasProposedUnderAnOlderPrompt(messageId: string): boolean {
     const latestStoredProposal = proposalStore.loadAll().findLast((stored) => stored.messageId === messageId);
     return latestStoredProposal !== undefined && latestStoredProposal.promptVersion !== currentTriagePromptVersion;
