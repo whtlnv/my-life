@@ -57,7 +57,7 @@
 - [x] An answered category question is fed back as an example for later messages from the same sender
 - [x] `GET /needs-input` asks "VIP or ordinary?" about a sender with no earlier message whose message asks the user for something
 - [x] `GET /needs-input` asks nothing about a new sender whose message asks the user nothing
-- [ ] `GET /needs-input` asks nothing about a sender with earlier messages whose message asks the user for something
+- [x] `GET /needs-input` asks nothing about a sender with earlier messages whose message asks the user for something
 - [ ] Answering "VIP" to a new-sender question marks the contact VIP, and the question is not asked again
 - [ ] Answering "ordinary" to a new-sender question leaves the contact unmarked, and the question is not asked again
 - [ ] The dashboard shell shows a Needs input tab with the count of unanswered questions, and no count when there are none

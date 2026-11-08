@@ -202,4 +202,43 @@ describe('backend app: GET /needs-input', () => {
 
     expect(needsInput.questions).toEqual([]);
   });
+
+  it('asks nothing about a sender with an earlier message when their later message asks the user for something', async () => {
+    const triage = {
+      propose: (message: { id: string }) =>
+        Promise.resolve({
+          proposal: {
+            action: 'act',
+            category: 'action',
+            summary: 'Luis writes about the budget',
+            extract: {},
+            reason: 'Luis writes to the user directly',
+            asks: message.id === 'message-1' ? [{ ask: 'Review the budget', due: '2026-11-06' }] : [],
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v1',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        {
+          ...budgetReview,
+          id: 'message-0',
+          threadId: 'thread-0',
+          subject: 'Budget kickoff',
+          date: 'Mon, 26 Oct 2026 09:00:00 -0600',
+          snippet: 'Here is the first budget draft.',
+        },
+        budgetReview,
+      ],
+    });
+    await postTriageRun(app);
+
+    const needsInput = await getJson<{ questions: unknown[] }>(app, '/needs-input');
+
+    expect(needsInput.questions).toEqual([]);
+  });
 });

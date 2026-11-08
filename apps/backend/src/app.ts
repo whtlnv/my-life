@@ -785,6 +785,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const asksTheUser = asks !== undefined && asks.length > 0;
       if (!asksTheUser || message === undefined) return [];
       const senderEmail = contactFromSender(message.from).email;
+      const senderWroteBefore = reportedMessages.some(
+        (reported) => reported.id !== messageId && contactFromSender(reported.from).email === senderEmail,
+      );
+      if (senderWroteBefore) return [];
       return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
     });
     return context.json({ questions: [...categoryQuestions, ...newSenderQuestions] });
