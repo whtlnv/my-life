@@ -36,6 +36,7 @@ import {
 } from '@my-life/domain';
 
 import { openAcknowledgementStore } from './acknowledgement-store';
+import { profileFileName } from './claude-triage';
 import { openCreatedFilterStore } from './created-filter-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openContactDetailsStore, type ContactDetails, type ImportedContactRecord } from './contact-details-store';
@@ -110,6 +111,7 @@ export interface AppOptions {
   dailySpendCeilingInUsd?: number;
   databasePath?: string;
   dashboardDirectory?: string;
+  profileDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
   urgency?: { unansweredAskBusinessDays: number };
   triage?: {
@@ -945,7 +947,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/people', (context) => {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
-    const isVip = (contact: { emails: string[] }) => markedEmails.has(contact.emails[0] ?? '');
+    const isOnAlwaysMattersLine = (contact: { emails: string[]; messageIds: string[] }) =>
+      options.profileDirectory !== undefined &&
+      contact.messageIds.some((messageId) =>
+        alwaysMattersLine(
+          readFileSync(
+            join(options.profileDirectory ?? '', profileFileName(accountEmailByMessageId.get(messageId) ?? '')),
+            'utf8',
+          ),
+        ).includes(contact.emails[0] ?? ''),
+      );
+    const isVip = (contact: { emails: string[]; messageIds: string[] }) =>
+      markedEmails.has(contact.emails[0] ?? '') || isOnAlwaysMattersLine(contact);
     const conversationMessagesOf = (contact: { messageIds: string[] }) =>
       reportedMessages
         .filter((message) => contact.messageIds.includes(message.id) || message.sentByUser === true)
@@ -1116,6 +1129,10 @@ function senderDomain(from: string): string {
 
 // One contact per email: a message's sender and every person its extraction names with an email, each listing the
 // messages they sent or appear in. The sender's own display name wins over a name the extraction gives.
+function alwaysMattersLine(profile: string): string {
+  return profile.split('\n').find((line) => line.startsWith('- Always matters:')) ?? '';
+}
+
 function contactsByEmail(senders: { messageId: string; from: string }[], proposals: Proposal[]) {
   const contacts = new Map<string, ListedContact>();
   const link = (email: string, displayName: string, messageId: string) => {

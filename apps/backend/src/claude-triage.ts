@@ -29,7 +29,7 @@ interface ClaudeTriageDependencies {
   createMessage: (request: ClaudeRequest) => Promise<ClaudeResponse>;
 }
 
-function profileFileName(accountEmail: string): string {
+export function profileFileName(accountEmail: string): string {
   const domainName = accountEmail.split('@')[1]?.split('.')[0] ?? '';
   return `${domainName}.md`;
 }

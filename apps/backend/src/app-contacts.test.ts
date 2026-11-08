@@ -1,3 +1,7 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
@@ -314,6 +318,26 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     };
     expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
     expect(everyoneElse.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
+  });
+
+  it('lists at GET /people under VIP, and not under Everyone else, a contact whose email is on the "Always matters" line of the profile of the account that received its message', async () => {
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    writeFileSync(
+      join(profileDirectory, 'example.md'),
+      '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, profileDirectory });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, everyoneElse } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+    expect(everyoneElse.map(({ emails }) => emails)).toEqual([['marta@acme.com']]);
   });
 
   it('lists at GET /people under Everyone else the contact whose most recent message is newest first', async () => {
