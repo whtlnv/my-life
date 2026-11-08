@@ -2919,4 +2919,42 @@ describe('backend app', () => {
       .map((row) => row.split(',')[0]);
     expect(vendors).toEqual(['This week']);
   });
+
+  it('leaves out of GET /expense-statement an expense proposal the user rejected through POST /verdicts', async () => {
+    const expenseOf = (vendor: string, date: string) => ({
+      action: 'archive',
+      category: 'expense',
+      summary: `Invoice from ${vendor}`,
+      extract: { vendor, amount: 100, currency: 'MXN', date },
+      reason: 'An invoice to file',
+    });
+    const proposalByMessageId: Record<string, unknown> = {
+      'message-kept': expenseOf('Kept', '2026-11-02'),
+      'message-rejected': expenseOf('Rejected', '2026-11-03'),
+    };
+    const triage = {
+      propose: (message: { id: string }) =>
+        Promise.resolve({ proposal: proposalByMessageId[message.id], costInUsd: 0, promptVersion: 'triage-v1' }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-kept', threadId: 'thread-kept', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'message-rejected', threadId: 'thread-rejected', date: 'Tue, 3 Nov 2026 10:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(app);
+    await postJson(app, '/verdicts', { messageId: 'message-rejected', decision: 'rejected' });
+
+    const response = await app.request('/expense-statement?week=2026-11-02');
+
+    const vendors = (await response.text())
+      .split('\n')
+      .slice(1)
+      .filter((row) => row !== '')
+      .map((row) => row.split(',')[0]);
+    expect(vendors).toEqual(['Kept']);
+  });
 });

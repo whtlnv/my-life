@@ -6,7 +6,7 @@ export interface ExpenseProposal {
   action: string;
   extract: { vendor: string; amount: number; currency: string; date: string };
   link: string;
-  verdict?: { decision: string };
+  verdict?: { decision: string } | undefined;
 }
 
 export interface ExpenseStatementEntry {

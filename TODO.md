@@ -102,7 +102,7 @@
 - [x] An `expense` proposal the user rejected is left out of the statement
 - [x] `GET /expense-statement?week=YYYY-MM-DD` answers a CSV file (`text/csv`, `Content-Disposition: attachment`) with header `vendor,amount,currency,date,account,link` and one row per entry, quoting fields that contain commas or quotes
 - [x] `GET /expense-statement` without `week` answers the current business week
-- [ ] An `expense` proposal the user rejected through `POST /verdicts` is left out of `GET /expense-statement` (supervisor keystone: the route hands the domain rule proposals without their verdicts)
+- [x] An `expense` proposal the user rejected through `POST /verdicts` is left out of `GET /expense-statement` (supervisor keystone: the route hands the domain rule proposals without their verdicts)
 - [ ] After a backend restart on the same database, `GET /expense-statement` still lists the week's expenses with their message dates (supervisor keystone: the route reads message dates from the in-memory report list)
 - [ ] The dashboard app shell has a `Statement` tab linking to `#/statement`, marked current on that route
 - [ ] The `#/statement` page shows the current week's entries in a table with their total per currency, and a Download link to that week's CSV

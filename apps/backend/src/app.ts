@@ -580,10 +580,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
   });
   app.get('/expense-statement', (context) => {
+    const verdicts = verdictStore.loadAll();
     const expenseProposals = proposals.map((proposal) => ({
       ...(proposal as unknown as ExpenseProposal),
       date: reportedMessages.find((message) => message.id === proposal.messageId)?.date ?? '',
       link: gmailMessageLink(proposal),
+      verdict: latestVerdictFor(proposal.messageId, verdicts),
     }));
     const entries = expenseStatement(expenseProposals, {
       week: context.req.query('week') ?? mondayOfBusinessWeek(clock.now()),
