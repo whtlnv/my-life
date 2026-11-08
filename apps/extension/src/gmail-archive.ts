@@ -30,17 +30,12 @@ export async function carryOutArchiveCommands(options: CommandOptions) {
   const commands = await fetchPendingArchiveCommands(options);
   for (const command of commands) {
     const labelId = await findOrCreateLabelId(options.fetch, authorization, command.label ?? archivedLabelName);
-    const archiveResponse =
+    const labelChanges =
       command.type === 'undo-automatic'
-        ? await modifyMessageLabels(options.fetch, authorization, command.messageId, {
-            removeLabelIds: [labelId],
-            addLabelIds: ['INBOX'],
-          })
-        : await modifyMessageLabels(options.fetch, authorization, command.messageId, {
-            removeLabelIds: ['INBOX'],
-            addLabelIds: [labelId],
-          });
-    if (!archiveResponse.ok) {
+        ? { removeLabelIds: [labelId], addLabelIds: ['INBOX'] }
+        : { removeLabelIds: ['INBOX'], addLabelIds: [labelId] };
+    const labelResponse = await modifyMessageLabels(options.fetch, authorization, command.messageId, labelChanges);
+    if (!labelResponse.ok) {
       continue;
     }
     await acknowledgeCommand(options, command.id);
