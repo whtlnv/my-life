@@ -18,6 +18,8 @@ export interface MessageDate {
   date: string;
 }
 
+export type ReportedMessageHeaders = MessageRecipients & MessageSender & MessageSubject & MessageDate;
+
 function createTables(database: ReturnType<typeof openDatabase>): void {
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_messages (message_id TEXT PRIMARY KEY, account_email TEXT NOT NULL)',
@@ -74,7 +76,7 @@ export function openReportedMessageStore(databasePath: string) {
     'SELECT account_email FROM reported_messages WHERE message_id = ?',
   );
   return {
-    save(messageId: string, accountEmail: string, message: MessageRecipients & MessageSender & MessageSubject & MessageDate): void {
+    save(messageId: string, accountEmail: string, message: ReportedMessageHeaders): void {
       saveMessage.run(messageId, accountEmail);
       saveRecipients.run(messageId, message.to ?? null, message.cc ?? null);
       saveSender.run(messageId, message.from, message.listId ?? null);
