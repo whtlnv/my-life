@@ -548,6 +548,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     triageRunInProgress = true;
     try {
       const awaitingRetriage = reportedMessages.filter((message) => messageIdsAwaitingRetriage.has(message.id));
+      let proposedInThisRun = false;
       for (const message of [...triageQueue(proposals, [], reportedMessages).remaining, ...awaitingRetriage]) {
         if (hasReachedDailySpendCeiling()) {
           break;
@@ -576,6 +577,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         });
         messageIdsAwaitingRetriage.delete(message.id);
         queueProposal({ ...displayedProposal, madeAutomatic });
+        proposedInThisRun = true;
+      }
+      if (!proposedInThisRun) {
+        return context.body(null, 200);
       }
       const items = waitingOutsideTheActionBlock(verdictStore.loadAll()).map(({ messageId }) => ({
         summary: latestProposalFor(proposals, messageId)?.summary ?? '',

@@ -876,6 +876,37 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     ]);
   });
 
+  it('keeps the summary lines of a digest when a later triage run adds no proposal to it', async () => {
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    let summaryCalls = 0;
+    const summary = {
+      summarize: () => {
+        summaryCalls += 1;
+        return Promise.resolve({ lines: [`Summary written on call ${summaryCalls}`], costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+    });
+    await postTriageRun(app);
+
+    await postTriageRun(app);
+
+    const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+    expect(digests).toEqual([
+      expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] }),
+    ]);
+  });
+
   it('opens in GET /triage-queue a fresh digest, with a new id and only the new proposal, for a proposal of the same account, category and key triaged after its digest was confirmed', async () => {
     const gitHubNotice = (summary: string) => ({
       action: 'archive',
