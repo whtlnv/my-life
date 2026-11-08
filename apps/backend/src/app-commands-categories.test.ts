@@ -678,4 +678,18 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
       commands: { commands: [] },
     });
   });
+  it('lists at GET /triage-queue nothing under handled for you for an item that was undone', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await switchCategory(app, 'cc-thread', 'automatic');
+    await proposeBudgetReview(app);
+
+    await app.request('/handled-for-you/message-1/undo', { method: 'POST' });
+    const queue = await app.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({ handledForYou: [] });
+  });
 });

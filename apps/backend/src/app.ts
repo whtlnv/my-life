@@ -706,7 +706,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: describeDigests(verdicts),
-      handledForYou: describeHandledForYou(proposals, clock),
+      handledForYou: describeHandledForYou(proposals, clock).filter(
+        ({ messageId }) => !undoneHandledForYouMessageIds.includes(messageId),
+      ),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
       fetchedAt: clock.now().toISOString(),
