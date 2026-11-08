@@ -43,6 +43,7 @@ import { openFilterDeletionRequestStore } from './filter-deletion-request-store'
 import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
 import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
 import { openFilterProposalStore } from './filter-proposal-store';
+import { openListedDigestStore } from './listed-digest-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
@@ -623,14 +624,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return JSON.stringify([accountEmail, category, key, messageId]);
   }
   // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
-  const listedDigestMessageIds = new Map<string, string[]>();
+  const listedDigestStore = openListedDigestStore(databasePath);
   // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
     return digests(waitingOutsideTheActionBlock(verdicts)).map((digest) => {
       const { key, proposals: digested, severityCounts } = digest;
       const { accountEmail, category } = digested[0] ?? {};
       const id = identifyDigest(digest);
-      listedDigestMessageIds.set(
+      listedDigestStore.save(
         id,
         digested.map(({ messageId }) => messageId),
       );
@@ -646,7 +647,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   app.post('/digests/:id/confirmation', (context) => {
     const digestId = context.req.param('id');
-    const listedMessageIds = listedDigestMessageIds.get(digestId);
+    const listedMessageIds = listedDigestStore.load(digestId);
     if (!listedMessageIds) return context.body(null, 404);
     digests(waitingOutsideTheActionBlock(verdictStore.loadAll()))
       .filter((digest) => identifyDigest(digest) === digestId)

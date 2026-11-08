@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 12:18 · `apps/backend/src/app-mail-triage.test.ts::confirms after a backend restart on the same database file a digest the dashboard loaded before it, reaching only the proposals it held then and leaving the later one in a fresh digest`
+- Behavior: After a backend restart, a confirmed digest stays confirmed and the fresh digest still holds only its later proposals
+- Predicted: the literal version (confirm before the restart, read the queue after it) passes, because verdicts, proposals and reported messages are all stored in SQLite
+- Actual: it passed vacuously
+- Type: passed unexpectedly
+- Resolution: what survives a restart is already stored; the real gap is the in-memory `listedDigestMessageIds` map, so the test was rewritten so the dashboard loads the digest before the restart and confirms it after; it now fails with `expected [] to deeply equal ['message-build']` (the confirm answers 404 and records nothing)
+
 ## 2026-11-08 12:07 · `apps/backend/src/app-mail-triage.test.ts::no longer lists in GET /triage-queue a digest confirmed at POST /digests/:id/confirmation, nor its items in any group`
 - Behavior: Confirming a digest removes its items from `GET /triage-queue`
 - Predicted: passes on first run — read before writing: the confirm route (apps/backend/src/app.ts:634) saves a `confirmed` verdict per item, and `describeDigests` builds from `triageQueue(…, verdicts)`, which drops decided proposals
