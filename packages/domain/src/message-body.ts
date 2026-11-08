@@ -5,7 +5,7 @@ interface MessagePart {
   parts?: MessagePart[];
 }
 
-const maximumBodyLength = 20 * 1024;
+const maximumBodyBytes = 20 * 1024;
 
 export function messageBody(payload: MessagePart): string {
   const bodyPart = chooseBodyPart(payload.parts ?? []);
@@ -22,7 +22,7 @@ function cappedToMaximumBodyBytes(text: string): string {
   let capped = '';
   for (const character of text) {
     byteLength += Buffer.byteLength(character, 'utf8');
-    if (byteLength > maximumBodyLength) {
+    if (byteLength > maximumBodyBytes) {
       break;
     }
     capped += character;
