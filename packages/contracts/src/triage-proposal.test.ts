@@ -114,6 +114,33 @@ describe('triageProposal', () => {
     expect(triageProposal.parse(proposal)).toEqual(proposal);
   });
 
+  it('accepts a proposal carrying people, organization, asks, commitments, dates and threadState and keeps them', () => {
+    const proposal = {
+      action: 'act',
+      category: 'action',
+      summary: 'Ana asks for the Q3 budget review by Friday; Luis will send the vendor figures',
+      extract: {
+        asker: 'Ana Ruiz',
+        ask: 'Review the Q3 budget spreadsheet and send comments',
+        due: '2026-11-13T12:00:00-06:00',
+      },
+      reason: 'Sent to the user and asks them to review a document by a deadline.',
+      taskDraft: { title: 'Review the Q3 budget for Ana' },
+      people: [
+        { name: 'Ana Ruiz', email: 'ana@mutuus.mx', role: 'sender' },
+        { name: 'Luis Ortega', email: 'luis@mutuus.mx', role: 'copied' },
+        { name: 'Diego', role: 'mentioned' },
+      ],
+      organization: 'Mutuus',
+      asks: [{ ask: 'Review the Q3 budget spreadsheet and send comments', due: '2026-11-13T12:00:00-06:00' }],
+      commitments: [{ who: 'Luis Ortega', commitment: 'Send the vendor figures before Wednesday' }],
+      dates: ['2026-11-11', '2026-11-13T12:00:00-06:00'],
+      threadState: 'Ana is waiting on the user to review the Q3 budget; Luis owes the vendor figures.',
+    };
+
+    expect(triageProposal.parse(proposal)).toEqual(proposal);
+  });
+
   it.each([
     {
       rule: 'a proposal whose category is not one of the seven categories',

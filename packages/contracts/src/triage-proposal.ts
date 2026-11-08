@@ -48,5 +48,11 @@ export const triageProposal = z
     ]),
     reason: z.string(),
     taskDraft: z.object({ title: z.string() }).optional(),
+    people: z.array(z.object({ name: z.string(), email: z.string().optional(), role: z.string() })).optional(),
+    organization: z.string().optional(),
+    asks: z.array(z.object({ ask: z.string(), due: z.string().optional() })).optional(),
+    commitments: z.array(z.object({ who: z.string(), commitment: z.string() })).optional(),
+    dates: z.array(z.string()).optional(),
+    threadState: z.string().optional(),
   })
   .refine(extractMatchesCategory);
