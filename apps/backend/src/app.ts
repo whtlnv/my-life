@@ -614,10 +614,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const items = digest.proposals.map(({ messageId }) => ({
         summary: latestProposalFor(proposals, messageId)?.summary ?? '',
       }));
-      const summary = hasReachedDailySpendCeiling() ? undefined : await options.summary?.summarize({ items });
-      if (summary) spendStore.save({ spentAt: clock.now().toISOString(), model: summary.model ?? '', costInUsd: summary.costInUsd });
+      const summary = await summarizeWithinTheSpendCeiling(items);
       summaryLinesByDigest.set(identifyDigest(digest), summary?.lines);
     }
+  }
+  // Summarizes one digest and logs its spend; writes nothing once the daily ceiling is reached.
+  async function summarizeWithinTheSpendCeiling(items: { summary: string }[]) {
+    if (hasReachedDailySpendCeiling()) return undefined;
+    const summary = await options.summary?.summarize({ items });
+    if (summary) spendStore.save({ spentAt: clock.now().toISOString(), model: summary.model ?? '', costInUsd: summary.costInUsd });
+    return summary;
   }
   // The waiting proposals outside the action block, with the sender each digest groups by.
   function waitingOutsideTheActionBlock(verdicts: StoredVerdict[]) {
