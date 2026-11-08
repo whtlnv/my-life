@@ -1,3 +1,4 @@
+import { messageBody, type MessagePart } from '@my-life/domain';
 import type { FetchFunction } from './fetch-function';
 import { gmailApi } from './gmail-api';
 
@@ -26,7 +27,7 @@ interface GmailMessage {
   id: string;
   threadId: string;
   snippet: string;
-  payload: { headers: { name: string; value: string }[] };
+  payload: MessagePart & { headers: { name: string; value: string }[] };
 }
 
 function isRetryable(response: Response) {
@@ -63,11 +64,12 @@ function toReportedMessage(message: GmailMessage) {
     date: header('Date'),
     snippet: message.snippet,
     listId: header('List-Id'),
+    body: messageBody(message.payload),
   };
 }
 
 async function fetchReportedMessage(options: PollGmailOptions, messageId: string) {
-  const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${messageId}?format=metadata`);
+  const message = await fetchGmailJson<GmailMessage>(options, `${gmailApi}/messages/${messageId}?format=full`);
   return toReportedMessage(message);
 }
 

@@ -1,4 +1,4 @@
-interface MessagePart {
+export interface MessagePart {
   mimeType: string;
   filename?: string;
   body?: { size: number; data?: string };

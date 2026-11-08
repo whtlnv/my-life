@@ -283,7 +283,7 @@ describe('pollGmailOnce', () => {
       },
     ]);
   });
-  it('reports each message with its From, To, Cc, Subject, Date and List-Id headers and its snippet, read as metadata', async () => {
+  it('reports each message with its From, To, Cc, Subject, Date and List-Id headers, its snippet and its trimmed body, read in full', async () => {
     const backendPosts: { url: string; body: unknown }[] = [];
     const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -294,8 +294,8 @@ describe('pollGmailOnce', () => {
         return Promise.resolve(Response.json({ messages: [{ id: 'digest', threadId: 'thread-digest' }] }));
       }
       if (url.origin + url.pathname === `${gmailApi}/messages/digest`) {
-        if (url.searchParams.get('format') !== 'metadata') {
-          return Promise.resolve(new Response('only metadata reads are served', { status: 400 }));
+        if (url.searchParams.get('format') !== 'full') {
+          return Promise.resolve(new Response('only full reads are served', { status: 400 }));
         }
         return Promise.resolve(
           Response.json({
@@ -313,6 +313,11 @@ describe('pollGmailOnce', () => {
                 { name: 'List-Id', value: 'Board <board.lists.example.com>' },
                 { name: 'Received', value: 'from mail.example.com' },
               ],
+              mimeType: 'text/plain',
+              body: {
+                size: 54,
+                data: Buffer.from('Agenda attached.\n\nOn Thu, Board wrote:\n> last week\n').toString('base64url'),
+              },
             },
           }),
         );
@@ -347,6 +352,7 @@ describe('pollGmailOnce', () => {
             date: 'Fri, 6 Nov 2026 08:00:00 -0600',
             snippet: 'This week in the board: agenda and minutes',
             listId: 'Board <board.lists.example.com>',
+            body: 'Agenda attached.\n',
           },
         ],
       },

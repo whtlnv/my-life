@@ -17,7 +17,7 @@
 - [x] An HTML body is trimmed of its quoted reply and signature and capped like a plain-text body
 - [x] A body of non-ASCII text is cut so its UTF-8 encoding is at most 20 KB, never mid-character
 - [x] A message part without a `body` (as in a metadata-only payload) adds no text to the body instead of throwing
-- [ ] The Gmail poll reads each message with `format=full` and reports its trimmed body alongside the headers
+- [x] The Gmail poll reads each message with `format=full` and reports its trimmed body alongside the headers (hand-driven: the metadata test migrated to a full read, not deleted)
   - predicted-contradiction: `apps/extension/src/gmail-poll.test.ts::reports each message with its From, To, Cc, Subject, Date and List-Id headers and its snippet, read as metadata` — asserts: each message is read with `format=metadata` (the fake Gmail answers 400 to any other format) — retired-by: "The Gmail poll reads each message with `format=full`"
 - [ ] A mail report whose message carries a body is accepted, and one without a body is still accepted
 - [ ] A body reported for a message is stored and is still there after the backend restarts
