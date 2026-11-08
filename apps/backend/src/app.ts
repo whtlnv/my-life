@@ -770,10 +770,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/needs-input', (context) => {
     const verdicts = verdictStore.loadAll();
     const questions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
+      const alreadyAnswered = latestVerdictFor(messageId, verdicts) !== undefined;
       const choices = categoryQuestionChoices(category, disagreement);
-      return choices === undefined || latestVerdictFor(messageId, verdicts) !== undefined
-        ? []
-        : [{ kind: 'category', messageId, accountEmail, choices }];
+      if (alreadyAnswered || choices === undefined) return [];
+      return [{ kind: 'category', messageId, accountEmail, choices }];
     });
     return context.json({ questions });
   });
