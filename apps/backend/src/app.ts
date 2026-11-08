@@ -684,7 +684,9 @@ function contactsFromSenders(senders: string[]) {
 
 function contactsFromProposals(proposals: Proposal[]) {
   return proposals.flatMap(({ people = [], messageId }) =>
-    people.map(({ name, email }) => ({ displayName: name, emails: [email], messageIds: [messageId] })),
+    people
+      .filter(({ email }) => email !== undefined)
+      .map(({ name, email }) => ({ displayName: name, emails: [email], messageIds: [messageId] })),
   );
 }
 

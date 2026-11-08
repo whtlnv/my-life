@@ -2839,7 +2839,38 @@ describe('backend app', () => {
 
     expect(response.status).toBe(200);
     const { contacts } = (await response.json()) as { contacts: unknown[] };
-    expect(contacts).toContainEqual({ displayName: 'Marta Díaz', emails: ['marta@acme.com'], messageIds: ['message-1'] });
+    expect(contacts).toContainEqual({
+      displayName: 'Marta Díaz',
+      emails: ['marta@acme.com'],
+      messageIds: ['message-1'],
+    });
+  });
+
+  it('lists at GET /contacts no contact for a person in a triaged extraction who has no email', async () => {
+    const triage = {
+      propose: () =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+            people: [{ name: 'Marta Díaz', role: 'mentioned' }],
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v2',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    const { contacts } = (await response.json()) as { contacts: { displayName: string }[] };
+    expect(contacts.map(({ displayName }) => displayName)).toEqual(['Luis']);
   });
 
   it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {
@@ -2951,7 +2982,9 @@ describe('backend app', () => {
     const response = await app.request('/organizations');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ organizations: [{ name: 'Mutuus', messageIds: ['message-1', 'message-2'] }] });
+    expect(await response.json()).toEqual({
+      organizations: [{ name: 'Mutuus', messageIds: ['message-1', 'message-2'] }],
+    });
   });
 
   it('lists at GET /organizations a message once, under the organization its latest proposal names, when the store holds two proposals for it', async () => {
