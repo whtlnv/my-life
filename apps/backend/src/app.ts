@@ -613,14 +613,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   // The waiting proposals grouped per account and sender (or system).
   function describeDigests(verdicts: StoredVerdict[]) {
-    return digests(waitingOutsideTheActionBlock(verdicts)).map(({ key, proposals: digested, severityCounts }) => ({
-      id: JSON.stringify([digested[0]?.accountEmail, digested[0]?.category, key]),
-      accountEmail: digested[0]?.accountEmail,
-      category: digested[0]?.category,
-      key,
-      count: digested.length,
-      severityCounts,
-    }));
+    return digests(waitingOutsideTheActionBlock(verdicts)).map(({ key, proposals: digested, severityCounts }) => {
+      const { accountEmail, category } = digested[0] ?? {};
+      return {
+        id: JSON.stringify([accountEmail, category, key]),
+        accountEmail,
+        category,
+        key,
+        count: digested.length,
+        severityCounts,
+      };
+    });
   }
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
