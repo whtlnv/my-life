@@ -247,33 +247,31 @@ interface ImportedContact {
   lists?: string[];
 }
 
+function sharePrimaryEmail(left: { emails: string[] }, right: { emails: string[] }): boolean {
+  return left.emails[0] === right.emails[0];
+}
+
 function withUnlistedImportedContacts<Contact extends ListedContact>(
   messageContacts: Contact[],
   importedContacts: ListedContact[],
 ): (Contact | ListedContact)[] {
   const unlistedImportedContacts = importedContacts.filter(
-    (imported) => !messageContacts.some((contact) => contact.emails[0] === imported.emails[0]),
+    (imported) => !messageContacts.some((contact) => sharePrimaryEmail(contact, imported)),
   );
   return [...messageContacts, ...unlistedImportedContacts];
 }
 
 // A second import of an email the list already holds merges its addresses into that contact instead of adding one.
-function recordImportedContact(
-  importedContacts: ListedContact[],
-  { displayName, emails }: { displayName: string; emails: string[] },
-): void {
-  const alreadyImported = importedContacts.find((imported) => imported.emails[0] === emails[0]);
-  if (alreadyImported) {
-    alreadyImported.emails = [...new Set([...alreadyImported.emails, ...emails])];
-    return;
-  }
-  importedContacts.push({ displayName, emails, messageIds: [] });
-}
-
 function listImportedContacts(imports: ImportedContactRecord[]): ListedContact[] {
-  const importedContacts: ListedContact[] = [];
-  imports.forEach((imported) => recordImportedContact(importedContacts, imported));
-  return importedContacts;
+  return imports.reduce<ListedContact[]>((importedContacts, imported) => {
+    const alreadyImported = importedContacts.find((listed) => sharePrimaryEmail(listed, imported));
+    if (alreadyImported) {
+      alreadyImported.emails = [...new Set([...alreadyImported.emails, ...imported.emails])];
+    } else {
+      importedContacts.push({ displayName: imported.displayName, emails: imported.emails, messageIds: [] });
+    }
+    return importedContacts;
+  }, []);
 }
 
 // The HTTP app, built without a port so tests call it directly through `app.request`.
