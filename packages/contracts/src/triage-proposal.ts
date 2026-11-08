@@ -19,6 +19,10 @@ const salesExtract = z.object({ company: z.string(), solution: z.string(), probl
 const calendarDriveExtract = z.object({ item: z.string(), change: z.string() });
 const unknownExtract = z.strictObject({});
 
+const person = z.object({ name: z.string(), email: z.string().optional(), role: z.string() });
+const ask = z.object({ ask: z.string(), due: z.string().optional() });
+const commitment = z.object({ who: z.string(), commitment: z.string() });
+
 const extractForCategory: Record<string, z.ZodType | undefined> = {
   action: actionExtract,
   'cc-thread': ccThreadExtract,
@@ -48,10 +52,10 @@ export const triageProposal = z
     ]),
     reason: z.string(),
     taskDraft: z.object({ title: z.string() }).optional(),
-    people: z.array(z.object({ name: z.string(), email: z.string().optional(), role: z.string() })).optional(),
+    people: z.array(person).optional(),
     organization: z.string().optional(),
-    asks: z.array(z.object({ ask: z.string(), due: z.string().optional() })).optional(),
-    commitments: z.array(z.object({ who: z.string(), commitment: z.string() })).optional(),
+    asks: z.array(ask).optional(),
+    commitments: z.array(commitment).optional(),
     dates: z.array(z.string()).optional(),
     threadState: z.string().optional(),
   })
