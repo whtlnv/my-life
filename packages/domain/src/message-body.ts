@@ -10,6 +10,7 @@ const maximumBodyLength = 20 * 1024;
 export function messageBody(payload: MessagePart): string {
   const bodyPart =
     payload.parts?.find((part) => part.mimeType === 'text/plain' && !part.filename) ??
+    payload.parts?.find((part) => part.mimeType === 'text/html' && !part.filename) ??
     payload.parts?.find((part) => part.mimeType.startsWith('multipart/'));
   if (bodyPart) {
     return messageBody(bodyPart);

@@ -150,4 +150,34 @@ describe('messageBody', () => {
 
     expect(messageBody(payload)).toBe('Hola Ana,\nTe mando las notas adjuntas.\n');
   });
+
+  it('comes out as the text of the HTML part of a multipart/mixed message whose only text part is HTML', () => {
+    const payload = {
+      mimeType: 'multipart/mixed',
+      filename: '',
+      headers: [{ name: 'Content-Type', value: 'multipart/mixed; boundary="000000000000fed789"' }],
+      body: { size: 0 },
+      parts: [
+        {
+          partId: '0',
+          mimeType: 'text/html',
+          filename: '',
+          headers: [{ name: 'Content-Type', value: 'text/html; charset="UTF-8"' }],
+          body: { size: 37, data: 'PHA-SG9sYSBBbmEsIHRlIG1hbmRvIGxhIGZhY3R1cmEuPC9wPg' },
+        },
+        {
+          partId: '1',
+          mimeType: 'application/pdf',
+          filename: 'factura.pdf',
+          headers: [
+            { name: 'Content-Type', value: 'application/pdf; name="factura.pdf"' },
+            { name: 'Content-Disposition', value: 'attachment; filename="factura.pdf"' },
+          ],
+          body: { size: 48213, attachmentId: 'ANGjdJ8factura' },
+        },
+      ],
+    };
+
+    expect(messageBody(payload)).toBe('Hola Ana, te mando la factura.');
+  });
 });
