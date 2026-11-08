@@ -201,6 +201,39 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     });
   });
 
+  it('shows on a GET /contacts/:email/timeline message the asks as answered once the user sent a later message in its thread', async () => {
+    const triage = triageAnsweringByMessageId({
+      'message-1': keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-05' }] }),
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const luisMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMessage,
+        {
+          ...luisMessage,
+          id: 'message-reply',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+          sentByUser: true,
+        },
+      ],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/contacts/luis@example.com/timeline');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      messages: [
+        { id: 'message-reply' },
+        { id: 'message-1', asks: [{ ask: 'Approve the budget', status: 'answered' }] },
+      ],
+    });
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);

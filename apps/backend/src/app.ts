@@ -968,7 +968,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           link: gmailMessageLink({ accountEmail, messageId: message.id }),
           sentByUser: message.sentByUser === true,
           threadState: proposal?.threadState,
-          asks: (proposal?.asks ?? []).map((ask) => ({ ...ask, status: 'open' })),
+          asks: (proposal?.asks ?? []).map((ask) => ({
+            ...ask,
+            status: reportedMessages.some(
+              (other) =>
+                other.sentByUser === true &&
+                other.threadId === message.threadId &&
+                new Date(other.date).getTime() > new Date(message.date).getTime(),
+            )
+              ? 'answered'
+              : 'open',
+          })),
         };
       });
     return context.json({ messages });
