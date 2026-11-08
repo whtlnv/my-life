@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 05:06 · `apps/backend/src/app.test.ts::still lists at GET /search?q= after a backend restart on the same database file a message whose body was reported before it`
+- Behavior: search results survive a backend restart
+- Predicted: pass — `createApp` reloads every reported message with its body and the latest proposal per message from SQLite, and `GET /search` filters those in-memory arrays, so nothing is left to persist
+- Actual: pass — assertion met on the first run
+- Type: passed unexpectedly
+- Resolution: The item assumed a search index that would need to persist or rebuild; the search is a filter over data already reloaded at startup, so the behavior exists and no variant (body, backfilled body, summary) can fail. Kept the test as a test-after pin of the restart path; nothing to turn green.
+
 ## 2026-11-08 05:02 · `apps/backend/src/app.test.ts::lists at GET /search?q= a message stored after an earlier search, without a rebuild`
 - Behavior: a message stored after the search index was built is found by `GET /search?q=` without a rebuild
 - Predicted: pass — the handler scans the live in-memory message array on every request and `/mail-report` pushes into that same array; there is no index to rebuild

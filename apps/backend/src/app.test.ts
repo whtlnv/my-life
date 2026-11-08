@@ -3569,4 +3569,19 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
   });
+
+  it('still lists at GET /search?q= after a backend restart on the same database file a message whose body was reported before it', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(beforeRestart, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' }],
+    });
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+
+    const response = await afterRestart.request('/search?q=quarterly');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+  });
 });

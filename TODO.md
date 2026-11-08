@@ -96,7 +96,7 @@
 - [x] `GET /search?q=` returns no message whose body, summary, extracts and thread state lack the query word
 - [x] `GET /search?q=` finds a message by a word only in its summary, extract or thread state
 - [x] A message stored after the index was built is found by `GET /search?q=` without a rebuild
-- [ ] Search results survive a backend restart
+- [x] Search results survive a backend restart
 
 ### Structured context in the prompt
 
