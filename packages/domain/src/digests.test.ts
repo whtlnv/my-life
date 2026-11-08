@@ -146,4 +146,25 @@ describe('digests', () => {
       expect.objectContaining({ key: 'calendar-notification@google.com', proposals: [movedSync, acceptedReview] }),
     ]);
   });
+
+  it('places two calendar-drive proposals from the same account and different sender addresses in two digests even when they name the same item', () => {
+    const calendarChange = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'calendar-notification@google.com',
+      action: 'archive',
+      category: 'calendar-drive',
+      extract: { item: 'Quarterly review', change: 'Moved from Wednesday 10:00 to Thursday 11:00' },
+    };
+    const driveShare = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'drive-shares-dm-noreply@google.com',
+      action: 'archive',
+      category: 'calendar-drive',
+      extract: { item: 'Quarterly review', change: 'Ana shared the document' },
+    };
+    const result = digests([calendarChange, driveShare]);
+    expect(result.map((digest) => digest.proposals)).toEqual([[calendarChange], [driveShare]]);
+  });
 });

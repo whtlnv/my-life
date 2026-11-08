@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 11:33 · `packages/domain/src/digests.test.ts::places two calendar-drive proposals from the same account and different sender addresses in two digests even when they name the same item`
+- Behavior: Two calendar-drive proposals from the same account and different sender addresses are in two digests
+- Predicted: pass on first run, and tsc clean: `digestKey` keys every non-`system` extract on the sender address, and the previous green already added `{ item, change }` to `DigestableExtract`
+- Actual: pass (1 passed, 7 skipped); tsc clean
+- Type: passed unexpectedly
+- Resolution: The behavior already exists, so no failing version can be written without making up new behavior. I kept the test as a pin, with both proposals naming the same item so it catches a regression to keying on the item. A throwaway mutation that keyed on `extract.item` made it fail; the source was then restored. `/green` has nothing to implement.
+
 ## 2026-11-08 11:30 · `packages/domain/src/digests.test.ts::places two calendar-drive proposals from the same account and the same sender address in one digest keyed by that address`
 - Behavior: Two calendar-drive proposals from the same account and the same sender address are in one digest
 - Predicted: the Vitest run passes (digestKey already falls back to the sender address when the extract has no `system`); tsc fails with TS2345 because `{ item, change }` is not in DigestableProposal's extract union
