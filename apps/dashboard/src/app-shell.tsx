@@ -30,7 +30,13 @@ interface AccountStatus {
 const statusRefreshIntervalMilliseconds = 60_000;
 const emptyStatus: ShellStatus = { badgeCount: 0, accounts: [], sources: [] };
 
-export const routes = { now: '#/', triage: '#/triage', categories: '#/categories', filters: '#/filters' } as const;
+export const routes = {
+  now: '#/',
+  triage: '#/triage',
+  categories: '#/categories',
+  filters: '#/filters',
+  statement: '#/statement',
+} as const;
 
 function timeInBusinessZone(isoTime: string): string {
   return new Intl.DateTimeFormat('en-GB', {
@@ -104,7 +110,8 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
   const onTriage = route === routes.triage;
   const onCategories = route === routes.categories;
   const onFilters = route === routes.filters;
-  const onNow = !onTriage && !onCategories && !onFilters;
+  const onStatement = route === routes.statement;
+  const onNow = !onTriage && !onCategories && !onFilters && !onStatement;
   return (
     <div className="shell">
       <header className="topbar">
@@ -125,6 +132,9 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             </Tab>
             <Tab href={routes.filters} current={onFilters}>
               Filters
+            </Tab>
+            <Tab href={routes.statement} current={onStatement}>
+              Statement
             </Tab>
           </nav>
           <ul className="sources" aria-label="Sources">

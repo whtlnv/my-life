@@ -81,6 +81,16 @@ describe('AppShell', () => {
     expect(filtersTab).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
+  it('has a Statement tab linking to the statement page, marked current on that route', async () => {
+    answerGetNowWith({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0, sources: [] });
+
+    render(<AppShell route="#/statement">{null}</AppShell>);
+
+    const statementTab = await screen.findByRole('link', { name: 'Statement' });
+    expect(statementTab).toHaveAttribute('href', '#/statement');
+    expect(statementTab).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
+  });
   it('still renders the tabs and the page when the backend cannot be reached', async () => {
     vi.stubGlobal(
       'fetch',
