@@ -871,6 +871,43 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(commands.map(({ messageId }) => messageId)).toEqual(['message-github']);
   });
 
+  it('no longer lists in GET /triage-queue a digest confirmed at POST /digests/:id/confirmation, nor its items in any group', async () => {
+    const triage = triageAnsweringInOrder(
+      [
+        {
+          action: 'archive',
+          category: 'system-update',
+          summary: 'GitHub build passed',
+          extract: { system: 'GitHub', severity: 'low', significant: false },
+          reason: 'A routine notification',
+        },
+      ],
+      1,
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-github', threadId: 'message-github', from: 'GitHub <noreply@github.com>' },
+      ],
+    });
+    await postTriageRun(app);
+    const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+
+    await app.request(`/digests/${encodeURIComponent(before[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+
+    const after = await getJson<{ digests: unknown[]; groups: { items: { messageId: string }[] }[] }>(
+      app,
+      '/triage-queue',
+    );
+    expect(before).toHaveLength(1);
+    expect(after.digests).toEqual([]);
+    expect(after.groups.flatMap(({ items }) => items.map(({ messageId }) => messageId))).not.toContain(
+      'message-github',
+    );
+  });
+
   it('lists in GET /triage-queue groups no waiting system-update, sales or calendar-drive proposal, which come back in digests only, while an expense proposal stays in its group', async () => {
     const proposalsInOrder = [
       { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },

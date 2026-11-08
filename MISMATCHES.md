@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 12:07 · `apps/backend/src/app-mail-triage.test.ts::no longer lists in GET /triage-queue a digest confirmed at POST /digests/:id/confirmation, nor its items in any group`
+- Behavior: Confirming a digest removes its items from `GET /triage-queue`
+- Predicted: passes on first run — read before writing: the confirm route (apps/backend/src/app.ts:634) saves a `confirmed` verdict per item, and `describeDigests` builds from `triageQueue(…, verdicts)`, which drops decided proposals
+- Actual: passes; with the route's verdict save disabled it fails `expected [ { …(6) } ] to deeply equal []`, so the test is not vacuous
+- Type: passed unexpectedly
+- Resolution: the behavior landed with the earlier "queues an archive command" item, since the verdict that commands the archive also removes the item from the queue; the test is kept as a pin, and the item needs no green step
+
 ## 2026-11-08 12:05 · `apps/backend/src/app-mail-triage.test.ts::keeps in GET /triage-queue, with no archive command at GET /commands, another system-update digest of the same account after a digest is confirmed at POST /digests/:id/confirmation`
 - Behavior: Confirming a digest leaves another waiting digest of the same category unconfirmed
 - Predicted: passes on first run — read before writing: `POST /digests/:id/confirmation` (apps/backend/src/app.ts:634) already filters digests by `identifyDigest(digest) === digestId`
