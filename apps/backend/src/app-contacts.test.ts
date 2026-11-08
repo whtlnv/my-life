@@ -263,6 +263,25 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     });
   });
 
+  it('leaves out of GET /organizations/:name/timeline the messages of contacts outside that organization', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const luisMessage = { ...budgetReviewReport.messages[0], from: 'Luis <luis@acme.com>' };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMessage,
+        { ...luisMessage, id: 'message-2', threadId: 'thread-2', from: 'Pedro <pedro@globex.com>' },
+      ],
+    });
+
+    const response = await app.request('/organizations/acme.com/timeline');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      messages: [{ id: 'message-1', subject: 'Budget review', accountEmail: 'ana@example.com' }],
+    });
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);

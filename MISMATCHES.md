@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 16:54 · `apps/backend/src/app-contacts.test.ts::leaves out of GET /organizations/:name/timeline the messages of contacts outside that organization`
+- Behavior: an organization's timeline leaves out messages from contacts outside it
+- Predicted: passes on first run (route already filters by the organization's grouped message ids)
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: the previous green (9199629) built the exclusion in by filtering on `organizationsByName`'s message ids, so the behavior already exists; kept the test as a pin rather than inventing a contrived failing variant.
+
 ## 2026-11-08 16:32 · `apps/backend/src/app-contacts.test.ts::leaves out of GET /contacts/:email/timeline a message another contact sent`
 - Behavior: A contact's timeline leaves out messages sent by other contacts
 - Predicted: passes on first run — the previous cycle's timeline route already filters reported messages by sender email
