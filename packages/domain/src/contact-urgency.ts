@@ -46,7 +46,10 @@ function asksSomething(message: UrgencyMessage): boolean {
 
 function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: number): boolean {
   const deadlineWindowMilliseconds = deadlineHours * 60 * 60 * 1000;
-  return (message.dates ?? []).some((date) => Date.parse(date) - Date.parse(now) <= deadlineWindowMilliseconds);
+  return (message.dates ?? []).some((date) => {
+    const millisecondsUntilDate = Date.parse(date) - Date.parse(now);
+    return millisecondsUntilDate >= 0 && millisecondsUntilDate <= deadlineWindowMilliseconds;
+  });
 }
 
 export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; reasons: string[] } {

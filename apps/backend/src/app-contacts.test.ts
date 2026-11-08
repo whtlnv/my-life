@@ -352,6 +352,24 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
   });
 
+  it('lists at GET /people a non-VIP contact whose only extracted deadline has already passed under Everyone else and not under Urgent', async () => {
+    const lastSaturdayNoon = '2026-10-31T12:00:00-06:00';
+    const triage = triageAnswering(keepProposalExtracting({ dates: [lastSaturdayNoon] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { urgent, everyoneElse } = (await response.json()) as {
+      urgent: { emails: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect(everyoneElse.map(({ emails }) => emails)).toContainEqual(['luis@example.com']);
+    expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
+  });
+
   it('lists at GET /people a VIP contact whose message has waited more than 1 business day for a reply under both VIP and Urgent, with the reason "VIP waiting"', async () => {
     const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
