@@ -30,7 +30,7 @@
 
 - [x] A `propose_triage` answer carrying `people`, `organization`, `asks`, `commitments`, `dates` and `threadState` is accepted
 - [x] A `propose_triage` answer whose person has a role other than `sender`, `asked`, `mentioned` or `copied` is rejected
-- [ ] A `propose_triage` answer whose `dates` entry is not ISO 8601 is rejected
+- [x] A `propose_triage` answer whose `dates` entry is not ISO 8601 is rejected
 - [ ] A `propose_triage` answer without the v2 fields is still accepted with the v1 category extract
 - [ ] Triage proposals are made under prompt version `triage-v2`, which asks for the v2 fields
 - [ ] A message's extraction is stored under its prompt version and survives a backend restart

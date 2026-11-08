@@ -57,7 +57,7 @@ export const triageProposal = z
     organization: z.string().optional(),
     asks: z.array(ask).optional(),
     commitments: z.array(commitment).optional(),
-    dates: z.array(z.string()).optional(),
+    dates: z.array(z.union([z.iso.date(), z.iso.datetime({ offset: true })])).optional(),
     threadState: z.string().optional(),
   })
   .refine(extractMatchesCategory);

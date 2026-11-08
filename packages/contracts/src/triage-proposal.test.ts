@@ -150,6 +150,12 @@ describe('triageProposal', () => {
     expect(triageProposal.safeParse(proposal).success).toBe(false);
   });
 
+  it('rejects a proposal whose dates entry is not ISO 8601', () => {
+    const proposal = { ...archiveCcThreadProposal, dates: ['next Friday'] };
+
+    expect(triageProposal.safeParse(proposal).success).toBe(false);
+  });
+
   it.each([
     {
       rule: 'a proposal whose category is not one of the seven categories',
