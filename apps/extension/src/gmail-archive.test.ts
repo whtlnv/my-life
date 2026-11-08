@@ -41,6 +41,14 @@ function fakeBackendAndGmail(
   };
 }
 
+function acknowledgementCommandId(url: URL, init: RequestInit | undefined): string | undefined {
+  const acknowledgementPath = /^\/commands\/([^/]+)\/acknowledgement$/.exec(url.pathname);
+  if (url.origin !== 'http://127.0.0.1:7777' || acknowledgementPath === null || init?.method !== 'POST') {
+    return undefined;
+  }
+  return acknowledgementPath[1] ?? '';
+}
+
 const runArchive = (fetch: FetchFunction) =>
   carryOutArchiveCommands({
     fetch,
@@ -91,9 +99,9 @@ describe('carryOutArchiveCommands', () => {
         );
         return Promise.resolve(Response.json({ commands: pending }));
       }
-      const acknowledgementPath = /^\/commands\/([^/]+)\/acknowledgement$/.exec(url.pathname);
-      if (url.origin === 'http://127.0.0.1:7777' && acknowledgementPath !== null && init?.method === 'POST') {
-        acknowledgedCommandIds.add(acknowledgementPath[1] ?? '');
+      const acknowledgedCommandId = acknowledgementCommandId(url, init);
+      if (acknowledgedCommandId !== undefined) {
+        acknowledgedCommandIds.add(acknowledgedCommandId);
         return Promise.resolve(new Response(null, { status: 204 }));
       }
       return gmail(input, init);
@@ -120,10 +128,10 @@ describe('carryOutArchiveCommands', () => {
         );
         return Promise.resolve(Response.json({ commands: pending }));
       }
-      const acknowledgementPath = /^\/commands\/([^/]+)\/acknowledgement$/.exec(url.pathname);
-      if (url.origin === 'http://127.0.0.1:7777' && acknowledgementPath !== null && init?.method === 'POST') {
-        events.push(`acknowledge ${acknowledgementPath[1] ?? ''}`);
-        acknowledgedCommandIds.add(acknowledgementPath[1] ?? '');
+      const acknowledgedCommandId = acknowledgementCommandId(url, init);
+      if (acknowledgedCommandId !== undefined) {
+        events.push(`acknowledge ${acknowledgedCommandId}`);
+        acknowledgedCommandIds.add(acknowledgedCommandId);
         return Promise.resolve(new Response(null, { status: 204 }));
       }
       if (url.pathname.endsWith('/modify') && gmailRefusesNextModify) {
@@ -155,9 +163,9 @@ describe('carryOutArchiveCommands', () => {
           }),
         );
       }
-      const acknowledgementPath = /^\/commands\/([^/]+)\/acknowledgement$/.exec(url.pathname);
-      if (url.origin === 'http://127.0.0.1:7777' && acknowledgementPath !== null && init?.method === 'POST') {
-        acknowledgedCommandIds.push(acknowledgementPath[1] ?? '');
+      const acknowledgedCommandId = acknowledgementCommandId(url, init);
+      if (acknowledgedCommandId !== undefined) {
+        acknowledgedCommandIds.push(acknowledgedCommandId);
         return Promise.resolve(new Response(null, { status: 204 }));
       }
       if (url.origin + url.pathname === `${gmailApi}/labels`) {
