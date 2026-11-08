@@ -572,10 +572,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
   app.put('/contacts/:email/marks/:mark', (context) => {
+    if (context.req.param('mark') !== 'vip') {
+      return context.body(null, 400);
+    }
     contactDetailsStore.saveMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
   app.delete('/contacts/:email/marks/:mark', (context) => {
+    if (context.req.param('mark') !== 'vip') {
+      return context.body(null, 400);
+    }
     contactDetailsStore.removeMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });

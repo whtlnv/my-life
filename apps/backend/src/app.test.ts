@@ -3108,4 +3108,15 @@ describe('backend app', () => {
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], marks: [] }]);
   });
+
+  it('answers 400 to PUT and DELETE /contacts/:email/marks/:mark for a mark other than vip', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const marked = await markContact(app, 'luis@example.com', 'favorite');
+    const unmarked = await unmarkContact(app, 'luis@example.com', 'favorite');
+
+    expect(marked.status).toBe(400);
+    expect(unmarked.status).toBe(400);
+  });
 });
