@@ -236,6 +236,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const spendStore = openSpendStore(databasePath);
   const verdictStore = openVerdictStore(databasePath);
   const filterProposalStore = openFilterProposalStore(databasePath);
+  const filterProposalRejectionStore = openFilterProposalRejectionStore(databasePath);
+  const filterProposalApprovalStore = openFilterProposalApprovalStore(databasePath);
+  const acknowledgementStore = openAcknowledgementStore(databasePath);
+  const createdFilterStore = openCreatedFilterStore(databasePath);
+  const filterDeletionRequestStore = openFilterDeletionRequestStore(databasePath);
+  const categoryModeStore = openCategoryModeStore(databasePath);
   const proposedCandidateKeys = new Set<string>(filterProposalStore.loadCandidateKeys());
   const loadDecidedMessages = () => {
     const verdicts = verdictStore.loadAll();
@@ -430,8 +436,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       fetchedAt: clock.now().toISOString(),
     });
   });
-  const filterProposalRejectionStore = openFilterProposalRejectionStore(databasePath);
-  const filterProposalApprovalStore = openFilterProposalApprovalStore(databasePath);
   app.get('/filter-proposals', (context) => {
     const decidedFilterProposalIds = new Set([
       ...filterProposalRejectionStore.loadAll(),
@@ -457,8 +461,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     filterProposalApprovalStore.save(context.req.param('id'), clock.now().toISOString());
     return context.body(null, 200);
   });
-  const acknowledgementStore = openAcknowledgementStore(databasePath);
-  const createdFilterStore = openCreatedFilterStore(databasePath);
   app.post('/commands/:id/acknowledgement', async (context) => {
     const commandId = context.req.param('id');
     acknowledgementStore.save(commandId);
@@ -495,7 +497,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         })),
     });
   });
-  const filterDeletionRequestStore = openFilterDeletionRequestStore(databasePath);
   app.delete('/filters/:id', (context) => {
     filterDeletionRequestStore.save(context.req.param('id'), clock.now().toISOString());
     return context.body(null, 200);
@@ -543,7 +544,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
-  const categoryModeStore = openCategoryModeStore(databasePath);
   app.put('/categories/:category/mode', async (context) => {
     const { mode } = await context.req.json<{ mode: string }>();
     const category = context.req.param('category');
