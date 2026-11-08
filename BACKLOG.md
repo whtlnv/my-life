@@ -16,6 +16,10 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/extension/src/gmail-archive.ts:4] The extension's fallback archive label is coupled to the backend's** (added: 2026-11-07)
+  `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
+  command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
+  Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
 - **[apps/backend/src/app.ts:231] `createApp` is one 400-line closure holding every route** (added: 2026-11-07)
   The file is 630 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
