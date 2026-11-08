@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 13:00 · `apps/backend/src/app-commands-categories.test.ts::lists at GET /triage-queue nothing under handled for you for a proposal the user confirmed in advise mode, even after its category is switched to automatic`
+- Behavior: `GET /triage-queue` does not list, under handled for you, a proposal the user confirmed in advise mode
+- Predicted: right-reason assertion failure was the target, but reading `app.ts` first predicted a pass
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: the behavior already exists — `describeHandledForYou` keeps only `madeAutomatic === true`, and that flag is fixed when the proposal is made (`app.ts:587`), so confirming in advise and then switching to automatic still leaves it out; no honest rewrite can fail, so the test stays as a guard for this edge and `/green` has nothing to implement.
+
 ## 2026-11-08 12:31 · `apps/backend/src/app-mail-triage.test.ts::asks the summary model once per digest with only the item summaries of that digest, and carries on each digest its own summary lines`
 - Behavior: Two digests each carry their own summary lines: the summary model is asked once per digest, with only that digest's item summaries (no item of another digest, no expense or cc-thread item)
 - Predicted: AssertionError — summarize called once with every non-action-block item, so the request list has length 1, not 2

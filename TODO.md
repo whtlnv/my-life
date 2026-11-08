@@ -43,7 +43,7 @@
 - [x] After a backend restart, a digest's summary lines are still returned without a new summary call
 - [x] `GET /triage-queue` lists, under handled for you, a proposal an automatic category acted on today in the business time zone
 - [x] `GET /triage-queue` does not list, under handled for you, a proposal an automatic category acted on before today in the business time zone
-- [ ] `GET /triage-queue` does not list, under handled for you, a proposal the user confirmed in advise mode
+- [x] `GET /triage-queue` does not list, under handled for you, a proposal the user confirmed in advise mode
 - [ ] Undoing a handled-for-you item queues, for that item's account, a command to remove `my-life/auto` and return the message to the inbox
 - [ ] An undo command is not offered to the extension of a different account
 - [ ] Undoing a message that no automatic category acted on answers 404 and queues nothing
