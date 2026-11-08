@@ -86,16 +86,18 @@ export const PeoplePage = () => {
       .then(setLists);
   }, []);
 
-  const showTimeline = (person: PersonRow) => {
-    void fetch(`/contacts/${encodeURIComponent(person.emails[0] as string)}/timeline`)
+  const loadTimeline = (path: string, displayName: string) => {
+    void fetch(path)
       .then((response) => response.json() as Promise<Timeline>)
-      .then((timeline) => setSelected({ ...timeline, displayName: person.displayName }));
+      .then((timeline) => setSelected({ ...timeline, displayName }));
+  };
+
+  const showTimeline = (person: PersonRow) => {
+    loadTimeline(`/contacts/${encodeURIComponent(person.emails[0] as string)}/timeline`, person.displayName);
   };
 
   const showOrganizationTimeline = (organization: string) => {
-    void fetch(`/organizations/${encodeURIComponent(organization)}/timeline`)
-      .then((response) => response.json() as Promise<Timeline>)
-      .then((timeline) => setSelected({ ...timeline, displayName: organization }));
+    loadTimeline(`/organizations/${encodeURIComponent(organization)}/timeline`, organization);
   };
 
   return (
