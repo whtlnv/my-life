@@ -788,10 +788,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/search', (context) => {
     const query = context.req.query('q') ?? '';
-    const containsQueryWord = (body: string): boolean => body.split(/\W+/).includes(query);
-    return context.json({
-      messages: reportedMessages.filter((message) => message.body !== undefined && containsQueryWord(message.body)),
-    });
+    return context.json({ messages: messagesWhoseBodyContainsWord(reportedMessages, query) });
   });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
@@ -822,6 +819,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
 const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 
 const freeMailDomains = new Set(['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com']);
+
+function messagesWhoseBodyContainsWord(messages: ReportedMessage[], word: string): ReportedMessage[] {
+  return messages.filter((message) => message.body !== undefined && message.body.split(/\W+/).includes(word));
+}
 
 // One organization per name: each reported message lists under the organization its latest proposal names, or
 // under its sender's domain when no proposal names one.
