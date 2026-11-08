@@ -947,15 +947,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/people', (context) => {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
+    const alwaysMattersLineOfAccount = (accountEmail: string) =>
+      alwaysMattersLine(readFileSync(join(options.profileDirectory ?? '', profileFileName(accountEmail)), 'utf8'));
     const isOnAlwaysMattersLine = (contact: { emails: string[]; messageIds: string[] }) =>
       options.profileDirectory !== undefined &&
       contact.messageIds.some((messageId) =>
-        alwaysMattersLine(
-          readFileSync(
-            join(options.profileDirectory ?? '', profileFileName(accountEmailByMessageId.get(messageId) ?? '')),
-            'utf8',
-          ),
-        ).includes(contact.emails[0] ?? ''),
+        alwaysMattersLineOfAccount(accountEmailByMessageId.get(messageId) ?? '').includes(contact.emails[0] ?? ''),
       );
     const isVip = (contact: { emails: string[]; messageIds: string[] }) =>
       markedEmails.has(contact.emails[0] ?? '') || isOnAlwaysMattersLine(contact);
