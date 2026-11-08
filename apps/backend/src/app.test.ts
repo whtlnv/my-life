@@ -2924,31 +2924,34 @@ describe('backend app', () => {
     expect(await response.json()).toEqual({ organizations: [{ name: 'example.com', messageIds: ['message-1'] }] });
   });
 
-  it('lists at GET /organizations no organization for a message from a free-mail domain whose extraction names no organization', async () => {
-    const triage = {
-      propose: () =>
-        Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-          },
-          costInUsd: 0,
-          promptVersion: 'triage-v2',
-        }),
-    };
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const fromGmail = { ...budgetReviewReport.messages[0], from: 'Luis <luis@gmail.com>' };
-    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [fromGmail] });
-    await postTriageRun(app);
+  it.each(['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'])(
+    'lists at GET /organizations no organization for a message from the free-mail domain %s whose extraction names no organization',
+    async (freeMailDomain) => {
+      const triage = {
+        propose: () =>
+          Promise.resolve({
+            proposal: {
+              action: 'keep',
+              category: 'unknown',
+              summary: 'A budget review',
+              extract: {},
+              reason: 'Unsure',
+            },
+            costInUsd: 0,
+            promptVersion: 'triage-v2',
+          }),
+      };
+      const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+      const fromGmail = { ...budgetReviewReport.messages[0], from: `Luis <luis@${freeMailDomain}>` };
+      await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [fromGmail] });
+      await postTriageRun(app);
 
-    const response = await app.request('/organizations');
+      const response = await app.request('/organizations');
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ organizations: [] });
-  });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ organizations: [] });
+    },
+  );
 
   it('lists at GET /organizations one organization holding both messages when two messages are triaged with extractions naming the same organization', async () => {
     const triage = {

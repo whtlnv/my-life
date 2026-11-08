@@ -656,7 +656,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
 
 const quotedOrBareDisplayNameThenAngleBracketedEmail = /^"?(.*?)"? <(.*)>$/;
 
-const freeMailDomains = new Set(['gmail.com']);
+const freeMailDomains = new Set(['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com']);
 
 function organizationsFromProposals(proposals: Proposal[], senderByMessageId: Map<string, string>) {
   const messageIdsByName = new Map<string, string[]>();
