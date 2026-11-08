@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { accountName } from './account-name';
+import { categoryLabel } from './category-labels';
 
 import {
   fetchedAtText,
@@ -1335,5 +1336,39 @@ describe('TriagePage', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(within(handledSection).queryByText(/Initech pitches a CRM/)).not.toBeInTheDocument();
     expect(within(handledSection).queryByText(/Globex pitches a webinar/)).not.toBeInTheDocument();
+  });
+
+  it('lists each handled item with its summary, category and account once Handled for you is expanded', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      digests: [],
+      handledForYou: [
+        {
+          messageId: 'message-1',
+          accountEmail: 'francisco@psmutuus.com',
+          action: 'archive',
+          category: 'sales',
+          summary: 'Initech pitches a CRM',
+          extract: {},
+          reason: 'A sales pitch',
+          link: 'https://mail.google.com/mail/?authuser=francisco%40psmutuus.com#all/message-1',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const handledSection = await screen.findByRole('region', { name: sectionTitles.handledForYou });
+    await user.click(
+      await within(handledSection).findByRole('button', { name: new RegExp(sectionTitles.handledForYou) }),
+    );
+    const handledRow = (await within(handledSection).findByText('Initech pitches a CRM')).closest('li');
+    if (handledRow === null) throw new Error('the handled item is not rendered as a list item');
+    expect(within(handledRow).getByText(categoryLabel('sales'))).toBeInTheDocument();
+    expect(within(handledRow).getByText(accountName('francisco@psmutuus.com'))).toBeInTheDocument();
   });
 });

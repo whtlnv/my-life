@@ -59,7 +59,7 @@ interface TriageQueueResponse {
   action: TriageItem[];
   groups: TriageGroup[];
   digests?: Digest[];
-  handledForYou?: unknown[];
+  handledForYou?: TriageItem[];
   remaining: number;
   paused?: boolean;
   fetchedAt?: string;
@@ -513,6 +513,7 @@ function Legend() {
 
 export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
+  const [handledExpanded, setHandledExpanded] = useState(false);
 
   useEffect(() => {
     const loadQueue = () =>
@@ -607,10 +608,27 @@ export function TriagePage() {
       </section>
       <section aria-label={sectionTitles.handledForYou} className="section">
         <h2 className="section-title">
-          <button type="button" aria-expanded={false}>
+          <button
+            type="button"
+            aria-expanded={handledExpanded}
+            onClick={() => {
+              setHandledExpanded(true);
+            }}
+          >
             {sectionTitles.handledForYou} <span className="count">{queue.handledForYou?.length}</span>
           </button>
         </h2>
+        {handledExpanded && (
+          <ul>
+            {queue.handledForYou?.map((item) => (
+              <li key={item.messageId}>
+                <span>{item.summary}</span>
+                <span>{categoryLabel(item.category ?? '')}</span>
+                <span>{accountName(item.accountEmail)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
       <section className="section">
         <h2 className="section-title">Everything else</h2>
