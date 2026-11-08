@@ -952,11 +952,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const involvesContact = (message: (typeof reportedMessages)[number]): boolean =>
       contactFromSender(message.from).email === email || namesContact(message.id);
     const contactThreadIds = new Set(reportedMessages.filter(involvesContact).map((message) => message.threadId));
+    const isUserReplyInContactThread = (message: (typeof reportedMessages)[number]): boolean =>
+      message.sentByUser === true && contactThreadIds.has(message.threadId);
     const messages = reportedMessages
-      .filter(
-        (message) =>
-          involvesContact(message) || (message.sentByUser === true && contactThreadIds.has(message.threadId)),
-      )
+      .filter((message) => involvesContact(message) || isUserReplyInContactThread(message))
       .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
