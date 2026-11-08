@@ -627,8 +627,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const userUnmarkedEmails = new Set<string>();
   app.delete(contactMarkRoute, rejectUnknownMark, (context) => {
-    contactDetailsStore.removeMark(context.req.param('email'), context.req.param('mark'));
-    userUnmarkedEmails.add(context.req.param('email'));
+    const email = context.req.param('email');
+    contactDetailsStore.removeMark(email, context.req.param('mark'));
+    userUnmarkedEmails.add(email);
     return context.body(null, 200);
   });
   app.patch('/contacts/:email', async (context) => {
@@ -647,7 +648,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...(userSetOrganization ? {} : { organization }),
       ...(lists ? { lists } : {}),
     });
-    if (starred && !userUnmarkedEmails.has(primaryEmail)) {
+    const userRemovedVip = userUnmarkedEmails.has(primaryEmail);
+    if (starred && !userRemovedVip) {
       contactDetailsStore.saveMark(primaryEmail, 'vip');
     }
     recordImportedContact(importedContacts, { displayName: name, emails });
