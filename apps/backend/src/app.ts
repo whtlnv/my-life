@@ -70,6 +70,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number] & {
   organization?: string;
   people?: { name: string; email?: string }[];
   dates?: string[];
+  asks?: { ask: string }[];
 };
 type TriageProposal = Parameters<typeof triageEffects>[0];
 type TriageVerdict = Parameters<typeof triageEffects>[1];
@@ -947,12 +948,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const conversationMessagesOf = (contact: { messageIds: string[] }) =>
       reportedMessages
         .filter((message) => contact.messageIds.includes(message.id) || message.sentByUser === true)
-        .map((message) => ({
-          threadId: message.threadId,
-          receivedAt: new Date(message.date).toISOString(),
-          sentByUser: message.sentByUser === true,
-          dates: proposals.find((proposal) => proposal.messageId === message.id)?.dates ?? [],
-        }));
+        .map((message) => {
+          const proposal = proposals.find((candidate) => candidate.messageId === message.id);
+          return {
+            threadId: message.threadId,
+            receivedAt: new Date(message.date).toISOString(),
+            sentByUser: message.sentByUser === true,
+            dates: proposal?.dates ?? [],
+            asks: proposal?.asks ?? [],
+          };
+        });
     const urgencySettings = {
       timeZone: businessTimeZone,
       unansweredAskBusinessDays: 2,

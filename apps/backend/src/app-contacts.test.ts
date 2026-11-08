@@ -411,6 +411,20 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['marta@acme.com']);
   });
 
+  it('lists at GET /people under Urgent, with the reason "unanswered ask", a non-VIP contact whose ask has waited 2 business days with no reply from the user', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Review the budget' }] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { urgent } = (await response.json()) as { urgent: { emails: string[]; reasons: string[] }[] };
+    expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['unanswered ask'] })]);
+  });
+
   it('lists at GET /contacts, after a backend restart on the same database file, the lists and note set on a contact through PATCH /contacts/:email before it', async () => {
     const options = {
       allowedEmails: ['ana@example.com'],
