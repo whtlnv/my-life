@@ -32,6 +32,19 @@ const StatementRow = ({ label, amount, currency }: { label: string; amount: numb
   </tr>
 );
 
+const StatementTable = ({ entries }: { entries: StatementEntry[] }) => (
+  <table>
+    <tbody>
+      {entries.map((entry, index) => (
+        <StatementRow key={index} label={entry.vendor} amount={entry.amount} currency={entry.currency} />
+      ))}
+      {totalsByCurrency(entries).map(([currency, total]) => (
+        <StatementRow key={currency} label="Total" amount={total} currency={currency} />
+      ))}
+    </tbody>
+  </table>
+);
+
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
 const mondayOf = (day: Date) => new Date(day.getTime() - ((day.getUTCDay() + 6) % 7) * millisecondsPerDay);
@@ -79,20 +92,7 @@ export const StatementPage = () => {
         Next week
       </button>
       <a href="/expense-statement">Download</a>
-      {entries.length === 0 ? (
-        <p className="empty">{noExpensesText}</p>
-      ) : (
-        <table>
-          <tbody>
-            {entries.map((entry, index) => (
-              <StatementRow key={index} label={entry.vendor} amount={entry.amount} currency={entry.currency} />
-            ))}
-            {totalsByCurrency(entries).map(([currency, total]) => (
-              <StatementRow key={currency} label="Total" amount={total} currency={currency} />
-            ))}
-          </tbody>
-        </table>
-      )}
+      {entries.length === 0 ? <p className="empty">{noExpensesText}</p> : <StatementTable entries={entries} />}
     </section>
   );
 };
