@@ -1446,8 +1446,7 @@ describe('backend app', () => {
     const databasePath = temporaryDatabasePath();
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage };
     const beforeRestart = createApp(options);
-    await proposeBudgetReview(beforeRestart);
-    await postJson(beforeRestart, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    await confirmBudgetReviewProposal(beforeRestart);
 
     const afterRestart = createApp(options);
     const queue = await afterRestart.request('/triage-queue');
