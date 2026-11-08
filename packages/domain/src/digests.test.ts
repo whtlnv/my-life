@@ -1,0 +1,25 @@
+import { describe, expect, it } from 'vitest';
+
+import { digests } from './digests';
+
+describe('digests', () => {
+  it('places two system-update proposals from the same account naming the same system in one digest', () => {
+    const firstAwsProposal = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'AWS', severity: 'info', significant: false },
+    };
+    const secondAwsProposal = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      action: 'archive',
+      category: 'system-update',
+      extract: { system: 'AWS', severity: 'warning', significant: true },
+    };
+    const result = digests([firstAwsProposal, secondAwsProposal]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.proposals).toEqual([firstAwsProposal, secondAwsProposal]);
+  });
+});
