@@ -46,7 +46,7 @@
 - [x] `GET /triage-queue` does not list, under handled for you, a proposal the user confirmed in advise mode
 - [x] Undoing a handled-for-you item queues, for that item's account, a command to remove `my-life/auto` and return the message to the inbox
 - [x] An undo command is not offered to the extension of a different account
-- [ ] Undoing a message that no automatic category acted on answers 404 and queues nothing
+- [x] Undoing a message that no automatic category acted on answers 404 and queues nothing
 - [ ] An undone item no longer appears under handled for you
 - [ ] After a backend restart, an undone item still does not appear under handled for you and its undo command is not re-queued once acknowledged
 - [ ] Given an undo command, the extension removes the `my-life/auto` label from the message, adds it back to the inbox and acknowledges the command

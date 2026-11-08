@@ -662,4 +662,20 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
 
     expect(await response.json()).toEqual({ commands: [] });
   });
+  it('answers 404 at POST /handled-for-you/:messageId/undo and lists no command at GET /commands for a message no automatic category acted on', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+    });
+    await proposeBudgetReview(app);
+
+    const undo = await app.request('/handled-for-you/message-1/undo', { method: 'POST' });
+    const commands = await getCommands(app, 'ana@example.com');
+
+    expect({ status: undo.status, commands: await commands.json() }).toEqual({
+      status: 404,
+      commands: { commands: [] },
+    });
+  });
 });
