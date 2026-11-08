@@ -75,6 +75,8 @@ const entities: Record<string, string> = {
   '&amp;': '&',
 };
 
+const entityPattern = new RegExp(Object.keys(entities).join('|'), 'g');
+
 function decodeEntities(text: string): string {
-  return text.replace(/&(?:nbsp|lt|gt|quot|#39|amp);/g, (entity) => entities[entity] ?? entity);
+  return text.replace(entityPattern, (entity) => entities[entity] ?? entity);
 }
