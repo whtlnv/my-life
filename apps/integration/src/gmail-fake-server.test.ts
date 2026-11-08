@@ -6,6 +6,7 @@ import { carryOutArchiveCommands } from '@my-life/extension/gmail-archive';
 import { carryOutFilterCommands } from '@my-life/extension/gmail-filter';
 import { pollGmailOnce } from '@my-life/extension/gmail-poll';
 
+import { extensionFetchRoutingTo } from './extension-fetch.test-support';
 import { budgetReviewBody, startGmailFakeServer } from './gmail-fake-server';
 
 const accountEmail = 'ana@example.com';
@@ -93,19 +94,9 @@ function createBackendProposing(proposalFor: (message: MessageSeenByTriage) => o
   return { backend, messagesSeenByTriage };
 }
 
-function extensionFetchRoutingTo(gmailUrl: string, backend: Backend): typeof fetch {
-  return async (input, init) => {
-    const url = new URL(input instanceof Request ? input.url : input.toString());
-    if (url.origin === 'https://gmail.googleapis.com') {
-      return fetch(new URL(url.pathname + url.search, gmailUrl), init);
-    }
-    return backend.request(url.pathname + url.search, init);
-  };
-}
-
 function extensionOptionsFor(gmailUrl: string, backend: Backend) {
   return {
-    fetch: extensionFetchRoutingTo(gmailUrl, backend),
+    fetch: extensionFetchRoutingTo('https://gmail.googleapis.com', gmailUrl, backend),
     accessToken: 'fake-token',
     accountEmail,
     backendUrl,
