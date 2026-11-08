@@ -4,8 +4,10 @@
 ## Phase 3 — People, Needs input, tasks
 
 - [x] When the extension polls Gmail, a message the account sent (Gmail label `SENT`) is reported to the backend marked as sent by the user
-- [ ] When the extension polls Gmail, a message received in the inbox is reported marked as not sent by the user
-  - predicted-contradiction: `apps/extension/src/gmail-poll.test.ts::pollGmailOnce > reports each message with its From, To, Cc, Subject, Date and List-Id headers, its snippet and its trimmed body, read in full` — asserts: an inbox message is reported as exactly id, threadId, from, to, cc, subject, date, snippet, listId and body, with no other field — retired-by: "a message received in the inbox is reported marked as not sent by the user"
+- [x] When the extension polls Gmail, a message received in the inbox is reported marked as not sent by the user
+  - hand-driven 2026-11-08: the exact-fields poll test was migrated to expect `sentByUser: false`, not deleted
+- [ ] `POST /mail-report` keeps whether each message was sent by the user (the shared contract accepts the field), also after a backend restart on the same database file
+- [ ] A message the user sent is never handed to the triage port and never appears in `GET /triage-queue`, digests or the badge count
 - [ ] The business days between two instants skip Saturday and Sunday in the business time zone: Friday 17:00 to Tuesday 17:00 is 2 business days
 - [ ] The business days between two instants on weekdays only count every day: Monday 17:00 to Wednesday 17:00 is 2 business days
 - [ ] A contact whose ask to the user has gone unanswered for 2 business days is urgent, with the reason "unanswered ask"

@@ -66,7 +66,7 @@ function toReportedMessage(message: GmailMessage) {
     snippet: message.snippet,
     listId: header('List-Id'),
     body: messageBody(message.payload),
-    ...(message.labelIds.includes('SENT') && { sentByUser: true }),
+    sentByUser: message.labelIds.includes('SENT'),
   };
 }
 

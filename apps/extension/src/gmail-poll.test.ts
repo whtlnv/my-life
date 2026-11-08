@@ -283,7 +283,7 @@ describe('pollGmailOnce', () => {
       },
     ]);
   });
-  it('reports each message with its From, To, Cc, Subject, Date and List-Id headers, its snippet and its trimmed body, read in full', async () => {
+  it('reports each message with its From, To, Cc, Subject, Date and List-Id headers, its snippet and its trimmed body, read in full, and an inbox message as not sent by the user', async () => {
     const backendPosts: { url: string; body: unknown }[] = [];
     const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -353,6 +353,7 @@ describe('pollGmailOnce', () => {
             snippet: 'This week in the board: agenda and minutes',
             listId: 'Board <board.lists.example.com>',
             body: 'Agenda attached.\n',
+            sentByUser: false,
           },
         ],
       },
