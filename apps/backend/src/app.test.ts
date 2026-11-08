@@ -3350,4 +3350,22 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ messageIds: ['message-1'] });
   });
+
+  it('lists at GET /bodies-missing?account= neither a message of that account reported with a body nor a body-less message of another account', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com', 'bea@example.com'], clock: clockAtTenPastThree });
+    const bodyLessMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [bodyLessMessage, { ...bodyLessMessage, id: 'message-2', body: 'Can you review the budget by Friday?' }],
+    });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      accountEmail: 'bea@example.com',
+      messages: [{ ...bodyLessMessage, id: 'message-3', to: 'bea@example.com' }],
+    });
+
+    const response = await app.request('/bodies-missing?account=ana%40example.com');
+
+    expect(await response.json()).toEqual({ messageIds: ['message-1'] });
+  });
 });

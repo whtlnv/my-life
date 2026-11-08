@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 03:56 · `apps/backend/src/app.test.ts::lists at GET /bodies-missing?account= neither a message of that account reported with a body nor a body-less message of another account`
+- Behavior: `GET /bodies-missing?account=` lists no message of another account and no message that has a body
+- Predicted: pass on first run — the previous Green (`5ac425f`) already filtered on `accountEmail` and `body === undefined`, beyond what its own test required
+- Actual: pass on first run
+- Type: passed unexpectedly
+- Resolution: kept the test as the pin for this TODO item instead of rewriting it; a throwaway mutation of the route filter made it fail with `message-2` and `message-3` listed, so it is not vacuous (the route was restored); the first-run pass is a sign the earlier Green over-implemented its item.
+
 ## 2026-11-08 03:47 · `apps/integration/src/people-fake-server.test.ts::importing the starred-client-and-other-contact scenario lists at GET /contacts the starred client as vip with its organization and list, and the other contact by name and email`
 - Behavior: the contacts import, from the extension against the fake People server to the stored contacts, ends with the contacts readable from the backend
 - Predicted: module-load error, `./people-fake-server` cannot be found because the fake People server does not exist yet
