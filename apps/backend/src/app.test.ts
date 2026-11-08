@@ -202,6 +202,12 @@ const shopNewsletterArchiveProposal = {
 
 const shopNewsletterArchiveTriage = () => triageAnswering(shopNewsletterArchiveProposal);
 
+const shopNewslettersFilterProposal = {
+  criteria: { from: 'news@shop.example.com' },
+  labelName: 'Shop newsletters',
+  skipInbox: true,
+};
+
 const expenseInvoiceProposal = (vendor: string, date: string, amount = 100) => ({
   action: 'archive',
   category: 'expense',
@@ -2097,11 +2103,7 @@ describe('backend app', () => {
 
   it('does not ask the filter port again after a backend restart on the same database file about a candidate whose filter proposal was stored before it', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = filterRecordingAskedCandidates(askedCandidates, {
-      criteria: { from: 'news@shop.example.com' },
-      labelName: 'Shop newsletters',
-      skipInbox: true,
-    });
+    const filter = filterRecordingAskedCandidates(askedCandidates, shopNewslettersFilterProposal);
     const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
@@ -2128,11 +2130,7 @@ describe('backend app', () => {
 
   it('asks the filter port, also after a backend restart on the same database file, with each candidate message carrying its sender and subject as reported', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = filterRecordingAskedCandidates(askedCandidates, {
-      criteria: { from: 'news@shop.example.com' },
-      labelName: 'Shop newsletters',
-      skipInbox: true,
-    });
+    const filter = filterRecordingAskedCandidates(askedCandidates, shopNewslettersFilterProposal);
     const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
@@ -2323,11 +2321,7 @@ describe('backend app', () => {
   });
 
   function appProposingShopNewslettersFilter() {
-    const filter = filterAnswering({
-      criteria: { from: 'news@shop.example.com' },
-      labelName: 'Shop newsletters',
-      skipInbox: true,
-    });
+    const filter = filterAnswering(shopNewslettersFilterProposal);
     const triage = shopNewsletterArchiveTriage();
     return createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, filter });
   }
@@ -2379,11 +2373,7 @@ describe('backend app', () => {
       clock: clockAtTenPastThree,
       databasePath: temporaryDatabasePath(),
       triage: shopNewsletterArchiveTriage(),
-      filter: filterAnswering({
-        criteria: { from: 'news@shop.example.com' },
-        labelName: 'Shop newsletters',
-        skipInbox: true,
-      }),
+      filter: filterAnswering(shopNewslettersFilterProposal),
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
@@ -2471,11 +2461,7 @@ describe('backend app', () => {
       clock: { now: () => currentTime },
       databasePath: temporaryDatabasePath(),
       triage: shopNewsletterArchiveTriage(),
-      filter: filterAnswering({
-        criteria: { from: 'news@shop.example.com' },
-        labelName: 'Shop newsletters',
-        skipInbox: true,
-      }),
+      filter: filterAnswering(shopNewslettersFilterProposal),
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
@@ -2552,11 +2538,7 @@ describe('backend app', () => {
       clock: { now: () => currentTime },
       databasePath: temporaryDatabasePath(),
       triage: shopNewsletterArchiveTriage(),
-      filter: filterAnswering({
-        criteria: { from: 'news@shop.example.com' },
-        labelName: 'Shop newsletters',
-        skipInbox: true,
-      }),
+      filter: filterAnswering(shopNewslettersFilterProposal),
     };
     const beforeRestart = createApp(options);
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
@@ -2608,11 +2590,7 @@ describe('backend app', () => {
 
   it('neither asks the filter port again nor lists a proposal at GET /filter-proposals for further confirmed archives from a sender whose filter proposal was rejected, also after a backend restart on the same database file', async () => {
     const askedCandidates: unknown[] = [];
-    const filter = filterRecordingAskedCandidates(askedCandidates, {
-      criteria: { from: 'news@shop.example.com' },
-      labelName: 'Shop newsletters',
-      skipInbox: true,
-    });
+    const filter = filterRecordingAskedCandidates(askedCandidates, shopNewslettersFilterProposal);
     const triage = shopNewsletterArchiveTriage();
     const options = {
       allowedEmails: ['ana@example.com'],
