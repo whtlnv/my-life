@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PeoplePage } from './people-page';
@@ -93,5 +94,69 @@ describe('PeoplePage', () => {
     const row = await within(urgentList).findByRole('listitem');
     expect(row).toHaveTextContent('unanswered ask');
     expect(row).toHaveTextContent('deadline');
+  });
+
+  it("shows a selected contact's merged timeline from GET /contacts/:email/timeline, newest first, each message with its account and source link", async () => {
+    const people = {
+      vip: [
+        {
+          displayName: 'Ana Ruiz',
+          emails: ['ana@mutuus.mx'],
+          messageIds: ['m1', 'm2'],
+          organization: 'Mutuus',
+          lastMessageAt: '2026-11-06T15:00:00.000Z',
+        },
+      ],
+      urgent: [],
+      everyoneElse: [],
+    };
+    const timeline = {
+      messages: [
+        {
+          id: 'm2',
+          subject: 'Contract draft',
+          accountEmail: 'work@example.com',
+          link: 'https://mail.google.com/mail/?authuser=work%40example.com#all/m2',
+          sentByUser: false,
+          asks: [],
+        },
+        {
+          id: 'm1',
+          subject: 'Kickoff notes',
+          accountEmail: 'personal@example.com',
+          link: 'https://mail.google.com/mail/?authuser=personal%40example.com#all/m1',
+          sentByUser: false,
+          asks: [],
+        },
+      ],
+    };
+    const bodies: Record<string, unknown> = {
+      '/people': people,
+      [`/contacts/${encodeURIComponent('ana@mutuus.mx')}/timeline`]: timeline,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const body = bodies[String(input)];
+        return Promise.resolve(
+          body === undefined
+            ? new Response(null, { status: 404 })
+            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+
+    render(<PeoplePage />);
+    const vipList = await screen.findByRole('list', { name: 'VIP' });
+    await userEvent.click(await within(vipList).findByRole('button', { name: /Ana Ruiz/ }));
+
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Ana Ruiz' });
+    const rows = within(timelineList).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    for (const [index, message] of timeline.messages.entries()) {
+      const row = rows[index] as HTMLElement;
+      expect(within(row).getByRole('link', { name: message.subject })).toHaveAttribute('href', message.link);
+      expect(row).toHaveTextContent(message.accountEmail);
+    }
   });
 });

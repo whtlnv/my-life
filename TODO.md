@@ -44,7 +44,7 @@
 - [x] The dashboard shell shows a People tab that opens the People page
 - [x] The People page shows the VIP, Urgent and Everyone else lists, each row with the contact's name, organization and the time of its last message
 - [x] An urgent row on the People page says why the contact is urgent
-- [ ] Selecting a contact on the People page shows its merged timeline
+- [x] Selecting a contact on the People page shows its merged timeline
 - [ ] Selecting an organization on the People page shows its timeline
 - [ ] Marking a contact VIP from the People page moves it into the VIP list; removing the mark moves it out
 - [ ] When the first triage model and the second opinion choose different categories for a message, both categories are stored with the proposal
