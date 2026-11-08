@@ -788,7 +788,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/search', (context) => {
     const query = context.req.query('q') ?? '';
-    return context.json({ messages: reportedMessages.filter((message) => message.body?.includes(query)) });
+    const containsQueryWord = (body: string): boolean => body.split(/\W+/).includes(query);
+    return context.json({
+      messages: reportedMessages.filter((message) => message.body !== undefined && containsQueryWord(message.body)),
+    });
   });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();

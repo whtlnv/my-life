@@ -3518,4 +3518,25 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
   });
+
+  it('lists at GET /search?q= no message whose body lacks the query word, even when the word appears inside another word', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReviewReport.messages[0], body: 'Hi Ana, the quarterly numbers are attached. Luis' },
+        {
+          ...budgetReviewReport.messages[0],
+          id: 'message-2',
+          threadId: 'thread-2',
+          body: 'Hi Ana, the sales team outnumbers us at the headquarters. Luis',
+        },
+      ],
+    });
+
+    const response = await app.request('/search?q=numbers');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ messages: [expect.objectContaining({ id: 'message-1' })] });
+  });
 });

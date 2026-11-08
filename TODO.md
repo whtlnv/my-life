@@ -93,7 +93,7 @@
 ### Search
 
 - [x] `GET /search?q=` returns the messages whose body contains the query word
-- [ ] `GET /search?q=` returns no message whose body, summary, extracts and thread state lack the query word
+- [x] `GET /search?q=` returns no message whose body, summary, extracts and thread state lack the query word
 - [ ] `GET /search?q=` finds a message by a word only in its summary, extract or thread state
 - [ ] A message stored after the index was built is found by `GET /search?q=` without a rebuild
 - [ ] Search results survive a backend restart
