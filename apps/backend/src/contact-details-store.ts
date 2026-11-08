@@ -13,6 +13,8 @@ export interface ImportedContactRecord {
 export function openContactDetailsStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec('CREATE TABLE IF NOT EXISTS contact_details (email TEXT NOT NULL, details TEXT NOT NULL)');
+  // Details a Google Contacts import brought; whatever the user set in the app is layered on top of them.
+  database.exec('CREATE TABLE IF NOT EXISTS imported_contact_details (email TEXT NOT NULL, details TEXT NOT NULL)');
   database.exec('CREATE TABLE IF NOT EXISTS contact_marks (email TEXT NOT NULL, mark TEXT NOT NULL)');
   // Every mark the user removed in the app, kept so a later Google Contacts import never puts it back.
   database.exec('CREATE TABLE IF NOT EXISTS contact_mark_removals (email TEXT NOT NULL, mark TEXT NOT NULL)');
@@ -20,6 +22,10 @@ export function openContactDetailsStore(databasePath: string) {
   const insertDetails = database.prepare('INSERT INTO contact_details (email, details) VALUES (?, ?)');
   const loadDetails = database.prepare<[], { email: string; details: string }>(
     'SELECT email, details FROM contact_details ORDER BY rowid',
+  );
+  const insertImportedDetails = database.prepare('INSERT INTO imported_contact_details (email, details) VALUES (?, ?)');
+  const loadImportedDetails = database.prepare<[], { email: string; details: string }>(
+    'SELECT email, details FROM imported_contact_details ORDER BY rowid',
   );
   const insertMark = database.prepare('INSERT INTO contact_marks (email, mark) VALUES (?, ?)');
   const loadMarkedEmails = database.prepare<[], { email: string }>('SELECT email FROM contact_marks');
@@ -36,9 +42,12 @@ export function openContactDetailsStore(databasePath: string) {
     save(email: string, details: ContactDetails): void {
       insertDetails.run(email, JSON.stringify(details));
     },
+    saveImportedDetails(email: string, details: ContactDetails): void {
+      insertImportedDetails.run(email, JSON.stringify(details));
+    },
     loadAll(): Record<string, ContactDetails> {
       const merged: Record<string, ContactDetails> = {};
-      for (const row of loadDetails.all()) {
+      for (const row of [...loadImportedDetails.all(), ...loadDetails.all()]) {
         merged[row.email] = { ...merged[row.email], ...(JSON.parse(row.details) as ContactDetails) };
       }
       return merged;

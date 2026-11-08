@@ -689,6 +689,22 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], organization: 'Mutuus' }]);
   });
 
+  it('lists at GET /contacts, after a second POST /contacts-import brings another organization for a contact whose organization the user never edited, that contact with the organization of the later import', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
+    });
+
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Globex', starred: false, lists: [] }],
+    });
+    const { contacts } = await getContacts(app);
+
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], organization: 'Globex' }]);
+  });
+
   it('accepts POST /contacts-import holding a phone-only contact without any email, skips that contact and lists at GET /contacts the others, a nameless one by its email', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 

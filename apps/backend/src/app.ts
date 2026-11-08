@@ -906,10 +906,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const importContact = ({ name, emails, organization, starred, lists }: ImportedContact): void => {
     const [primaryEmail] = emails;
     if (primaryEmail === undefined) return;
-    const organizationAlreadyStored = contactDetailsStore.loadAll()[primaryEmail]?.organization !== undefined;
-    const keepStoredOrganization = organizationAlreadyStored || organization === undefined;
-    contactDetailsStore.save(primaryEmail, {
-      ...(keepStoredOrganization ? {} : { organization }),
+    contactDetailsStore.saveImportedDetails(primaryEmail, {
+      ...(organization === undefined ? {} : { organization }),
       ...(lists ? { lists } : {}),
     });
     const userRemovedVip = contactDetailsStore.userRemovedMark(primaryEmail, 'vip');
