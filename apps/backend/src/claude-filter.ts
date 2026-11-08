@@ -3,12 +3,7 @@ import { basename, extname } from 'node:path';
 
 import { filterProposal } from '@my-life/contracts';
 
-import { computeCostInUsd, type ClaudePricing } from './claude-triage';
-
-interface ClaudeResponse {
-  content: { type: string; input?: unknown }[];
-  usage: { input_tokens: number; output_tokens: number };
-}
+import { computeCostInUsd, type ClaudePricing, type ClaudeResponse } from './claude-triage';
 
 interface ClaudeFilterDependencies {
   model: string;

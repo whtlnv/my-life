@@ -4,7 +4,7 @@ import { basename, extname, join } from 'node:path';
 import { triageProposal } from '@my-life/contracts';
 import { isAddressedToUser } from '@my-life/domain';
 
-interface ClaudeResponse {
+export interface ClaudeResponse {
   content: { type: string; input?: unknown }[];
   usage: { input_tokens: number; output_tokens: number };
 }
