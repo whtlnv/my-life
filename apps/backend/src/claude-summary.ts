@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import { digestSummary } from '@my-life/contracts';
+
 import { type ClaudePricing, type ClaudeResponse, computeCostInUsd, readToolUseInput } from './claude-triage';
 
 const summaryToolName = 'write_summary';
@@ -29,9 +31,8 @@ export function createClaudeSummary({ model, promptPath, pricing, createMessage 
         tool_choice: { type: 'tool', name: summaryToolName },
         messages: [{ role: 'user', content: items.map(({ summary }) => summary).join('\n') }],
       });
-      const written = readToolUseInput(response) as { lines: string[] };
-      if (written.lines.length > 2) throw new Error('The summary has more than two lines');
-      return { ...written, costInUsd: computeCostInUsd(response.usage, pricing) };
+      const { lines } = digestSummary.parse(readToolUseInput(response));
+      return { lines, costInUsd: computeCostInUsd(response.usage, pricing) };
     },
   };
 }

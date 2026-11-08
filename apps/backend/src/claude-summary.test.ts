@@ -21,7 +21,9 @@ describe('Claude summary', () => {
       createMessage: (request: SentRequest) => {
         sentRequests.push(request);
         return Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } }],
+          content: [
+            { type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } },
+          ],
           usage: { input_tokens: 0, output_tokens: 0 },
         });
       },
@@ -63,7 +65,9 @@ describe('Claude summary', () => {
       pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
       createMessage: () =>
         Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } }],
+          content: [
+            { type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } },
+          ],
           usage: { input_tokens: 2_000_000, output_tokens: 400_000 },
         }),
     });
@@ -98,6 +102,25 @@ describe('Claude summary', () => {
     ).rejects.toThrow();
   });
 
+  it.each([
+    { rule: 'no lines', input: { lines: [] } },
+    { rule: 'an empty line', input: { lines: [''] } },
+    { rule: 'a line that is not text', input: { lines: [42] } },
+    { rule: 'no lines field', input: {} },
+  ])('fails the summary when the model writes $rule through its write_summary tool', async ({ input }) => {
+    const summary = createClaudeSummary({
+      model: 'claude-haiku-5-5',
+      pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input }],
+          usage: { input_tokens: 0, output_tokens: 0 },
+        }),
+    });
+
+    await expect(summary.summarize({ items: [{ summary: 'GitHub build passed' }] })).rejects.toThrow();
+  });
+
   it('sends every item summary of the digest under the versioned prompt file and requires its write_summary tool', async () => {
     const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'digest-summary-v1.md');
     writeFileSync(promptPath, 'Summarize the digest in one or two lines by calling write_summary.');
@@ -114,7 +137,9 @@ describe('Claude summary', () => {
       createMessage: (request) => {
         sentRequests.push(request);
         return Promise.resolve({
-          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } }],
+          content: [
+            { type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } },
+          ],
           usage: { input_tokens: 0, output_tokens: 0 },
         });
       },

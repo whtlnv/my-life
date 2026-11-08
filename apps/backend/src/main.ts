@@ -17,6 +17,7 @@ import { readStartupSettings } from './startup-settings';
 const settings = readStartupSettings(process.env, homedir());
 const promptPath = fileURLToPath(new URL(`../prompts/${currentTriagePromptVersion}.md`, import.meta.url));
 const filterPromptPath = fileURLToPath(new URL('../prompts/filter-v1.md', import.meta.url));
+const digestSummaryPromptPath = fileURLToPath(new URL('../prompts/digest-summary-v1.md', import.meta.url));
 const profileDirectory = fileURLToPath(new URL('../../../profile', import.meta.url));
 const triageRunIntervalInMilliseconds = 30_000;
 const maximumAnswerTokens = 2048;
@@ -104,6 +105,7 @@ const summary =
     ? undefined
     : createClaudeSummary({
         model: settings.summaryModel,
+        promptPath: digestSummaryPromptPath,
         pricing: pricingFor(settings.summaryModel),
         createMessage: (request) =>
           claude.createMessage({

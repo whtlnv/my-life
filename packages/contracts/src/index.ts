@@ -5,3 +5,4 @@ export { triageCategories, triageProposal } from './triage-proposal';
 export { filterProposal } from './filter-proposal';
 export { contactDetails } from './contact-details';
 export { contactsImport, type ContactsImport } from './contacts-import';
+export { digestSummary } from './digest-summary';
