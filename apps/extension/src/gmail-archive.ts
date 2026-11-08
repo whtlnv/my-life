@@ -1,14 +1,9 @@
-import type { FetchFunction } from './fetch-function';
+import type { AccountRequestOptions, FetchFunction } from './fetch-function';
 import { gmailApi } from './gmail-api';
 
 const archivedLabelName = 'my-life/archived';
 
-export interface CommandOptions {
-  fetch: FetchFunction;
-  accessToken: string;
-  accountEmail: string;
-  backendUrl: string;
-}
+export type CommandOptions = AccountRequestOptions;
 
 interface MessageCommand {
   id: string;
