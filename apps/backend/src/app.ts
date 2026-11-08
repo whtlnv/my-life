@@ -68,6 +68,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number] & {
   madeAt?: string;
   organization?: string;
   people?: { name: string; email?: string }[];
+  dates?: string[];
 };
 type TriageProposal = Parameters<typeof triageEffects>[0];
 type TriageVerdict = Parameters<typeof triageEffects>[1];
@@ -942,9 +943,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
     const isVip = (contact: { emails: string[] }) => markedEmails.has(contact.emails[0] ?? '');
+    const hasDeadline = (contact: { messageIds: string[] }) =>
+      proposals.some(
+        (proposal) => contact.messageIds.includes(proposal.messageId) && (proposal.dates ?? []).length > 0,
+      );
     return context.json({
+      urgent: contacts.filter(hasDeadline).map((contact) => ({ ...contact, reasons: ['deadline'] })),
       vip: contacts.filter(isVip),
-      everyoneElse: contacts.filter((contact) => !isVip(contact)),
+      everyoneElse: contacts.filter((contact) => !isVip(contact) && !hasDeadline(contact)),
     });
   });
   app.get('/organizations', (context) => {

@@ -316,6 +316,24 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(everyoneElse.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
   });
 
+  it('lists at GET /people a non-VIP contact whose triaged message carries a deadline inside 48 hours under Urgent with the reason "deadline", and not under Everyone else', async () => {
+    const tomorrowNoon = '2026-11-03T12:00:00-06:00';
+    const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { urgent, everyoneElse } = (await response.json()) as {
+      urgent: { emails: string[]; reasons: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['deadline'] })]);
+    expect(everyoneElse.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
+  });
+
   it('lists at GET /contacts, after a backend restart on the same database file, the lists and note set on a contact through PATCH /contacts/:email before it', async () => {
     const options = {
       allowedEmails: ['ana@example.com'],
