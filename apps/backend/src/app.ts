@@ -242,6 +242,29 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const createdFilterStore = openCreatedFilterStore(databasePath);
   const filterDeletionRequestStore = openFilterDeletionRequestStore(databasePath);
   const categoryModeStore = openCategoryModeStore(databasePath);
+  const reportedMessages: ReportedMessage[] = [];
+  const accountEmailByMessageId = new Map<string, string>();
+  const automaticMessageIds = new Set(proposalStore.loadAutomaticMessageIds());
+  const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => {
+    const accountEmail = reportedMessageStore.accountEmailOf(messageId);
+    return {
+      ...withDisplayedCategory(
+        { ...(proposal as Proposal), messageId, accountEmail },
+        reportedMessageStore.recipientsOf(messageId),
+        accountEmail,
+      ),
+      madeAutomatic: automaticMessageIds.has(messageId),
+    };
+  });
+  const loggedSpends = (): { loggedAt: string; costInUsd: number }[] =>
+    spendStore.loadAll().map(({ spentAt, costInUsd }) => ({ loggedAt: spentAt, costInUsd }));
+  const hasReachedDailySpendCeiling = (): boolean =>
+    options.dailySpendCeilingInUsd !== undefined &&
+    isTriagePaused(
+      loggedSpends(),
+      { dailyCeilingInUsd: options.dailySpendCeilingInUsd, timeZone: businessTimeZone },
+      clock,
+    );
   const proposedCandidateKeys = new Set<string>(filterProposalStore.loadCandidateKeys());
   const loadDecidedMessages = () => {
     const verdicts = verdictStore.loadAll();
@@ -293,29 +316,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     }
   };
-  const reportedMessages: ReportedMessage[] = [];
-  const accountEmailByMessageId = new Map<string, string>();
-  const automaticMessageIds = new Set(proposalStore.loadAutomaticMessageIds());
-  const proposals: Proposal[] = proposalStore.loadAll().map(({ messageId, proposal }) => {
-    const accountEmail = reportedMessageStore.accountEmailOf(messageId);
-    return {
-      ...withDisplayedCategory(
-        { ...(proposal as Proposal), messageId, accountEmail },
-        reportedMessageStore.recipientsOf(messageId),
-        accountEmail,
-      ),
-      madeAutomatic: automaticMessageIds.has(messageId),
-    };
-  });
-  const loggedSpends = (): { loggedAt: string; costInUsd: number }[] =>
-    spendStore.loadAll().map(({ spentAt, costInUsd }) => ({ loggedAt: spentAt, costInUsd }));
-  const hasReachedDailySpendCeiling = (): boolean =>
-    options.dailySpendCeilingInUsd !== undefined &&
-    isTriagePaused(
-      loggedSpends(),
-      { dailyCeilingInUsd: options.dailySpendCeilingInUsd, timeZone: businessTimeZone },
-      clock,
-    );
   const isAllowed = (email: string): boolean => options.allowedEmails.includes(email);
   // An account outside the allow-list is refused before its payload is checked against the contract.
   const refusalStatus = (accountEmail: string, matchesContract: () => boolean): 403 | 400 | undefined => {
