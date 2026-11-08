@@ -22,9 +22,9 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   reordered or added column compiles and shows amounts under the wrong heading. Deferred for the same reason as the
   `/triage-queue` and `/now` entries below: there is no statement contract to share the column list from, and adding one is
   new `packages/contracts` surface delivered test-first.
-- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07)
-  `new URL(input instanceof Request ? input.url : input.toString())` opens about 30 fake `fetch` functions across six
-  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 30 times.
+- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07)
+  `new URL(input instanceof Request ? input.url : input.toString())` opens 36 fake `fetch` functions across six
+  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 36 times.
   Deferred because two of those files (`calendar-poll.test.ts`, `gmail-poll.test.ts`) sit outside 2aaf298..HEAD and the
   extension has no shared test-helper module to hoist it into.
 - **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
@@ -36,13 +36,13 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:231] `createApp` is one 400-line closure holding every route** (added: 2026-11-07)
-  The file is 630 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:225] `createApp` is one 400-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07)
+  The file is 623 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
-- **[apps/backend/src/app.test.ts:156] One 3000-line `describe` with 110 tests covers every route** (added: 2026-11-07)
-  Finding the tests for one route means searching the whole file, and its staging helpers sit 2000 lines above the tests
+- **[apps/backend/src/app.test.ts:243] One 2600-line `describe` with 100 tests covers every route** (added: 2026-11-07; location corrected 2026-11-07)
+  Finding the tests for one route means searching the whole file, and its staging helpers (lines 17–236) sit up to 2400 lines above the tests
   that use them. Deferred to the `createApp` split above: the test files should follow the route modules, not come first.
 - **[packages/domain/src/expense-statement.ts:26] `localCalendarDate` is defined four times** (added: 2026-11-07)
   Identical `Intl.DateTimeFormat('en-CA', …)` helpers sit in `expense-statement.ts`, `now-view.ts`, `triage-spend.ts` and
@@ -62,25 +62,14 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Nothing in `apps/*` imports it (the backend tests stub `propose` inline), so it reads as a live Triage adapter while being dead.
   Deferred because deleting it deletes `scripted-triage.test.ts`, and a refactor pass never deletes a test; it is a
   `/test-quality` matter.
-- **[apps/backend/src/app.ts:147] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07)
+- **[apps/backend/src/app.ts:246] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07)
   `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
   the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
   same message id (the map keeps the last account, the store's `INSERT OR IGNORE` the first), so dropping either changes behavior.
-- **[apps/dashboard/src/triage-page.tsx:39] The `GET /triage-queue` body shape is declared apart from the route that builds it** (added: 2026-11-07)
+- **[apps/dashboard/src/triage-page.tsx:39] The `GET /triage-queue` body shape is declared apart from the route that builds it** (added: 2026-11-07; description corrected 2026-11-07)
   `TriageQueueResponse` and `TriageItem` here and `splitActionFromGroups` in `apps/backend/src/app.ts` must change together, and
-  nothing ties them; the page already reads a `fetchedAt` the route never sends. Deferred for the same reason as the `/now` entry
+  nothing ties them: a renamed field compiles and the page reads it as missing. Deferred for the same reason as the `/now` entry
   below: there is no response contract to unify into, and adding one is new `packages/contracts` surface delivered test-first.
-- **[packages/domain/src/triage-spend.ts:16] `isTriagePaused` is tested but never called; the backend keeps its own spend-day math** (added: 2026-11-07)
-  `apps/backend/src/app.ts` computes the day's spend once at startup (`businessDate`, `spentOnBusinessDateInUsd`) and then only adds
-  to it, so the ceiling never resets at business midnight while the process runs; the domain rule recomputes per day. Deferred
-  because routing the backend through `isTriagePaused` changes that behavior; it is a planned item, and it also retires the
-  duplicate `localCalendarDate`/`businessDate` definitions.
-- **[packages/domain/src/current-verdict.ts:1] `currentVerdict` is tested but never called** (added: 2026-11-07)
-  The backend takes the first stored verdict per message (`find`/`some` in `apps/backend/src/app.ts`), not the latest. Deferred
-  because using the latest verdict changes which decision wins after a re-decision.
-- **[packages/domain/src/displayed-category.ts:3] `displayedCategory` is tested but never called** (added: 2026-11-07)
-  No route demotes an `action` proposal that is not addressed to the account to `cc-thread`. Deferred because wiring it changes
-  what the triage queue shows.
 
 - **[apps/dashboard/src/dashboard-app.tsx:32] The `GET /now` body shape is declared apart from the route that builds it** (added: 2026-11-02)
   `NowResponse` here, `{ badgeCount: number }` in `apps/extension/src/badge-refresh.ts` and the object `apps/backend/src/app.ts`
@@ -94,9 +83,3 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 - **[apps/dashboard/src/dashboard-app.tsx:43] Dashboard hard-codes the business time zone** (added: 2026-11-02; description corrected 2026-11-07)
   This is a third copy of `America/Mexico_City`, alongside the two (backend `app.ts`, extension `background.ts`) in § Config gaps. Deferred to the same change: when the time
   zone becomes a setting, the dashboard should get it from `GET /now`, which changes behavior.
-
-- **Triage sends every `profile/*.md` file to Claude, not the account's own.** `apps/backend/src/claude-triage.ts` concatenates the folder (2026-11-07). Fine while Phase 1 triages one account; Phase 2 (every account) needs a per-account selection rule (for example `accounts.md` plus the file named after the account's domain) and a test with two accounts proving only the matching file is sent.
-
-- **Same-category verdict examples cannot be chosen at proposal time.** `chooseVerdictExamples` (`packages/domain/src/verdict-examples.ts`) falls back to verdicts of the message's category, but a message being triaged has no category yet, so the backend's run (`apps/backend/src/app.ts` `verdictExamplesFor`) can only ever supply same-sender examples (2026-11-07). A usable fallback needs a pre-classification key: the sender's domain or the List-Id. Phase 2 material.
-
-- **The triage prompt includes `profile/README.md`.** `apps/backend/src/claude-triage.ts` reads every file in `profile/`, so the folder's own README (instructions for humans) is sent to Claude on every call (2026-11-07, docs-sync). A filter on `README.md` and `*.example.md`, or a per-account selection (see the entry above), fixes both.
