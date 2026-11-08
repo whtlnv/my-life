@@ -26,7 +26,7 @@ export async function carryOutFilterCommands(options: CarryOutFilterCommandsOpti
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as {
-    commands: (CreateFilterCommand | DeleteFilterCommand)[];
+    commands: (CreateFilterCommand | DeleteFilterCommand | { id: string; type?: undefined })[];
   };
   for (const command of commands) {
     if (command.type === 'delete-filter') {

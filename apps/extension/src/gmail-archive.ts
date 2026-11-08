@@ -16,6 +16,9 @@ interface ArchiveCommand {
   label?: string;
 }
 
+// GET /commands lists every command kind for the account; filter commands carry no messageId.
+type ListedCommand = Omit<ArchiveCommand, 'messageId'> & { messageId?: string };
+
 interface GmailLabel {
   id: string;
   name: string;
@@ -53,11 +56,15 @@ async function archiveMessage(
 
 async function fetchPendingArchiveCommands(options: CarryOutArchiveCommandsOptions) {
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
-  const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: ArchiveCommand[] };
-  return commands.filter((command) => command.messageId !== undefined);
+  const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: ListedCommand[] };
+  return commands.filter((command): command is ArchiveCommand => command.messageId !== undefined);
 }
 
-export async function findOrCreateLabelId(fetch: FetchFunction, authorization: { Authorization: string }, labelName: string) {
+export async function findOrCreateLabelId(
+  fetch: FetchFunction,
+  authorization: { Authorization: string },
+  labelName: string,
+) {
   const { labels } = (await (await fetch(`${gmailApi}/labels`, { headers: authorization })).json()) as {
     labels: GmailLabel[];
   };
