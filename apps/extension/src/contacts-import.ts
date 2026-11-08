@@ -1,3 +1,4 @@
+import type { ContactsImport } from '@my-life/contracts';
 import type { FetchFunction } from './fetch-function';
 
 const peopleApi = 'https://people.googleapis.com/v1';
@@ -90,7 +91,10 @@ async function fetchUserGroupNames(options: ImportContactsOptions): Promise<Map<
   );
 }
 
-function toImportedContact(connection: GoogleConnection, userGroupNames: Map<string, string>) {
+function toImportedContact(
+  connection: GoogleConnection,
+  userGroupNames: Map<string, string>,
+): ContactsImport['contacts'][number] {
   const groupResourceNames = (connection.memberships ?? []).map(
     (membership) => membership.contactGroupMembership.contactGroupResourceName,
   );
