@@ -1,8 +1,8 @@
-import { isAddressedToUser } from './addressed-to-user';
+import { isAddressedToUser, type AddressedMessage } from './addressed-to-user';
 
 export function displayedCategory(
   proposal: { category: string },
-  message: { to: string; cc: string },
+  message: AddressedMessage,
   accountAddress: string,
 ): string {
   if (proposal.category !== 'action') return proposal.category;

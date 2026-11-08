@@ -7,6 +7,7 @@ export { badgeCount } from './badge-count';
 export { hasVerdict, isLeadingCategory, triageQueue } from './triage-queue';
 export { triageEffects } from './triage-effects';
 export { isAddressedToUser } from './addressed-to-user';
+export { displayedCategory } from './displayed-category';
 export { chooseVerdictExamples } from './verdict-examples';
 export { currentVerdict } from './current-verdict';
 export { isTriagePaused } from './triage-spend';

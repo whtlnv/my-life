@@ -10,10 +10,10 @@ import {
   chooseVerdictExamples,
   currentVerdict,
   describeSourceFreshness,
+  displayedCategory,
   expenseStatement,
   filterCandidates,
   isAccountFresh,
-  isAddressedToUser,
   isLeadingCategory,
   isTriagePaused,
   mergeCalendarSnapshots,
@@ -58,8 +58,8 @@ function withDisplayedCategory(
   message: Pick<ReportedMessage, 'to'>,
   accountEmail: string,
 ): Proposal {
-  const isAddressedToAccount = isAddressedToUser({ to: message.to }, accountEmail);
-  return proposal.category === 'action' && !isAddressedToAccount ? { ...proposal, category: 'cc-thread' } : proposal;
+  if (proposal.category === undefined) return proposal;
+  return { ...proposal, category: displayedCategory({ category: proposal.category }, message, accountEmail) };
 }
 
 // What the Triage port answers for one message: the adapter always reports the cost and the prompt version; the
