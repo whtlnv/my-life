@@ -79,7 +79,9 @@ describe('digests', () => {
       extract: { company: 'Acme', solution: 'CRM', problem: 'follow-up' },
     };
     const result = digests([firstPitch, secondPitch]);
-    expect(result).toEqual([expect.objectContaining({ key: 'ana@acme.example', proposals: [firstPitch, secondPitch] })]);
+    expect(result).toEqual([
+      expect.objectContaining({ key: 'ana@acme.example', proposals: [firstPitch, secondPitch] }),
+    ]);
   });
 
   it('places two sales proposals from the same account and different sender addresses in two digests even when they name the same company', () => {

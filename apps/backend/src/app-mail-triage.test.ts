@@ -649,7 +649,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(groups.map(({ category }) => category)).not.toContain('unknown');
   });
 
-  it('carries in each GET /triage-queue group its items, and in a system-update group its sending-system sub-groups with their items', async () => {
+  it('carries in each GET /triage-queue group its items, each with its account and Gmail link, and puts a system-update proposal in a digest instead', async () => {
     const expenseProposal = {
       action: 'archive',
       category: 'expense',
@@ -679,7 +679,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
 
     const queue = await app.request('/triage-queue');
 
-    const { groups } = (await queue.json()) as { groups: { category: string }[] };
+    const { groups, digests } = (await queue.json()) as { groups: { category: string }[]; digests: unknown[] };
     const expenseItem = {
       messageId: 'message-expense',
       category: 'expense',
@@ -689,20 +689,8 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       accountEmail: 'ana@example.com',
       link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-expense',
     };
-    const systemItem = {
-      messageId: 'message-system',
-      category: 'system-update',
-      summary: systemUpdateProposal.summary,
-      extract: systemUpdateProposal.extract,
-      reason: systemUpdateProposal.reason,
-      accountEmail: 'ana@example.com',
-      link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-system',
-    };
     expect(groups.find(({ category }) => category === 'expense')).toMatchObject({ items: [expenseItem] });
-    expect(groups.find(({ category }) => category === 'system-update')).toMatchObject({
-      items: [systemItem],
-      systems: [{ system: 'GitHub', items: [systemItem] }],
-    });
+    expect(digests).toEqual([expect.objectContaining({ category: 'system-update', key: 'GitHub', count: 1 })]);
   });
 
   it('returns in GET /triage-queue the waiting system-update, sales and calendar-drive proposals as digests, each with its account, category, key, item count and severity counts', async () => {
@@ -799,6 +787,44 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
         }),
       ]),
     );
+  });
+
+  it('lists in GET /triage-queue groups no waiting system-update, sales or calendar-drive proposal, which come back in digests only, while an expense proposal stays in its group', async () => {
+    const proposalsInOrder = [
+      { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },
+      { action: 'archive', category: 'system-update', summary: 'GitHub build passed', reason: 'A notification' },
+      { action: 'archive', category: 'sales', summary: 'Acme offers a discount', reason: 'A sales pitch' },
+      { action: 'archive', category: 'calendar-drive', summary: 'Marta shared a document', reason: 'A share' },
+    ].map((proposal, index) => ({
+      ...proposal,
+      extract: [
+        { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+        { system: 'GitHub', severity: 'low', significant: false },
+        { company: 'Acme' },
+        { item: 'Q4 plan', change: 'shared' },
+      ][index],
+    }));
+    const triage = triageAnsweringInOrder(proposalsInOrder, 1);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: proposalsInOrder.map((_, index) => ({
+        ...budgetReview,
+        id: `message-${String(index)}`,
+        date: `Mon, 2 Nov 2026 1${String(9 - index)}:00:00 -0600`,
+      })),
+    });
+    await postTriageRun(app);
+
+    const queue = await app.request('/triage-queue');
+
+    const { groups, digests } = (await queue.json()) as {
+      groups: { category: string; count: number }[];
+      digests: { category: string }[];
+    };
+    expect(groups).toEqual([expect.objectContaining({ category: 'expense', count: 1 })]);
+    expect(digests.map(({ category }) => category).sort()).toEqual(['calendar-drive', 'sales', 'system-update']);
   });
 
   it.each([

@@ -23,6 +23,7 @@ import {
   expenseStatement,
   filterCandidates,
   isAccountFresh,
+  isDigestedCategory,
   isLeadingCategory,
   isTriagePaused,
   mergeCalendarSnapshots,
@@ -234,7 +235,9 @@ function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: str
       .filter(({ category }) => isLeadingCategory(category))
       .flatMap((group) => group.proposals)
       .map(withLink),
-    groups: groups.filter(({ category }) => !isLeadingCategory(category)).map(describeGroup),
+    groups: groups
+      .filter(({ category }) => !isLeadingCategory(category) && !isDigestedCategory(category))
+      .map(describeGroup),
   };
 }
 

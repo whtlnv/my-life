@@ -131,6 +131,15 @@ async function runTriageAndReadGroupItems(
   return queue.groups.find((group) => group.category === category)?.items ?? [];
 }
 
+interface ListedDigest {
+  category: string;
+  key: string;
+  count: number;
+  severityCounts: Record<string, number>;
+}
+
+const senderAddress = (from: string | undefined) => from?.match(/<([^>]+)>/)?.[1] ?? from;
+
 describe('Gmail fake server', () => {
   it('polling the action-to-me scenario puts the message, addressed to the user, in the action block of GET /triage-queue', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);
@@ -169,20 +178,6 @@ describe('Gmail fake server', () => {
       proposal: expenseProposal,
       shownExtract: { amount: expenseProposal.extract.amount },
     },
-    {
-      rule: 'polling the sales-pitch scenario shows the pitch with its company in the sales group of GET /triage-queue',
-      scenario: 'sales-pitch',
-      category: 'sales',
-      proposal: salesProposal,
-      shownExtract: { company: salesProposal.extract.company },
-    },
-    {
-      rule: 'polling the calendar-notification scenario shows the notification with its item in the calendar-drive group of GET /triage-queue',
-      scenario: 'calendar-notification',
-      category: 'calendar-drive',
-      proposal: calendarDriveProposal,
-      shownExtract: { item: calendarDriveProposal.extract.item },
-    },
   ] as const)('$rule', async ({ scenario, category, proposal, shownExtract }) => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => proposal);
     await pollScenarioIntoBackend(scenario, backend);
@@ -195,27 +190,37 @@ describe('Gmail fake server', () => {
       extract: shownExtract,
     });
   });
-  it('polling the system-update-burst scenario groups its notifications by sending system in the system-update group of GET /triage-queue', async () => {
+  it.each([
+    { scenario: 'sales-pitch', category: 'sales', proposal: salesProposal },
+    { scenario: 'calendar-notification', category: 'calendar-drive', proposal: calendarDriveProposal },
+  ] as const)(
+    'polling the $scenario scenario puts its one message in a $category digest keyed by its sender address in GET /triage-queue',
+    async ({ scenario, category, proposal }) => {
+      const { backend, messagesSeenByTriage } = createBackendProposing(() => proposal);
+      await pollScenarioIntoBackend(scenario, backend);
+      const queue = await runTriageAndReadQueue<{ digests: ListedDigest[] }>(backend);
+
+      expect(messagesSeenByTriage).toHaveLength(1);
+      expect(queue.digests).toEqual([
+        expect.objectContaining({ category, key: senderAddress(messagesSeenByTriage[0]?.from), count: 1 }),
+      ]);
+    },
+  );
+  it('polling the system-update-burst scenario puts its notifications in one system-update digest per sending system in GET /triage-queue', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(systemUpdateProposalFor);
     await pollScenarioIntoBackend('system-update-burst', backend);
-    const queue = await runTriageAndReadQueue<{
-      groups: { category: string; systems?: { system: string; items: { messageId: string }[] }[] }[];
-    }>(backend);
-    const idsFrom = (system: string) =>
-      messagesSeenByTriage.filter(({ from }) => from?.startsWith(system)).map(({ id }) => id);
-    const systems = queue.groups.find(({ category }) => category === 'system-update')?.systems ?? [];
+    const queue = await runTriageAndReadQueue<{ digests: ListedDigest[] }>(backend);
+    const countFrom = (system: string) => messagesSeenByTriage.filter(({ from }) => from?.startsWith(system)).length;
 
-    expect(idsFrom('GitHub')).toHaveLength(2);
-    expect(idsFrom('Sentry')).toHaveLength(1);
-    expect(
-      systems.map(({ system, items }) => ({ system, messageIds: items.map(({ messageId }) => messageId).sort() })),
-    ).toEqual(
+    expect(countFrom('GitHub')).toBe(2);
+    expect(countFrom('Sentry')).toBe(1);
+    expect(queue.digests.map(({ category, key, count }) => ({ category, key, count }))).toEqual(
       expect.arrayContaining([
-        { system: 'GitHub', messageIds: idsFrom('GitHub').sort() },
-        { system: 'Sentry', messageIds: idsFrom('Sentry').sort() },
+        { category: 'system-update', key: 'GitHub', count: 2 },
+        { category: 'system-update', key: 'Sentry', count: 1 },
       ]),
     );
-    expect(systems).toHaveLength(2);
+    expect(queue.digests).toHaveLength(2);
   });
   it('polling the history-404 scenario from an expired stored history id reports the whole inbox and returns a fresh history id', async () => {
     const { backend, messagesSeenByTriage } = createBackendProposing(() => actionProposal);

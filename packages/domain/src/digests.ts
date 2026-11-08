@@ -16,10 +16,14 @@ interface DigestableProposal {
   readonly extract: DigestableExtract | object;
 }
 
-const undigestedCategories = new Set(['expense', 'cc-thread']);
+const digestedCategories = new Set(['system-update', 'sales', 'calendar-drive']);
+
+export function isDigestedCategory(category: string | undefined): boolean {
+  return category !== undefined && digestedCategories.has(category);
+}
 
 function isDigestable(proposal: DigestableProposal): boolean {
-  return !undigestedCategories.has(proposal.category);
+  return isDigestedCategory(proposal.category);
 }
 
 function digestKey(proposal: DigestableProposal): string | undefined {
@@ -45,7 +49,10 @@ function senderAddress(from: string | undefined): string | undefined {
 }
 
 export function digests<Proposal extends DigestableProposal>(proposals: readonly Proposal[]): Digest<Proposal>[] {
-  const byAccountCategoryAndKey = new Map<string, { key: string | undefined; category: string; proposals: Proposal[] }>();
+  const byAccountCategoryAndKey = new Map<
+    string,
+    { key: string | undefined; category: string; proposals: Proposal[] }
+  >();
   for (const proposal of proposals.filter(isDigestable)) {
     const key = digestKey(proposal);
     const groupKey = JSON.stringify([proposal.accountEmail, proposal.category, key]);
