@@ -836,6 +836,41 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(commandedMessageIds).toEqual(['message-build']);
   });
 
+  it('keeps in GET /triage-queue, with no archive command at GET /commands, another system-update digest of the same account after a digest is confirmed at POST /digests/:id/confirmation', async () => {
+    const notice = (system: string) => ({
+      action: 'archive',
+      category: 'system-update',
+      summary: `${system} build passed`,
+      extract: { system, severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const triage = triageAnsweringInOrder([notice('GitHub'), notice('Vercel')], 1);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-github', threadId: 'message-github', from: 'GitHub <noreply@github.com>' },
+        { ...budgetReview, id: 'message-vercel', threadId: 'message-vercel', from: 'Vercel <notifications@vercel.com>' },
+      ],
+    });
+    await postTriageRun(app);
+    const { digests: before } = await getJson<{ digests: { id: string; key: string }[] }>(app, '/triage-queue');
+    const gitHubDigestId = before.find(({ key }) => key === 'GitHub')?.id ?? '';
+
+    await app.request(`/digests/${encodeURIComponent(gitHubDigestId)}/confirmation`, { method: 'POST' });
+
+    const { digests: after } = await getJson<{ digests: { key: string }[] }>(app, '/triage-queue');
+    const { commands } = await getJson<{ commands: { messageId: string }[] }>(
+      app,
+      '/commands?accountEmail=ana%40example.com',
+    );
+    expect(after).toEqual(
+      expect.arrayContaining([expect.objectContaining({ key: 'Vercel', category: 'system-update', count: 1 })]),
+    );
+    expect(commands.map(({ messageId }) => messageId)).toEqual(['message-github']);
+  });
+
   it('lists in GET /triage-queue groups no waiting system-update, sales or calendar-drive proposal, which come back in digests only, while an expense proposal stays in its group', async () => {
     const proposalsInOrder = [
       { action: 'archive', category: 'expense', summary: 'Receipt from Acme', reason: 'A receipt to file' },

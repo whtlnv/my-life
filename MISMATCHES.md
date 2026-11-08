@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 12:05 · `apps/backend/src/app-mail-triage.test.ts::keeps in GET /triage-queue, with no archive command at GET /commands, another system-update digest of the same account after a digest is confirmed at POST /digests/:id/confirmation`
+- Behavior: Confirming a digest leaves another waiting digest of the same category unconfirmed
+- Predicted: passes on first run — read before writing: `POST /digests/:id/confirmation` (apps/backend/src/app.ts:634) already filters digests by `identifyDigest(digest) === digestId`
+- Actual: passes; still passes after tightening the command assertion to `['message-github']`, which proves the confirm ran and touched only its own digest
+- Type: passed unexpectedly
+- Resolution: the behavior was delivered as a side effect of the "queues an archive command for each of its items" cycle (id-scoped filter); no rewrite can make it fail without inventing behavior, so the test stays as a non-vacuous regression pin and `/green` has nothing to implement
+
 ## 2026-11-08 12:02 · `apps/backend/src/app-mail-triage.test.ts::lists at GET /commands no archive command for an item of a digest confirmed at POST /digests/:id/confirmation whose own proposal is keep`
 - Behavior: Confirming a digest queues no archive command for its items whose own proposal is `keep`
 - Predicted: passes on first run — `GET /commands` already filters proposals to `action === 'archive'` (apps/backend/src/app.ts:726), and the previous cycle's digest confirmation only saves verdicts
