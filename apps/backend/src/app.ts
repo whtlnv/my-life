@@ -451,13 +451,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       reportedMessageStore.saveBody(messageId, body);
       const reportedMessage = reportedMessages.find((message) => message.id === messageId);
       if (reportedMessage !== undefined) reportedMessage.body = body;
-      const latestStoredProposal = proposalStore.loadAll().findLast((stored) => stored.messageId === messageId);
-      if (latestStoredProposal !== undefined && latestStoredProposal.promptVersion !== 'triage-v2') {
-        messageIdsAwaitingRetriage.add(messageId);
-      }
+      if (wasProposedUnderAnOlderPrompt(messageId)) messageIdsAwaitingRetriage.add(messageId);
     });
     return context.body(null, 200);
   });
+  // A message already proposed under the current prompt gains nothing from a retriage when its body arrives.
+  const currentTriagePromptVersion = 'triage-v2';
+  function wasProposedUnderAnOlderPrompt(messageId: string): boolean {
+    const latestStoredProposal = proposalStore.loadAll().findLast((stored) => stored.messageId === messageId);
+    return latestStoredProposal !== undefined && latestStoredProposal.promptVersion !== currentTriagePromptVersion;
+  }
   // A retriage replaces the message's open proposal; a proposal the user has already decided on is left alone.
   function queueProposal(queuedProposal: Proposal): void {
     const existingIndex = proposals.findIndex((proposal) => proposal.messageId === queuedProposal.messageId);
