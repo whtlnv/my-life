@@ -13,6 +13,14 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
+- **[apps/backend/src/app.ts:839] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08)
+  Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
+  scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
+  agent (Phase 4) needs ranking.
+- **[apps/backend/src/app.ts:746] The first imported organization sticks for good** (added: 2026-11-08)
+  An imported organization is saved in the same details record a user edit writes, so `organizationAlreadyStored` treats
+  it as set by the user and a later import (a contact who changed jobs) never updates it. Fix by storing imported and
+  user-set fields apart; the user-set one wins.
 
 ## Out of Scope
 

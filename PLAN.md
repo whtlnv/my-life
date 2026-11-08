@@ -8,7 +8,7 @@ Phases (locked decision 17):
 - **Phase 1:** Gmail triage on `franciscoc@psmutuus.com`, _advise_ mode, category groups — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through (`docs/phase-1-walkthrough.md`) waits on the extension reload.
 - **Phase 2a:** the dashboard redesign (tokens, app shell, _now_ and triage pages) — delivered 2026-11-07 (`DONE.md`, `docs/screenshots/2026-11-07-phase-2a-*.jpg`); new pages reuse `apps/dashboard/src/styles.css` and are screenshot-verified over `scripts/demo.sh`.
 - **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters, the weekly expense statement — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through is `docs/phase-2-walkthrough.md`.
-- **Phase 2b:** capture: full text bodies kept locally, extraction v2 (people, organization, asks, commitments, dates, thread state), Google Contacts import, body backfill and retriage of stored mail (grilled 2026-11-08, `docs/decisions/2026-11-08-product-direction.md`).
+- **Phase 2b:** capture: bodies kept locally, extraction v2, contacts and organizations, the Google Contacts import, body backfill and retriage, `GET /search` — code delivered 2026-11-08 (`DONE.md`); the real-account walk-through is `docs/phase-2b-walkthrough.md`.
 - **Phase 2c:** rolling digests replace per-message groups in triage; a _Handled for you_ strip shows automatic work.
 - **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contacts and organizations with a merged timeline), the Needs input queue, tasks and the prioritizer, waiting-on.
 - **Phase 4:** the in-app agent: chat over mail, contacts, calendar and tasks on Opus, with tools; acts within safeguards (archive, label, draft, task; never delete, never send).
@@ -17,44 +17,24 @@ Phases (locked decision 17):
 - **Phase 7:** Gemini meeting notes from Drive.
 - **Phase 8:** cloud.
 
-Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Phase 1's inputs arrived 2026-11-06 (key in `.env`, `profile/psmutuus.md`). Before Phase 2b: § 9 (People API and the contacts scope). Before Phase 5: § 5 (Slack app). Before Phase 6: § 6 (Telegram credentials).
+Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Phase 1's inputs arrived 2026-11-06 (key in `.env`, `profile/psmutuus.md`). Before the Phase 2b walk-through: § 9 (the contacts scopes; the People API is enabled). Before Phase 5: § 5 (Slack app). Before Phase 6: § 6 (Telegram credentials).
 
 ---
 
-## Phase 2b in delivery (handoff 2026-11-08, mid-phase)
+## Start here (handoff 2026-11-08, after Phase 2b)
 
-**Resume with `/tdd-supervise`** (Step 1 resumes the unchecked items in `TODO.md`; do not re-run `/plan`). Plan commit `b6267f0`: pass `b6267f0..HEAD` to the quality loops and `/docs-sync` at wind-up. State at the stop: 27 items done, 44 open, tree clean; the next item is the bare-address `From` contact in § Contacts.
+Read `CLAUDE.md` first. **Phase 2b's code is delivered** (`DONE.md`): the body parser (`packages/domain/src/message-body.ts`), `format=full` polling and the body backfill, `prompts/triage-v2.md` with the v2 extraction stored in the proposal store under its prompt version, retriage of messages whose body arrives (verdicts kept), contacts and organizations derived from senders and extractions plus the Google Contacts import (stored, merged by email, starred → `vip`, labels → lists, nothing imported overrides the app), and `GET /search`. `scripts/demo.sh` seeds all of it. **Not yet seen over the real accounts**: the contacts scopes and one re-consent per profile (`PENDING_TASKS.md` § 9, `docs/phase-2b-walkthrough.md`), which also clears the Gmail 403 three profiles answer since Phase 2. The launchd backend still runs the pre-2b build until it is restarted. Phase 0's three-day token check is due 2026-11-09.
 
-- **Done:** the body parser (`packages/domain/src/message-body.ts`: text/plain, HTML with style/script and entities, multipart, quoted reply, signature, attachments, a 20 KB UTF-8 byte cap, missing body); the Gmail poll reads `format=full` and reports `body`; the backend accepts, stores (pre-body databases included) and sends the body to triage; the `propose_triage` v2 fields and `prompts/triage-v2.md`; extractions stored per prompt version; `GET /contacts` derived from senders.
-- **Not wired yet:** `apps/backend/src/main.ts` still loads `triage-v1.md`. The wiring item at the end of `TODO.md` switches it. The launchd backend runs the pre-2b build, so do not `launchctl kickstart` it mid-phase.
-- **`GET /contacts` is a constant fake so far:** it maps every stored message's `From` with a regex and a cast, with no store and no deduplication. The next items (bare and quoted `From`, one contact per email, the restart item) must replace it with a real contact store.
-- **What the supervision found this phase.** Hand-fixed: `Buffer` in the domain would throw in the extension's service worker (`ad64f44`; Buffer is now lint-banned there). `/reconcile` refused to delete the `format=metadata` poll test because it was the only one covering the `Cc`/`List-Id` mapping, so it was migrated by hand. A table column added through `CREATE TABLE IF NOT EXISTS` would have broken the live database, so a keystone was added. Items already pinned by existing tests bail at Red; check them off. Cycles sometimes background a phase and get IDLE-killed with the work done: verify the diff, run the test, and commit through `tdd-commit.sh`.
-- **User state:** the People API is enabled in Google Cloud. The contacts scopes and the per-profile re-consent wait until 2b is delivered (user, 2026-11-08). Three profiles still answer Gmail 403 until then.
+**Next:** split `apps/backend/src/app.test.ts` (past 3,500 lines) by route group, then `/tdd-supervise` on Phase 2c. Pass `--model` to every `claude -p` subprocess: the TDD skills pin none, so leaves inherit the user's default.
 
-## Start here (handoff 2026-11-08, after Phase 2)
+What the supervision showed in Phase 2b — check these every cycle:
 
-Read `CLAUDE.md` first. **Phase 2's code is delivered** (`DONE.md`, 100 items): per-account profile selection in the triage prompt, the Cc demotion through the domain rule, the latest verdict deciding every effect, the spend ceiling resetting at business midnight, sender-domain and List-Id verdict examples, category modes (`advise` / `automatic`, persisted, automatic decisions recorded per proposal, `my-life/auto` label, kill switch) with their page, filter candidates (three decided archives per sender or List-Id per account) → Claude filter proposals (`prompts/filter-v1.md`, strict `propose_filter`, spend logged) → approval → `create-filter` commands carried out by the extension through the fake-Gmail-proven path → `GET /filters` with times → deletion; the weekly expense statement (domain rule, CSV route, page); `scripts/demo.sh` seeds all of it. **Not yet seen over the real inbox**: the extensions still need a reload for the `gmail.settings.basic` scope; `docs/phase-2-walkthrough.md` is the checklist. Phase 0's three-day token check is due 2026-11-09.
-
-What the supervision showed this phase — check these every cycle:
-
-- **Every store started in memory again** (category modes, automatic decisions, filter approvals, rejections, deletion requests, candidate keys, message dates): one restart keystone each. Plan restart items next to every new store from the start.
-- **Mode-at-request-time is the new constant fake:** the first automatic green derived "automatic" from the current mode when `GET /commands` was called; three keystones (recorded decision, later verdict wins, new proposals only) fixed it. Any "setting" that changes behavior needs an item saying _when_ it applies.
-- **Items that name two sides get one side:** the adapter clause landed without the backend clause twice (filter candidate messages, delete-filter). Split such items up front.
-- **Shape-pinning tests block additive greens:** six `toEqual` on whole response bodies had to be migrated to `toMatchObject` (categories, commands, candidates). Prefer field-subset assertions in route tests.
-- **The integration suite catches contract drift the unit tests cannot** (`label` vs `labelName`): one integration item per command type that crosses the backend–extension line.
-- **The refactor loop took 15 passes** (39 applied, mostly test-helper extraction in `app.test.ts`); the test-quality loop six (9 applied); complexity one (0). `app.test.ts` is past 3,000 lines: split it by route group before Phase 3 adds tasks.
-
-## Phase 2b — Capture: bodies, extraction v2, contacts
-
-Outcome: nothing the app reads ever has to be read again. Every message's text is on the Mac, every message carries who, what was asked and when, and the user's contacts are known. Decided with the user 2026-11-08 (`docs/decisions/2026-11-08-product-direction.md`).
-
-- The extension reads each message with `format=full` and reports the plain-text body: HTML stripped, quoted replies and signatures trimmed by a pure, fixture-tested function, capped at 20 KB, attachments never. The backend stores it (locked decision 20 amended: bodies stay local). The triage prompt gets the body instead of the snippet.
-- Extraction v2, in the same `propose_triage` call (prompt `triage-v2`, cost marginal on Haiku): `people[]` (name, email, role in the message: `sender` / `asked` / `mentioned` / `copied`), `organization` (named, or the sender's domain), `asks[]` (what is asked of the user, with any due date), `commitments[]` (what anyone promised), `dates[]` (every date or deadline mentioned, ISO 8601), `threadState` (one line of where the thread stands after this message). Stored append-only per message and prompt version; the extract shapes of v1 stay.
-- Contact and organization records in the domain and SQLite: a contact has a display name, one or more handles per channel (email now; Slack, phone later), an organization, marks (`vip`), lists (free labels), and a note. Organizations are domains or names. Every message links to its contacts and organization by handle; a message with Jean-Louis from Mutuus shows under both.
-- Google Contacts: each profile's extension imports its account's contacts and Other Contacts daily through the People API (`contacts.readonly`, `contacts.other.readonly`; `PENDING_TASKS.md` § 9): names, emails, organization, starred, labels. Contacts merge across accounts by email; starred seeds `vip`; a Google label becomes a list; nothing imported overrides a mark the user set in the app.
-- Backfill: the backend lists stored messages without a body per account; the extension fetches them (`format=full`) on its poll; the backend retriages every message under v2 with the Haiku-first setup, keeping the verdicts already given and only replacing proposals.
-- Full-text index (SQLite FTS5) over bodies, summaries, extracts and thread states, kept in step on every write; `GET /search?q=` for the dashboard and the agent later.
-- The profile's narrative stays in `profile/*.md`; structured facts (VIP, lists, merges, per-sender examples) live in the store and are injected per message (the sender's record, the thread state so far) instead of the whole folder.
+- **Minimal greens fake lists and stores:** the free-mail set held only `gmail.com`; marks were hard-coded to `vip` and kept in memory; user-removed marks, imported contacts and pending retriages each lived in a `Set` or array until a restart keystone forced a table. Plan the restart item and the triangulating case beside every item from the start.
+- **Code that runs in the extension must not use Node globals:** `Buffer` passed every test under Node and would have thrown in the service worker; it is lint-banned in the domain now.
+- **Adding a column to an existing table breaks the live database** (`CREATE TABLE IF NOT EXISTS` never alters it); a keystone covers databases created before the change.
+- **Real-world inputs the fakes never send:** Other Contacts without a name, phone-only contacts without an email. Each would have failed the whole import on a real account.
+- **A store built only for its tests** (the extraction store) was never opened by the app; the wiring item exposed it. Check every new store has a production caller.
+- **Cycles stall when the wrapper's 60 s idle kill fires** while `/tdd-cycle` waits on its own leaf; `RUN_LOGGED_IDLE_GRACE=300` stops it. Shape-pinning `toEqual` assertions still had to be migrated to field subsets six times.
 
 ## Phase 2c — Digests
 
