@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const importedContact = z.object({
-  name: z.string(),
+  name: z.string().optional(),
   emails: z.array(z.string()),
   organization: z.string().optional(),
   starred: z.boolean().optional(),

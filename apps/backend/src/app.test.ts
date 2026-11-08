@@ -3289,6 +3289,22 @@ describe('backend app', () => {
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], organization: 'Mutuus' }]);
   });
 
+  it('accepts POST /contacts-import holding a phone-only contact without any email, skips that contact and lists at GET /contacts the others, a nameless one by its email', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    const response = await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [
+        { name: 'Plumber', emails: [], starred: false, lists: [] },
+        { emails: ['noreply@vendor.io'], starred: false, lists: [] },
+      ],
+    });
+    const { contacts } = (await getContacts(app)) as { contacts: { displayName: string; emails: string[] }[] };
+
+    expect(response.status).toBe(200);
+    expect(contacts).toMatchObject([{ displayName: 'noreply@vendor.io', emails: ['noreply@vendor.io'] }]);
+  });
+
   it('lists at GET /contacts, after POST /contacts-import brings starred again a contact whose vip mark the user removed through DELETE /contacts/:email/marks/vip, that contact still with no marks', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const starredLuis = {

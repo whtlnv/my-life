@@ -739,8 +739,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.save(context.req.param('email'), details);
     return context.body(null, 200);
   });
+  // A Google contact without an email (phone-only) has no handle to link to yet; it is skipped.
   const importContact = ({ name, emails, organization, starred, lists }: ImportedContact): void => {
-    const primaryEmail = emails[0]!;
+    const [primaryEmail] = emails;
+    if (primaryEmail === undefined) return;
     const userSetOrganization = contactDetailsStore.loadAll()[primaryEmail]?.organization !== undefined;
     const keepStoredOrganization = userSetOrganization || organization === undefined;
     contactDetailsStore.save(primaryEmail, {
@@ -751,7 +753,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (starred && !userRemovedVip) {
       contactDetailsStore.saveMark(primaryEmail, 'vip');
     }
-    contactDetailsStore.saveImported({ displayName: name, emails });
+    contactDetailsStore.saveImported({ displayName: name ?? primaryEmail, emails });
   };
   app.post('/contacts-import', async (context) => {
     const parsed = contactsImport.safeParse(await context.req.json());

@@ -7,9 +7,7 @@ export function openContactDetailsStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec('CREATE TABLE IF NOT EXISTS contact_details (email TEXT NOT NULL, details TEXT NOT NULL)');
   database.exec('CREATE TABLE IF NOT EXISTS contact_marks (email TEXT NOT NULL, mark TEXT NOT NULL)');
-  database.exec(
-    'CREATE TABLE IF NOT EXISTS imported_contacts (display_name TEXT NOT NULL, emails TEXT NOT NULL)',
-  );
+  database.exec('CREATE TABLE IF NOT EXISTS imported_contacts (display_name TEXT NOT NULL, emails TEXT NOT NULL)');
   const insertDetails = database.prepare('INSERT INTO contact_details (email, details) VALUES (?, ?)');
   const loadDetails = database.prepare<[], { email: string; details: string }>(
     'SELECT email, details FROM contact_details ORDER BY rowid',
