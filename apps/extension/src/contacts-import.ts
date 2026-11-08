@@ -36,36 +36,45 @@ async function fetchPeopleJson<ResponseBody>(options: ImportContactsOptions, url
   return (await response.json()) as ResponseBody;
 }
 
-async function fetchAllConnections(options: ImportContactsOptions): Promise<GoogleConnection[]> {
-  const connections: GoogleConnection[] = [];
+async function fetchAllPages<Page extends { nextPageToken?: string }>(
+  options: ImportContactsOptions,
+  path: string,
+  query: Record<string, string>,
+  itemsOf: (page: Page) => GoogleConnection[],
+): Promise<GoogleConnection[]> {
+  const items: GoogleConnection[] = [];
   let pageToken: string | undefined;
   do {
-    const url = new URL(`${peopleApi}/people/me/connections`);
-    url.searchParams.set('personFields', 'names,emailAddresses,organizations,memberships');
+    const url = new URL(`${peopleApi}/${path}`);
+    for (const [name, value] of Object.entries(query)) {
+      url.searchParams.set(name, value);
+    }
     if (pageToken !== undefined) {
       url.searchParams.set('pageToken', pageToken);
     }
-    const page = await fetchPeopleJson<GoogleConnectionsResponse>(options, url);
-    connections.push(...page.connections);
+    const page = await fetchPeopleJson<Page>(options, url);
+    items.push(...itemsOf(page));
     pageToken = page.nextPageToken;
   } while (pageToken !== undefined);
-  return connections;
+  return items;
 }
 
-async function fetchAllOtherContacts(options: ImportContactsOptions): Promise<GoogleConnection[]> {
-  const otherContacts: GoogleConnection[] = [];
-  let pageToken: string | undefined;
-  do {
-    const url = new URL(`${peopleApi}/otherContacts`);
-    url.searchParams.set('readMask', 'names,emailAddresses');
-    if (pageToken !== undefined) {
-      url.searchParams.set('pageToken', pageToken);
-    }
-    const page = await fetchPeopleJson<GoogleOtherContactsResponse>(options, url);
-    otherContacts.push(...page.otherContacts);
-    pageToken = page.nextPageToken;
-  } while (pageToken !== undefined);
-  return otherContacts;
+function fetchAllConnections(options: ImportContactsOptions): Promise<GoogleConnection[]> {
+  return fetchAllPages<GoogleConnectionsResponse>(
+    options,
+    'people/me/connections',
+    { personFields: 'names,emailAddresses,organizations,memberships' },
+    (page) => page.connections,
+  );
+}
+
+function fetchAllOtherContacts(options: ImportContactsOptions): Promise<GoogleConnection[]> {
+  return fetchAllPages<GoogleOtherContactsResponse>(
+    options,
+    'otherContacts',
+    { readMask: 'names,emailAddresses' },
+    (page) => page.otherContacts,
+  );
 }
 
 async function fetchUserGroupNames(options: ImportContactsOptions): Promise<Map<string, string>> {
