@@ -17,7 +17,8 @@ interface FakeGmailMessage {
   payload: { headers: { name: string; value: string }[]; mimeType?: string; body?: { size: number; data: string } };
 }
 
-export const budgetReviewBody = 'Hi,\n\nCould you review the budget before Friday? The numbers are in the shared sheet.\n\nLuis\n';
+export const budgetReviewBody =
+  'Hi,\n\nCould you review the budget before Friday? The numbers are in the shared sheet.\n\nLuis\n';
 
 function scenarioMessages(scenario: GmailScenario, accountEmail: string): FakeGmailMessage[] {
   const budgetReview: FakeGmailMessage = {
