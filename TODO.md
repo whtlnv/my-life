@@ -1,2 +1,78 @@
 # TODO.md — working set
 
+
+## Phase 3 — People, Needs input, tasks
+
+- [ ] When the extension polls Gmail, a message the account sent (Gmail label `SENT`) is reported to the backend marked as sent by the user
+- [ ] When the extension polls Gmail, a message received in the inbox is reported marked as not sent by the user
+  - predicted-contradiction: `apps/extension/src/gmail-poll.test.ts::pollGmailOnce > reports each message with its From, To, Cc, Subject, Date and List-Id headers, its snippet and its trimmed body, read in full` — asserts: an inbox message is reported as exactly id, threadId, from, to, cc, subject, date, snippet, listId and body, with no other field — retired-by: "a message received in the inbox is reported marked as not sent by the user"
+- [ ] The business days between two instants skip Saturday and Sunday in the business time zone: Friday 17:00 to Tuesday 17:00 is 2 business days
+- [ ] The business days between two instants on weekdays only count every day: Monday 17:00 to Wednesday 17:00 is 2 business days
+- [ ] A contact whose ask to the user has gone unanswered for 2 business days is urgent, with the reason "unanswered ask"
+- [ ] A contact whose ask to the user has gone unanswered for less than 2 business days is not urgent
+- [ ] A contact whose ask the user answered in the same thread (a sent message after it) is not urgent, however old the ask
+- [ ] A contact whose message carries an extracted deadline inside the next 48 hours is urgent, with the reason "deadline"
+- [ ] A contact whose message carries an extracted deadline more than 48 hours away is not urgent
+- [ ] A VIP contact whose message has waited for a reply more than 1 business day is urgent, with the reason "VIP waiting"
+- [ ] A non-VIP contact whose message has waited for a reply more than 1 business day (and asks nothing) is not urgent
+- [ ] Setting the unanswered-ask threshold to 1 business day in the backend settings makes a contact with a 1-business-day-old unanswered ask urgent
+- [ ] `GET /people` lists a VIP contact under VIP and not under Everyone else
+- [ ] `GET /people` lists an urgent non-VIP contact under Urgent, with its reasons, and not under Everyone else
+- [ ] `GET /people` lists an urgent VIP contact under both VIP and Urgent
+- [ ] `GET /people` lists a contact that is neither VIP nor urgent under Everyone else
+- [ ] `GET /people` sorts each list by the contact's most recent message, newest first
+- [ ] A contact whose email is on the profile's "Always matters" line is listed as VIP
+- [ ] A contact on the profile's "Always matters" line whose VIP mark the user removed is not listed as VIP
+- [ ] A later Google Contacts import updates the organization of a contact whose organization the user never edited (backlog: apps/backend/src/app.ts:897 The first imported organization sticks for good)
+- [ ] A later Google Contacts import leaves the organization the user set on a contact unchanged (backlog: apps/backend/src/app.ts:897 The first imported organization sticks for good)
+- [ ] A contact's timeline lists every message that contact sent, across every account, newest first, each with its account and source link
+- [ ] A contact's timeline leaves out messages sent by other contacts
+- [ ] A contact's timeline includes a message that names them in its extracted people (asked, mentioned or copied) although someone else sent it
+- [ ] A contact's timeline includes the user's sent messages in threads with that contact, marked as the user's replies
+- [ ] A timeline message shows its thread state and the asks the user has not answered as open
+- [ ] A timeline message whose thread has a later message sent by the user shows its asks as answered, not open
+- [ ] An organization's timeline lists the messages of every contact in that organization, newest first
+- [ ] An organization's timeline leaves out messages from contacts outside it
+- [ ] The dashboard shell shows a People tab that opens the People page
+- [ ] The People page shows the VIP, Urgent and Everyone else lists, each row with the contact's name, organization and the time of its last message
+- [ ] An urgent row on the People page says why the contact is urgent
+- [ ] Selecting a contact on the People page shows its merged timeline
+- [ ] Selecting an organization on the People page shows its timeline
+- [ ] Marking a contact VIP from the People page moves it into the VIP list; removing the mark moves it out
+- [ ] When the first triage model and the second opinion choose different categories for a message, both categories are stored with the proposal
+- [ ] When the first triage model's category stands without a second opinion, no disagreement is stored
+- [ ] `GET /needs-input` asks which category is right for a message whose two models disagreed, offering both categories
+- [ ] `GET /needs-input` asks nothing about a message whose two models agreed
+- [ ] `GET /needs-input` asks which category is right for a message proposed as `unknown`
+- [ ] Answering a category question records the chosen category as the message's verdict, and the question is not asked again
+- [ ] An answered category question is fed back as an example for later messages from the same sender
+- [ ] `GET /needs-input` asks "VIP or ordinary?" about a sender with no earlier message whose message asks the user for something
+- [ ] `GET /needs-input` asks nothing about a new sender whose message asks the user nothing
+- [ ] `GET /needs-input` asks nothing about a sender with earlier messages whose message asks the user for something
+- [ ] Answering "VIP" to a new-sender question marks the contact VIP, and the question is not asked again
+- [ ] Answering "ordinary" to a new-sender question leaves the contact unmarked, and the question is not asked again
+- [ ] The dashboard shell shows a Needs input tab with the count of unanswered questions, and no count when there are none
+- [ ] The Needs input page shows each question with its one-key answers; pressing an answer's key answers the question and removes it from the page
+- [ ] Each ask the extraction finds in a message becomes a task proposal titled with the ask, carrying its due time, the message link and the account
+- [ ] A message whose extraction finds no asks produces no task proposal
+- [ ] Confirming a task proposal creates an open task; rejecting it creates none
+- [ ] Marking a task done removes it from the open tasks
+- [ ] A task snoozed until a time is left out of the open tasks before that time
+- [ ] A task snoozed until a time is back among the open tasks once that time has passed
+- [ ] A task can be given a waiting-on person, and the open tasks show it
+- [ ] A task's history lists every transition (created, done, snoozed, reopened, waiting-on set) with its timestamp, oldest first
+- [ ] The prioritization pass sends the open tasks with the profile, today's calendar, due dates and urgency to the model configured for prioritization (default Opus 5.5) and stores the rank and reason it returns for each task
+- [ ] A prioritization answer that fails the contract's validation is rejected, and the previous ranks stand
+- [ ] Each prioritization call's cost is logged against the daily spend, and no pass runs once the daily ceiling is reached
+- [ ] `GET /tasks` returns the open tasks ordered by their stored rank, each with its reason
+- [ ] A pinned task is first in `GET /tasks` whatever its rank; unpinning returns it to rank order
+- [ ] `POST /prioritization-run` runs the prioritization pass on demand
+- [ ] The prioritization pass runs again once its configured interval has elapsed, and not before
+- [ ] The _now_ page shows the 3 highest-ranked open tasks with their reasons, and not the fourth
+- [ ] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
+- [ ] The _now_ waiting-on list leaves out a person whose last message the user has answered
+- [ ] The badge count includes the unanswered Needs input questions
+- [ ] The badge count includes the open tasks whose due time has passed
+- [ ] The badge count leaves out the open tasks due later
+- [ ] The shipped backend (`apps/backend/src/main.ts`) serves `GET /people`, the timelines, `GET /needs-input` and the task routes, and runs the prioritization pass on its schedule through the real Claude adapter with its prompt file
+- [ ] `scripts/demo.sh` seeds VIP, urgent and ordinary contacts, Needs input questions and ranked tasks; the People, Needs input and _now_ pages are screenshot-verified against it
