@@ -81,4 +81,25 @@ describe('digests', () => {
     const result = digests([firstPitch, secondPitch]);
     expect(result).toEqual([expect.objectContaining({ key: 'ana@acme.example', proposals: [firstPitch, secondPitch] })]);
   });
+
+  it('places two sales proposals from the same account and different sender addresses in two digests even when they name the same company', () => {
+    const anaPitch = {
+      messageId: 'message-1',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'ana@acme.example',
+      action: 'archive',
+      category: 'sales',
+      extract: { company: 'Acme', solution: 'CRM', problem: 'lost leads' },
+    };
+    const brunoPitch = {
+      messageId: 'message-2',
+      accountEmail: 'franciscoc@psmutuus.com',
+      from: 'bruno@acme.example',
+      action: 'archive',
+      category: 'sales',
+      extract: { company: 'Acme', solution: 'CRM', problem: 'lost leads' },
+    };
+    const result = digests([anaPitch, brunoPitch]);
+    expect(result.map((digest) => digest.proposals)).toEqual([[anaPitch], [brunoPitch]]);
+  });
 });

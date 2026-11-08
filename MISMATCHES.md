@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 11:27 · `packages/domain/src/digests.test.ts::places two sales proposals from the same account and different sender addresses in two digests even when they name the same company`
+- Behavior: two sales proposals from one account but different sender addresses are in two digests
+- Predicted: passes on first run (read beforehand: `digestKey` already keys sales on `from`), so no right-reason failure was available
+- Actual: passed (1 passed, 4 skipped)
+- Type: passed unexpectedly
+- Resolution: the previous green (8a45783, "same sender address are in one digest") already implemented this; no failing shape exists without inventing new behavior, so the test was kept as a pin, with both pitches naming the same company so it would catch a regression to keying on company. It was not rewritten. `/green` has nothing to implement.
+
 ## 2026-11-08 05:06 · `apps/backend/src/app.test.ts::still lists at GET /search?q= after a backend restart on the same database file a message whose body was reported before it`
 - Behavior: search results survive a backend restart
 - Predicted: pass — `createApp` reloads every reported message with its body and the latest proposal per message from SQLite, and `GET /search` filters those in-memory arrays, so nothing is left to persist
