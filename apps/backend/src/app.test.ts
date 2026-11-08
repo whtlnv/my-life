@@ -189,14 +189,15 @@ const budgetReviewActTriage = (taskDraft?: { title: string }) =>
     ...(taskDraft && { taskDraft }),
   });
 
-const shopNewsletterArchiveTriage = () =>
-  triageAnswering({
-    action: 'archive',
-    category: 'sales',
-    summary: 'A shop newsletter',
-    extract: {},
-    reason: 'Promotional mail',
-  });
+const shopNewsletterArchiveProposal = {
+  action: 'archive',
+  category: 'sales',
+  summary: 'A shop newsletter',
+  extract: {},
+  reason: 'Promotional mail',
+};
+
+const shopNewsletterArchiveTriage = () => triageAnswering(shopNewsletterArchiveProposal);
 
 const proposeBudgetReview = async (app: App) => {
   await postJson(app, '/mail-report', budgetReviewReport);
@@ -2252,20 +2253,16 @@ describe('backend app', () => {
           promptVersion: 'filter-v1',
         }),
     };
-    const archiveProposal = {
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    };
     const databasePath = temporaryDatabasePath();
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
       dailySpendCeilingInUsd: 20,
       databasePath,
-      triage: triageAnsweringInOrder([archiveProposal, archiveProposal, archiveProposal], 1),
+      triage: triageAnsweringInOrder(
+        [shopNewsletterArchiveProposal, shopNewsletterArchiveProposal, shopNewsletterArchiveProposal],
+        1,
+      ),
       filter,
     });
     await reportTriageAndConfirmShopNewsletters(app);
@@ -2341,18 +2338,14 @@ describe('backend app', () => {
       { criteria: { from: 'news@shop.example.com' }, labelName: 'Shop', skipInbox: true },
       1,
     );
-    const archiveProposal = {
-      action: 'archive',
-      category: 'sales',
-      summary: 'A shop newsletter',
-      extract: {},
-      reason: 'Promotional mail',
-    };
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
       dailySpendCeilingInUsd: 20,
-      triage: triageAnsweringInOrder([archiveProposal, archiveProposal, archiveProposal], 7),
+      triage: triageAnsweringInOrder(
+        [shopNewsletterArchiveProposal, shopNewsletterArchiveProposal, shopNewsletterArchiveProposal],
+        7,
+      ),
       filter,
     });
     await reportTriageAndConfirmShopNewsletters(app);
