@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createApp } from '@my-life/backend/app';
 import { backfillBodiesOnce } from '@my-life/extension/body-backfill';
-import { carryOutArchiveCommands } from '@my-life/extension/gmail-archive';
+import { carryOutMessageCommands } from '@my-life/extension/gmail-archive';
 import { carryOutFilterCommands } from '@my-life/extension/gmail-filter';
 import { pollGmailOnce } from '@my-life/extension/gmail-poll';
 
@@ -314,7 +314,7 @@ describe('Gmail fake server', () => {
         body: JSON.stringify({ messageId, decision: 'confirmed' }),
       });
 
-      await carryOutArchiveCommands(extensionOptions);
+      await carryOutMessageCommands(extensionOptions);
 
       const inbox = (await (await fetch(`${gmailApi}/messages?labelIds=INBOX`)).json()) as {
         messages?: { id: string }[];

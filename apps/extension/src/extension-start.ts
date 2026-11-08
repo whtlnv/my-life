@@ -2,7 +2,7 @@ import { refreshBadge } from './badge-refresh';
 import { backfillBodiesOnce } from './body-backfill';
 import { pollCalendarOnce } from './calendar-poll';
 import { importContactsOnce } from './contacts-import';
-import { carryOutArchiveCommands } from './gmail-archive';
+import { carryOutMessageCommands } from './gmail-archive';
 import { carryOutFilterCommands } from './gmail-filter';
 import { pollGmailOnce } from './gmail-poll';
 import type { FetchFunction } from './fetch-function';
@@ -52,7 +52,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
       storedHistoryId,
     });
     const accountRequestOptions = { fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl };
-    await carryOutArchiveCommands(accountRequestOptions);
+    await carryOutMessageCommands(accountRequestOptions);
     await carryOutFilterCommands(accountRequestOptions);
     await backfillBodiesOnce(accountRequestOptions);
   };

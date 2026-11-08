@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { FetchFunction } from './fetch-function';
-import { carryOutArchiveCommands } from './gmail-archive';
+import { carryOutMessageCommands } from './gmail-archive';
 
 const gmailApi = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
@@ -49,19 +49,19 @@ function acknowledgementCommandId(url: URL, init: RequestInit | undefined): stri
   return acknowledgementPath[1] ?? '';
 }
 
-const runArchive = (fetch: FetchFunction) =>
-  carryOutArchiveCommands({
+const runMessageCommands = (fetch: FetchFunction) =>
+  carryOutMessageCommands({
     fetch,
     accessToken: 'token-for-francisco',
     accountEmail: 'francisco@example.com',
     backendUrl: 'http://127.0.0.1:7777',
   });
 
-describe('carryOutArchiveCommands', () => {
+describe('carryOutMessageCommands', () => {
   it("removes the message of a pending archive command for the profile's account from the inbox and adds the label my-life/archived", async () => {
     const gmailRequests: GmailRequest[] = [];
 
-    await runArchive(fakeBackendAndGmail([inboxLabel, archivedLabel], gmailRequests));
+    await runMessageCommands(fakeBackendAndGmail([inboxLabel, archivedLabel], gmailRequests));
 
     expect(gmailRequests).toEqual([
       { request: 'modify message-to-archive', body: { removeLabelIds: ['INBOX'], addLabelIds: ['Label_42'] } },
@@ -71,7 +71,7 @@ describe('carryOutArchiveCommands', () => {
   it('creates the label my-life/archived before the first archive when it does not exist yet', async () => {
     const gmailRequests: GmailRequest[] = [];
 
-    await runArchive(fakeBackendAndGmail([inboxLabel], gmailRequests));
+    await runMessageCommands(fakeBackendAndGmail([inboxLabel], gmailRequests));
 
     expect(gmailRequests).toEqual([
       { request: 'create label', body: expect.objectContaining({ name: 'my-life/archived' }) as unknown },
@@ -82,7 +82,7 @@ describe('carryOutArchiveCommands', () => {
   it('creates no second label my-life/archived when the label already exists', async () => {
     const gmailRequests: GmailRequest[] = [];
 
-    await runArchive(fakeBackendAndGmail([inboxLabel, archivedLabel], gmailRequests));
+    await runMessageCommands(fakeBackendAndGmail([inboxLabel, archivedLabel], gmailRequests));
 
     expect(gmailRequests.filter(({ request }) => request === 'create label')).toEqual([]);
   });
@@ -107,8 +107,8 @@ describe('carryOutArchiveCommands', () => {
       return gmail(input, init);
     };
 
-    await runArchive(backendWithAcknowledgements);
-    await runArchive(backendWithAcknowledgements);
+    await runMessageCommands(backendWithAcknowledgements);
+    await runMessageCommands(backendWithAcknowledgements);
 
     expect(gmailRequests.filter(({ request }) => request.startsWith('modify'))).toEqual([
       { request: 'modify message-to-archive', body: { removeLabelIds: ['INBOX'], addLabelIds: ['Label_42'] } },
@@ -145,8 +145,8 @@ describe('carryOutArchiveCommands', () => {
       return gmail(input, init);
     };
 
-    await runArchive(backendAndFlakyGmail);
-    await runArchive(backendAndFlakyGmail);
+    await runMessageCommands(backendAndFlakyGmail);
+    await runMessageCommands(backendAndFlakyGmail);
 
     expect(events).toEqual(['modify refused', 'modify carried out', 'acknowledge command-1']);
   });
@@ -177,7 +177,7 @@ describe('carryOutArchiveCommands', () => {
       return Promise.resolve(new Response('unexpected request', { status: 404 }));
     };
 
-    await runArchive(backendAndRefusingGmail);
+    await runMessageCommands(backendAndRefusingGmail);
 
     expect(acknowledgedCommandIds).toEqual([]);
   });
@@ -199,7 +199,7 @@ describe('carryOutArchiveCommands', () => {
       return gmail(input, init);
     };
 
-    await runArchive(backendWithAutomaticCommand);
+    await runMessageCommands(backendWithAutomaticCommand);
 
     expect(gmailRequests).toEqual([
       { request: 'create label', body: expect.objectContaining({ name: 'my-life/auto' }) as unknown },

@@ -10,7 +10,7 @@ export interface CommandOptions {
   backendUrl: string;
 }
 
-interface ArchiveCommand {
+interface MessageCommand {
   id: string;
   messageId: string;
   label?: string;
@@ -18,16 +18,16 @@ interface ArchiveCommand {
 }
 
 // GET /commands lists every command kind for the account; filter commands carry no messageId.
-type ListedCommand = Omit<ArchiveCommand, 'messageId'> & { messageId?: string };
+type ListedCommand = Omit<MessageCommand, 'messageId'> & { messageId?: string };
 
 interface GmailLabel {
   id: string;
   name: string;
 }
 
-export async function carryOutArchiveCommands(options: CommandOptions) {
+export async function carryOutMessageCommands(options: CommandOptions) {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
-  const commands = await fetchPendingArchiveCommands(options);
+  const commands = await fetchPendingMessageCommands(options);
   for (const command of commands) {
     const labelId = await findOrCreateLabelId(options.fetch, authorization, command.label ?? archivedLabelName);
     const labelChanges =
@@ -62,10 +62,10 @@ async function modifyMessageLabels(
   });
 }
 
-async function fetchPendingArchiveCommands(options: CommandOptions) {
+async function fetchPendingMessageCommands(options: CommandOptions) {
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: ListedCommand[] };
-  return commands.filter((command): command is ArchiveCommand => command.messageId !== undefined);
+  return commands.filter((command): command is MessageCommand => command.messageId !== undefined);
 }
 
 export async function findOrCreateLabelId(
