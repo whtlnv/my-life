@@ -40,9 +40,9 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   reordered or added column compiles and shows amounts under the wrong heading. Deferred for the same reason as the
   `/triage-queue` and `/now` entries below: there is no statement contract to share the column list from, and adding one is
   new `packages/contracts` surface delivered test-first.
-- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07)
-  `new URL(input instanceof Request ? input.url : input.toString())` opens 36 fake `fetch` functions across six
-  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 36 times.
+- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
+  `new URL(input instanceof Request ? input.url : input.toString())` opens 29 fake `fetch` functions across eight
+  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 29 times.
   Deferred because two of those files (`calendar-poll.test.ts`, `gmail-poll.test.ts`) sit outside 2aaf298..HEAD and the
   extension has no shared test-helper module to hoist it into.
 - **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
@@ -54,13 +54,13 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:225] `createApp` is one 400-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07)
-  The file is 623 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:293] `createApp` is one 575-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
+  The file is 934 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
-- **[apps/backend/src/app.test.ts:243] One 2600-line `describe` with 100 tests covers every route** (added: 2026-11-07; location corrected 2026-11-07)
-  Finding the tests for one route means searching the whole file, and its staging helpers (lines 17–236) sit up to 2400 lines above the tests
+- **[apps/backend/src/app.test.ts:329] One 3340-line `describe` with 151 tests covers every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
+  Finding the tests for one route means searching the whole file, and its staging helpers (lines 17–328) sit up to 3300 lines above the tests
   that use them. Deferred to the `createApp` split above: the test files should follow the route modules, not come first.
 - **[packages/domain/src/expense-statement.ts:26] `localCalendarDate` is defined four times** (added: 2026-11-07)
   Identical `Intl.DateTimeFormat('en-CA', …)` helpers sit in `expense-statement.ts`, `now-view.ts`, `triage-spend.ts` and
@@ -80,7 +80,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Nothing in `apps/*` imports it (the backend tests stub `propose` inline), so it reads as a live Triage adapter while being dead.
   Deferred because deleting it deletes `scripted-triage.test.ts`, and a refactor pass never deletes a test; it is a
   `/test-quality` matter.
-- **[apps/backend/src/app.ts:246] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07)
+- **[apps/backend/src/app.ts:317] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08)
   `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
   the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
   same message id (the map keeps the last account, the store's `INSERT OR IGNORE` the first), so dropping either changes behavior.
