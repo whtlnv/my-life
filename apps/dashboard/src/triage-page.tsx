@@ -447,6 +447,21 @@ function CategoryGroup({ group, onAccepted }: { group: TriageGroup; onAccepted: 
   );
 }
 
+function DigestCard({ digest }: { digest: Digest }) {
+  return (
+    <article className="card">
+      {digest.summaryLines.map((line) => (
+        <p key={line}>{line}</p>
+      ))}
+      {Object.entries(digest.severityCounts).map(([severity, count]) => (
+        <span key={severity} className="pill">
+          {severityCountText(severity, count)}
+        </span>
+      ))}
+    </article>
+  );
+}
+
 function Legend() {
   return (
     <p className="legend" aria-label="Keys">
@@ -548,16 +563,7 @@ export function TriagePage() {
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
-          <article key={digest.id} className="card">
-            {digest.summaryLines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-            {Object.entries(digest.severityCounts).map(([severity, count]) => (
-              <span key={severity} className="pill">
-                {severityCountText(severity, count)}
-              </span>
-            ))}
-          </article>
+          <DigestCard key={digest.id} digest={digest} />
         ))}
       </section>
       <section aria-label={sectionTitles.needsInput} className="section">
