@@ -56,24 +56,26 @@ async function fetchUserGroupNames(options: ImportContactsOptions): Promise<Map<
   );
 }
 
+function toImportedContact(connection: GoogleConnection, userGroupNames: Map<string, string>) {
+  const groupResourceNames = (connection.memberships ?? []).map(
+    (membership) => membership.contactGroupMembership.contactGroupResourceName,
+  );
+  return {
+    name: connection.names?.[0]?.displayName,
+    emails: (connection.emailAddresses ?? []).map((email) => email.value),
+    organization: connection.organizations?.[0]?.name,
+    starred: groupResourceNames.includes(starredGroup),
+    lists: groupResourceNames.flatMap((resourceName) => {
+      const groupName = userGroupNames.get(resourceName);
+      return groupName === undefined ? [] : [groupName];
+    }),
+  };
+}
+
 export async function importContactsOnce(options: ImportContactsOptions): Promise<void> {
   const userGroupNames = await fetchUserGroupNames(options);
   const connections = await fetchAllConnections(options);
-  const contacts = connections.map((connection) => {
-    const groupResourceNames = (connection.memberships ?? []).map(
-      (membership) => membership.contactGroupMembership.contactGroupResourceName,
-    );
-    return {
-      name: connection.names?.[0]?.displayName,
-      emails: (connection.emailAddresses ?? []).map((email) => email.value),
-      organization: connection.organizations?.[0]?.name,
-      starred: groupResourceNames.includes(starredGroup),
-      lists: groupResourceNames.flatMap((resourceName) => {
-        const groupName = userGroupNames.get(resourceName);
-        return groupName === undefined ? [] : [groupName];
-      }),
-    };
-  });
+  const contacts = connections.map((connection) => toImportedContact(connection, userGroupNames));
   await options.fetch(`${options.backendUrl}/contacts-import`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, contacts }),
