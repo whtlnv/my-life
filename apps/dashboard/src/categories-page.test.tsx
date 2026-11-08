@@ -7,11 +7,7 @@ import { agreementRateText, CategoriesPage, killSwitchLabel, noProposalsYetText 
 
 const answerGetCategoriesWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
-    Promise.resolve(
-      input === '/categories'
-        ? new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
-        : new Response(null, { status: 404 }),
-    ),
+    Promise.resolve(input === '/categories' ? Response.json(body) : new Response(null, { status: 404 })),
   );
   vi.stubGlobal('fetch', fetchStub);
 };
@@ -78,9 +74,7 @@ describe('CategoriesPage', () => {
         }
         if (input === '/categories') {
           const categories = [{ category: 'sales', mode: salesMode, agreementRate: 0.5, recentProposals: [] }];
-          return Promise.resolve(
-            new Response(JSON.stringify({ categories }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ categories }));
         }
         return Promise.resolve(new Response(null, { status: 404 }));
       }),
@@ -139,9 +133,7 @@ describe('CategoriesPage', () => {
             { category: 'sales', mode, agreementRate: 0.5, recentProposals: [] },
             { category: 'expense', mode, agreementRate: 0.9, recentProposals: [] },
           ];
-          return Promise.resolve(
-            new Response(JSON.stringify({ categories }), { headers: { 'content-type': 'application/json' } }),
-          );
+          return Promise.resolve(Response.json({ categories }));
         }
         return Promise.resolve(new Response(null, { status: 404 }));
       }),
