@@ -944,24 +944,27 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
     const isVip = (contact: { emails: string[] }) => markedEmails.has(contact.emails[0] ?? '');
+    const conversationMessagesOf = (contact: { messageIds: string[] }) =>
+      reportedMessages
+        .filter((message) => contact.messageIds.includes(message.id) || message.sentByUser === true)
+        .map((message) => ({
+          threadId: message.threadId,
+          receivedAt: new Date(message.date).toISOString(),
+          sentByUser: message.sentByUser === true,
+          dates: proposals.find((proposal) => proposal.messageId === message.id)?.dates ?? [],
+        }));
+    const urgencySettings = {
+      timeZone: businessTimeZone,
+      unansweredAskBusinessDays: 2,
+      deadlineHours: 48,
+      vipWaitingBusinessDays: 1,
+    };
     const urgencyOf = (contact: { emails: string[]; messageIds: string[] }) =>
       contactUrgency({
-        messages: reportedMessages
-          .filter((message) => contact.messageIds.includes(message.id) || message.sentByUser === true)
-          .map((message) => ({
-            threadId: message.threadId,
-            receivedAt: new Date(message.date).toISOString(),
-            sentByUser: message.sentByUser === true,
-            dates: proposals.find((proposal) => proposal.messageId === message.id)?.dates ?? [],
-          })),
+        messages: conversationMessagesOf(contact),
         vip: isVip(contact),
         now: clock.now().toISOString(),
-        settings: {
-          timeZone: businessTimeZone,
-          unansweredAskBusinessDays: 2,
-          deadlineHours: 48,
-          vipWaitingBusinessDays: 1,
-        },
+        settings: urgencySettings,
       });
     const urgentContacts = contacts.flatMap((contact) => {
       const { urgent, reasons } = urgencyOf(contact);
