@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { type ClaudePricing, type ClaudeResponse, readToolUseInput } from './claude-triage';
 
+const summaryToolName = 'write_summary';
+
 interface ClaudeSummaryRequest {
   model: string;
   system?: string;
@@ -23,8 +25,8 @@ export function createClaudeSummary({ model, promptPath, createMessage }: Claude
       const response = await createMessage({
         model,
         ...(promptPath === undefined ? {} : { system: readFileSync(promptPath, 'utf8') }),
-        tools: [{ name: 'write_summary' }],
-        tool_choice: { type: 'tool', name: 'write_summary' },
+        tools: [{ name: summaryToolName }],
+        tool_choice: { type: 'tool', name: summaryToolName },
         messages: [{ role: 'user', content: items.map(({ summary }) => summary).join('\n') }],
       });
       return readToolUseInput(response);
