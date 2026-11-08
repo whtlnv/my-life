@@ -3256,4 +3256,21 @@ describe('backend app', () => {
 
     expect(contacts).toMatchObject([{ emails: ['luis@example.com'], lists: ['board'] }]);
   });
+
+  it('lists at GET /contacts, after POST /contacts-import brings an organization for a contact whose organization the user set through PATCH /contacts/:email, that contact still with the organization the user set', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await app.request('/contacts/luis%40example.com', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ organization: 'Mutuus' }),
+    });
+
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
+    });
+    const { contacts } = (await getContacts(app)) as { contacts: { emails: string[]; organization?: string }[] };
+
+    expect(contacts).toMatchObject([{ emails: ['luis@example.com'], organization: 'Mutuus' }]);
+  });
 });

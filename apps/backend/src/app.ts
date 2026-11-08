@@ -642,7 +642,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { contacts } = await context.req.json<{ contacts: ImportedContact[] }>();
     for (const { name, emails, organization, starred, lists } of contacts) {
       const primaryEmail = emails[0]!;
-      contactDetailsStore.save(primaryEmail, { organization, ...(lists ? { lists } : {}) });
+      const hasOrganization = contactDetailsStore.loadAll()[primaryEmail]?.organization !== undefined;
+      contactDetailsStore.save(primaryEmail, {
+        ...(hasOrganization ? {} : { organization }),
+        ...(lists ? { lists } : {}),
+      });
       if (starred) {
         contactDetailsStore.saveMark(primaryEmail, 'vip');
       }
