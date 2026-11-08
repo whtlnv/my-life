@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 01:15 · `apps/backend/src/app.test.ts::lists a message under no contact it does not link to: a second message from another sender, whose extraction names nobody, appears under its sender alone, not under the first sender or the person the first message names`
+- Behavior: A message lists under no contact it does not link to
+- Predicted: pass — `contactsByEmail` links each sender and each extracted person to the one message id it came from, so a second message can only appear under its own sender
+- Actual: pass
+- Type: passed unexpectedly (predicted, but not a right-reason failure)
+- Resolution: the previous greens already scope every link to its own message, so the item had no missing behavior; kept the test as a guardrail pin after proving it non-vacuous (temporarily linking each extracted person to every reported message makes it fail with `pedro@acme.com` also listing `message-2`; production restored, `git diff` touches only the test file).
+
 ## 2026-11-08 01:09 · `apps/backend/src/app.test.ts::lists a reported message that is not yet triaged under both parties it links to: its sender contact and the organization of its sender's domain`
 - Behavior: One message lists under every contact and organization it links to
 - Predicted: pass — the natural reading (one triaged message under its sender, two extracted people and the named organization) was already covered by the previous green's per-person link loop

@@ -2927,6 +2927,42 @@ describe('backend app', () => {
     expect(partiesListingTheMessage.toSorted()).toEqual(['example.com', 'luis@example.com']);
   });
 
+  it('lists a message under no contact it does not link to: a second message from another sender, whose extraction names nobody, appears under its sender alone, not under the first sender or the person the first message names', async () => {
+    const triage = {
+      propose: (message: { id: string }) =>
+        Promise.resolve({
+          proposal: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+            people: message.id === 'message-1' ? [{ name: 'Pedro Soto', email: 'pedro@acme.com', role: 'copied' }] : [],
+          },
+          costInUsd: 0,
+          promptVersion: 'triage-v2',
+        }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const fromMarta = {
+      ...budgetReviewReport.messages[0],
+      id: 'message-2',
+      threadId: 'thread-2',
+      from: 'Marta <marta@acme.com>',
+    };
+    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [budgetReviewReport.messages[0], fromMarta] });
+    await postTriageRun(app);
+
+    const { contacts } = (await (await app.request('/contacts')).json()) as {
+      contacts: { emails: string[]; messageIds: string[] }[];
+    };
+
+    const contactsListingTheSecondMessage = contacts
+      .filter(({ messageIds }) => messageIds.includes('message-2'))
+      .flatMap(({ emails }) => emails);
+    expect(contactsListingTheSecondMessage).toEqual(['marta@acme.com']);
+  });
+
   it('lists at GET /organizations, once a message is triaged with an extraction that names an organization, that organization with the message linked to it', async () => {
     const triage = {
       propose: () =>
