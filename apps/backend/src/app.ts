@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 
 import { calendarSnapshot, mailReport, triageCategories, type HealthResponse } from '@my-life/contracts';
 import {
@@ -571,17 +571,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
-  app.put('/contacts/:email/marks/:mark', (context) => {
+  const rejectUnknownMark: MiddlewareHandler = async (context, next) => {
     if (context.req.param('mark') !== 'vip') {
       return context.body(null, 400);
     }
+    await next();
+  };
+  app.put('/contacts/:email/marks/:mark', rejectUnknownMark, (context) => {
     contactDetailsStore.saveMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
-  app.delete('/contacts/:email/marks/:mark', (context) => {
-    if (context.req.param('mark') !== 'vip') {
-      return context.body(null, 400);
-    }
+  app.delete('/contacts/:email/marks/:mark', rejectUnknownMark, (context) => {
     contactDetailsStore.removeMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
