@@ -1,6 +1,7 @@
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { triageProposal } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
@@ -330,6 +331,30 @@ describe('Claude triage', () => {
 
     expect(result.proposal).toEqual(proposal);
     expect(result).toMatchObject(expected);
+  });
+
+  it('ships a triage-v2 prompt that reports version triage-v2 and asks for every field of the propose_triage contract', async () => {
+    const promptPath = fileURLToPath(new URL('../prompts/triage-v2.md', import.meta.url));
+    const { sentRequests, createMessage } = recordRequests();
+    const triage = createClaudeTriage({
+      pricing: defaultPricing,
+      model: 'claude-haiku-5-5',
+      promptPath,
+      createMessage,
+    });
+
+    const result = await triage.propose({
+      id: 'message-7',
+      accountEmail: 'ana@acme.com',
+      date: '2026-11-07T10:00:00Z',
+    });
+
+    const system = firstSentRequest(sentRequests).system ?? '';
+    const fieldsNotAskedFor = Object.keys(triageProposal.shape).filter((field) => !system.includes(`\`${field}\``));
+    expect({ promptVersion: result.promptVersion, fieldsNotAskedFor }).toEqual({
+      promptVersion: 'triage-v2',
+      fieldsNotAskedFor: [],
+    });
   });
 
   it('declares exactly one strict propose_triage tool built from the shared contract, leaves tool choice on auto and keeps the call instruction in the prompt file', async () => {
