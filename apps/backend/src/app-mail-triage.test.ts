@@ -1003,7 +1003,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const summary = {
       summarize: () => {
         summaryCalls += 1;
-        return Promise.resolve({ lines: [`Summary written on call ${summaryCalls}`], costInUsd: 0.01 });
+        return Promise.resolve({ lines: [`Summary written on call ${String(summaryCalls)}`], costInUsd: 0.01 });
       },
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary });
@@ -1068,7 +1068,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const summary = {
       summarize: () => {
         summaryCalls += 1;
-        return Promise.resolve({ lines: [`Summary written on call ${summaryCalls}`], costInUsd: 0.01 });
+        return Promise.resolve({ lines: [`Summary written on call ${String(summaryCalls)}`], costInUsd: 0.01 });
       },
     };
     const databasePath = temporaryDatabasePath();
