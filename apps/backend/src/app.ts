@@ -242,8 +242,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const createdFilterStore = openCreatedFilterStore(databasePath);
   const filterDeletionRequestStore = openFilterDeletionRequestStore(databasePath);
   const categoryModeStore = openCategoryModeStore(databasePath);
-  const reportedMessages: ReportedMessage[] = [];
-  const accountEmailByMessageId = new Map<string, string>();
+  // Messages reported before this process started are reloaded, so a restart never strands a message untriaged.
+  const storedMessages = reportedMessageStore.loadReportedMessages();
+  const reportedMessages: ReportedMessage[] = storedMessages;
+  const accountEmailByMessageId = new Map<string, string>(
+    storedMessages.map((message) => [message.id, message.accountEmail]),
+  );
   const automaticMessageIds = new Set(proposalStore.loadAutomaticMessageIds());
   // Overlapping runs once stored a proposal twice (append-only); the latest row per message is the one that counts.
   const latestStoredProposals = [

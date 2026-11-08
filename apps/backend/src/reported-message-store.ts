@@ -18,7 +18,14 @@ export interface MessageDate {
   date: string;
 }
 
-export type ReportedMessageHeaders = MessageRecipients & MessageSender & MessageSubject & MessageDate;
+export interface MessageBody {
+  threadId: string;
+  snippet: string;
+}
+
+export type ReportedMessageHeaders = MessageRecipients & MessageSender & MessageSubject & MessageDate & MessageBody;
+
+export type StoredReportedMessage = ReportedMessageHeaders & { id: string; accountEmail: string };
 
 function createTables(database: ReturnType<typeof openDatabase>): void {
   database.exec(
@@ -35,6 +42,9 @@ function createTables(database: ReturnType<typeof openDatabase>): void {
   );
   database.exec(
     'CREATE TABLE IF NOT EXISTS reported_message_dates (message_id TEXT PRIMARY KEY, date_header TEXT NOT NULL)',
+  );
+  database.exec(
+    'CREATE TABLE IF NOT EXISTS reported_message_bodies (message_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, snippet TEXT NOT NULL)',
   );
 }
 
@@ -62,6 +72,28 @@ export function openReportedMessageStore(databasePath: string) {
   >(
     'SELECT messages.message_id AS messageId, messages.account_email AS accountEmail, senders.from_header AS "from", senders.list_id AS listId FROM reported_messages AS messages JOIN reported_message_senders AS senders ON senders.message_id = messages.message_id',
   );
+  const saveBody = database.prepare(
+    'INSERT OR IGNORE INTO reported_message_bodies (message_id, thread_id, snippet) VALUES (?, ?, ?)',
+  );
+  // Every message the store has seen, with every header the triage prompt needs, in report order. A message
+  // reported before the bodies table existed is left out: it was triaged under the old process anyway.
+  const loadReportedMessages = database.prepare<
+    [],
+    {
+      id: string;
+      accountEmail: string;
+      threadId: string;
+      snippet: string;
+      from: string;
+      listId: string | null;
+      to: string;
+      cc: string | null;
+      subject: string;
+      date: string;
+    }
+  >(
+    'SELECT messages.message_id AS id, messages.account_email AS accountEmail, bodies.thread_id AS threadId, bodies.snippet AS snippet, senders.from_header AS "from", senders.list_id AS listId, recipients.to_header AS "to", recipients.cc_header AS cc, subjects.subject AS subject, dates.date_header AS date FROM reported_messages AS messages JOIN reported_message_bodies AS bodies ON bodies.message_id = messages.message_id JOIN reported_message_senders AS senders ON senders.message_id = messages.message_id JOIN reported_message_recipients AS recipients ON recipients.message_id = messages.message_id JOIN reported_message_subjects AS subjects ON subjects.message_id = messages.message_id JOIN reported_message_dates AS dates ON dates.message_id = messages.message_id ORDER BY messages.rowid',
+  );
   const countMessages = database.prepare('SELECT COUNT(*) FROM reported_messages').pluck();
   const loadHeaders = database.prepare<
     [string],
@@ -82,6 +114,14 @@ export function openReportedMessageStore(databasePath: string) {
       saveSender.run(messageId, message.from, message.listId ?? null);
       saveSubject.run(messageId, message.subject);
       saveDate.run(messageId, message.date);
+      saveBody.run(messageId, message.threadId, message.snippet);
+    },
+    loadReportedMessages(): StoredReportedMessage[] {
+      return loadReportedMessages.all().map(({ listId, cc, ...rest }) => ({
+        ...rest,
+        ...(listId === null ? {} : { listId }),
+        ...(cc === null ? {} : { cc }),
+      }));
     },
     loadAll() {
       return loadAllMessages.all();

@@ -18,6 +18,8 @@ describe('reported message store', () => {
       date: '2026-11-07T10:00:00Z',
       to: 'ana@example.com',
       listId: 'deals.shop.example',
+      threadId: 'thread-1',
+      snippet: 'Deals of the week',
     };
     openReportedMessageStore(databasePath).save(message.id, 'ana@example.com', message);
 

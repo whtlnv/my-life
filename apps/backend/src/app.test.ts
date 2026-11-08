@@ -2702,4 +2702,39 @@ describe('backend app', () => {
       remaining: queue.remaining,
     }).toEqual({ action: [{ messageId: 'message-1', summary: 'Second proposal' }], remaining: 0 });
   });
+  it('triages a message reported before a backend restart on the first POST /triage-run after it, handing the Triage port the snippet and thread id as reported', async () => {
+    const databasePath = temporaryDatabasePath();
+    const before = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(before, '/mail-report', budgetReviewReport);
+    const askedMessages: unknown[] = [];
+    const triage = {
+      propose: (message: unknown) => {
+        askedMessages.push(message);
+        return Promise.resolve({
+          proposal: { action: 'keep', category: 'unknown', summary: 'A message', extract: {}, reason: 'Unsure' },
+          costInUsd: 0,
+          promptVersion: 'triage-v1',
+        });
+      },
+    };
+
+    const afterRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+    });
+    await postTriageRun(afterRestart);
+
+    expect(askedMessages).toEqual([
+      expect.objectContaining({
+        id: 'message-1',
+        threadId: 'thread-1',
+        snippet: 'Can you review the budget by Friday?',
+        from: 'Luis <luis@example.com>',
+        subject: 'Budget review',
+        accountEmail: 'ana@example.com',
+      }) as unknown,
+    ]);
+  });
 });
