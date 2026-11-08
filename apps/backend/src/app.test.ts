@@ -223,6 +223,17 @@ const triageUnderV2Recording = <Asked>(
   },
 });
 
+const storeBudgetReviewProposedUnder = async (databasePath: string, promptVersion: string): Promise<void> => {
+  const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+  await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
+  openProposalStore(databasePath).save({
+    messageId: 'message-1',
+    madeAt: '2026-11-02T15:00:00.000Z',
+    promptVersion,
+    proposal: keepProposalExtracting(),
+  });
+};
+
 const filterAnswering = (proposal: unknown) => ({
   propose: () => Promise.resolve({ proposal, costInUsd: 0.05, promptVersion: 'filter-v1' }),
 });
@@ -3442,14 +3453,7 @@ describe('backend app', () => {
 
   it('asks the triage port again, with the body, for a message proposed under triage-v1 whose body arrives at POST /bodies-report, on the next POST /triage-run', async () => {
     const databasePath = temporaryDatabasePath();
-    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
-    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
-    openProposalStore(databasePath).save({
-      messageId: 'message-1',
-      madeAt: '2026-11-02T15:00:00.000Z',
-      promptVersion: 'triage-v1',
-      proposal: keepProposalExtracting(),
-    });
+    await storeBudgetReviewProposedUnder(databasePath, 'triage-v1');
     const askedMessages: { id: string; body?: string | undefined }[] = [];
     const triage = triageUnderV2Recording(askedMessages, ({ id, body }) => ({ id, body }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
@@ -3466,14 +3470,7 @@ describe('backend app', () => {
 
   it('lists at GET /tasks no task when the retriage after its body arrives proposes act for a message whose keep proposal the user had already confirmed', async () => {
     const databasePath = temporaryDatabasePath();
-    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
-    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
-    openProposalStore(databasePath).save({
-      messageId: 'message-1',
-      madeAt: '2026-11-02T15:00:00.000Z',
-      promptVersion: 'triage-v1',
-      proposal: keepProposalExtracting(),
-    });
+    await storeBudgetReviewProposedUnder(databasePath, 'triage-v1');
     const triage = {
       propose: () =>
         Promise.resolve({
@@ -3504,14 +3501,7 @@ describe('backend app', () => {
 
   it('does not ask the triage port again for a message already proposed under triage-v2 whose body arrives at POST /bodies-report, on the next POST /triage-run', async () => {
     const databasePath = temporaryDatabasePath();
-    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
-    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
-    openProposalStore(databasePath).save({
-      messageId: 'message-1',
-      madeAt: '2026-11-02T15:00:00.000Z',
-      promptVersion: 'triage-v2',
-      proposal: keepProposalExtracting(),
-    });
+    await storeBudgetReviewProposedUnder(databasePath, 'triage-v2');
     const askedMessages: { id: string; body?: string | undefined }[] = [];
     const triage = triageUnderV2Recording(askedMessages, ({ id, body }) => ({ id, body }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
@@ -3527,14 +3517,7 @@ describe('backend app', () => {
 
   it('asks the triage port again, with the body, on the first POST /triage-run after a restart for a message whose body arrived at POST /bodies-report before the restart and was not yet retriaged', async () => {
     const databasePath = temporaryDatabasePath();
-    const beforeBackfill = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
-    await postJson(beforeBackfill, '/mail-report', budgetReviewReport);
-    openProposalStore(databasePath).save({
-      messageId: 'message-1',
-      madeAt: '2026-11-02T15:00:00.000Z',
-      promptVersion: 'triage-v1',
-      proposal: keepProposalExtracting(),
-    });
+    await storeBudgetReviewProposedUnder(databasePath, 'triage-v1');
     const body = 'Hi Ana, can you review the budget by Friday? Luis';
     const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
     await postJson(beforeRestart, '/bodies-report', {
