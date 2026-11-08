@@ -597,4 +597,19 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
       ],
     });
   });
+  it('lists at GET /triage-queue nothing under handled for you for a proposal an automatic category acted on before today in the business time zone', async () => {
+    let now = clockAtTenPastThree.now();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => now },
+      triage: ccThreadTriage('archive'),
+    });
+    await switchCategory(app, 'cc-thread', 'automatic');
+    await proposeBudgetReview(app);
+    now = new Date('2026-11-03T15:10:00.000Z');
+
+    const queue = await app.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({ handledForYou: [] });
+  });
 });

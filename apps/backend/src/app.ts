@@ -64,6 +64,7 @@ interface ReportedMessage extends ReportedMessageHeaders {
 type Proposal = Parameters<typeof triageQueue>[0][number] & {
   summary?: string;
   madeAutomatic?: boolean;
+  madeAt?: string;
   organization?: string;
   people?: { name: string; email?: string }[];
 };
@@ -228,8 +229,15 @@ function withLink(proposal: Proposal) {
   return { ...proposal, link: gmailMessageLink(proposal) };
 }
 
-function describeHandledForYou(proposals: Proposal[]) {
-  return proposals.filter((proposal) => proposal.madeAutomatic === true).map(withLink);
+const businessDateOf = (instant: Date): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
+
+function describeHandledForYou(proposals: Proposal[], clock: Clock) {
+  const today = businessDateOf(clock.now());
+  return proposals
+    .filter((proposal) => proposal.madeAutomatic === true)
+    .filter((proposal) => proposal.madeAt !== undefined && businessDateOf(new Date(proposal.madeAt)) === today)
+    .map(withLink);
 }
 
 function splitActionFromGroups(proposals: Proposal[], verdicts: { messageId: string }[]) {
@@ -335,7 +343,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const latestStoredProposals = [
     ...new Map(proposalStore.loadAll().map((stored) => [stored.messageId, stored])).values(),
   ];
-  const proposals: Proposal[] = latestStoredProposals.map(({ messageId, proposal }) => {
+  const proposals: Proposal[] = latestStoredProposals.map(({ messageId, madeAt, proposal }) => {
     const accountEmail = reportedMessageStore.accountEmailOf(messageId);
     return {
       ...withDisplayedCategory(
@@ -344,6 +352,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         accountEmail,
       ),
       madeAutomatic: automaticMessageIds.has(messageId),
+      madeAt,
     };
   });
   const loggedSpends = (): { loggedAt: string; costInUsd: number }[] =>
@@ -584,7 +593,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           madeAutomatic,
         });
         messageIdsAwaitingRetriage.delete(message.id);
-        queueProposal({ ...displayedProposal, madeAutomatic });
+        queueProposal({ ...displayedProposal, madeAutomatic, madeAt: answeredAt });
         proposedInThisRun = true;
       }
       if (proposedInThisRun) {
@@ -697,7 +706,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: describeDigests(verdicts),
-      handledForYou: describeHandledForYou(proposals),
+      handledForYou: describeHandledForYou(proposals, clock),
       remaining: reportedMessageStore.count() - proposals.length,
       paused: hasReachedDailySpendCeiling(),
       fetchedAt: clock.now().toISOString(),
