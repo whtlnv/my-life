@@ -51,7 +51,7 @@ describe('CategoriesPage', () => {
     render(<CategoriesPage />);
 
     const list = await screen.findByRole('list', { name: 'Categories' });
-    const row = within(list).getByRole('listitem');
+    const row = await within(list).findByRole('listitem');
     expect(noProposalsYetText).toMatch(/^no proposals yet$/i);
     const placeholder = within(row).getByText(noProposalsYetText);
     expect(
