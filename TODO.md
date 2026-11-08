@@ -47,7 +47,7 @@
 - [x] Selecting a contact on the People page shows its merged timeline
 - [x] Selecting an organization on the People page shows its timeline
 - [x] Marking a contact VIP from the People page moves it into the VIP list; removing the mark moves it out
-- [ ] When the first triage model and the second opinion choose different categories for a message, both categories are stored with the proposal
+- [x] When the first triage model and the second opinion choose different categories for a message, both categories are stored with the proposal
 - [ ] When the first triage model's category stands without a second opinion, no disagreement is stored
 - [ ] `GET /needs-input` asks which category is right for a message whose two models disagreed, offering both categories
 - [ ] `GET /needs-input` asks nothing about a message whose two models agreed

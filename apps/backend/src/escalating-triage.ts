@@ -33,7 +33,13 @@ export function createEscalatingTriage<Message>({
       const firstOpinion = await first.propose(message, examples);
       if (!needsSecondOpinion(firstOpinion)) return firstOpinion;
       const secondOpinion = await second.propose(message, examples);
-      return { ...secondOpinion, costInUsd: firstOpinion.costInUsd + secondOpinion.costInUsd };
+      const firstCategory = (firstOpinion.proposal as { category?: string } | undefined)?.category;
+      const secondCategory = (secondOpinion.proposal as { category?: string } | undefined)?.category;
+      return {
+        ...secondOpinion,
+        proposal: { ...(secondOpinion.proposal as object), disagreement: { firstCategory, secondCategory } },
+        costInUsd: firstOpinion.costInUsd + secondOpinion.costInUsd,
+      };
     },
   };
 }
