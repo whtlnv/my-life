@@ -46,4 +46,4 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 
 ## 9. People API (Phase 2b)
 
-- [ ] Enable the **People API** in the Google Cloud project and add `contacts.readonly` and `contacts.other.readonly` to the OAuth consent screen's scopes. Each profile then needs one more consent (reload the extension card; revoke the cached token in `chrome://identity-internals` first if the prompt does not appear).
+- [ ] Enable the **People API** in the Google Cloud project (the legacy Contacts API is gone), then add the scopes to the OAuth consent screen by their full URIs: `https://www.googleapis.com/auth/contacts.readonly` and `https://www.googleapis.com/auth/contacts.other.readonly` (the manual box rejects the short names; once the API is enabled they also appear in the scope picker under People API). Each profile then needs one more consent (reload the extension card; revoke the cached token in `chrome://identity-internals` first if the prompt does not appear).
