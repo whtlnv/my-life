@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 00:31 · `apps/backend/src/app.test.ts::lists at GET /contacts two contacts for two messages from different emails`
+- Behavior: two messages from different emails link to two contacts
+- Predicted: AssertionError — one contact received instead of two, the sender map collapsing senders
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: the previous green ("same email on different accounts → one contact") keyed `contactsFromSenders` by email, which already yields one contact per distinct email; the test is a genuine pin of that behavior, not a vacuous pass, so it is kept as-is without a rewrite.
+
 ## 2026-11-07 17:00 · `apps/backend/src/app.test.ts::lists no create-filter command at GET /commands for a pending filter proposal that was never approved`
 - Behavior: A filter proposal with no stored approval never yields a `create-filter` command
 - Predicted: passes on first run (read `app.ts` first: `GET /commands` already filters filter proposals through `approvedFilterProposalIds`)

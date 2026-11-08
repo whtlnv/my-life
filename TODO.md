@@ -42,7 +42,7 @@
 - [x] A sender whose `From` header is a bare address (`ana@acme.com`) becomes a contact named by that address, and `GET /contacts` still answers
 - [x] A sender whose display name is quoted (`"Ana Ruiz" <ana@acme.com>`) becomes a contact named `Ana Ruiz`, without the quotes
 - [x] Two messages from the same email, on different accounts, link to one contact
-- [ ] Two messages from different emails link to two contacts
+- [x] Two messages from different emails link to two contacts
 - [ ] A message's organization is the one its extraction names
 - [ ] A message whose extraction names no organization links to the organization of its sender's domain
 - [ ] A message from a free-mail domain (`gmail.com`, `outlook.com`, `hotmail.com`, `yahoo.com`, `icloud.com`) links to no domain organization

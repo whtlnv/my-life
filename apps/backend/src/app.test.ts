@@ -2781,4 +2781,20 @@ describe('backend app', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ contacts: [{ displayName: 'Luis', emails: ['luis@example.com'] }] });
   });
+
+  it('lists at GET /contacts two contacts for two messages from different emails', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const fromMarta = { ...budgetReviewReport.messages[0], id: 'message-2', threadId: 'thread-2', from: 'Marta <marta@acme.com>' };
+    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [budgetReviewReport.messages[0], fromMarta] });
+
+    const response = await app.request('/contacts');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      contacts: [
+        { displayName: 'Luis', emails: ['luis@example.com'] },
+        { displayName: 'Marta', emails: ['marta@acme.com'] },
+      ],
+    });
+  });
 });
