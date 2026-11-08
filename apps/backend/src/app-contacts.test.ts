@@ -176,6 +176,31 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     });
   });
 
+  it('shows on each GET /contacts/:email/timeline message its extracted thread state and the asks the user has not answered as open', async () => {
+    const triage = triageAnsweringByMessageId({
+      'message-1': keepProposalExtracting({
+        threadState: 'Luis is waiting for the approval',
+        asks: [{ ask: 'Approve the budget', due: '2026-11-05' }],
+      }),
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/contacts/luis@example.com/timeline');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      messages: [
+        {
+          id: 'message-1',
+          threadState: 'Luis is waiting for the approval',
+          asks: [{ ask: 'Approve the budget', due: '2026-11-05', status: 'open' }],
+        },
+      ],
+    });
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);

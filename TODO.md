@@ -37,7 +37,7 @@
 - [x] A contact's timeline leaves out messages sent by other contacts
 - [x] A contact's timeline includes a message that names them in its extracted people (asked, mentioned or copied) although someone else sent it
 - [x] A contact's timeline includes the user's sent messages in threads with that contact, marked as the user's replies
-- [ ] A timeline message shows its thread state and the asks the user has not answered as open
+- [x] A timeline message shows its thread state and the asks the user has not answered as open
 - [ ] A timeline message whose thread has a later message sent by the user shows its asks as answered, not open
 - [ ] An organization's timeline lists the messages of every contact in that organization, newest first
 - [ ] An organization's timeline leaves out messages from contacts outside it

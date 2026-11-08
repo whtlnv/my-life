@@ -72,6 +72,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number] & {
   people?: { name: string; email?: string }[];
   dates?: string[];
   asks?: { ask: string }[];
+  threadState?: string;
 };
 type TriageProposal = Parameters<typeof triageEffects>[0];
 type TriageVerdict = Parameters<typeof triageEffects>[1];
@@ -959,12 +960,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .toSorted((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime())
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
+        const proposal = proposals.find((candidate) => candidate.messageId === message.id);
         return {
           id: message.id,
           subject: message.subject,
           accountEmail,
           link: gmailMessageLink({ accountEmail, messageId: message.id }),
           sentByUser: message.sentByUser === true,
+          threadState: proposal?.threadState,
+          asks: (proposal?.asks ?? []).map((ask) => ({ ...ask, status: 'open' })),
         };
       });
     return context.json({ messages });
