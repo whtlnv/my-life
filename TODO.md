@@ -18,7 +18,7 @@
 - [x] A VIP contact whose message has waited for a reply more than 1 business day is urgent, with the reason "VIP waiting"
 - [x] A non-VIP contact whose message has waited for a reply more than 1 business day (and asks nothing) is not urgent
 - [x] Setting the unanswered-ask threshold to 1 business day in the backend settings makes a contact with a 1-business-day-old unanswered ask urgent
-- [ ] `GET /people` lists a VIP contact under VIP and not under Everyone else
+- [x] `GET /people` lists a VIP contact under VIP and not under Everyone else
 - [ ] `GET /people` lists an urgent non-VIP contact under Urgent, with its reasons, and not under Everyone else
 - [ ] `GET /people` lists an urgent VIP contact under both VIP and Urgent
 - [ ] `GET /people` lists a contact that is neither VIP nor urgent under Everyone else

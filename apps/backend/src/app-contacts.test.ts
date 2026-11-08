@@ -300,6 +300,22 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     ]);
   });
 
+  it('lists at GET /people a contact marked vip through PUT /contacts/:email/marks/vip under VIP and not under Everyone else', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+    await markContact(app, 'luis@example.com', 'vip');
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, everyoneElse } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+    expect(everyoneElse.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
+  });
+
   it('lists at GET /contacts, after a backend restart on the same database file, the lists and note set on a contact through PATCH /contacts/:email before it', async () => {
     const options = {
       allowedEmails: ['ana@example.com'],

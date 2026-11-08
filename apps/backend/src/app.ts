@@ -938,6 +938,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }),
     });
   });
+  app.get('/people', (context) => {
+    const markedEmails = contactDetailsStore.markedEmails();
+    const contacts = contactsByEmail(reportedSenders(), proposals);
+    const isVip = (contact: { emails: string[] }) => markedEmails.has(contact.emails[0] ?? '');
+    return context.json({
+      vip: contacts.filter(isVip),
+      everyoneElse: contacts.filter((contact) => !isVip(contact)),
+    });
+  });
   app.get('/organizations', (context) => {
     return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });
   });
