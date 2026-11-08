@@ -1,15 +1,32 @@
+import { readFileSync } from 'node:fs';
+
 import { type ClaudePricing, type ClaudeResponse, readToolUseInput } from './claude-triage';
+
+interface ClaudeSummaryRequest {
+  model: string;
+  system?: string;
+  tools: { name: string }[];
+  tool_choice: { type: 'tool'; name: string };
+  messages: { role: string; content: string }[];
+}
 
 interface ClaudeSummaryDependencies {
   model: string;
+  promptPath?: string;
   pricing: ClaudePricing;
-  createMessage: (request: { model: string }) => Promise<ClaudeResponse>;
+  createMessage: (request: ClaudeSummaryRequest) => Promise<ClaudeResponse>;
 }
 
-export function createClaudeSummary({ model, createMessage }: ClaudeSummaryDependencies) {
+export function createClaudeSummary({ model, promptPath, createMessage }: ClaudeSummaryDependencies) {
   return {
-    summarize: async (_request: { items: { summary: string }[] }) => {
-      const response = await createMessage({ model });
+    summarize: async ({ items }: { items: { summary: string }[] }) => {
+      const response = await createMessage({
+        model,
+        ...(promptPath === undefined ? {} : { system: readFileSync(promptPath, 'utf8') }),
+        tools: [{ name: 'write_summary' }],
+        tool_choice: { type: 'tool', name: 'write_summary' },
+        messages: [{ role: 'user', content: items.map(({ summary }) => summary).join('\n') }],
+      });
       return readToolUseInput(response);
     },
   };

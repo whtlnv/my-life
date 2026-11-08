@@ -1,3 +1,7 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { createClaudeSummary } from './claude-summary';
@@ -51,5 +55,39 @@ describe('Claude summary', () => {
     });
 
     expect(written).toMatchObject({ lines: ['GitHub: 2 builds passed', 'Vercel: 1 deploy failed'] });
+  });
+
+  it('sends every item summary of the digest under the versioned prompt file and requires its write_summary tool', async () => {
+    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'digest-summary-v1.md');
+    writeFileSync(promptPath, 'Summarize the digest in one or two lines by calling write_summary.');
+    const sentRequests: {
+      system?: string;
+      tools?: { name: string }[];
+      tool_choice?: unknown;
+      messages?: { role: string; content: string }[];
+    }[] = [];
+    const summary = createClaudeSummary({
+      model: 'claude-haiku-5-5',
+      promptPath,
+      pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
+      createMessage: (request) => {
+        sentRequests.push(request);
+        return Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: ['GitHub: 2 builds'] } }],
+          usage: { input_tokens: 0, output_tokens: 0 },
+        });
+      },
+    });
+
+    await summary.summarize({ items: [{ summary: 'GitHub build passed' }, { summary: 'Vercel deploy failed' }] });
+
+    expect(sentRequests).toHaveLength(1);
+    const [request] = sentRequests;
+    expect(request?.system).toBe('Summarize the digest in one or two lines by calling write_summary.');
+    expect(request?.tools?.map(({ name }) => name)).toEqual(['write_summary']);
+    expect(request?.tool_choice).toEqual({ type: 'tool', name: 'write_summary' });
+    const userContent = request?.messages?.map(({ content }) => content).join('\n') ?? '';
+    expect(userContent).toContain('GitHub build passed');
+    expect(userContent).toContain('Vercel deploy failed');
   });
 });
