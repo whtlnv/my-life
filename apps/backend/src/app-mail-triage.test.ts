@@ -1031,6 +1031,43 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     ).toEqual(['claude-summary-model-from-settings']);
   });
 
+  it("writes no summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines", async () => {
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    let summaryCalls = 0;
+    const summary = {
+      summarize: () => {
+        summaryCalls += 1;
+        return Promise.resolve({ lines: ['GitHub: 1 notice'], costInUsd: 0.25 });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 1,
+      triage,
+      summary,
+    });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+    });
+
+    await postTriageRun(app);
+
+    const { digests } = await getJson<{ digests: object[] }>(app, '/triage-queue');
+    expect(summaryCalls).toBe(0);
+    expect(digests).toHaveLength(1);
+    expect(digests[0]).toMatchObject({ key: 'GitHub' });
+    expect(digests[0]).not.toHaveProperty('summaryLines');
+  });
+
   it('opens in GET /triage-queue a fresh digest, with a new id and only the new proposal, for a proposal of the same account, category and key triaged after its digest was confirmed', async () => {
     const gitHubNotice = (summary: string) => ({
       action: 'archive',

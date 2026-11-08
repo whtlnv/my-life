@@ -37,7 +37,7 @@
 - [x] The summary request names the model set in config
 - [x] Each summary call's cost is logged as spend against the daily ceiling
 - [x] Each summary call's spend entry records the summary model it ran on, not an empty model name
-- [ ] When the daily spend ceiling is reached, no summary is written and the digest is still returned without one
+- [x] When the daily spend ceiling is reached, no summary is written and the digest is still returned without one
   - note: the response is JSON, which drops a key whose value is undefined — assert the digest has no `summaryLines` property (`not.toHaveProperty`) and that the summary model was called 0 times
 - [ ] When the summary model answers with output that fails validation, the digest is returned without summary lines and the triage queue still loads
 - [ ] After a backend restart, a digest's summary lines are still returned without a new summary call
