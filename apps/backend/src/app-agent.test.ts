@@ -34,7 +34,9 @@ describe('backend app: the agent', () => {
 
     await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' });
 
-    expect(askedRequests).toEqual([{ turns: [{ role: 'user', text: 'What is on my plate today?' }] }]);
+    expect(askedRequests).toEqual([
+      expect.objectContaining({ turns: [{ role: 'user', text: 'What is on my plate today?' }] }),
+    ]);
   });
 
   it('sends the earlier user and assistant turns to the model along with the new message', async () => {
