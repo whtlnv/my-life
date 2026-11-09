@@ -34,6 +34,7 @@ const defaultPort = 7777;
 const millisecondsPerSecond = 1000;
 const defaultGmailPollingIntervalInSeconds = 60;
 export const defaultGmailPollingIntervalInMilliseconds = secondsToMilliseconds(defaultGmailPollingIntervalInSeconds);
+const defaultSlackPollingIntervalInSeconds = 60;
 const defaultTriageModel = 'claude-haiku-5-5';
 const defaultTriageEscalationModel = 'claude-opus-5-5';
 const defaultSummaryModel = 'claude-haiku-5-5';
@@ -80,7 +81,7 @@ export function readStartupSettings(
     },
     slackWorkspaces: readSlackWorkspaces(environment),
     slackPollingIntervalInMilliseconds: secondsToMilliseconds(
-      parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, 60),
+      parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, defaultSlackPollingIntervalInSeconds),
     ),
   };
 }
