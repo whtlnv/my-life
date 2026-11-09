@@ -166,6 +166,11 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
+interface LabelRequest {
+  messageId: string;
+  labelName: string;
+}
+
 function countMatchingWords(text: string | undefined, query: string): number {
   if (text === undefined) return 0;
   const textWords = text.split(/\W+/);
@@ -960,7 +965,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     undoAutomaticStore.save(messageId);
     return context.body(null, 200);
   });
-  const labelRequests: { messageId: string; labelName: string }[] = [];
+  const labelRequests: LabelRequest[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
@@ -1197,7 +1202,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const labelMessageTool: AgentTool = {
     name: 'label_message',
     run: (input) => {
-      labelRequests.push(input as { messageId: string; labelName: string });
+      labelRequests.push(input as LabelRequest);
       return Promise.resolve({});
     },
   };
