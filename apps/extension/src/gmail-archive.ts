@@ -25,18 +25,23 @@ export async function carryOutMessageCommands(options: CommandOptions) {
   const commands = await fetchPendingMessageCommands(options);
   for (const command of commands) {
     const labelId = await findOrCreateLabelId(options.fetch, authorization, command.label ?? archivedLabelName);
-    const labelChanges =
-      command.type === 'undo-automatic'
-        ? { removeLabelIds: [labelId], addLabelIds: ['INBOX'] }
-        : command.type === 'label'
-          ? { removeLabelIds: [], addLabelIds: [labelId] }
-          : { removeLabelIds: ['INBOX'], addLabelIds: [labelId] };
+    const labelChanges = labelChangesFor(command, labelId);
     const labelResponse = await modifyMessageLabels(options.fetch, authorization, command.messageId, labelChanges);
     if (!labelResponse.ok) {
       continue;
     }
     await acknowledgeCommand(options, command.id);
   }
+}
+
+function labelChangesFor(command: MessageCommand, labelId: string) {
+  if (command.type === 'undo-automatic') {
+    return { removeLabelIds: [labelId], addLabelIds: ['INBOX'] };
+  }
+  if (command.type === 'label') {
+    return { removeLabelIds: [], addLabelIds: [labelId] };
+  }
+  return { removeLabelIds: ['INBOX'], addLabelIds: [labelId] };
 }
 
 export async function acknowledgeCommand(options: CommandOptions, commandId: string, body?: string) {
