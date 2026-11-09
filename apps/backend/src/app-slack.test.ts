@@ -202,4 +202,32 @@ describe('createApp Slack messages', () => {
 
     expect(people).toEqual([]);
   });
+
+  it('leaves out of GET /waiting-on a Slack mention the user answered in its thread', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackMessageStore = openSlackMessageStore(databasePath);
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0002',
+      senderName: 'Bruno',
+      text: '<@U0000> can you review the launch plan?',
+      timestamp: '1762700000.000100',
+    });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0000',
+      senderName: 'Francisco',
+      text: 'Reviewed, looks good.',
+      timestamp: '1762701000.000100',
+      threadTimestamp: '1762700000.000100',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([]);
+  });
 });

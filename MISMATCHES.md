@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 13:08 · `apps/backend/src/app-slack.test.ts::leaves out of GET /waiting-on a Slack mention the user answered in its thread`
+- Behavior: A Slack mention the user answered in its thread does not appear in `GET /waiting-on`
+- Predicted: passes on first run (no right-reason failure available): `userRepliedLaterInConversation` already hides any message followed by a later `sentByUser` message in the same `conversationId`, and a thread reply shares its channel's conversation id
+- Actual: passed, as predicted
+- Type: passed unexpectedly
+- Resolution: The behavior already came with the previous DM item, and no test of this behavior can be red against the store, so the test stays as a pin with no green step needed. The real gap is in `slack-poll.ts:120`: thread replies are saved without `ownSlackUserId`, so the user's own polled thread replies are never marked `sentByUser`. That is a separate behavior for a poll-level test.
+
 ## 2026-11-09 12:47 · `apps/integration/src/slack-fake-server.test.ts::confirming reply at POST /slack-verdicts on a polled Slack DM posts nothing to Slack`
 - Behavior: Confirming `reply` on a Slack item posts nothing to Slack
 - Predicted: passes on first run, because no backend code calls `chat.postMessage` and `POST /slack-verdicts` only stores the verdict
