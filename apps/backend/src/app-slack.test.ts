@@ -4,6 +4,25 @@ import { createApp } from './app';
 import { budgetReviewReport, getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openSlackMessageStore } from './slack-message-store';
 
+async function appWithVipSlackDirectMessageSentAt(timestamp: string) {
+  const databasePath = temporaryDatabasePath();
+  openSlackMessageStore(databasePath).saveMessage({
+    workspaceTeamId: 'T0001',
+    conversationId: 'D0001',
+    senderUserId: 'U0001',
+    senderName: 'Ana',
+    text: 'Can you look at the contract today?',
+    timestamp,
+  });
+  const app = createApp({
+    allowedEmails: [],
+    databasePath,
+    clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
+  });
+  await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'PUT' });
+  return app;
+}
+
 describe('createApp Slack messages', () => {
   it('serves at GET /slack-messages, after a backend restart on the same database file, a Slack message stored before it', async () => {
     const databasePath = temporaryDatabasePath();
@@ -317,21 +336,7 @@ describe('createApp Slack messages', () => {
     ]);
   });
   it('lists at GET /people under Urgent, with the reason "VIP waiting", a Slack contact marked vip through PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip whose DM has waited more than 1 business day for a reply', async () => {
-    const databasePath = temporaryDatabasePath();
-    openSlackMessageStore(databasePath).saveMessage({
-      workspaceTeamId: 'T0001',
-      conversationId: 'D0001',
-      senderUserId: 'U0001',
-      senderName: 'Ana',
-      text: 'Can you look at the contract today?',
-      timestamp: '1793631600.000100',
-    });
-    const app = createApp({
-      allowedEmails: [],
-      databasePath,
-      clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
-    });
-    await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'PUT' });
+    const app = await appWithVipSlackDirectMessageSentAt('1793631600.000100');
 
     const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
 
@@ -345,21 +350,7 @@ describe('createApp Slack messages', () => {
     ]);
   });
   it('leaves out of Urgent at GET /people a Slack contact marked vip whose DM has waited less than 1 business day for a reply', async () => {
-    const databasePath = temporaryDatabasePath();
-    openSlackMessageStore(databasePath).saveMessage({
-      workspaceTeamId: 'T0001',
-      conversationId: 'D0001',
-      senderUserId: 'U0001',
-      senderName: 'Ana',
-      text: 'Can you look at the contract today?',
-      timestamp: '1793804400.000100',
-    });
-    const app = createApp({
-      allowedEmails: [],
-      databasePath,
-      clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
-    });
-    await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'PUT' });
+    const app = await appWithVipSlackDirectMessageSentAt('1793804400.000100');
 
     const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
 
