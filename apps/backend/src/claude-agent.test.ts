@@ -9,6 +9,15 @@ interface SentRequest {
   messages: { role: string; content: unknown }[];
 }
 
+// The model, prompt and profile of every test that asserts nothing about them.
+function fixedAgentSetup() {
+  return {
+    model: 'claude-opus-5-5',
+    promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
+    profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+  };
+}
+
 describe('Claude agent', () => {
   it("sends the versioned agent prompt file and the user's profile text as the system prompt", async () => {
     const sentRequests: SentRequest[] = [];
@@ -50,9 +59,7 @@ describe('Claude agent', () => {
       },
     ];
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       tools: [
         {
@@ -98,9 +105,7 @@ describe('Claude agent', () => {
       },
     ];
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       tools: [],
       createMessage: (request: SentRequest) => {
@@ -133,9 +138,7 @@ describe('Claude agent', () => {
       },
     ];
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       tools: [
         {
@@ -174,9 +177,7 @@ describe('Claude agent', () => {
     const toolRuns: unknown[] = [];
     let modelCalls = 0;
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       maxToolRounds: 2,
       tools: [
@@ -226,9 +227,7 @@ describe('Claude agent', () => {
       },
     ];
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       tools: [
         {
@@ -247,9 +246,7 @@ describe('Claude agent', () => {
   });
   it('reports the cost of every model call made before the turn stopped at the tool-round limit', async () => {
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       maxToolRounds: 1,
       tools: [
@@ -288,9 +285,7 @@ describe('Claude agent', () => {
       },
     ];
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       createMessage: (request: SentRequest & { tools?: unknown }) => {
         sentRequests.push(request);
@@ -343,9 +338,7 @@ describe('Claude agent', () => {
       },
     ];
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       createMessage: () => Promise.resolve(responses.shift() ?? responses[0]),
     });
@@ -370,9 +363,7 @@ describe('Claude agent', () => {
       },
     ];
     const agent = createClaudeAgent({
-      model: 'claude-opus-5-5',
-      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
-      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      ...fixedAgentSetup(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       createMessage: (request) => {
         requests.push(structuredClone(request));
