@@ -103,13 +103,15 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
         .then((response) => response.json() as Promise<ShellStatus>)
         .then(setStatus)
         .catch(() => undefined);
+    const loadUnansweredQuestions = () =>
+      void fetch('/needs-input')
+        .then((response) => response.json() as Promise<{ questions: unknown[] }>)
+        .then(({ questions }) => {
+          setUnansweredQuestions(questions.length);
+        })
+        .catch(() => undefined);
     loadStatus();
-    void fetch('/needs-input')
-      .then((response) => response.json() as Promise<{ questions: unknown[] }>)
-      .then(({ questions }) => {
-        setUnansweredQuestions(questions.length);
-      })
-      .catch(() => undefined);
+    loadUnansweredQuestions();
     const interval = setInterval(loadStatus, statusRefreshIntervalMilliseconds);
     return () => {
       clearInterval(interval);
