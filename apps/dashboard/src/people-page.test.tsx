@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { routes } from './app-shell';
 import { PeoplePage } from './people-page';
 
 const answerGetPeopleWith = (body: unknown) => {
@@ -19,6 +20,7 @@ const answerGetPeopleWith = (body: unknown) => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  window.location.hash = '';
 });
 
 describe('PeoplePage', () => {
@@ -252,5 +254,56 @@ describe('PeoplePage', () => {
 
     expect(await within(everyoneElseList).findByText('Marta Soto')).toBeInTheDocument();
     expect(within(vipList).queryByText('Marta Soto')).not.toBeInTheDocument();
+  });
+
+  it("shows the timeline of the contact named in the route's query when the page opens at #/people?contact=<email>", async () => {
+    const people = {
+      vip: [],
+      urgent: [
+        {
+          displayName: 'Sofía Herrera',
+          emails: ['sofia@erlia.mx'],
+          messageIds: ['m5'],
+          organization: 'Erlia',
+          lastMessageAt: '2026-11-07T15:00:00.000Z',
+        },
+      ],
+      everyoneElse: [],
+    };
+    const timeline = {
+      messages: [
+        {
+          id: 'm5',
+          subject: 'Can you sign the addendum?',
+          accountEmail: 'work@example.com',
+          link: 'https://mail.google.com/mail/?authuser=work%40example.com#all/m5',
+        },
+      ],
+    };
+    const bodies: Record<string, unknown> = {
+      '/people': people,
+      [`/contacts/${encodeURIComponent('sofia@erlia.mx')}/timeline`]: timeline,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const body = bodies[String(input)];
+        return Promise.resolve(
+          body === undefined
+            ? new Response(null, { status: 404 })
+            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+    window.location.hash = `${routes.people}?contact=${encodeURIComponent('sofia@erlia.mx')}`;
+
+    render(<PeoplePage />);
+
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Sofía Herrera' });
+    const row = within(timelineList).getByRole('listitem');
+    expect(within(row).getByRole('link', { name: 'Can you sign the addendum?' })).toHaveAttribute(
+      'href',
+      'https://mail.google.com/mail/?authuser=work%40example.com#all/m5',
+    );
   });
 });

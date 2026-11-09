@@ -85,13 +85,17 @@ export const PeoplePage = () => {
   const [lists, setLists] = useState<PeopleLists>(emptyLists);
   const [selected, setSelected] = useState<SelectedTimeline | undefined>(undefined);
 
-  const loadPeople = () => {
-    void fetch('/people')
+  const fetchPeople = () =>
+    fetch('/people')
       .then((response) => response.json() as Promise<PeopleLists>)
-      .then(setLists);
-  };
+      .then((loaded) => {
+        setLists(loaded);
+        return loaded;
+      });
 
-  useEffect(loadPeople, []);
+  const loadPeople = () => {
+    void fetchPeople();
+  };
 
   const setVipMark = (method: 'PUT' | 'DELETE') => (person: PersonRow) => {
     void fetch(`/contacts/${encodeURIComponent(person.emails[0] as string)}/marks/vip`, { method }).then(loadPeople);
@@ -108,6 +112,16 @@ export const PeoplePage = () => {
   const showTimeline = (person: PersonRow) => {
     loadTimeline(`/contacts/${encodeURIComponent(person.emails[0] as string)}/timeline`, person.displayName);
   };
+
+  useEffect(() => {
+    void fetchPeople().then((loaded) => {
+      const contact = new URLSearchParams(window.location.hash.split('?')[1]).get('contact');
+      const person = [...loaded.vip, ...loaded.urgent, ...loaded.everyoneElse].find(
+        (candidate) => contact !== null && candidate.emails.includes(contact),
+      );
+      if (person) showTimeline(person);
+    });
+  }, []);
 
   const showOrganizationTimeline = (organization: string) => {
     loadTimeline(`/organizations/${encodeURIComponent(organization)}/timeline`, organization);
