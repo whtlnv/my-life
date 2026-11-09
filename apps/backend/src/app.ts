@@ -1309,6 +1309,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const messageTarget = (input: unknown) => (input as { messageId: string }).messageId;
     const emailTarget = (input: unknown) => (input as { email: string }).email;
     const proposalTarget = (input: unknown) => (input as { proposalId: string }).proposalId;
+    const createdTaskTarget = (_input: unknown, result: unknown) => (result as { taskId: string }).taskId;
     const recordingAction = (
       tool: AgentTool,
       undoable: boolean,
@@ -1348,7 +1349,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         recordingAction(archiveMessageTool, true, messageTarget),
         recordingAction(labelMessageTool, true, messageTarget),
         recordingAction(writeDraftTool, false, messageTarget),
-        recordingAction(createTaskToolFor(conversationId), true, (_input, result) => (result as { taskId: string }).taskId),
+        recordingAction(createTaskToolFor(conversationId), true, createdTaskTarget),
         recordingAction(markVipTool, true, emailTarget),
         recordingAction(updateContactTool, false, emailTarget),
         recordingAction(approveFilterProposalTool, false, proposalTarget),
