@@ -51,4 +51,22 @@ describe('createApp Slack messages', () => {
       },
     ]);
   });
+
+  it('leaves out of GET /triage-queue a Slack message the user sent', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0000',
+      senderName: 'Francisco',
+      text: 'I will send the contract tomorrow.',
+      timestamp: '1762700000.000200',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { slackItems } = await getJson<{ slackItems: unknown[] }>(app, '/triage-queue');
+
+    expect(slackItems).toEqual([]);
+  });
 });

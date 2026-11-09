@@ -875,11 +875,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: recordAndDescribeListedDigests(verdicts),
-      slackItems: slackMessageStore.listMessages().map((message) => ({
-        ...message,
-        permalink: slackPermalink(message),
-        choices: ['ignore', 'act', 'reply'],
-      })),
+      slackItems: slackMessageStore
+        .listMessages()
+        .filter((message) => message.sentByUser !== true)
+        .map((message) => ({
+          ...message,
+          permalink: slackPermalink(message),
+          choices: ['ignore', 'act', 'reply'],
+        })),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
