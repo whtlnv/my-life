@@ -1583,6 +1583,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.saveMark(context.req.param('email'), context.req.param('mark'));
     return context.body(null, 200);
   });
+  app.put('/slack-contacts/:workspaceTeamId/:userId/marks/vip', (context) => {
+    contactDetailsStore.saveMark(slackContactKey(context.req.param()), 'vip');
+    return context.body(null, 200);
+  });
   app.delete(contactMarkRoute, rejectUnknownMark, (context) => {
     const email = context.req.param('email');
     contactDetailsStore.removeMark(email, context.req.param('mark'));
@@ -1736,8 +1740,25 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       displayName: message.senderName,
       slackHandles: [{ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }],
     });
+    const urgentSlackSenders = slackMessageStore.listMessages().flatMap((message) => {
+      const { urgent, reasons } = contactUrgency({
+        messages: [
+          {
+            threadId: message.conversationId,
+            receivedAt: new Date(Number(message.timestamp) * 1000).toISOString(),
+            sentByUser: message.sentByUser === true,
+          },
+        ],
+        vip: markedEmails.has(
+          slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }),
+        ),
+        now: clock.now().toISOString(),
+        settings: urgencySettings,
+      });
+      return urgent ? [{ ...slackSenderAsContact(message), reasons }] : [];
+    });
     return {
-      urgent: urgentContacts.map(withOrganizationAndLastMessage),
+      urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders],
       vip: contacts.filter(isVip).map(withOrganizationAndLastMessage),
       everyoneElse: [
         ...contacts
@@ -1939,6 +1960,10 @@ function organizationsByName(senders: { messageId: string; from: string }[], pro
     messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
   }
   return [...messageIdsByName].map(([name, messageIds]) => ({ name, messageIds }));
+}
+
+function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string; userId: string }): string {
+  return `slack:${workspaceTeamId}/${userId}`;
 }
 
 function slackPermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }): string {

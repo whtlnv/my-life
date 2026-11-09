@@ -316,4 +316,32 @@ describe('createApp Slack messages', () => {
       }),
     ]);
   });
+  it('lists at GET /people under Urgent, with the reason "VIP waiting", a Slack contact marked vip through PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip whose DM has waited more than 1 business day for a reply', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1793631600.000100',
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
+    });
+    await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'PUT' });
+
+    const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
+
+    expect(urgent).toEqual([
+      expect.objectContaining({
+        channel: 'slack',
+        displayName: 'Ana',
+        slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }],
+        reasons: ['VIP waiting'],
+      }),
+    ]);
+  });
 });
