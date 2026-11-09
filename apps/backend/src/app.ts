@@ -789,7 +789,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         (reported) => reported.id !== messageId && contactFromSender(reported.from).email === senderEmail,
       );
       const senderAlreadyMarked = contactDetailsStore.markedEmails().has(senderEmail);
-      if (senderWroteBefore || senderAlreadyMarked) return [];
+      const senderMarkedOrdinary = contactDetailsStore.userRemovedMark(senderEmail, 'vip');
+      if (senderWroteBefore || senderAlreadyMarked || senderMarkedOrdinary) return [];
       return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
     });
     return context.json({ questions: [...categoryQuestions, ...newSenderQuestions] });
@@ -802,7 +803,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       answer: string;
     }>();
     if (kind === 'new-sender') {
-      contactDetailsStore.saveMark(senderEmail, answer);
+      if (answer === 'vip') contactDetailsStore.saveMark(senderEmail, answer);
+      else contactDetailsStore.removeMark(senderEmail, 'vip');
       return context.body(null, 200);
     }
     verdictStore.save({

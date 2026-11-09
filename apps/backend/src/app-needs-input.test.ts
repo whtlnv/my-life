@@ -266,4 +266,29 @@ describe('backend app: GET /needs-input', () => {
     expect(people.vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
     expect((await getJson<{ questions: unknown[] }>(app, '/needs-input')).questions).toEqual([]);
   });
+
+  it('leaves the sender unmarked when a new-sender question is answered "ordinary", and asks the question no more', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks the user to review the budget',
+      extract: {},
+      reason: 'Luis asks the user directly',
+      asks: [{ ask: 'Review the budget', due: '2026-11-06' }],
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    await postJson(app, '/needs-input/answers', {
+      kind: 'new-sender',
+      senderEmail: 'luis@example.com',
+      messageId: 'message-1',
+      answer: 'ordinary',
+    });
+
+    const people = await getJson<{ vip: { emails: string[] }[] }>(app, '/people');
+    expect(people.vip).toEqual([]);
+    expect((await getJson<{ questions: unknown[] }>(app, '/needs-input')).questions).toEqual([]);
+  });
 });
