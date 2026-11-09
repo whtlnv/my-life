@@ -39,6 +39,11 @@ interface ClaudeAgentDependencies {
   createMessage: (request: ClaudeAgentRequest) => Promise<ClaudeAgentResponse | undefined>;
 }
 
+function missingRequiredProperties(inputSchema: unknown, input: unknown) {
+  const { required = [] } = inputSchema as { required?: string[] };
+  return required.filter((property) => !(property in (input as object)));
+}
+
 function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgentTool[]) {
   return Promise.all(
     content
@@ -46,6 +51,15 @@ function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgen
       .map(async (block) => {
         const tool = tools.find((candidate) => candidate.name === block.name);
         if (!tool) return { type: 'tool_result', tool_use_id: block.id, is_error: true };
+        const missing = missingRequiredProperties(tool.inputSchema, block.input);
+        if (missing.length > 0) {
+          return {
+            type: 'tool_result',
+            tool_use_id: block.id,
+            is_error: true,
+            content: `Missing required input: ${missing.join(', ')}`,
+          };
+        }
         return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(await tool.run(block.input)) };
       }),
   );
