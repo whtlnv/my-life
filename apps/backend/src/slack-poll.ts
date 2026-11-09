@@ -41,12 +41,23 @@ function saveSlackMessage(input: PollSlackWorkspaceInput, conversationId: string
   });
 }
 
+function newestStoredTimestampIn(store: SlackMessageStore, conversationId: string): string | undefined {
+  return store
+    .listMessages()
+    .filter((message) => message.conversationId === conversationId)
+    .map((message) => message.timestamp)
+    .sort()
+    .at(-1);
+}
+
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im');
   for (const channel of channels) {
+    const newestStoredTimestamp = newestStoredTimestampIn(input.store, channel.id);
+    const oldestParameter = newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
       input,
-      `/conversations.history?channel=${channel.id}`,
+      `/conversations.history?channel=${channel.id}${oldestParameter}`,
     );
     for (const message of messages) {
       saveSlackMessage(input, channel.id, message);
@@ -61,15 +72,6 @@ async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
   for (const match of matches) {
     saveSlackMessage(input, match.channel.id, match);
   }
-}
-
-function newestStoredTimestampIn(store: SlackMessageStore, conversationId: string): string | undefined {
-  return store
-    .listMessages()
-    .filter((message) => message.conversationId === conversationId)
-    .map((message) => message.timestamp)
-    .sort()
-    .at(-1);
 }
 
 async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promise<void> {

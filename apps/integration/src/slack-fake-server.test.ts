@@ -420,6 +420,33 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('a second poll asks conversations.history only for the DM messages newer than the newest one stored for that conversation', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      const historyRequests: URL[] = [];
+      const recordingFetch: typeof fetch = (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        if (url.pathname === '/conversations.history') historyRequests.push(url);
+        return fetch(request, init);
+      };
+      const poll = () =>
+        pollSlackWorkspace({
+          fetch: recordingFetch,
+          apiUrl: slack.url,
+          workspace: { teamId: 'T0001', userToken: slack.token },
+          store,
+        });
+
+      await poll();
+      historyRequests.length = 0;
+      await poll();
+
+      expect(historyRequests.map((url) => url.searchParams.get('oldest'))).toEqual(['1762700000.000100']);
+    } finally {
+      await slack.close();
+    }
+  });
   it('a poll does not store a reply in a thread the user never wrote in', async () => {
     const slack = await startSlackFakeServer('thread-reply');
     try {
