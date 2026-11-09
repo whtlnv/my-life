@@ -77,10 +77,14 @@ export function readStartupSettings(
       deadlineHours: defaultDeadlineHours,
       vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     },
-    slackWorkspaces: [readSlackWorkspace(environment, 1), readSlackWorkspace(environment, 2)].filter(
-      (workspace) => workspace.userToken !== undefined,
-    ),
+    slackWorkspaces: readSlackWorkspaces(environment),
   };
+}
+
+function readSlackWorkspaces(environment: Record<string, string | undefined>): SlackWorkspaceSettings[] {
+  return [readSlackWorkspace(environment, 1), readSlackWorkspace(environment, 2)].filter(
+    (workspace) => workspace.userToken !== undefined,
+  );
 }
 
 function readSlackWorkspace(
