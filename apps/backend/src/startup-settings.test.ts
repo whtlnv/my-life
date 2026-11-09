@@ -100,6 +100,12 @@ describe('startup settings', () => {
       expected: 'claude-haiku-5-5',
     },
     {
+      rule: 'prioritizes with claude-sonnet-5-5 when MY_LIFE_PRIORITIZATION_MODEL is claude-sonnet-5-5',
+      environment: { MY_LIFE_PRIORITIZATION_MODEL: 'claude-sonnet-5-5' },
+      setting: 'prioritizationModel',
+      expected: 'claude-sonnet-5-5',
+    },
+    {
       rule: 'caps daily triage spend at USD 20 when MY_LIFE_DAILY_SPEND_CEILING_USD is unset',
       environment: {},
       setting: 'dailySpendCeilingInUsd',

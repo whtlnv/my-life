@@ -81,7 +81,7 @@
 - [x] The prioritization pass sends the open tasks with the profile, today's calendar, due dates and urgency to the model configured for prioritization (default Opus 5.5) and stores the rank and reason it returns for each task
 - [x] A prioritization answer that fails the contract's validation is rejected, and the previous ranks stand
 - [x] The Claude prioritization adapter sends the model every task it is given (id, title, account, due time, waiting-on), the profile, the calendar and the urgent contacts, under the prompt file `apps/backend/prompts/prioritize-v1.md`, requiring its `rank_tasks` tool
-- [ ] The prioritization model is a backend setting (`MY_LIFE_PRIORITIZATION_MODEL`), default `claude-opus-5-5`
+- [x] The prioritization model is a backend setting (`MY_LIFE_PRIORITIZATION_MODEL`), default `claude-opus-5-5`
 - [ ] `POST /prioritization-run` hands the prioritization port the open tasks, the profiles of their accounts, today's calendar events and the urgent contacts, and stores the rank and reason it returns for each task
 - [ ] `GET /tasks` returns the open tasks ordered by their stored rank, each with its reason
 - [ ] A prioritization answer that fails validation at `POST /prioritization-run` leaves the previous ranks and reasons in `GET /tasks`

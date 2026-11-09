@@ -56,7 +56,7 @@ export function readStartupSettings(
     triageModel: environment.MY_LIFE_TRIAGE_MODEL ?? defaultTriageModel,
     ...readTriageEscalationModel(environment.MY_LIFE_TRIAGE_ESCALATION_MODEL),
     summaryModel: environment.MY_LIFE_SUMMARY_MODEL ?? defaultSummaryModel,
-    prioritizationModel: defaultPrioritizationModel,
+    prioritizationModel: environment.MY_LIFE_PRIORITIZATION_MODEL ?? defaultPrioritizationModel,
     dailySpendCeilingInUsd: parseNumberOrDefault(
       environment.MY_LIFE_DAILY_SPEND_CEILING_USD,
       defaultDailySpendCeilingInUsd,
