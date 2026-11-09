@@ -93,4 +93,33 @@ describe('createApp Slack messages', () => {
     expect(response.status).toBe(200);
     expect(slackItems).toEqual([]);
   });
+
+  it('lists at GET /tasks an open task linked to the Slack message, on its workspace, once the user confirms act on it at POST /slack-verdicts', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    await postJson(app, '/slack-verdicts', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      timestamp: '1762700000.000100',
+      decision: 'act',
+    });
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+
+    expect(tasks).toEqual([
+      expect.objectContaining({
+        status: 'open',
+        link: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
+        accountEmail: 'T0001',
+      }),
+    ]);
+  });
 });

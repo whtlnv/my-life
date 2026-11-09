@@ -873,7 +873,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const slackMessageKey = (message: { workspaceTeamId: string; conversationId: string; timestamp: string }) =>
     `${message.workspaceTeamId}/${message.conversationId}/${message.timestamp}`;
   app.post('/slack-verdicts', async (context) => {
-    ignoredSlackMessageKeys.add(slackMessageKey(await context.req.json()));
+    const verdict = await context.req.json<{
+      workspaceTeamId: string;
+      conversationId: string;
+      timestamp: string;
+      decision: string;
+    }>();
+    ignoredSlackMessageKeys.add(slackMessageKey(verdict));
+    if (verdict.decision === 'act') {
+      const message = slackMessageStore.listMessages().find((stored) => slackMessageKey(stored) === slackMessageKey(verdict));
+      taskEventStore.save({
+        type: 'proposal-confirmed',
+        taskId: `slack-${slackMessageKey(verdict)}`,
+        at: clock.now().toISOString(),
+        proposal: { title: String(message?.text), accountEmail: verdict.workspaceTeamId, link: slackPermalink(verdict) },
+      });
+    }
     return context.body(null, 200);
   });
   function describeSlackItems() {
