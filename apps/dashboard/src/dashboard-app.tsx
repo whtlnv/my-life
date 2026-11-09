@@ -113,6 +113,22 @@ interface RankedTask {
 
 const topTaskCount = 3;
 
+function TopTasks({ tasks }: { tasks: RankedTask[] }) {
+  return (
+    <section aria-label="Top tasks" className="section">
+      <h2 className="section-title">Top tasks</h2>
+      <ul className="timeline">
+        {tasks.map((task) => (
+          <li key={task.id}>
+            <span>{task.title}</span>
+            <span>{task.reason}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 const nowRefreshIntervalMilliseconds = 60_000;
 
 const emptyNowResponse: NowResponse = { current: [], next: [], laterToday: [], accounts: [] };
@@ -181,17 +197,7 @@ export function DashboardApp() {
               <NextEventSummary key={event.id} event={event} />
             ))}
           </section>
-          <section aria-label="Top tasks" className="section">
-            <h2 className="section-title">Top tasks</h2>
-            <ul className="timeline">
-              {topTasks.map((task) => (
-                <li key={task.id}>
-                  <span>{task.title}</span>
-                  <span>{task.reason}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <TopTasks tasks={topTasks} />
           <section aria-label="Later today" className="section">
             <h2 className="section-title">Later today</h2>
             {loaded && laterToday.length === 0 && <p className="empty">Nothing else today</p>}
