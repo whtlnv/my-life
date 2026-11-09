@@ -50,11 +50,15 @@ function newestStoredTimestampIn(store: SlackMessageStore, conversationId: strin
     .at(-1);
 }
 
+function oldestParameterFor(store: SlackMessageStore, conversationId: string): string {
+  const newestStoredTimestamp = newestStoredTimestampIn(store, conversationId);
+  return newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
+}
+
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im');
   for (const channel of channels) {
-    const newestStoredTimestamp = newestStoredTimestampIn(input.store, channel.id);
-    const oldestParameter = newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
+    const oldestParameter = oldestParameterFor(input.store, channel.id);
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
       input,
       `/conversations.history?channel=${channel.id}${oldestParameter}`,
@@ -82,8 +86,7 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
     if (match.thread_ts === undefined) {
       continue;
     }
-    const newestStoredTimestamp = newestStoredTimestampIn(input.store, match.channel.id);
-    const oldestParameter = newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
+    const oldestParameter = oldestParameterFor(input.store, match.channel.id);
     const { messages: replies } = await callSlack<{ messages: SlackMessage[] }>(
       input,
       `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}${oldestParameter}`,
