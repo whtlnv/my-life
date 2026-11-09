@@ -67,12 +67,9 @@ function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: nu
 
 export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; reasons: string[] } {
   const { messages, now, settings } = input;
-  if (
-    messages.some(
-      (message) =>
-        !message.onlyMentionsContact && hasDeadlineSoon(message, now, settings.deadlineHours, settings.timeZone),
-    )
-  ) {
+  const hasOwnDeadlineSoon = (message: UrgencyMessage) =>
+    !message.onlyMentionsContact && hasDeadlineSoon(message, now, settings.deadlineHours, settings.timeZone);
+  if (messages.some(hasOwnDeadlineSoon)) {
     return { urgent: true, reasons: ['deadline'] };
   }
   if (
