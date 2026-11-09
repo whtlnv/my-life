@@ -144,8 +144,8 @@ describe('PeoplePage', () => {
     };
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL) => {
-        const body = bodies[String(input)];
+      vi.fn((input: string) => {
+        const body = bodies[input];
         return Promise.resolve(
           body === undefined
             ? new Response(null, { status: 404 })
@@ -193,8 +193,8 @@ describe('PeoplePage', () => {
     };
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL) => {
-        const body = bodies[String(input)];
+      vi.fn((input: string) => {
+        const body = bodies[input];
         return Promise.resolve(
           body === undefined
             ? new Response(null, { status: 404 })
@@ -229,8 +229,8 @@ describe('PeoplePage', () => {
     let martaIsVip = false;
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const path = String(input);
+      vi.fn((input: string, init?: RequestInit) => {
+        const path = input;
         const method = init?.method ?? 'GET';
         if (path === markPath && (method === 'PUT' || method === 'DELETE')) {
           martaIsVip = method === 'PUT';
@@ -292,8 +292,8 @@ describe('PeoplePage', () => {
     };
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL) => {
-        const body = bodies[String(input)];
+      vi.fn((input: string) => {
+        const body = bodies[input];
         return Promise.resolve(
           body === undefined
             ? new Response(null, { status: 404 })

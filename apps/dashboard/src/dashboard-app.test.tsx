@@ -408,12 +408,12 @@ describe('DashboardApp', () => {
     ];
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL) => {
+      vi.fn((input: string) => {
         const bodies: Record<string, unknown> = {
           '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
           '/tasks': { tasks: rankedTasks },
         };
-        const body = bodies[String(input)];
+        const body = bodies[input];
         return Promise.resolve(
           body === undefined
             ? new Response(null, { status: 404 })
@@ -443,10 +443,10 @@ describe('DashboardApp', () => {
       },
       { id: 'task-2', title: 'Approve the budget', account: 'work@example.com', rank: 2, reason: 'Due today' },
     ];
-    const fetchStub = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+    const fetchStub = vi.fn((input: string, init?: RequestInit) => {
       const json = (body: unknown) =>
         Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
-      const url = String(input);
+      const url = input;
       if (url === '/tasks/task-1/done' && init?.method === 'POST') {
         openTasks = openTasks.filter((task) => task.id !== 'task-1');
         return json({});
@@ -472,7 +472,7 @@ describe('DashboardApp', () => {
   it('lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL) => {
+      vi.fn((input: string) => {
         const bodies: Record<string, unknown> = {
           '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
           '/tasks': { tasks: [] },
@@ -484,7 +484,7 @@ describe('DashboardApp', () => {
             ],
           },
         };
-        const body = bodies[String(input)];
+        const body = bodies[input];
         return Promise.resolve(
           body === undefined
             ? new Response(null, { status: 404 })
@@ -518,7 +518,7 @@ describe('DashboardApp', () => {
     const anaWaitingSince = '2026-11-03T09:00:00.000Z';
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL) => {
+      vi.fn((input: string) => {
         const bodies: Record<string, unknown> = {
           '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
           '/tasks': { tasks: [] },
@@ -526,7 +526,7 @@ describe('DashboardApp', () => {
             people: [{ email: 'ana@example.com', displayName: 'Ana Ruiz', waitingSince: anaWaitingSince }],
           },
         };
-        const body = bodies[String(input)];
+        const body = bodies[input];
         return Promise.resolve(
           body === undefined
             ? new Response(null, { status: 404 })

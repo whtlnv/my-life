@@ -25,7 +25,7 @@ describe('NeedsInputPage', () => {
           return Promise.resolve(Response.json({ questions: [question] }));
         }
         if (input === '/needs-input/answers') {
-          answerRequests.push({ method: init?.method, body: JSON.parse(String(init?.body)) });
+          answerRequests.push({ method: init?.method, body: JSON.parse(init?.body as string) });
           return Promise.resolve(new Response(null, { status: 200 }));
         }
         return Promise.resolve(new Response(null, { status: 404 }));
