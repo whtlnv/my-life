@@ -334,6 +334,14 @@ function newestFirst(first: { date: string }, second: { date: string }): number 
   return new Date(second.date).getTime() - new Date(first.date).getTime();
 }
 
+function isLaterUserReplyTo(message: ReportedMessage, other: ReportedMessage): boolean {
+  return (
+    other.sentByUser === true &&
+    other.threadId === message.threadId &&
+    new Date(other.date).getTime() > new Date(message.date).getTime()
+  );
+}
+
 function sharePrimaryEmail(left: { emails: string[] }, right: { emails: string[] }): boolean {
   return left.emails[0] === right.emails[0];
 }
@@ -1154,10 +1162,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const contactThreadIds = new Set(reportedMessages.filter(involvesContact).map((message) => message.threadId));
     const isUserReplyInContactThread = (message: ReportedMessage): boolean =>
       message.sentByUser === true && contactThreadIds.has(message.threadId);
-    const isLaterUserReplyTo = (message: ReportedMessage, other: ReportedMessage): boolean =>
-      other.sentByUser === true &&
-      other.threadId === message.threadId &&
-      new Date(other.date).getTime() > new Date(message.date).getTime();
     const messages = reportedMessages
       .filter((message) => involvesContact(message) || isUserReplyInContactThread(message))
       .toSorted(newestFirst)
@@ -1251,12 +1255,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/people', (context) => context.json(peopleGroups()));
   app.get('/waiting-on', (context) => {
     const userRepliedLaterInThread = (message: ReportedMessage): boolean =>
-      reportedMessages.some(
-        (other) =>
-          other.sentByUser === true &&
-          other.threadId === message.threadId &&
-          new Date(other.date).getTime() > new Date(message.date).getTime(),
-      );
+      reportedMessages.some((other) => isLaterUserReplyTo(message, other));
     const isAutomatedCategory = (category: string | undefined): boolean =>
       isDigestedCategory(category) || category === 'expense';
     const isAutomatedMail = (message: ReportedMessage): boolean =>
