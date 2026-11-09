@@ -356,4 +356,27 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it("a poll stores a reply by someone else in a thread the user wrote in, with the thread's channel and the reply's sender, text and timestamp", async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    try {
+      const store = openSlackMessageStore(':memory:');
+
+      await pollSlackWorkspace({
+        fetch,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      expect(store.listMessages()).toContainEqual({
+        workspaceTeamId: 'T0001',
+        conversationId: 'C0002',
+        senderUserId: 'U0003',
+        text: threadReplyText,
+        timestamp: '1762700300.000400',
+      });
+    } finally {
+      await slack.close();
+    }
+  });
 });

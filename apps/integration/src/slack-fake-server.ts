@@ -49,6 +49,7 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
     },
   },
   'thread-reply': {
+    '/conversations.list': { ok: true, channels: [] },
     '/search.messages': {
       ok: true,
       messages: {
