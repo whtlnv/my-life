@@ -307,7 +307,7 @@ describe('backend app: task proposals and tasks', () => {
     expect(handedProfiles).toEqual([expect.stringContaining(profileText)]);
   });
 
-  it('hands the prioritization port at POST /prioritization-run today\'s calendar events across every account', async () => {
+  it("hands the prioritization port at POST /prioritization-run today's calendar events across every account", async () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     const handedCalendars: unknown[][] = [];
     const prioritization = {
@@ -593,10 +593,8 @@ describe('backend app: task proposals and tasks', () => {
     expect(prioritizationCalls).toBe(2);
   });
 
-  it('counts an open task whose due time has passed in the GET /now badge count', async () => {
-    const triage = triageAnswering(
-      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-01' }] }),
-    );
+  async function badgeCountsAroundConfirmingATaskDue(due: string) {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due }] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
@@ -606,22 +604,18 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
 
     const after = await getJson<{ badgeCount: number }>(app, '/now');
-    expect(after.badgeCount).toBe(before.badgeCount + 1);
+    return { before: before.badgeCount, after: after.badgeCount };
+  }
+
+  it('counts an open task whose due time has passed in the GET /now badge count', async () => {
+    const { before, after } = await badgeCountsAroundConfirmingATaskDue('2026-11-01');
+
+    expect(after).toBe(before + 1);
   });
 
   it('leaves an open task due later out of the GET /now badge count', async () => {
-    const triage = triageAnswering(
-      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-20' }] }),
-    );
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
-    const before = await getJson<{ badgeCount: number }>(app, '/now');
-    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    const { before, after } = await badgeCountsAroundConfirmingATaskDue('2026-11-20');
 
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
-
-    const after = await getJson<{ badgeCount: number }>(app, '/now');
-    expect(after.badgeCount).toBe(before.badgeCount);
+    expect(after).toBe(before);
   });
 });
