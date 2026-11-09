@@ -329,4 +329,46 @@ describe('backend app: the agent', () => {
 
     expect(result.messages.map((message) => message.id)).toEqual(['message-1', 'message-2']);
   });
+
+  it("read_thread returns every stored message of the given message's thread with its body, oldest first, and no message from another thread", async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'Here is the thread.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        {
+          ...budgetReviewReport.messages[0],
+          id: 'message-3',
+          from: 'Ana <ana@example.com>',
+          date: 'Tue, 3 Nov 2026 10:00:00 -0600',
+          body: 'Reviewed, looks good. Ana',
+        },
+        messageWithQuarterlyNumbersBody,
+        {
+          ...budgetReviewReport.messages[0],
+          id: 'message-2',
+          threadId: 'thread-2',
+          subject: 'Lunch on Thursday',
+          body: 'Hi Ana, are you free for lunch? Luis',
+        },
+      ],
+    });
+    await postJson(app, '/agent/conversations', { message: 'Show me the budget thread' });
+    const readThread = offeredTools.find((tool) => tool.name === 'read_thread');
+
+    const result = await readThread?.run({ messageId: 'message-3' });
+
+    expect(result).toEqual({
+      messages: [
+        expect.objectContaining({ id: 'message-1', body: messageWithQuarterlyNumbersBody.body }),
+        expect.objectContaining({ id: 'message-3', body: 'Reviewed, looks good. Ana' }),
+      ],
+    });
+  });
 });

@@ -1123,8 +1123,20 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({ messages });
     },
   };
+  const readThreadTool: AgentTool = {
+    name: 'read_thread',
+    run: (input) => {
+      const { messageId } = input as { messageId: string };
+      const threadId = reportedMessages.find((message) => message.id === messageId)?.threadId;
+      const messages = reportedMessages
+        .filter((message) => message.threadId === threadId)
+        .sort((first, second) => new Date(first.date).getTime() - new Date(second.date).getTime())
+        .map((message) => ({ id: message.id, body: message.body }));
+      return Promise.resolve({ messages });
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
-    const reply = await options.agent?.respond({ turns, tools: [searchMessagesTool] });
+    const reply = await options.agent?.respond({ turns, tools: [searchMessagesTool, readThreadTool] });
     if (reply) {
       logSpend(reply);
     }
