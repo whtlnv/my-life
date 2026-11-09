@@ -5,9 +5,9 @@ import { computeCostInUsd, type ClaudePricing } from './claude-triage';
 
 interface ClaudeAgentRequest {
   model: string;
-  system?: string;
+  system: string;
   messages: { role: string; content: unknown }[];
-  tools?: { name: string; description: string; input_schema: unknown }[];
+  tools: { name: string; description: string; input_schema: unknown }[];
 }
 
 interface ClaudeAgentContentBlock {

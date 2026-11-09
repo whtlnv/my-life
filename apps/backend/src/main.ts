@@ -126,9 +126,9 @@ const agent =
         createMessage: (request) =>
           claude.createMessage({
             model: request.model,
-            system: request.system ?? '',
+            system: request.system,
             messages: request.messages,
-            tools: (request.tools ?? []).map(({ name, description, input_schema }) => ({
+            tools: request.tools.map(({ name, description, input_schema }) => ({
               name,
               description,
               strict: false,
