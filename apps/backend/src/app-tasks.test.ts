@@ -403,6 +403,47 @@ describe('backend app: task proposals and tasks', () => {
     ]);
   });
 
+  it('lists at GET /tasks a task pinned with PUT /tasks/:id/pin first whatever its rank, and back in rank order once unpinned', async () => {
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
+    );
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string; title: string }[] }) => ({
+        ranks: context.tasks.map(({ id, title }) =>
+          title === 'Send the slides'
+            ? { taskId: id, rank: 1, reason: 'The board meets at four' }
+            : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
+        ),
+        costInUsd: 0.01,
+      }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    for (const proposal of waiting.proposals) {
+      await postJson(app, `/task-proposals/${proposal.id}/confirmation`, {});
+    }
+    await postJson(app, '/prioritization-run', {});
+    const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
+    const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
+    const putPin = (pinned: boolean) =>
+      app.request(`/tasks/${budgetTask?.id}/pin`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pinned }),
+      });
+
+    const pinResponse = await putPin(true);
+    const whilePinned = await getJson<{ tasks: { title: string }[] }>(app, '/tasks');
+    await putPin(false);
+    const afterUnpin = await getJson<{ tasks: { title: string }[] }>(app, '/tasks');
+
+    expect(pinResponse.status).toBe(200);
+    expect(whilePinned.tasks.map(({ title }) => title)).toEqual(['Approve the budget', 'Send the slides']);
+    expect(afterUnpin.tasks.map(({ title }) => title)).toEqual(['Send the slides', 'Approve the budget']);
+  });
+
   it('keeps at GET /tasks the previous ranks and reasons when a prioritization answer fails validation at POST /prioritization-run', async () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     const answers = [

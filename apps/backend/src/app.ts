@@ -1025,12 +1025,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.json({});
   });
+  const pinnedTaskIds = new Set<string>();
+  app.put('/tasks/:id/pin', async (context) => {
+    const taskId = context.req.param('id');
+    const { pinned } = await context.req.json<{ pinned: boolean }>();
+    if (pinned) pinnedTaskIds.add(taskId);
+    else pinnedTaskIds.delete(taskId);
+    return context.json({ pinned });
+  });
   app.get('/tasks', (context) => {
     const rankedOpenTasks = currentOpenTasks().map((task) => {
       const ranked = taskRanksFromLastRun.find(({ taskId }) => taskId === task.id);
       return ranked === undefined ? task : { ...task, rank: ranked.rank, reason: ranked.reason };
     });
-    const rankOrLast = (task: (typeof rankedOpenTasks)[number]) => ('rank' in task ? task.rank : Infinity);
+    const rankOrLast = (task: (typeof rankedOpenTasks)[number]) =>
+      pinnedTaskIds.has(task.id) ? -Infinity : 'rank' in task ? task.rank : Infinity;
     rankedOpenTasks.sort((first, second) => rankOrLast(first) - rankOrLast(second));
     return context.json({
       tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...rankedOpenTasks],
