@@ -27,8 +27,8 @@ const profileDirectory =
   process.env.MY_LIFE_PROFILE_DIRECTORY ?? fileURLToPath(new URL('../../../profile', import.meta.url));
 const triageRunIntervalInMilliseconds = 30_000;
 
-// Anthropic list prices per million tokens (2026-11-07). The model id is config; a model missing here disables triage
-// loudly instead of logging a wrong spend.
+// Anthropic list prices per million tokens (2026-11-07). The model id is config; a model missing here stops the backend
+// at startup instead of logging a wrong spend.
 const pricingByModel: Record<string, ClaudePricing> = {
   'claude-opus-5-5': { inputPerMillionTokensInUsd: 4, outputPerMillionTokensInUsd: 20 },
   'claude-sonnet-5-5': { inputPerMillionTokensInUsd: 2, outputPerMillionTokensInUsd: 10 },
