@@ -22,6 +22,22 @@ import {
 import { openSpendStore } from './spend-store';
 import { openVerdictStore } from './verdict-store';
 
+interface OfferedTool {
+  name: string;
+  run: (input: unknown) => Promise<unknown>;
+}
+
+function agentRecordingOfferedTools(text: string) {
+  const offeredTools: OfferedTool[] = [];
+  const agent = {
+    respond: (request?: { tools?: OfferedTool[] }) => {
+      offeredTools.push(...(request?.tools ?? []));
+      return Promise.resolve({ text, costInUsd: 0.01 });
+    },
+  };
+  return { agent, offeredTools };
+}
+
 describe('backend app: the agent', () => {
   it("creates a conversation on the user's first message and returns the model's text reply as its assistant turn", async () => {
     const agent = {
@@ -271,13 +287,7 @@ describe('backend app: the agent', () => {
   });
 
   it('gives the agent a search_messages tool that returns the stored messages containing the query words, with their id, account, sender, subject, date and Gmail link, and leaves out the others', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'Found it.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('Found it.');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
@@ -312,13 +322,7 @@ describe('backend app: the agent', () => {
   });
 
   it('search_messages ranks a message containing every query word above one containing only some of them', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'Found it.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('Found it.');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
@@ -342,13 +346,7 @@ describe('backend app: the agent', () => {
   });
 
   it("read_thread returns every stored message of the given message's thread with its body, oldest first, and no message from another thread", async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'Here is the thread.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('Here is the thread.');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
@@ -384,13 +382,7 @@ describe('backend app: the agent', () => {
   });
 
   it('contact_timeline returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'Here is what Luis and you exchanged.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('Here is what Luis and you exchanged.');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
@@ -423,13 +415,7 @@ describe('backend app: the agent', () => {
   });
 
   it("calendar_day returns the events of the given date across every account's calendars, in the business time zone, with their Meet links, and no event of another day", async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'Here is your Tuesday.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('Here is your Tuesday.');
     const app = createApp({ allowedEmails: ['ana@example.com', 'ana@acme.com'], clock: clockAtTenPastThree, agent });
     await postCalendarSnapshot(app, 'ana@example.com', [
       {
@@ -478,13 +464,7 @@ describe('backend app: the agent', () => {
   });
 
   it('tasks returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'You have one open task.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('You have one open task.');
     const triage = triageAnswering(
       keepProposalExtracting({
         asks: [{ ask: 'Approve the budget', due: '2026-11-05' }, { ask: 'Send the slides' }],
@@ -535,13 +515,7 @@ describe('backend app: the agent', () => {
   });
 
   it('digest returns the waiting digests with their account, category, count and summary lines', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'One digest is waiting.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('One digest is waiting.');
     const triage = triageAnswering({
       action: 'archive',
       category: 'system-update',
@@ -555,7 +529,9 @@ describe('backend app: the agent', () => {
     const [budgetReview] = budgetReviewReport.messages;
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
-      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+      ],
     });
     await postTriageRun(app);
     await postJson(app, '/agent/conversations', { message: 'What digests are waiting?' });
@@ -577,7 +553,7 @@ describe('backend app: the agent', () => {
 
   it('shows a citation of a message a tool returned in that turn with the message and its link', async () => {
     const agent = {
-      respond: async (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+      respond: async (request?: { tools?: OfferedTool[] }) => {
         await request?.tools?.find((tool) => tool.name === 'search_messages')?.run({ query: 'quarterly' });
         return { text: 'Luis sent the quarterly numbers.', citations: [{ id: 'message-1' }], costInUsd: 0.01 };
       },
@@ -600,7 +576,11 @@ describe('backend app: the agent', () => {
   it('shows a citation of a message no tool returned in that turn as unverified, without a link', async () => {
     const agent = {
       respond: async () =>
-        Promise.resolve({ text: 'Luis sent the quarterly numbers.', citations: [{ id: 'message-1' }], costInUsd: 0.01 }),
+        Promise.resolve({
+          text: 'Luis sent the quarterly numbers.',
+          citations: [{ id: 'message-1' }],
+          costInUsd: 0.01,
+        }),
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
     await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
@@ -612,13 +592,7 @@ describe('backend app: the agent', () => {
   });
 
   it("archive_message stores an archive verdict for the message attributed to the agent, and the message's account receives an archive command", async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'I can archive that.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can archive that.');
     const databasePath = temporaryDatabasePath();
     const app = createApp({
       allowedEmails: ['ana@example.com'],
@@ -642,13 +616,7 @@ describe('backend app: the agent', () => {
   });
 
   it('archive_message on a message id the store does not know returns an error to the model and records nothing', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'I can archive that.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can archive that.');
     const databasePath = temporaryDatabasePath();
     const app = createApp({
       allowedEmails: ['ana@example.com'],
@@ -669,13 +637,7 @@ describe('backend app: the agent', () => {
   });
 
   it("label_message sends the message's account a label command with the given label name that leaves the message in the inbox", async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'I can label that.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can label that.');
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -693,13 +655,7 @@ describe('backend app: the agent', () => {
     expect(commands).toEqual([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Finance' })]);
   });
   it('create_task with a source message creates an open task with the given title, linked to that message and its account', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'I can make a task of that.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can make a task of that.');
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -724,13 +680,7 @@ describe('backend app: the agent', () => {
     ]);
   });
   it('create_task without a source message creates an open task linked to the agent conversation it came from', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'I can make a task of that.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can make a task of that.');
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -751,13 +701,7 @@ describe('backend app: the agent', () => {
     ]);
   });
   it('mark_vip puts the contact under VIP in the People view, as a Needs input answer would', async () => {
-    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
-    const agent = {
-      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
-        offeredTools.push(...(request?.tools ?? []));
-        return Promise.resolve({ text: 'I can mark Luis as VIP.', costInUsd: 0.01 });
-      },
-    };
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can mark Luis as VIP.');
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
