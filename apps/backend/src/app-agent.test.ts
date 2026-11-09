@@ -1033,6 +1033,27 @@ describe('backend app: the agent', () => {
     expect(transitions).toContain('undone');
     expect(transitions).not.toContain('done');
   });
+  it('an undo naming a tool and target the agent never acted on is refused and sends the account no command', async () => {
+    const { agent } = agentRecordingOfferedTools('Nothing to do.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'What is in my inbox?' });
+    const { commands: commandsBefore } = (await (await getCommands(app, 'ana@example.com')).json()) as {
+      commands: unknown[];
+    };
+
+    const response = await postJson(app, '/agent/actions/undo', { tool: 'archive_message', target: 'message-1' });
+
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect(response.status).toBe(404);
+    expect(commands).toEqual(commandsBefore);
+  });
   it('undoing an agent draft is refused and sends the account no command beyond the draft itself', async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('I can draft a reply.');
     const app = createApp({
