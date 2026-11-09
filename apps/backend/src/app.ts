@@ -621,7 +621,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     slackWorkspacePolls = await Promise.all(
       configuredSlackWorkspaces.map(async ({ teamId, userToken }) =>
         succeededTeamIds.has(teamId)
-          ? { teamId, ...(await fetchSlackWorkspaceIdentity(userToken)), lastSuccessfulPollAt: clock.now().toISOString() }
+          ? {
+              teamId,
+              ...(await fetchSlackWorkspaceIdentity(userToken)),
+              lastSuccessfulPollAt: clock.now().toISOString(),
+            }
           : { teamId },
       ),
     );
@@ -635,7 +639,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const postSlackMessage = async (send: SlackSendRequest): Promise<SlackPostMessageResult> => {
     const slackResponse = await fetch(`${options.slackApiUrl ?? ''}/chat.postMessage`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${slackUserTokenFor(send.workspaceTeamId)}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${slackUserTokenFor(send.workspaceTeamId)}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ channel: send.conversationId, thread_ts: send.threadTimestamp, text: send.text }),
     });
     return (await slackResponse.json()) as SlackPostMessageResult;
@@ -965,6 +972,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return `${workspaceUrl}archives/${message.conversationId}/p${message.timestamp.replace('.', '')}`;
   }
+  function displaySlackMentions(text: string, slackUserNames: Map<string, string | null | undefined>) {
+    return text.replace(/<@(\w+)>/g, (_mention, userId: string) => `@${slackUserNames.get(userId) ?? userId}`);
+  }
   function describeSlackItems() {
     const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));
     const messages = slackMessageStore.listMessages();
@@ -974,10 +984,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
       .map((message) => ({
         ...message,
-        text: message.text.replace(
-          /<@(\w+)>/g,
-          (_mention, userId: string) => `@${slackUserNames.get(userId) ?? userId}`,
-        ),
+        text: displaySlackMentions(message.text, slackUserNames),
         permalink: slackTriagePermalink(message),
         choices: ['ignore', 'act', 'reply'],
       }));
