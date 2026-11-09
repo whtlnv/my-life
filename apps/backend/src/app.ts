@@ -999,13 +999,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     context.json({ history: taskHistory(taskEventStore.loadAll(), context.req.param('id')) }),
   );
   const currentOpenTasks = () => openTasks(taskEventStore.loadAll(), clock.now().toISOString());
+  const profileOfAccount = (accountEmail: string): string | undefined => {
+    const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
+    return existsSync(profilePath) ? readFileSync(profilePath, 'utf8') : undefined;
+  };
   let taskRanksFromLastRun: TaskRanks['ranks'] = [];
   app.post('/prioritization-run', async (context) => {
     const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
     const profile = tasks
-      .map(({ accountEmail }) => join(options.profileDirectory ?? '', profileFileName(accountEmail)))
-      .filter((profilePath) => existsSync(profilePath))
-      .map((profilePath) => readFileSync(profilePath, 'utf8'))
+      .map(({ accountEmail }) => profileOfAccount(accountEmail))
+      .filter((accountProfile) => accountProfile !== undefined)
       .join('\n');
     taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile })).ranks;
     return context.json({});
@@ -1123,8 +1126,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
     const alwaysMattersLineOfAccount = (accountEmail: string) => {
-      const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
-      return existsSync(profilePath) ? alwaysMattersLine(readFileSync(profilePath, 'utf8')) : '';
+      const accountProfile = profileOfAccount(accountEmail);
+      return accountProfile === undefined ? '' : alwaysMattersLine(accountProfile);
     };
     const isOnAlwaysMattersLine = (contact: { emails: string[]; messageIds: string[] }) =>
       options.profileDirectory !== undefined &&
