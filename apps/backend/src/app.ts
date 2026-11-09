@@ -633,6 +633,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.json({ error: slackResult.error }, 502);
     }
     slackSends.push({ ...send, sentAt: clock.now().toISOString() });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: send.workspaceTeamId,
+      conversationId: send.conversationId,
+      senderUserId: '',
+      text: send.text,
+      timestamp: String(clock.now().getTime() / 1000),
+      sentByUser: true,
+    });
     return context.json({});
   });
   app.get('/slack-sends', (context) => context.json({ sends: slackSends }));

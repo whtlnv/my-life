@@ -922,4 +922,39 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('after a reply is sent at POST /slack-sends, the person it answers no longer appears in GET /waiting-on for that conversation', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    const databaseDirectory = mkdtempSync(join(tmpdir(), 'my-life-'));
+    try {
+      const databasePath = join(databaseDirectory, 'my-life.sqlite');
+      openSlackMessageStore(databasePath).saveMessage({
+        workspaceTeamId: 'T0001',
+        conversationId: 'D0001',
+        senderUserId: 'U0001',
+        senderName: 'Ana',
+        text: 'Can you look at the contract today?',
+        timestamp: '1762700000.000100',
+      });
+      const backend = createApp({
+        allowedEmails: [],
+        databasePath,
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      await backend.request('/slack-sends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceTeamId: 'T0001', conversationId: 'D0001', text: 'On it, sending it tonight.' }),
+      });
+      const { people } = (await (await backend.request('/waiting-on')).json()) as { people: unknown[] };
+
+      expect(people).toEqual([]);
+    } finally {
+      await slack.close();
+      rmSync(databaseDirectory, { recursive: true, force: true });
+    }
+  });
 });
