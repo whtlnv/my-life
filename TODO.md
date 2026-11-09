@@ -19,6 +19,9 @@
 - [x] When the model asks for a tool that does not exist, an error result goes back to the model and the turn still completes
 - [x] When a tool's input fails its schema, a validation error goes back to the model and the tool does not run
 - [x] When the model keeps asking for tools past the configured round limit, the turn stops and the reply says it stopped
+- [ ] The first message of a new conversation reaches the model: the agent port receives that message as the conversation's only user turn, and the Claude agent adapter sends it (today the route calls `respond()` with no turns, which the real adapter cannot take)
+- [ ] The Claude agent adapter reports the cost of every model call in a turn, tool rounds included, from the response usage and the configured pricing
+- [ ] A follow-up message in a conversation logs its spend and, once the daily ceiling is reached, answers that the ceiling is reached without calling the model, like a first message
 - [ ] `search_messages` returns the stored messages whose body, subject or summary contains the query words, each with its id, account, sender, subject, date and Gmail link, and leaves out messages without them
 - [ ] `search_messages` ranks a message containing every query word above one containing only some of them (backlog: apps/backend/src/app.ts:990 `GET /search` scans every stored message instead of an SQLite FTS5 index)
 - [ ] `read_thread` returns every stored message of the given message's thread with its body, oldest first, and no message from another thread
