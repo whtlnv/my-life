@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { routes } from './app-shell';
 import { DashboardApp, waitingDurationText } from './dashboard-app';
+import { answerGetsWith } from './fetch-stub.test-support';
 
 const answerGetNowWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -406,21 +407,10 @@ describe('DashboardApp', () => {
       { id: 'task-3', title: 'Call the bank', account: 'personal@example.com', rank: 3, reason: 'Ana is waiting' },
       { id: 'task-4', title: 'Renew the domain', account: 'personal@example.com', rank: 4, reason: 'Due next week' },
     ];
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: string) => {
-        const bodies: Record<string, unknown> = {
-          '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
-          '/tasks': { tasks: rankedTasks },
-        };
-        const body = bodies[input];
-        return Promise.resolve(
-          body === undefined
-            ? new Response(null, { status: 404 })
-            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
-        );
-      }),
-    );
+    answerGetsWith({
+      '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
+      '/tasks': { tasks: rankedTasks },
+    });
 
     render(<DashboardApp />);
 
@@ -470,28 +460,17 @@ describe('DashboardApp', () => {
     expect(screen.getByText('Approve the budget')).toBeInTheDocument();
   });
   it('lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: string) => {
-        const bodies: Record<string, unknown> = {
-          '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
-          '/tasks': { tasks: [] },
-          '/waiting-on': {
-            people: [
-              { email: 'luis@example.com', displayName: 'Luis Pérez', waitingSince: '2026-11-06T16:00:00.000Z' },
-              { email: 'ana@example.com', displayName: 'Ana Ruiz', waitingSince: '2026-11-03T09:00:00.000Z' },
-              { email: 'marta@example.com', displayName: 'Marta Gil', waitingSince: '2026-11-07T10:00:00.000Z' },
-            ],
-          },
-        };
-        const body = bodies[input];
-        return Promise.resolve(
-          body === undefined
-            ? new Response(null, { status: 404 })
-            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
-        );
-      }),
-    );
+    answerGetsWith({
+      '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
+      '/tasks': { tasks: [] },
+      '/waiting-on': {
+        people: [
+          { email: 'luis@example.com', displayName: 'Luis Pérez', waitingSince: '2026-11-06T16:00:00.000Z' },
+          { email: 'ana@example.com', displayName: 'Ana Ruiz', waitingSince: '2026-11-03T09:00:00.000Z' },
+          { email: 'marta@example.com', displayName: 'Marta Gil', waitingSince: '2026-11-07T10:00:00.000Z' },
+        ],
+      },
+    });
 
     render(<DashboardApp />);
 
@@ -516,24 +495,13 @@ describe('DashboardApp', () => {
     });
     vi.setSystemTime(new Date('2026-11-08T09:00:00.000Z'));
     const anaWaitingSince = '2026-11-03T09:00:00.000Z';
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: string) => {
-        const bodies: Record<string, unknown> = {
-          '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
-          '/tasks': { tasks: [] },
-          '/waiting-on': {
-            people: [{ email: 'ana@example.com', displayName: 'Ana Ruiz', waitingSince: anaWaitingSince }],
-          },
-        };
-        const body = bodies[input];
-        return Promise.resolve(
-          body === undefined
-            ? new Response(null, { status: 404 })
-            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
-        );
-      }),
-    );
+    answerGetsWith({
+      '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
+      '/tasks': { tasks: [] },
+      '/waiting-on': {
+        people: [{ email: 'ana@example.com', displayName: 'Ana Ruiz', waitingSince: anaWaitingSince }],
+      },
+    });
 
     render(<DashboardApp />);
 

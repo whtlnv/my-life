@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { routes } from './app-shell';
+import { answerGetsWith } from './fetch-stub.test-support';
 import { PeoplePage } from './people-page';
 
 const answerGetPeopleWith = (body: unknown) => {
@@ -138,21 +139,10 @@ describe('PeoplePage', () => {
         },
       ],
     };
-    const bodies: Record<string, unknown> = {
+    answerGetsWith({
       '/people': people,
       [`/contacts/${encodeURIComponent('ana@mutuus.mx')}/timeline`]: timeline,
-    };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: string) => {
-        const body = bodies[input];
-        return Promise.resolve(
-          body === undefined
-            ? new Response(null, { status: 404 })
-            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
-        );
-      }),
-    );
+    });
 
     render(<PeoplePage />);
     const vipList = await screen.findByRole('list', { name: 'VIP' });
@@ -188,21 +178,10 @@ describe('PeoplePage', () => {
         { id: 'm3', subject: 'Onboarding call', accountEmail: 'personal@example.com' },
       ],
     };
-    const bodies: Record<string, unknown> = {
+    answerGetsWith({
       '/people': people,
       [`/organizations/${encodeURIComponent('Acme')}/timeline`]: timeline,
-    };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: string) => {
-        const body = bodies[input];
-        return Promise.resolve(
-          body === undefined
-            ? new Response(null, { status: 404 })
-            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
-        );
-      }),
-    );
+    });
 
     render(<PeoplePage />);
     const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
@@ -286,21 +265,10 @@ describe('PeoplePage', () => {
         },
       ],
     };
-    const bodies: Record<string, unknown> = {
+    answerGetsWith({
       '/people': people,
       [`/contacts/${encodeURIComponent('sofia@erlia.mx')}/timeline`]: timeline,
-    };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: string) => {
-        const body = bodies[input];
-        return Promise.resolve(
-          body === undefined
-            ? new Response(null, { status: 404 })
-            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
-        );
-      }),
-    );
+    });
     window.location.hash = `${routes.people}?contact=${encodeURIComponent('sofia@erlia.mx')}`;
 
     render(<PeoplePage />);
