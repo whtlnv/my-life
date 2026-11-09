@@ -33,7 +33,8 @@ export function createClaudePrioritization({
       const response = await createMessage({ model });
       const input = readToolUseInput(response);
       const parsed = taskRanks.safeParse(input);
-      return parsed.success ? { ranks: parsed.data.ranks, costInUsd: computeCostInUsd(response.usage, pricing) } : { failure: { input } };
+      if (!parsed.success) return { failure: { input } };
+      return { ranks: parsed.data.ranks, costInUsd: computeCostInUsd(response.usage, pricing) };
     },
   };
 }
