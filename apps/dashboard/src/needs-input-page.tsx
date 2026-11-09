@@ -13,6 +13,18 @@ function keyOf(choice: string): string {
   return choice.charAt(0);
 }
 
+function postAnswer(question: Question, choice: string): void {
+  void fetch('/needs-input/answers', {
+    method: 'POST',
+    body: JSON.stringify({
+      kind: question.kind,
+      senderEmail: question.senderEmail,
+      messageId: question.messageId,
+      answer: choice,
+    }),
+  });
+}
+
 export function NeedsInputPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
 
@@ -28,15 +40,7 @@ export function NeedsInputPage() {
     const [question] = questions;
     if (question === undefined) return;
     const answer = (choice: string) => {
-      void fetch('/needs-input/answers', {
-        method: 'POST',
-        body: JSON.stringify({
-          kind: question.kind,
-          senderEmail: question.senderEmail,
-          messageId: question.messageId,
-          answer: choice,
-        }),
-      });
+      postAnswer(question, choice);
       setQuestions((current) => current.filter((candidate) => candidate !== question));
     };
     const onKeyDown = (event: KeyboardEvent) => {
