@@ -65,7 +65,7 @@
 - [x] After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
 - [x] After a backend restart, an agent undo of an archive or a label that the extension has not yet picked up is still waiting in that account's commands
   - note (supervisor 2026-11-09): `undoneAgentArchiveMessageIds` and `undoneLabelRequests` in `apps/backend/src/app.ts` live only in memory; derive the pending undo commands from the stored, undone actions instead.
-- [ ] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
+- [x] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
 - [ ] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
 - [ ] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
 - [ ] On the agent page, choosing a past conversation shows its turns, and the next question continues it

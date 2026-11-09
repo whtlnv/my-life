@@ -40,6 +40,7 @@ export const routes = {
   categories: '#/categories',
   filters: '#/filters',
   statement: '#/statement',
+  agent: '#/agent',
 } as const;
 
 export function timeInBusinessZone(isoTime: string): string {
@@ -151,6 +152,9 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             </Tab>
             <Tab href={routes.statement} current={route === routes.statement}>
               Statement
+            </Tab>
+            <Tab href={routes.agent} current={route === routes.agent}>
+              Agent
             </Tab>
           </nav>
           <ul className="sources" aria-label="Sources">
