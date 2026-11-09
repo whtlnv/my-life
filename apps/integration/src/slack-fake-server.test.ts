@@ -1,3 +1,7 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from '@my-life/backend/app';
@@ -564,6 +568,42 @@ describe('Slack fake server', () => {
       expect(storedOwnMessage).toMatchObject({ senderUserId: ownSlackUserId, sentByUser: true });
     } finally {
       await slack.close();
+    }
+  });
+
+  it('a thread reply the user posted, polled from conversations.replies, keeps the reply it answers out of GET /waiting-on', async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    const databaseDirectory = mkdtempSync(join(tmpdir(), 'my-life-'));
+    try {
+      const databasePath = join(databaseDirectory, 'my-life.sqlite');
+      const ownThreadReply = {
+        type: 'message',
+        user: ownSlackUserId,
+        text: 'Thanks, tonight works.',
+        ts: '1762700400.000500',
+        thread_ts: '1762700200.000300',
+      };
+      const fetchWithTheUsersOwnThreadReply: typeof fetch = async (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        const response = await fetch(request, init);
+        if (url.pathname !== '/conversations.replies') return response;
+        const body = (await response.json()) as { messages: unknown[] };
+        return Response.json({ ...body, messages: [...body.messages, ownThreadReply] });
+      };
+
+      await pollSlackWorkspace({
+        fetch: fetchWithTheUsersOwnThreadReply,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store: openSlackMessageStore(databasePath),
+      });
+      const backend = createApp({ allowedEmails: [], databasePath });
+      const { people } = (await (await backend.request('/waiting-on')).json()) as { people: unknown[] };
+
+      expect(people).toEqual([]);
+    } finally {
+      await slack.close();
+      rmSync(databaseDirectory, { recursive: true, force: true });
     }
   });
 

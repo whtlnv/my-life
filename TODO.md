@@ -72,7 +72,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A Slack DM from someone else that the user has not answered later in the same conversation appears in `GET /waiting-on` with channel `slack`, waiting since its timestamp
 - [x] A Slack DM the user answered later in the same conversation does not appear in `GET /waiting-on`
 - [x] A Slack mention the user answered in its thread does not appear in `GET /waiting-on`
-- [ ] A thread reply the user posted, saved by the Slack poller from `conversations.replies`, is stored as sent by the user, so the mention it answers stays out of `GET /waiting-on` (keystone: the poller saved thread replies without the user's own Slack id, so their replies were never theirs)
+- [x] A thread reply the user posted, saved by the Slack poller from `conversations.replies`, is stored as sent by the user, so the mention it answers stays out of `GET /waiting-on` (keystone: the poller saved thread replies without the user's own Slack id, so their replies were never theirs)
 - [ ] `GET /waiting-on` orders email and Slack people together by how long they have waited
 
 ### People view

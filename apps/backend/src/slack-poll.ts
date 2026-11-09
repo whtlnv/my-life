@@ -117,7 +117,7 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
       `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}${oldestParameter}`,
     );
     for (const reply of replies) {
-      await saveSlackMessage(input, match.channel.id, reply, { threadTimestamp: match.thread_ts });
+      await saveSlackMessage(input, match.channel.id, reply, { threadTimestamp: match.thread_ts, ownSlackUserId });
     }
   }
 }
