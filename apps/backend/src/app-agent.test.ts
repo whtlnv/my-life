@@ -779,4 +779,28 @@ describe('backend app: the agent', () => {
       ]) as unknown,
     });
   });
+  it('reject_filter_proposal stores a rejection, and the proposal leaves the filter proposals list', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can reject that filter.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: shopNewsletterArchiveTriage(),
+      filter: filterAnswering(shopNewslettersFilterProposal),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await reportTriageAndConfirmShopNewsletters(app);
+    const proposalId = await firstPendingFilterProposalId(app);
+    await postJson(app, '/agent/conversations', { message: 'Reject the shop newsletters filter' });
+    const rejectTool = offeredTools.find((tool) => tool.name === 'reject_filter_proposal');
+
+    await rejectTool?.run({ proposalId });
+
+    const { proposals } = await getJson<{ proposals: unknown[] }>(app, '/filter-proposals');
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect({ proposals, commands }).toMatchObject({
+      proposals: [],
+      commands: expect.not.arrayContaining([expect.objectContaining({ type: 'create-filter' })]) as unknown,
+    });
+  });
 });

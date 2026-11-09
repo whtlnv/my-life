@@ -1231,6 +1231,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   };
+  const rejectFilterProposalTool: AgentTool = {
+    name: 'reject_filter_proposal',
+    run: (input) => {
+      filterProposalRejectionStore.save((input as { proposalId: string }).proposalId);
+      return Promise.resolve({});
+    },
+  };
   const createTaskToolFor = (conversationId: string): AgentTool => ({
     name: 'create_task',
     run: (input) => {
@@ -1275,6 +1282,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         markVipTool,
         updateContactTool,
         approveFilterProposalTool,
+        rejectFilterProposalTool,
       ],
     });
     if (!reply) {
