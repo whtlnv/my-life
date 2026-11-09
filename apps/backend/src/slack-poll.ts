@@ -35,8 +35,7 @@ function saveSlackMessage(
   input: PollSlackWorkspaceInput,
   conversationId: string,
   message: SlackMessage,
-  threadTimestamp?: string,
-  ownSlackUserId?: string,
+  { threadTimestamp, ownSlackUserId }: { threadTimestamp?: string; ownSlackUserId?: string } = {},
 ): void {
   input.store.saveMessage({
     workspaceTeamId: input.workspace.teamId,
@@ -72,7 +71,7 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
       `/conversations.history?channel=${channel.id}${oldestParameter}`,
     );
     for (const message of messages) {
-      saveSlackMessage(input, channel.id, message, undefined, ownSlackUserId);
+      saveSlackMessage(input, channel.id, message, { ownSlackUserId });
     }
   }
 }
@@ -101,7 +100,7 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
       `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}${oldestParameter}`,
     );
     for (const reply of replies) {
-      saveSlackMessage(input, match.channel.id, reply, match.thread_ts);
+      saveSlackMessage(input, match.channel.id, reply, { threadTimestamp: match.thread_ts });
     }
   }
 }
