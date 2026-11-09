@@ -33,4 +33,16 @@ export async function pollSlackWorkspace(input: PollSlackWorkspaceInput): Promis
       });
     }
   }
+  const { messages } = await callSlack<{
+    messages: { matches: { user: string; text: string; ts: string; channel: { id: string } }[] };
+  }>(input, '/search.messages');
+  for (const match of messages.matches) {
+    input.store.saveMessage({
+      workspaceTeamId: input.workspace.teamId,
+      conversationId: match.channel.id,
+      senderUserId: match.user,
+      text: match.text,
+      timestamp: match.ts,
+    });
+  }
 }

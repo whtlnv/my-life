@@ -26,8 +26,10 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
       ok: true,
       messages: [{ type: 'message', user: 'U0001', text: directMessageText, ts: '1762700000.000100' }],
     },
+    '/search.messages': { ok: true, messages: { matches: [] } },
   },
   mention: {
+    '/conversations.list': { ok: true, channels: [] },
     '/search.messages': {
       ok: true,
       messages: {

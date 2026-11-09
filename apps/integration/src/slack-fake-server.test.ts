@@ -213,4 +213,29 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('polling the mention scenario stores the channel message that mentions the user', async () => {
+    const slack = await startSlackFakeServer('mention');
+    try {
+      const store = openSlackMessageStore(':memory:');
+
+      await pollSlackWorkspace({
+        fetch,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      expect(store.listMessages()).toEqual([
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'C0001',
+          senderUserId: 'U0002',
+          text: mentionMessageText,
+          timestamp: '1762700100.000200',
+        },
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
 });
