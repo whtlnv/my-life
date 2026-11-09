@@ -502,7 +502,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     chooseVerdictExamples(
       message,
       verdictStore.loadAll().map((verdict) => {
-        const verdictMessage = reportedMessages.find((reported) => reported.id === verdict.messageId);
+        const verdictMessage = reportedMessageWithId(reportedMessages, verdict.messageId);
         return {
           ...verdict,
           from: verdictMessage?.from ?? '',
@@ -565,7 +565,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const report = await context.req.json<BodiesReport>();
     report.bodies.forEach(({ messageId, body }) => {
       reportedMessageStore.saveBody(messageId, body);
-      const reportedMessage = reportedMessages.find((message) => message.id === messageId);
+      const reportedMessage = reportedMessageWithId(reportedMessages, messageId);
       if (reportedMessage !== undefined) reportedMessage.body = body;
       if (wasProposedUnderAnOlderPrompt(messageId)) messageIdsAwaitingRetriage.add(messageId);
     });
@@ -731,7 +731,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ...proposal,
         category: proposal.category ?? '',
         extract: proposal.extract ?? {},
-        from: reportedMessages.find((message) => message.id === proposal.messageId)?.from ?? '',
+        from: reportedMessageWithId(reportedMessages, proposal.messageId)?.from ?? '',
       }));
   }
   // Every digest of the waiting proposals: GET /triage-queue lists, the triage run summarizes and a confirm reaches
@@ -812,13 +812,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const alreadyAnswered = latestVerdictFor(messageId, verdicts) !== undefined;
       const choices = categoryQuestionChoices(category, disagreement);
       if (alreadyAnswered || choices === undefined) return [];
-      const message = reportedMessages.find((reported) => reported.id === messageId);
+      const message = reportedMessageWithId(reportedMessages, messageId);
       return [
         { kind: 'category', messageId, accountEmail, choices, subject: message?.subject, summary, from: message?.from },
       ];
     });
     const newSenderQuestions = proposals.flatMap(({ messageId, accountEmail, asks }) => {
-      const message = reportedMessages.find((reported) => reported.id === messageId);
+      const message = reportedMessageWithId(reportedMessages, messageId);
       const asksTheUser = asks !== undefined && asks.length > 0;
       if (!asksTheUser || message === undefined) return [];
       const { email: senderEmail, displayName: senderName } = contactFromSender(message.from);
@@ -1399,6 +1399,10 @@ function messagesWhoseBodyOrSummaryContainsWord(
 
 function latestProposalFor<T extends { messageId: string }>(proposals: T[], messageId: string): T | undefined {
   return proposals.findLast((proposal) => proposal.messageId === messageId);
+}
+
+function reportedMessageWithId(messages: ReportedMessage[], messageId: string): ReportedMessage | undefined {
+  return messages.find((message) => message.id === messageId);
 }
 
 // One organization per name: each reported message lists under the organization its latest proposal names, or
