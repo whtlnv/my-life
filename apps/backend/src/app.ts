@@ -61,7 +61,7 @@ import { openListedDigestStore } from './listed-digest-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
-import { openSlackMessageStore, type SlackVerdict } from './slack-message-store';
+import { openSlackMessageStore, type SlackMessage, type SlackVerdict } from './slack-message-store';
 import { pollSlackWorkspaces } from './slack-poll';
 import { openSpendStore } from './spend-store';
 import { openTaskEventStore } from './task-event-store';
@@ -881,7 +881,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         type: 'proposal-confirmed',
         taskId: `slack-${verdictKey}`,
         at: clock.now().toISOString(),
-        proposal: { title: String(message?.text), accountEmail: verdict.workspaceTeamId, link: slackPermalink(verdict) },
+        proposal: {
+          title: String(message?.text),
+          accountEmail: verdict.workspaceTeamId,
+          link: slackPermalink(verdict),
+        },
       });
     }
     return context.body(null, 200);
@@ -1718,6 +1722,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       organization: senderDomain(primaryEmailOf(contact)),
       lastMessageAt: new Date(mostRecentMessageTime(contact)).toISOString(),
     });
+    const slackSenderAsContact = (message: SlackMessage) => ({
+      channel: 'slack',
+      displayName: message.senderName,
+      slackHandles: [{ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }],
+    });
     return {
       urgent: urgentContacts.map(withOrganizationAndLastMessage),
       vip: contacts.filter(isVip).map(withOrganizationAndLastMessage),
@@ -1726,11 +1735,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((contact) => !isVip(contact) && !isUrgent(contact))
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
-        ...slackMessageStore.listMessages().map((message) => ({
-          channel: 'slack',
-          displayName: message.senderName,
-          slackHandles: [{ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }],
-        })),
+        ...slackMessageStore.listMessages().map(slackSenderAsContact),
       ],
     };
   };
