@@ -46,6 +46,20 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
     },
   },
   'thread-reply': {
+    '/search.messages': {
+      ok: true,
+      messages: {
+        matches: [
+          {
+            text: 'Can someone share the Q3 numbers?',
+            user: ownSlackUserId,
+            ts: threadTimestamp,
+            thread_ts: threadTimestamp,
+            channel: { id: 'C0002', is_im: false },
+          },
+        ],
+      },
+    },
     '/conversations.replies': {
       ok: true,
       messages: [

@@ -82,6 +82,29 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('in the thread-reply scenario returns the message the user wrote, with its channel and thread, from search.messages for from:<@U0000>', async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    try {
+      const search = (await (
+        await fetch(`${slack.url}/search.messages?query=${encodeURIComponent(`from:<@${ownSlackUserId}>`)}`, {
+          headers: { Authorization: `Bearer ${slack.token}` },
+        })
+      ).json()) as {
+        ok: boolean;
+        messages: { matches: { user: string; ts: string; thread_ts: string; channel: { id: string } }[] };
+      };
+
+      expect(search.ok).toBe(true);
+      expect(search.messages.matches).toHaveLength(1);
+      const [match] = search.messages.matches;
+      expect(match?.user).toBe(ownSlackUserId);
+      expect(match?.channel.id).toBe('C0002');
+      expect(match?.thread_ts).toBe('1762700200.000300');
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('answers users.info with the display name of each user in the scenario', async () => {
     const slack = await startSlackFakeServer('thread-reply');
     try {
