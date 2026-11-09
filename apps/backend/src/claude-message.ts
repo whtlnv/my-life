@@ -9,6 +9,12 @@ interface ClaudeMessageRequest {
   tools: { name: string; strict: boolean; input_schema: unknown }[];
 }
 
+function toAnswerBlock(block: Anthropic.Beta.BetaContentBlock) {
+  if (block.type === 'tool_use') return { type: block.type, id: block.id, name: block.name, input: block.input };
+  if (block.type === 'text') return { type: block.type, text: block.text };
+  return { type: block.type };
+}
+
 // One Anthropic call shape for every adapter: a system prompt, the messages with their roles and blocks, strict
 // tools, low effort, fallbacks.
 export function createMessageWith(client: Anthropic) {
@@ -28,11 +34,7 @@ export function createMessageWith(client: Anthropic) {
       fallbacks: 'default',
     });
     return {
-      content: response.content.map((block) => {
-        if (block.type === 'tool_use') return { type: block.type, id: block.id, name: block.name, input: block.input };
-        if (block.type === 'text') return { type: block.type, text: block.text };
-        return { type: block.type };
-      }),
+      content: response.content.map(toAnswerBlock),
       stop_reason: response.stop_reason,
       usage: { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens },
     };
