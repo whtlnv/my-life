@@ -158,22 +158,22 @@ const app = createApp({
   ...(agent === undefined ? {} : { agent }),
 });
 
-function runTriage(): void {
-  Promise.resolve(app.request('/triage-run', { method: 'POST' })).catch((error: unknown) => {
-    console.error('triage run failed', error);
+function postToScheduledRoute(path: string, failureLabel: string): void {
+  Promise.resolve(app.request(path, { method: 'POST' })).catch((error: unknown) => {
+    console.error(`${failureLabel} failed`, error);
   });
+}
+
+function runTriage(): void {
+  postToScheduledRoute('/triage-run', 'triage run');
 }
 
 function runPrioritization(): void {
-  Promise.resolve(app.request('/prioritization-run', { method: 'POST' })).catch((error: unknown) => {
-    console.error('prioritization run failed', error);
-  });
+  postToScheduledRoute('/prioritization-run', 'prioritization run');
 }
 
 function runSlackPoll(): void {
-  Promise.resolve(app.request('/slack-poll', { method: 'POST' })).catch((error: unknown) => {
-    console.error('slack poll failed', error);
-  });
+  postToScheduledRoute('/slack-poll', 'slack poll');
 }
 
 serve({ fetch: app.fetch, port: settings.port, hostname: '127.0.0.1' }, (info) => {
