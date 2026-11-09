@@ -67,7 +67,7 @@
   - note (supervisor 2026-11-09): `undoneAgentArchiveMessageIds` and `undoneLabelRequests` in `apps/backend/src/app.ts` live only in memory; derive the pending undo commands from the stored, undone actions instead.
 - [x] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
 - [x] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
-- [ ] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
+- [x] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
 - [ ] On the agent page, choosing a past conversation shows its turns, and the next question continues it
 - [ ] On the agent page, a "What the agent did" list shows each action, with an Undo button only on reversible ones, and pressing Undo marks the action undone
 - [ ] The shipped backend answers agent messages through Claude with the agent model and the real store-backed tools, as composed by its production entry point

@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 
+export const unverifiedCitationText = 'Unverified citation';
+
+interface Citation {
+  id: string;
+  subject?: string;
+  link?: string;
+  verified?: boolean;
+}
+
 interface Turn {
   role: string;
   text: string;
+  citations?: Citation[];
 }
 
 async function askAgent(message: string): Promise<Turn[]> {
@@ -31,7 +41,18 @@ export function AgentPage() {
       </header>
       <ol>
         {turns.map((turn, index) => (
-          <li key={index}>{turn.text}</li>
+          <li key={index}>
+            {turn.text}
+            {turn.citations?.map((citation) =>
+              citation.verified === false ? (
+                <span key={citation.id}>{unverifiedCitationText}</span>
+              ) : (
+                <a key={citation.id} href={citation.link}>
+                  {citation.subject}
+                </a>
+              ),
+            )}
+          </li>
         ))}
       </ol>
       <form onSubmit={onSubmit}>
