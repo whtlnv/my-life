@@ -132,6 +132,7 @@ export interface AppOptions {
   prioritization?: {
     prioritize: (context: {
       tasks: { id: string; title: string; accountEmail: string; due: string | undefined }[];
+      profile: string;
     }) => Promise<{ ranks: TaskRanks['ranks'] }>;
   };
   summary?: {
@@ -1001,7 +1002,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   let taskRanksFromLastRun: TaskRanks['ranks'] = [];
   app.post('/prioritization-run', async (context) => {
     const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
-    taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks })).ranks;
+    const profile = tasks
+      .map(({ accountEmail }) => join(options.profileDirectory ?? '', profileFileName(accountEmail)))
+      .filter((profilePath) => existsSync(profilePath))
+      .map((profilePath) => readFileSync(profilePath, 'utf8'))
+      .join('\n');
+    taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile })).ranks;
     return context.json({});
   });
   app.get('/tasks', (context) => {

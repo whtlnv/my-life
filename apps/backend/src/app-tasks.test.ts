@@ -1,3 +1,7 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
@@ -165,7 +169,11 @@ describe('backend app: task proposals and tasks', () => {
   });
 
   it('keeps a confirmed task proposal an open task, not listed again at GET /task-proposals, after a backend restart on the same database file', async () => {
-    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() };
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+    };
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     const beforeRestart = createApp({ ...options, triage });
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
@@ -183,7 +191,11 @@ describe('backend app: task proposals and tasks', () => {
 
   it('keeps after a backend restart on the same database file a done task out of GET /tasks, a snoozed task hidden until its time with its waiting-on person, and each history unchanged', async () => {
     let now = new Date('2026-11-02T15:10:00.000Z');
-    const options = { allowedEmails: ['ana@example.com'], clock: { now: () => now }, databasePath: temporaryDatabasePath() };
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => now },
+      databasePath: temporaryDatabasePath(),
+    };
     const triage = triageAnswering(
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
     );
@@ -258,5 +270,36 @@ describe('backend app: task proposals and tasks', () => {
     expect(tasks.tasks).toEqual([
       expect.objectContaining({ title: 'Approve the budget', rank: 1, reason: 'Due before the board meeting' }),
     ]);
+  });
+
+  it('hands the prioritization port at POST /prioritization-run the profile of the account the open tasks come from', async () => {
+    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    const profileText = '## Purpose\n\nBoard work for Acme; the budget review closes this week.\n';
+    writeFileSync(join(profileDirectory, 'example.md'), profileText);
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-05' }] }),
+    );
+    const handedProfiles: string[] = [];
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string }[]; profile: string }) => {
+        handedProfiles.push(context.profile);
+        return { ranks: [], costInUsd: 0.01 };
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage,
+      prioritization,
+      profileDirectory,
+    });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+
+    await postJson(app, '/prioritization-run', {});
+
+    expect(handedProfiles).toEqual([expect.stringContaining(profileText)]);
   });
 });
