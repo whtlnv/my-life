@@ -1390,8 +1390,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({});
   });
   app.post('/agent/actions/undo', async (context) => {
-    const { tool, target } = await context.req.json<{ tool: string; target: string }>();
-    if (tool === 'write_draft') return context.body(null, 409);
+    const { tool, target, actionId } = await context.req.json<{ tool: string; target: string; actionId?: string }>();
+    const action = agentActions.find(({ id }) => id === actionId);
+    if (tool === 'write_draft' || action?.undoable === false) return context.body(null, 409);
     const labelRequest = labelRequests.find(({ messageId }) => messageId === target);
     if (tool === 'create_task') taskEventStore.save({ type: 'done', taskId: target, at: clock.now().toISOString() });
     else if (tool === 'mark_vip') contactDetailsStore.removeMark(target, 'vip');

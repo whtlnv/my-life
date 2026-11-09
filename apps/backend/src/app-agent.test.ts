@@ -1016,4 +1016,30 @@ describe('backend app: the agent', () => {
     expect(response.status).toBe(409);
     expect(commands.map(({ type }) => type)).toEqual(['create-draft']);
   });
+  it('undoing an agent filter approval by its action id is refused and sends the account no new command', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can approve that filter.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: shopNewsletterArchiveTriage(),
+      filter: filterAnswering(shopNewslettersFilterProposal),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await reportTriageAndConfirmShopNewsletters(app);
+    const proposalId = await firstPendingFilterProposalId(app);
+    await postJson(app, '/agent/conversations', { message: 'Approve the shop newsletters filter' });
+    await offeredTools.find((tool) => tool.name === 'approve_filter_proposal')?.run({ proposalId });
+    const { actions } = await getJson<{ actions: { id: string; tool: string }[] }>(app, '/agent/actions');
+    const approvalActionId = actions.find(({ tool }) => tool === 'approve_filter_proposal')?.id;
+    const { commands: commandsBeforeUndo } = (await (await getCommands(app, 'ana@example.com')).json()) as {
+      commands: unknown[];
+    };
+
+    const response = await postJson(app, '/agent/actions/undo', { actionId: approvalActionId });
+
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect(response.status).toBe(409);
+    expect(commands).toEqual(commandsBeforeUndo);
+  });
 });
