@@ -192,4 +192,25 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('a second poll of the direct-message scenario stores no DM message the first poll already stored', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      const poll = () =>
+        pollSlackWorkspace({
+          fetch,
+          apiUrl: slack.url,
+          workspace: { teamId: 'T0001', userToken: slack.token },
+          store,
+        });
+
+      await poll();
+      await poll();
+
+      expect(store.listMessages().map((message) => message.timestamp)).toEqual(['1762700000.000100']);
+    } finally {
+      await slack.close();
+    }
+  });
 });
