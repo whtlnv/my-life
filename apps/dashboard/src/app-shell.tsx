@@ -30,6 +30,8 @@ interface AccountStatus {
 const statusRefreshIntervalMilliseconds = 60_000;
 const emptyStatus: ShellStatus = { badgeCount: 0, accounts: [], sources: [] };
 
+export const businessTimeZone = 'America/Mexico_City';
+
 export const routes = {
   now: '#/',
   people: '#/people',
@@ -44,7 +46,7 @@ function timeInBusinessZone(isoTime: string): string {
   return new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Mexico_City',
+    timeZone: businessTimeZone,
   }).format(new Date(isoTime));
 }
 

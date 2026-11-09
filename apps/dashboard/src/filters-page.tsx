@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { businessTimeZone } from './app-shell';
 import { accountName } from './account-name';
 
 interface FilterDefinition {
@@ -43,7 +44,7 @@ function timeInBusinessZone(isoTime: string): string {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Mexico_City',
+    timeZone: businessTimeZone,
   }).format(new Date(isoTime));
 }
 

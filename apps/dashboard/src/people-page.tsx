@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { businessTimeZone } from './app-shell';
+
 interface PersonRow {
   displayName: string;
   emails: string[];
@@ -36,7 +38,7 @@ const timeInBusinessZone = (isoTime: string) =>
     weekday: 'short',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'America/Mexico_City',
+    timeZone: businessTimeZone,
   }).format(new Date(isoTime));
 
 const PeopleList = ({

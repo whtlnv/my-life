@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, ty
 
 import { triageCategories } from '@my-life/contracts';
 
+import { businessTimeZone } from './app-shell';
 import { accountName } from './account-name';
 import { categoryLabel, categorySwatches } from './category-labels';
 
@@ -87,7 +88,7 @@ export const fetchedAtText = (fetchedAt: string) =>
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    timeZone: 'America/Mexico_City',
+    timeZone: businessTimeZone,
   }).format(new Date(fetchedAt))}`;
 
 const queueRefreshIntervalMilliseconds = 30_000;
