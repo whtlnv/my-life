@@ -2,18 +2,25 @@
 // startup settings and the Claude adapters is pinned from the outside.
 
 import { type ChildProcess, spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { type AddressInfo, createServer as createNetServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { budgetReviewReport, profileDirectoryWith, temporaryDatabasePath } from './app.test-support';
+import {
+  budgetReviewReport,
+  budgetReviewReportWithQuarterlyNumbersBody,
+  profileDirectoryWith,
+  temporaryDatabasePath,
+} from './app.test-support';
 
 interface RecordedAnthropicRequest {
   model: string;
   system?: unknown;
   tools: { name: string }[];
+  messages?: { role: string; content: unknown }[];
 }
 
 const writtenSummaryLines = ['GitHub: one build passed, nothing significant'];
@@ -235,5 +242,40 @@ describe('the shipped backend (main.ts)', () => {
     expect(recorded.find(isPrioritizationRequest)).toEqual(
       expect.objectContaining({ model: 'claude-opus-5-5', system: expect.stringMatching(/\S/) as unknown }),
     );
+  }, 30_000);
+
+  it('answers an agent message through Claude on the agent model under prompts/agent-v1.md, running a search the agent asks for against the stored messages', async () => {
+    const recorded: RecordedAnthropicRequest[] = [];
+    const agentReplyText = 'Luis sent the quarterly numbers.';
+    const isAgentRequest = (request: RecordedAnthropicRequest) =>
+      request.tools.some(({ name }) => name === 'search_messages');
+    fakeAnthropic = await startFakeAnthropic(recorded, (request) => {
+      if (!isAgentRequest(request)) return toolUseAnswer(request);
+      const searchedAlready = JSON.stringify(request.messages).includes('tool_result');
+      return {
+        ...toolUseAnswer(request),
+        content: searchedAlready
+          ? [{ type: 'text', text: agentReplyText }]
+          : [{ type: 'tool_use', id: 'search-1', name: 'search_messages', input: { query: 'quarterly numbers' } }],
+        stop_reason: searchedAlready ? 'end_turn' : 'tool_use',
+      };
+    });
+    const baseUrl = await startShippedBackend(fakeAnthropic, { MY_LIFE_AGENT_MODEL: 'claude-sonnet-5-5' });
+    await postMailReport(baseUrl, budgetReviewReportWithQuarterlyNumbersBody);
+
+    const conversation = (await (
+      await fetch(`${baseUrl}/agent/conversations`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ message: 'Did Luis send the quarterly numbers?' }),
+      })
+    ).json()) as { turns: { role: string; text: string }[] };
+
+    expect(conversation.turns.at(-1)).toEqual(expect.objectContaining({ role: 'assistant', text: agentReplyText }));
+    const agentRequests = recorded.filter(isAgentRequest);
+    expect(agentRequests.map(({ model }) => model)).toEqual(['claude-sonnet-5-5', 'claude-sonnet-5-5']);
+    expect(JSON.stringify(agentRequests[1]?.messages)).toContain('message-1');
+    const agentPrompt = readFileSync(new URL('../prompts/agent-v1.md', import.meta.url), 'utf8');
+    expect(agentRequests[0]?.system).toEqual(expect.stringContaining(agentPrompt.trim()));
   }, 30_000);
 });

@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { serve } from '@hono/node-server';
 
 import { createApp, currentTriagePromptVersion } from './app';
+import { createClaudeAgent } from './claude-agent';
 import { createClaudeFilter } from './claude-filter';
 import { createMessageWith } from './claude-message';
 import { createClaudePrioritization } from './claude-prioritization';
@@ -21,6 +22,7 @@ const promptPath = fileURLToPath(new URL(`../prompts/${currentTriagePromptVersio
 const filterPromptPath = fileURLToPath(new URL('../prompts/filter-v1.md', import.meta.url));
 const digestSummaryPromptPath = fileURLToPath(new URL('../prompts/digest-summary-v1.md', import.meta.url));
 const prioritizationPromptPath = fileURLToPath(new URL('../prompts/prioritization-v1.md', import.meta.url));
+const agentPromptPath = fileURLToPath(new URL('../prompts/agent-v1.md', import.meta.url));
 const profileDirectory =
   process.env.MY_LIFE_PROFILE_DIRECTORY ?? fileURLToPath(new URL('../../../profile', import.meta.url));
 const triageRunIntervalInMilliseconds = 30_000;
@@ -113,6 +115,23 @@ const prioritization =
           }),
       });
 
+const agent =
+  claude === undefined
+    ? undefined
+    : createClaudeAgent({
+        model: settings.agentModel,
+        promptPath: agentPromptPath,
+        profileDirectory,
+        pricing: pricingFor(settings.agentModel),
+        createMessage: (request) =>
+          claude.createMessage({
+            model: request.model,
+            system: request.system ?? '',
+            messages: request.messages,
+            tools: (request.tools ?? []).map(({ name, input_schema }) => ({ name, strict: false, input_schema })),
+          }),
+      });
+
 const app = createApp({
   allowedEmails: settings.allowedEmails,
   databasePath: settings.databasePath,
@@ -125,6 +144,7 @@ const app = createApp({
   ...(filter === undefined ? {} : { filter }),
   ...(summary === undefined ? {} : { summary }),
   ...(prioritization === undefined ? {} : { prioritization }),
+  ...(agent === undefined ? {} : { agent }),
 });
 
 function runTriage(): void {

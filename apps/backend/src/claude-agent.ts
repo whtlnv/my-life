@@ -20,7 +20,7 @@ interface ClaudeAgentContentBlock {
 
 interface ClaudeAgentResponse {
   content: ClaudeAgentContentBlock[];
-  stop_reason?: string;
+  stop_reason?: string | null;
   usage: { input_tokens: number; output_tokens: number };
 }
 

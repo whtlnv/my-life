@@ -77,6 +77,6 @@
   - note (supervisor 2026-11-09): `createMessageWith` in `apps/backend/src/main.ts` maps every message to `role: 'user'`, keeps only `type` and `input` of each block and drops `stop_reason`; triage, filter, summary and prioritization rely on it and must keep passing.
 - [x] The production Claude request returns the text of each text block in Claude's answer, so the agent's final reply reaches the conversation
   - note (supervisor 2026-11-09, split after a sizing bail): `createMessageWith` in `apps/backend/src/claude-message.ts` keeps only `type` for a text block; the test belongs in `claude-message.test.ts`.
-- [ ] The shipped backend answers agent messages through Claude on the agent model under `apps/backend/prompts/agent-v1.md`, and a search the agent asks for is answered from the stored messages, as composed by its production entry point
+- [x] The shipped backend answers agent messages through Claude on the agent model under `apps/backend/prompts/agent-v1.md`, and a search the agent asks for is answered from the stored messages, as composed by its production entry point
   - note (supervisor 2026-11-09, keystone): `main.ts` creates no agent today and the prompt file does not exist; write the prompt as a versioned file. Check the composed agent gets the store-backed tools, including the refused ones.
 - [ ] The demo seeds an agent conversation with citations and agent actions, and the agent page is screenshot-verified over `scripts/demo.sh`

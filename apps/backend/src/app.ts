@@ -151,10 +151,10 @@ export interface AppOptions {
     }) => Promise<{ ranks?: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
   };
   agent?: {
-    respond: (request?: {
+    respond: (request: {
       turns: ConversationTurn[];
       tools?: AgentTool[];
-    }) => Promise<{ text: string; citations?: { id: string }[]; costInUsd: number; model?: string }>;
+    }) => Promise<{ text: string | undefined; citations?: { id: string }[]; costInUsd: number; model?: string }>;
   };
   summary?: {
     summarize: (request: {
@@ -1158,7 +1158,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const conversationStore = openConversationStore(databasePath);
   const agentActionStore = openAgentActionStore(databasePath);
-  const assistantTurn = (reply: { text: string; citations?: unknown[] | undefined } | undefined): ConversationTurn => ({
+  const assistantTurn = (reply: { text: string | undefined; citations?: unknown[] | undefined } | undefined): ConversationTurn => ({
     role: 'assistant',
     text: reply?.text ?? agentUnavailableReply,
     citations: reply?.citations,
