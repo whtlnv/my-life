@@ -13,6 +13,8 @@ export const threadReplyText = 'Sounds good, I will send the numbers tonight.';
 
 const threadTimestamp = '1762700200.000300';
 
+const threadParentText = 'Can someone share the Q3 numbers?';
+
 const displayNameByUserId: Record<string, string> = { [ownSlackUserId]: 'me', U0003: 'Dana' };
 
 function usersInfoResponse(userId: string) {
@@ -51,7 +53,7 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
       messages: {
         matches: [
           {
-            text: 'Can someone share the Q3 numbers?',
+            text: threadParentText,
             user: ownSlackUserId,
             ts: threadTimestamp,
             thread_ts: threadTimestamp,
@@ -66,7 +68,7 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
         {
           type: 'message',
           user: ownSlackUserId,
-          text: 'Can someone share the Q3 numbers?',
+          text: threadParentText,
           ts: threadTimestamp,
           thread_ts: threadTimestamp,
         },
