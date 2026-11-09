@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { agentUnavailableReply, createApp } from './app';
+import { agentSpendCeilingReply, agentUnavailableReply, createApp } from './app';
 import { clockAtTenPastThree, getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openSpendStore } from './spend-store';
 
@@ -142,6 +142,32 @@ describe('backend app: the agent', () => {
     expect(conversation.turns).toEqual([
       { role: 'user', text: 'What is on my plate today?' },
       { role: 'assistant', text: agentUnavailableReply },
+    ]);
+  });
+
+  it("answers that the daily spend ceiling is reached, without calling the model, once today's spend reaches it", async () => {
+    let modelCalls = 0;
+    const agent = {
+      respond: () => {
+        modelCalls += 1;
+        return Promise.resolve({ text: 'You have two open tasks today.', costInUsd: 1, model: 'claude-opus-5-5' });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 1,
+      agent,
+    });
+    await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' });
+
+    const response = await postJson(app, '/agent/conversations', { message: 'Who is waiting on me?' });
+
+    const conversation = (await response.json()) as { turns: { role: string; text: string }[] };
+    expect(modelCalls).toBe(1);
+    expect(conversation.turns).toEqual([
+      { role: 'user', text: 'Who is waiting on me?' },
+      { role: 'assistant', text: agentSpendCeilingReply },
     ]);
   });
 });

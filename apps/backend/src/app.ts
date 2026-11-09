@@ -187,6 +187,7 @@ const automaticLabelName = 'my-life/auto';
 // main.ts loads `prompts/<version>.md`, and the Claude adapter reports the file's name as the proposal's version.
 export const currentTriagePromptVersion = 'triage-v2';
 export const agentUnavailableReply = 'The agent is unavailable: no Anthropic key is configured.';
+export const agentSpendCeilingReply = 'The agent is paused: the daily spend ceiling is reached.';
 
 function gmailMessageLink({ accountEmail, messageId }: Pick<Proposal, 'accountEmail' | 'messageId'>): string {
   return `https://mail.google.com/mail/?authuser=${encodeURIComponent(accountEmail)}#all/${messageId}`;
@@ -1087,6 +1088,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
+    if (hasReachedDailySpendCeiling()) {
+      const turns: ConversationTurn[] = [
+        { role: 'user', text: message },
+        { role: 'assistant', text: agentSpendCeilingReply },
+      ];
+      return context.json({ id: '', turns }, 201);
+    }
     const reply = await options.agent?.respond();
     if (reply) {
       logSpend(reply);
