@@ -103,14 +103,20 @@ export function createClaudeAgent({
       };
       let response = await sendMessages();
       let toolRounds = 0;
+      const citations: { id: string }[] = [];
       while (response?.stop_reason === 'tool_use') {
         if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply, costInUsd };
         toolRounds += 1;
+        for (const block of response.content) {
+          if (block.type === 'tool_use' && block.name === 'cite_sources') {
+            citations.push(...(block.input as { ids: string[] }).ids.map((id) => ({ id })));
+          }
+        }
         const toolResults = await runRequestedTools(response.content, turnTools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
         response = await sendMessages();
       }
-      return { text: response?.content.find((block) => block.type === 'text')?.text, costInUsd };
+      return { text: response?.content.find((block) => block.type === 'text')?.text, costInUsd, citations };
     },
   };
 }

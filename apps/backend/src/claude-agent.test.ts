@@ -324,4 +324,32 @@ describe('Claude agent', () => {
       ],
     });
   });
+
+  it('returns the ids Claude passes to the cite_sources tool as the citations of its reply', async () => {
+    const responses = [
+      {
+        content: [
+          { type: 'tool_use', id: 'tool-use-1', name: 'cite_sources', input: { ids: ['message-1', 'event-2'] } },
+        ],
+        stop_reason: 'tool_use',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+      {
+        content: [{ type: 'text', text: 'Luis sent the quarterly numbers before the review.' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+    ];
+    const agent = createClaudeAgent({
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
+      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: () => Promise.resolve(responses.shift() ?? responses[0]),
+    });
+
+    const reply = await agent.respond({ turns: [{ role: 'user', text: 'Did Luis send the numbers?' }] });
+
+    expect(reply.citations).toEqual([{ id: 'message-1' }, { id: 'event-2' }]);
+  });
 });
