@@ -49,7 +49,8 @@ function agentRecordingOfferedTools(text: string) {
       return Promise.resolve({ text, costInUsd: 0.01 });
     },
   };
-  return { agent, offeredTools };
+  const runTool = (name: string, input: unknown) => offeredTools.find((tool) => tool.name === name)?.run(input);
+  return { agent, offeredTools, runTool };
 }
 
 describe('backend app: the agent', () => {
@@ -878,7 +879,7 @@ describe('backend app: the agent', () => {
     ]);
   });
   it('lists every kind of agent action with an id, its tool, target and conversation, and only archive, label, create task and mark VIP as undoable', async () => {
-    const { agent, offeredTools } = agentRecordingOfferedTools('Done.');
+    const { agent, runTool } = agentRecordingOfferedTools('Done.');
     const app = createApp({
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -893,15 +894,14 @@ describe('backend app: the agent', () => {
     const created = (await (await postJson(app, '/agent/conversations', { message: 'Tidy up my inbox' })).json()) as {
       id: string;
     };
-    const run = (name: string, input: unknown) => offeredTools.find((tool) => tool.name === name)?.run(input);
-    await run('archive_message', { messageId: 'message-1' });
-    await run('label_message', { messageId: 'message-1', labelName: 'Finance' });
-    await run('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
-    await run('create_task', { title: 'Review the budget', sourceMessageId: 'message-1' });
-    await run('mark_vip', { email: 'luis@example.com' });
-    await run('update_contact', { email: 'luis@example.com', note: 'Luis is my boss' });
-    await run('approve_filter_proposal', { proposalId });
-    await run('reject_filter_proposal', { proposalId });
+    await runTool('archive_message', { messageId: 'message-1' });
+    await runTool('label_message', { messageId: 'message-1', labelName: 'Finance' });
+    await runTool('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
+    await runTool('create_task', { title: 'Review the budget', sourceMessageId: 'message-1' });
+    await runTool('mark_vip', { email: 'luis@example.com' });
+    await runTool('update_contact', { email: 'luis@example.com', note: 'Luis is my boss' });
+    await runTool('approve_filter_proposal', { proposalId });
+    await runTool('reject_filter_proposal', { proposalId });
     const { tasks } = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
     const taskId = tasks.find(({ title }) => title === 'Review the budget')?.id;
 
@@ -1196,7 +1196,7 @@ describe('backend app: the agent', () => {
     });
   });
   it('after a backend restart on the same database file, still lists every agent action and refusal with its undone state, and still undoes a reversible one', async () => {
-    const { agent, offeredTools } = agentRecordingOfferedTools('Done.');
+    const { agent, runTool } = agentRecordingOfferedTools('Done.');
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -1207,7 +1207,6 @@ describe('backend app: the agent', () => {
     const beforeRestart = createApp(options);
     await proposeBudgetReview(beforeRestart);
     await postJson(beforeRestart, '/agent/conversations', { message: 'Tidy up the budget thread' });
-    const runTool = (name: string, input: unknown) => offeredTools.find((tool) => tool.name === name)?.run(input);
     await runTool('create_task', { title: 'Call the accountant' });
     await runTool('archive_message', { messageId: 'message-1' });
     await runTool('send_message', { messageId: 'message-1', body: 'I will review it by Friday.' });
@@ -1242,7 +1241,7 @@ describe('backend app: the agent', () => {
   });
 
   it("after a backend restart, an undone agent archive and an undone agent label the extension has not picked up are still in the account's commands", async () => {
-    const { agent, offeredTools } = agentRecordingOfferedTools('Done.');
+    const { agent, runTool } = agentRecordingOfferedTools('Done.');
     const options = {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
@@ -1253,7 +1252,6 @@ describe('backend app: the agent', () => {
     const beforeRestart = createApp(options);
     await proposeBudgetReview(beforeRestart);
     await postJson(beforeRestart, '/agent/conversations', { message: 'Tidy up the budget thread' });
-    const runTool = (name: string, input: unknown) => offeredTools.find((tool) => tool.name === name)?.run(input);
     await runTool('archive_message', { messageId: 'message-1' });
     await runTool('label_message', { messageId: 'message-1', labelName: 'Finance' });
     await undoAgentAction(beforeRestart, 'archive_message');
