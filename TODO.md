@@ -73,6 +73,11 @@
 - [x] A task can be given a waiting-on person, and the open tasks show it
 - [x] A task's history lists every transition (created, done, snoozed, reopened, waiting-on set) with its timestamp, oldest first
 - [x] After a backend restart on the same database file, every task keeps its state, snooze time, waiting-on person and history, and a decided task proposal is not listed again
+- [ ] `POST /tasks/:id/done` marks a task done and it leaves `GET /tasks`; an unknown task answers 404
+- [ ] `POST /tasks/:id/snooze` with an `until` time keeps the task out of `GET /tasks` until that time and back after it
+- [ ] `PUT /tasks/:id/waiting-on` sets the person the task waits on, shown with it in `GET /tasks`
+- [ ] `GET /tasks/:id/history` lists the task's transitions made through these routes, each with its time from the clock, oldest first
+- [ ] After a backend restart on the same database file, a task marked done stays out of `GET /tasks`, a snoozed one stays hidden until its time, a waiting-on person is kept and the history is unchanged
 - [ ] The prioritization pass sends the open tasks with the profile, today's calendar, due dates and urgency to the model configured for prioritization (default Opus 5.5) and stores the rank and reason it returns for each task
 - [ ] A prioritization answer that fails the contract's validation is rejected, and the previous ranks stand
 - [ ] Each prioritization call's cost is logged against the daily spend, and no pass runs once the daily ceiling is reached
@@ -82,6 +87,7 @@
 - [ ] After a backend restart on the same database file, `GET /tasks` keeps each task's rank, reason and pin without a new prioritization call
 - [ ] The prioritization pass runs again once its configured interval has elapsed, and not before
 - [ ] The _now_ page shows the 3 highest-ranked open tasks with their reasons, and not the fourth
+- [ ] Each task on the _now_ page can be marked done with one click, and it leaves the page
 - [ ] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
 - [ ] The _now_ waiting-on list leaves out a person whose last message the user has answered
 - [ ] The badge count includes the unanswered Needs input questions
