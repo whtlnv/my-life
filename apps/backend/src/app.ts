@@ -167,8 +167,6 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
-type AgentAction = StoredAgentAction;
-
 interface LabelRequest {
   messageId: string;
   labelName: string;
@@ -1304,7 +1302,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const emailTarget = (input: unknown) => (input as { email: string }).email;
     const proposalTarget = (input: unknown) => (input as { proposalId: string }).proposalId;
     const createdTaskTarget = (_input: unknown, result: unknown) => (result as { taskId: string }).taskId;
-    const recordAction = (action: Pick<AgentAction, 'tool' | 'target' | 'undoable' | 'outcome'>): void => {
+    const recordAction = (action: Pick<StoredAgentAction, 'tool' | 'target' | 'undoable' | 'outcome'>): void => {
       agentActionStore.save({
         id: `action-${String(agentActionStore.loadAll().length + 1)}`,
         conversationId,
