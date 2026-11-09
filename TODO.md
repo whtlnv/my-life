@@ -63,10 +63,13 @@
 - [x] When the agent asks for a tool it may not use (sending or deleting mail), the backend refuses it, changes nothing, and the list of agent actions shows the refusal
   - note (supervisor 2026-11-09, keystone): `decideAgentAction` in `packages/domain/src/agent-action.ts` has no caller outside its tests; the backend never records a refusal. Wire it into the backend's action path rather than adding a second check.
 - [x] After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
+- [ ] After a backend restart, an agent undo of an archive or a label that the extension has not yet picked up is still waiting in that account's commands
+  - note (supervisor 2026-11-09): `undoneAgentArchiveMessageIds` and `undoneLabelRequests` in `apps/backend/src/app.ts` live only in memory; derive the pending undo commands from the stored, undone actions instead.
 - [ ] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
 - [ ] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
 - [ ] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
 - [ ] On the agent page, choosing a past conversation shows its turns, and the next question continues it
 - [ ] On the agent page, a "What the agent did" list shows each action, with an Undo button only on reversible ones, and pressing Undo marks the action undone
 - [ ] The shipped backend answers agent messages through Claude with the agent model and the real store-backed tools, as composed by its production entry point
+  - note (supervisor 2026-11-09, keystone): `createClaudeAgent` in `apps/backend/src/claude-agent.ts` never sends tool definitions to Claude (`createMessage` gets only model, system, messages) and ignores the `tools` passed to `respond`, so in production the agent can call no tool at all. The test must see each offered tool's name, description and input schema in the request (send_message and delete_message included, so refusals can be recorded) and a tool_use answered by the store-backed tool.
 - [ ] The demo seeds an agent conversation with citations and agent actions, and the agent page is screenshot-verified over `scripts/demo.sh`
