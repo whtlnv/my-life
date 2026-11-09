@@ -617,6 +617,22 @@ function HandledForYouSection({
   );
 }
 
+function SlackSection({ items }: { items: SlackTriageItem[] }) {
+  return (
+    <section aria-label={sectionTitles.slack} className="section">
+      <h2 className="section-title">{sectionTitles.slack}</h2>
+      {items.map((item) => (
+        <article key={`${item.workspaceTeamId}:${item.timestamp}`} className="card">
+          <p>
+            {item.senderName} · {item.workspaceTeamId}
+          </p>
+          <p>{item.text}</p>
+        </article>
+      ))}
+    </section>
+  );
+}
+
 function Legend() {
   return (
     <p className="legend" aria-label="Keys">
@@ -731,19 +747,7 @@ export function TriagePage() {
           />
         ))}
       </section>
-      {queue.slackItems !== undefined && (
-        <section aria-label={sectionTitles.slack} className="section">
-          <h2 className="section-title">{sectionTitles.slack}</h2>
-          {queue.slackItems.map((item) => (
-            <article key={`${item.workspaceTeamId}:${item.timestamp}`} className="card">
-              <p>
-                {item.senderName} · {item.workspaceTeamId}
-              </p>
-              <p>{item.text}</p>
-            </article>
-          ))}
-        </section>
-      )}
+      {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} />}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
