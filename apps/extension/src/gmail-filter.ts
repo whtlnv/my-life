@@ -1,5 +1,5 @@
 import type { FetchFunction } from './fetch-function';
-import { acknowledgeCommand, findOrCreateLabelId, type CommandOptions } from './gmail-archive';
+import { acknowledgeCommand, fetchCommands, findOrCreateLabelId, type CommandOptions } from './gmail-archive';
 import { gmailApi } from './gmail-api';
 
 interface CreateFilterCommand {
@@ -17,10 +17,9 @@ interface DeleteFilterCommand {
 
 export async function carryOutFilterCommands(options: CommandOptions) {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
-  const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
-  const { commands } = (await (await options.fetch(commandsUrl)).json()) as {
-    commands: (CreateFilterCommand | DeleteFilterCommand | { id: string; type?: undefined })[];
-  };
+  const commands = (await fetchCommands(options)) as (
+    CreateFilterCommand | DeleteFilterCommand | { id: string; type?: undefined }
+  )[];
   for (const command of commands) {
     if (command.type === 'delete-filter') {
       await deleteGmailFilter(options.fetch, authorization, command);

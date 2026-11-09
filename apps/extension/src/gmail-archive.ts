@@ -64,9 +64,14 @@ async function modifyMessageLabels(
   });
 }
 
-async function fetchPendingMessageCommands(options: CommandOptions) {
+export async function fetchCommands(options: CommandOptions): Promise<unknown[]> {
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
-  const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: ListedCommand[] };
+  const { commands } = (await (await options.fetch(commandsUrl)).json()) as { commands: unknown[] };
+  return commands;
+}
+
+async function fetchPendingMessageCommands(options: CommandOptions) {
+  const commands = (await fetchCommands(options)) as ListedCommand[];
   return commands.filter((command): command is MessageCommand => command.messageId !== undefined);
 }
 

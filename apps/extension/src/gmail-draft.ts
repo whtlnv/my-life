@@ -1,4 +1,4 @@
-import { acknowledgeCommand, type CommandOptions } from './gmail-archive';
+import { acknowledgeCommand, fetchCommands, type CommandOptions } from './gmail-archive';
 import { gmailApi } from './gmail-api';
 
 interface CreateDraftCommand {
@@ -18,10 +18,7 @@ export async function carryOutDraftCommands(options: CommandOptions) {
 }
 
 async function fetchPendingDraftCommands(options: CommandOptions) {
-  const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
-  const { commands } = (await (await options.fetch(commandsUrl)).json()) as {
-    commands: (CreateDraftCommand | { id: string; type?: string })[];
-  };
+  const commands = (await fetchCommands(options)) as (CreateDraftCommand | { id: string; type?: string })[];
   return commands.filter((command): command is CreateDraftCommand => command.type === 'create-draft');
 }
 
