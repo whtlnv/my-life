@@ -67,7 +67,7 @@
 - [x] Confirming a task proposal creates an open task; rejecting it creates none
 - [x] `GET /task-proposals` lists each waiting task proposal with its title, due time, message link and account; `POST /task-proposals/:id/confirmation` makes it an open task in `GET /tasks`, `POST /task-proposals/:id/rejection` drops it, and neither is listed again
 - [x] The Needs input page lists the waiting task proposals, each confirmed or rejected with one key
-- [ ] Marking a task done removes it from the open tasks
+- [x] Marking a task done removes it from the open tasks
 - [ ] A task snoozed until a time is left out of the open tasks before that time
 - [ ] A task snoozed until a time is back among the open tasks once that time has passed
 - [ ] A task can be given a waiting-on person, and the open tasks show it

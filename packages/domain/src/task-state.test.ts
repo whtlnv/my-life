@@ -36,4 +36,23 @@ describe('openTasks', () => {
       },
     ]);
   });
+
+  it('removes a task from the open tasks once it is marked done', () => {
+    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
+    const events = [
+      {
+        type: 'proposal-confirmed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T15:00:00.000Z',
+        proposal: {
+          title: 'Review the Q3 budget spreadsheet and send comments',
+          link,
+          accountEmail: 'ana@example.com',
+        },
+      },
+      { type: 'done' as const, taskId: 'task-budget', at: '2026-11-09T17:30:00.000Z' },
+    ];
+
+    expect(openTasks(events)).toEqual([]);
+  });
 });
