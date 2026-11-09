@@ -42,7 +42,7 @@ function saveSlackMessage(input: PollSlackWorkspaceInput, conversationId: string
 }
 
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
-  const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list');
+  const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im');
   for (const channel of channels) {
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
       input,

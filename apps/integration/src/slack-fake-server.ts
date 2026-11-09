@@ -137,6 +137,10 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
         return;
       }
     }
+    if (url.pathname === '/conversations.list' && !url.searchParams.has('types')) {
+      response.end(JSON.stringify({ ok: true, channels: [] }));
+      return;
+    }
     if (url.pathname === '/users.info') {
       response.end(JSON.stringify(usersInfoResponse(url.searchParams.get('user') ?? '')));
       return;

@@ -38,6 +38,20 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('in the direct-message scenario lists no DM conversation from conversations.list without types, as Slack lists only public channels by default', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const list = (await (
+        await fetch(`${slack.url}/conversations.list`, { headers: { Authorization: `Bearer ${slack.token}` } })
+      ).json()) as { ok: boolean; channels: { id: string; is_im: boolean }[] };
+
+      expect(list.ok).toBe(true);
+      expect(list.channels.filter((conversation) => conversation.is_im)).toEqual([]);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('in the mention scenario returns one channel message that mentions the user from search.messages', async () => {
     const slack = await startSlackFakeServer('mention');
     try {
