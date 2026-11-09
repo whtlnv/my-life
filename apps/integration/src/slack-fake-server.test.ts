@@ -532,4 +532,35 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('a DM message the user sent is stored as sent by the user', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      const ownDirectMessage = {
+        type: 'message',
+        user: ownSlackUserId,
+        text: 'Yes, by noon.',
+        ts: '1762700100.000200',
+      };
+      const fetchWithTheUsersOwnDirectMessage: typeof fetch = async (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        const response = await fetch(request, init);
+        if (url.pathname !== '/conversations.history') return response;
+        const body = (await response.json()) as { messages: unknown[] };
+        return Response.json({ ...body, messages: [ownDirectMessage, ...body.messages] });
+      };
+
+      await pollSlackWorkspace({
+        fetch: fetchWithTheUsersOwnDirectMessage,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      const storedOwnMessage = store.listMessages().find((message) => message.timestamp === ownDirectMessage.ts);
+      expect(storedOwnMessage).toMatchObject({ senderUserId: ownSlackUserId, sentByUser: true });
+    } finally {
+      await slack.close();
+    }
+  });
 });

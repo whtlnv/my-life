@@ -44,7 +44,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A poll lists DM conversations with `types=im,mpim`; the Slack fake's `conversations.list` returns the DM only when `types` includes `im`, as Slack returns public channels by default (keystone: real Slack would list no DMs)
 - [x] A second poll asks `conversations.history` only for messages newer than the newest one stored for that conversation, passing `oldest`; the Slack fake honors `oldest` (keystone: every poll re-read whole conversations)
 - [x] A thread reply older than a newer message stored in the same channel outside the thread is still stored: the poll asks `conversations.replies` with `oldest` set from the newest stored message of that thread, not of the channel
-- [ ] A DM message the user sent is stored as sent by the user
+- [x] A DM message the user sent is stored as sent by the user
 - [ ] A stored Slack message carries its sender's Slack display name
 - [ ] A stored Slack message whose sender `users.info` cannot resolve carries the sender's user id as its name
 - [ ] When Slack answers 429 with `Retry-After`, the poll waits that long and retries, and the message is stored

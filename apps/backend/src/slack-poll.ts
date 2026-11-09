@@ -36,6 +36,7 @@ function saveSlackMessage(
   conversationId: string,
   message: SlackMessage,
   threadTimestamp?: string,
+  ownSlackUserId?: string,
 ): void {
   input.store.saveMessage({
     workspaceTeamId: input.workspace.teamId,
@@ -44,6 +45,7 @@ function saveSlackMessage(
     text: message.text,
     timestamp: message.ts,
     threadTimestamp,
+    sentByUser: message.user === ownSlackUserId,
   });
 }
 
@@ -61,6 +63,7 @@ function oldestParameterAfter(newestStoredTimestamp: string | undefined): string
 }
 
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
+  const ownSlackUserId = await fetchOwnSlackUserId(input);
   const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im');
   for (const channel of channels) {
     const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
@@ -69,7 +72,7 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
       `/conversations.history?channel=${channel.id}${oldestParameter}`,
     );
     for (const message of messages) {
-      saveSlackMessage(input, channel.id, message);
+      saveSlackMessage(input, channel.id, message, undefined, ownSlackUserId);
     }
   }
 }
