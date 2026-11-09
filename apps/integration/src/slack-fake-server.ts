@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type SlackScenario = 'direct-message' | 'mention' | 'thread-reply';
+type SlackScenario = 'direct-message' | 'mention' | 'thread-reply' | 'rate-limited';
 
 export const directMessageText = 'Can you review the proposal today?';
 
@@ -63,14 +63,22 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
       ],
     },
   },
+  'rate-limited': {},
 };
 
 const token = 'xoxp-fake';
 
 export async function startSlackFakeServer(scenario: SlackScenario) {
   const responseByPath = responseByPathByScenario[scenario];
+  let rateLimitPending = scenario === 'rate-limited';
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://fake');
+    if (rateLimitPending) {
+      rateLimitPending = false;
+      response.writeHead(429, { 'Retry-After': '1' });
+      response.end();
+      return;
+    }
     response.writeHead(200, { 'Content-Type': 'application/json' });
     if (request.headers.authorization !== `Bearer ${token}`) {
       response.end(JSON.stringify({ ok: false, error: 'invalid_auth' }));

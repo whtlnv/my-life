@@ -125,4 +125,22 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('in the rate-limited scenario answers the first request with 429 and a Retry-After header, and the next one normally', async () => {
+    const slack = await startSlackFakeServer('rate-limited');
+    try {
+      const headers = { Authorization: `Bearer ${slack.token}` };
+      const first = await fetch(`${slack.url}/users.info?user=${ownSlackUserId}`, { headers });
+
+      expect(first.status).toBe(429);
+      expect(Number(first.headers.get('Retry-After'))).toBeGreaterThan(0);
+
+      const second = await fetch(`${slack.url}/users.info?user=${ownSlackUserId}`, { headers });
+
+      expect(second.status).toBe(200);
+      expect(((await second.json()) as { ok: boolean }).ok).toBe(true);
+    } finally {
+      await slack.close();
+    }
+  });
 });
