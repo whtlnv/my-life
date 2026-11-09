@@ -16,33 +16,41 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
   return (await response.json()) as Response;
 }
 
-export async function pollSlackWorkspace(input: PollSlackWorkspaceInput): Promise<void> {
+type SlackMessage = { user: string; text: string; ts: string };
+
+function saveSlackMessage(input: PollSlackWorkspaceInput, conversationId: string, message: SlackMessage): void {
+  input.store.saveMessage({
+    workspaceTeamId: input.workspace.teamId,
+    conversationId,
+    senderUserId: message.user,
+    text: message.text,
+    timestamp: message.ts,
+  });
+}
+
+async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list');
   for (const channel of channels) {
-    const { messages } = await callSlack<{ messages: { user: string; text: string; ts: string }[] }>(
+    const { messages } = await callSlack<{ messages: SlackMessage[] }>(
       input,
       `/conversations.history?channel=${channel.id}`,
     );
     for (const message of messages) {
-      input.store.saveMessage({
-        workspaceTeamId: input.workspace.teamId,
-        conversationId: channel.id,
-        senderUserId: message.user,
-        text: message.text,
-        timestamp: message.ts,
-      });
+      saveSlackMessage(input, channel.id, message);
     }
   }
+}
+
+async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
   const { messages } = await callSlack<{
-    messages: { matches: { user: string; text: string; ts: string; channel: { id: string } }[] };
+    messages: { matches: (SlackMessage & { channel: { id: string } })[] };
   }>(input, '/search.messages');
   for (const match of messages.matches) {
-    input.store.saveMessage({
-      workspaceTeamId: input.workspace.teamId,
-      conversationId: match.channel.id,
-      senderUserId: match.user,
-      text: match.text,
-      timestamp: match.ts,
-    });
+    saveSlackMessage(input, match.channel.id, match);
   }
+}
+
+export async function pollSlackWorkspace(input: PollSlackWorkspaceInput): Promise<void> {
+  await pollDirectMessages(input);
+  await pollMentions(input);
 }
