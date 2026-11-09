@@ -49,6 +49,7 @@ import { openCalendarSnapshotStore, type StoredCalendarSnapshot } from './calend
 import { openFilterDeletionRequestStore } from './filter-deletion-request-store';
 import { openFilterProposalApprovalStore } from './filter-proposal-approval-store';
 import { openFilterProposalRejectionStore } from './filter-proposal-rejection-store';
+import { openPrioritizationStore } from './prioritization-store';
 import { openUndoAutomaticStore } from './undo-automatic-store';
 import { openFilterProposalStore } from './filter-proposal-store';
 import { openDigestSummaryStore } from './digest-summary-store';
@@ -381,6 +382,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
   const listedDigestStore = openListedDigestStore(databasePath);
   const undoAutomaticStore = openUndoAutomaticStore(databasePath);
+  const prioritizationStore = openPrioritizationStore(databasePath);
   const taskEventStore = openTaskEventStore(databasePath);
   // Messages reported before this process started are reloaded, so a restart never strands a message untriaged.
   const storedMessages = reportedMessageStore.loadReportedMessages();
@@ -1007,7 +1009,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
     return existsSync(profilePath) ? readFileSync(profilePath, 'utf8') : undefined;
   };
-  let taskRanksFromLastRun: TaskRanks['ranks'] = [];
   app.post('/prioritization-run', async (context) => {
     if (hasReachedDailySpendCeiling()) return context.json({});
     const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
@@ -1021,19 +1022,23 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     spendStore.save({ spentAt: clock.now().toISOString(), model: result.model ?? '', costInUsd: result.costInUsd ?? 0 });
     const answer = taskRanks.safeParse(result);
     if (answer.success) {
-      taskRanksFromLastRun = answer.data.ranks;
+      prioritizationStore.saveRanks(answer.data.ranks);
     }
     return context.json({});
   });
-  const pinnedTaskIds = new Set<string>();
   app.put('/tasks/:id/pin', async (context) => {
     const taskId = context.req.param('id');
     const { pinned } = await context.req.json<{ pinned: boolean }>();
-    if (pinned) pinnedTaskIds.add(taskId);
-    else pinnedTaskIds.delete(taskId);
+    prioritizationStore.savePin({ taskId, pinned });
     return context.json({ pinned });
   });
   app.get('/tasks', (context) => {
+    const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
+    const pinnedTaskIds = new Set<string>();
+    for (const { taskId, pinned } of prioritizationStore.loadPins()) {
+      if (pinned) pinnedTaskIds.add(taskId);
+      else pinnedTaskIds.delete(taskId);
+    }
     const rankedOpenTasks = currentOpenTasks().map((task) => {
       const ranked = taskRanksFromLastRun.find(({ taskId }) => taskId === task.id);
       return ranked === undefined ? task : { ...task, rank: ranked.rank, reason: ranked.reason };

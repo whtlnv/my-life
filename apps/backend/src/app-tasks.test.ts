@@ -444,6 +444,50 @@ describe('backend app: task proposals and tasks', () => {
     expect(afterUnpin.tasks.map(({ title }) => title)).toEqual(['Send the slides', 'Approve the budget']);
   });
 
+  it('keeps at GET /tasks, after a backend restart on the same database file, each task rank, reason and pin from before it, with no prioritization run after it', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+    };
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
+    );
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string; title: string }[] }) => ({
+        ranks: context.tasks.map(({ id, title }) =>
+          title === 'Send the slides'
+            ? { taskId: id, rank: 1, reason: 'The board meets at four' }
+            : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
+        ),
+        costInUsd: 0.01,
+      }),
+    };
+    const beforeRestart = createApp({ ...options, triage, prioritization });
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+    await postTriageRun(beforeRestart);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(beforeRestart, '/task-proposals');
+    for (const proposal of waiting.proposals) {
+      await postJson(beforeRestart, `/task-proposals/${proposal.id}/confirmation`, {});
+    }
+    await postJson(beforeRestart, '/prioritization-run', {});
+    const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(beforeRestart, '/tasks');
+    const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
+    await beforeRestart.request(`/tasks/${budgetTask?.id}/pin`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pinned: true }),
+    });
+
+    const afterRestart = createApp(options);
+    const tasks = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
+
+    expect(tasks.tasks).toEqual([
+      expect.objectContaining({ title: 'Approve the budget', rank: 2, reason: 'Due at the end of the week' }),
+      expect.objectContaining({ title: 'Send the slides', rank: 1, reason: 'The board meets at four' }),
+    ]);
+  });
+
   it('keeps at GET /tasks the previous ranks and reasons when a prioritization answer fails validation at POST /prioritization-run', async () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     const answers = [
