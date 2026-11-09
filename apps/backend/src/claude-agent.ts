@@ -36,6 +36,7 @@ interface ClaudeAgentDependencies {
   profileDirectory: string;
   pricing: ClaudePricing;
   tools?: ClaudeAgentTool[];
+  maxToolRounds?: number;
   createMessage: (request: ClaudeAgentRequest) => Promise<ClaudeAgentResponse | undefined>;
 }
 
@@ -65,11 +66,14 @@ function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgen
   );
 }
 
+export const agentToolRoundLimitReply = 'I stopped because I used too many tool calls for this turn.';
+
 export function createClaudeAgent({
   model,
   promptPath,
   profileDirectory,
   tools = [],
+  maxToolRounds = Infinity,
   createMessage,
 }: ClaudeAgentDependencies) {
   return {
@@ -79,7 +83,10 @@ export function createClaudeAgent({
       const system = `${prompt}\n\n${profile}`;
       const messages: ClaudeAgentRequest['messages'] = turns.map(({ role, text }) => ({ role, content: text }));
       let response = await createMessage({ model, system, messages });
+      let toolRounds = 0;
       while (response?.stop_reason === 'tool_use') {
+        if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply };
+        toolRounds += 1;
         const toolResults = await runRequestedTools(response.content, tools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
         response = await createMessage({ model, system, messages });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { profileDirectoryWith, promptFile } from './app.test-support';
-import { createClaudeAgent } from './claude-agent';
+import { agentToolRoundLimitReply, createClaudeAgent } from './claude-agent';
 
 interface SentRequest {
   model: string;
@@ -164,5 +164,47 @@ describe('Claude agent', () => {
         { type: 'tool_result', tool_use_id: 'tool-use-1', is_error: true, content: expect.stringContaining('query') },
       ],
     });
+  });
+  it('stops the turn and replies that it stopped when the model keeps asking for tools past the configured round limit', async () => {
+    const toolRuns: unknown[] = [];
+    let modelCalls = 0;
+    const agent = createClaudeAgent({
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
+      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      maxToolRounds: 2,
+      tools: [
+        {
+          name: 'tasks',
+          description: 'The open tasks.',
+          inputSchema: { type: 'object', properties: {} },
+          run: (input: unknown) => {
+            toolRuns.push(input);
+            return Promise.resolve({ tasks: [] });
+          },
+        },
+      ],
+      createMessage: () => {
+        modelCalls += 1;
+        if (modelCalls > 5) {
+          return Promise.resolve({
+            content: [{ type: 'text', text: 'Finally done.' }],
+            stop_reason: 'end_turn',
+            usage: { input_tokens: 0, output_tokens: 0 },
+          });
+        }
+        return Promise.resolve({
+          content: [{ type: 'tool_use', id: `tool-use-${String(modelCalls)}`, name: 'tasks', input: {} }],
+          stop_reason: 'tool_use',
+          usage: { input_tokens: 0, output_tokens: 0 },
+        });
+      },
+    });
+
+    const reply = await agent.respond({ turns: [{ role: 'user', text: 'What is on my plate today?' }] });
+
+    expect(toolRuns).toHaveLength(2);
+    expect(reply.text).toBe(agentToolRoundLimitReply);
   });
 });
