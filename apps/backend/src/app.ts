@@ -29,6 +29,7 @@ import {
   isDigestedCategory,
   isLeadingCategory,
   isTriagePaused,
+  localCalendarDate,
   mergeCalendarSnapshots,
   triageEffects,
   taskProposals,
@@ -246,11 +247,8 @@ function agreementRate(category: string, proposals: Proposal[], verdicts: Stored
 
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
-const businessDateOf = (instant: Date): string =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: businessTimeZone, dateStyle: 'short' }).format(instant);
-
 const mondayOfBusinessWeek = (instant: Date): string => {
-  const today = businessDateOf(instant);
+  const today = localCalendarDate(instant, businessTimeZone);
   const midnight = Date.parse(`${today}T00:00:00.000Z`);
   const daysSinceMonday = (new Date(midnight).getUTCDay() + 6) % 7;
   return new Date(midnight - daysSinceMonday * millisecondsPerDay).toISOString().slice(0, 10);
@@ -280,10 +278,12 @@ function withLink(proposal: Proposal) {
 }
 
 function describeHandledForYou(proposals: Proposal[], clock: Clock) {
-  const today = businessDateOf(clock.now());
+  const today = localCalendarDate(clock.now(), businessTimeZone);
   return proposals
     .filter((proposal) => proposal.madeAutomatic === true)
-    .filter((proposal) => proposal.madeAt !== undefined && businessDateOf(new Date(proposal.madeAt)) === today)
+    .filter(
+      (proposal) => proposal.madeAt !== undefined && localCalendarDate(proposal.madeAt, businessTimeZone) === today,
+    )
     .map(withLink);
 }
 
