@@ -967,12 +967,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   function describeSlackItems() {
     const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));
-    return slackMessageStore
-      .listMessages()
+    const messages = slackMessageStore.listMessages();
+    const slackUserNames = new Map(messages.map((message) => [message.senderUserId, message.senderName]));
+    return messages
       .filter((message) => message.sentByUser !== true)
       .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
       .map((message) => ({
         ...message,
+        text: message.text.replace(
+          /<@(\w+)>/g,
+          (_mention, userId: string) => `@${slackUserNames.get(userId) ?? userId}`,
+        ),
         permalink: slackTriagePermalink(message),
         choices: ['ignore', 'act', 'reply'],
       }));

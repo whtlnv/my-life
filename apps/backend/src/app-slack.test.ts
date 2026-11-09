@@ -71,6 +71,34 @@ describe('createApp Slack messages', () => {
     ]);
   });
 
+  it("shows in a Slack item's text at GET /triage-queue each <@U…> mention as @ and that user's display name, or @ and the user id when the name is unknown", async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openSlackMessageStore(databasePath);
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0002',
+      senderName: 'Bruno',
+      text: 'Morning all',
+      timestamp: '1762700000.000100',
+    });
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: '<@U0002> and <@U0009>, can you review the contract?',
+      timestamp: '1762700000.000200',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { slackItems } = await getJson<{ slackItems: { timestamp: string; text: string }[] }>(app, '/triage-queue');
+
+    expect(slackItems.find(({ timestamp }) => timestamp === '1762700000.000200')?.text).toBe(
+      '@Bruno and @U0009, can you review the contract?',
+    );
+  });
+
   it('leaves out of GET /triage-queue a Slack message the user sent', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({

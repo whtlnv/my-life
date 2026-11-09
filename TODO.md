@@ -109,7 +109,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A poll records each workspace's name and URL from `auth.test` (`team`, `url`); `GET /now` lists each Slack workspace with its name, and each Slack triage item carries its workspace's name (keystone: the dashboard showed team ids)
 - [x] A Slack item's permalink is the workspace URL from `auth.test` followed by `archives/<conversation>/p<timestamp without the dot>`, Slack's own permalink form (keystone: the hand-built app.slack.com link did not open the message)
 - [x] The user's own Slack identity (the `auth.test` user id of each workspace) is not listed in `GET /people`, even though their sent messages are stored
-- [ ] A Slack item's text in `GET /triage-queue` shows each `<@U…>` mention as `@` and that user's display name, falling back to the user id when the name is unknown
+- [x] A Slack item's text in `GET /triage-queue` shows each `<@U…>` mention as `@` and that user's display name, falling back to the user id when the name is unknown
 - [ ] On the triage page, a key other than the ignore, act and reply keys on a Slack item posts nothing
 - [ ] A Slack item on the triage page has Ignore, Task and Reply buttons with their keys and an Open in Slack link to its permalink; clicking Ignore or Task posts that verdict and clicking Reply opens the composer
 - [ ] After a Slack verdict or a successful send, the item leaves the triage page; a send Slack rejects keeps the composer open with the Slack error shown
