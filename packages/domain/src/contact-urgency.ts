@@ -8,16 +8,18 @@ interface UrgencyMessage {
   asks?: { ask: string }[];
 }
 
+export interface UrgencySettings {
+  timeZone: string;
+  unansweredAskBusinessDays: number;
+  deadlineHours: number;
+  vipWaitingBusinessDays: number;
+}
+
 interface ContactUrgencyInput {
   messages: UrgencyMessage[];
   vip: boolean;
   now: string;
-  settings: {
-    timeZone: string;
-    unansweredAskBusinessDays: number;
-    deadlineHours: number;
-    vipWaitingBusinessDays: number;
-  };
+  settings: UrgencySettings;
 }
 
 function answeredByUser(message: UrgencyMessage, messages: UrgencyMessage[]): boolean {

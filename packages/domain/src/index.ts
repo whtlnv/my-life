@@ -16,6 +16,6 @@ export { filterCandidates } from './filter-candidates';
 export { expenseStatement, type ExpenseProposal } from './expense-statement';
 export { digests, isDigestedCategory } from './digests';
 export { messageBody, type MessagePart } from './message-body';
-export { contactUrgency } from './contact-urgency';
+export { contactUrgency, type UrgencySettings } from './contact-urgency';
 export { taskProposals } from './task-proposals';
 export { openTasks, taskHistory, type TaskEvent } from './task-state';

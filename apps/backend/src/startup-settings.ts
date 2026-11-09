@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
+import type { UrgencySettings } from '@my-life/domain';
+
 import { resolveDatabasePath } from './database-path';
 
 export type TriageAvailability = { enabled: false; reason: string } | { enabled: true };
@@ -17,12 +19,7 @@ export interface StartupSettings {
   prioritizationModel: string;
   dailySpendCeilingInUsd: number;
   triage: TriageAvailability;
-  urgency: {
-    timeZone: string;
-    unansweredAskBusinessDays: number;
-    deadlineHours: number;
-    vipWaitingBusinessDays: number;
-  };
+  urgency: UrgencySettings;
 }
 
 const defaultPort = 7777;
