@@ -1,3 +1,82 @@
+- [x] 2026-11-09 · When the user sends a first message to the agent, a new conversation is created and the model's text reply is returned as the conversation's assistant turn
+- [x] 2026-11-09 · A second message in the same conversation sends the earlier user and assistant turns to the model along with the new one
+- [x] 2026-11-09 · Opening a conversation returns every turn in the order it was said
+- [x] 2026-11-09 · The list of conversations shows each with its first user message as its title, most recently active first
+- [x] 2026-11-09 · A conversation and its turns are still there after the backend restarts
+- [x] 2026-11-09 · The agent's requests use the configured agent model, Claude Opus 5.5 when no setting is given
+- [x] 2026-11-09 · The agent's requests use the model named by the agent model setting when one is given
+- [x] 2026-11-09 · The agent's system prompt carries the versioned agent prompt file and the user's profile text
+- [x] 2026-11-09 · Sending a message to the agent when no Anthropic key is configured answers that the agent is unavailable instead of crashing
+- [x] 2026-11-09 · Each agent call's cost is logged against the daily spend ceiling
+- [x] 2026-11-09 · Once the daily spend ceiling is reached, a message to the agent answers that the ceiling is reached and the model is not called
+- [x] 2026-11-09 · Below the daily spend ceiling, a message to the agent calls the model
+- [x] 2026-11-09 · When the model asks for a tool, the tool's result is sent back to the model and the model's following text becomes the reply
+- [x] 2026-11-09 · When the model asks for a tool that does not exist, an error result goes back to the model and the turn still completes
+- [x] 2026-11-09 · When a tool's input fails its schema, a validation error goes back to the model and the tool does not run
+- [x] 2026-11-09 · When the model keeps asking for tools past the configured round limit, the turn stops and the reply says it stopped
+- [x] 2026-11-09 · The first message of a new conversation reaches the model: the agent port receives that message as the conversation's only user turn, and the Claude agent adapter sends it (today the route calls `respond()` with no turns, which the real adapter cannot take)
+- [x] 2026-11-09 · The Claude agent adapter reports the cost of every model call in a turn, tool rounds included, from the response usage and the configured pricing
+- [x] 2026-11-09 · A follow-up message in a conversation logs its spend and, once the daily ceiling is reached, answers that the ceiling is reached without calling the model, like a first message
+- [x] 2026-11-09 · `search_messages` returns the stored messages whose body, subject or summary contains the query words, each with its id, account, sender, subject, date and Gmail link, and leaves out messages without them
+- [x] 2026-11-09 · `search_messages` ranks a message containing every query word above one containing only some of them (backlog: apps/backend/src/app.ts:990 `GET /search` scans every stored message instead of an SQLite FTS5 index)
+- [x] 2026-11-09 · `read_thread` returns every stored message of the given message's thread with its body, oldest first, and no message from another thread
+- [x] 2026-11-09 · `contact_timeline` returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them
+- [x] 2026-11-09 · `calendar_day` returns the events of the given date across every account's calendars, in the business time zone, with their Meet links, and no event of another day
+- [x] 2026-11-09 · `tasks` returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks
+- [x] 2026-11-09 · `digest` returns the waiting digests with their account, category, count and summary lines
+- [x] 2026-11-09 · A reply that cites a message or event a tool returned in that turn shows the cited item with its link
+- [x] 2026-11-09 · A turn stopped at the tool-round limit still reports the cost of every model call it made, so it is logged against the daily spend
+- [x] 2026-11-09 · A reply that cites a message or event no tool returned in that turn shows the citation as unverified, without a link
+- [x] 2026-11-09 · An agent action outside the allowed set (anything that sends or deletes) is refused, recorded as refused, and changes nothing
+- [x] 2026-11-09 · An allowed agent action is carried out and recorded with the conversation it came from and the time
+- [x] 2026-11-09 · `archive_message` stores an archive verdict for the message attributed to the agent, and the message's account receives an archive command
+- [x] 2026-11-09 · `archive_message` on a message id the store does not know returns an error to the model and records nothing
+- [x] 2026-11-09 · `label_message` sends the message's account a label command with the given label name that leaves the message in the inbox
+- [x] 2026-11-09 · The extension applies a label command by adding the named label, creating it if missing, without removing the message from the inbox, then acknowledges the command
+- [x] 2026-11-09 · `create_task` with a source message creates an open task with the given title, linked to that message and its account
+- [x] 2026-11-09 · `create_task` without a source message creates an open task linked to the agent conversation it came from
+- [x] 2026-11-09 · `mark_vip` puts the contact under VIP in the People view, as a Needs input answer would
+- [x] 2026-11-09 · `update_contact` saves a note, organization or lists on the contact, as an edit from the People page would ("Luis is my boss" is kept as his note)
+- [x] 2026-11-09 · `approve_filter_proposal` stores an approval for the proposal, and its account receives the create-filter command
+- [x] 2026-11-09 · `reject_filter_proposal` stores a rejection, and the proposal leaves the filter proposals list
+- [x] 2026-11-09 · `write_draft` sends the replied-to message's account a create-draft command carrying the thread, recipients, subject and body
+- [x] 2026-11-09 · The extension carries out a create-draft command by creating a Gmail draft in that thread, never sending it, then acknowledges the command
+  - note (handoff 2026-11-09): a first attempt was discarded. It treated every command from `GET /commands` as a draft (an archive or label command would have been turned into a draft and acknowledged), acknowledged even when the Gmail request failed, and was not called from `extension-start.ts`. The test must include an archive command beside the draft command, a failed Gmail answer, and the wiring.
+- [x] 2026-11-09 · The list of agent actions shows every action newest first, with its tool, target, conversation, time and whether it can be undone
+- [x] 2026-11-09 · Undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label
+- [x] 2026-11-09 · Undoing an agent label sends the message's account a command that removes that label
+- [x] 2026-11-09 · Undoing an agent VIP mark removes the mark
+- [x] 2026-11-09 · Undoing an agent-created task removes it from the open tasks
+  - note (supervisor 2026-11-09): agent tasks without a source message used to share the id `agent-undefined`; they now get `agent-<conversation>-<n>`. The test should undo one of two sourceless tasks and see the other stay open.
+- [x] 2026-11-09 · Undoing an agent action that cannot be reversed (a draft, a filter approval already carried out) is refused and changes nothing
+- [x] 2026-11-09 · Every agent action (archive, label, write draft, create task, mark VIP, update contact, approve or reject a filter proposal) appears in the list of agent actions with an id, its tool, target and conversation; archive, label, create task and mark VIP can be undone, the others cannot
+  - note (supervisor 2026-11-09, keystone): today only archive and write draft are recorded (`recordingAction` in `apps/backend/src/app.ts`). Each action's target is what its undo needs: the message for archive and label (and the label name), the task id for create task, the contact for mark VIP.
+- [x] 2026-11-09 · Undo names an action by its id from the list of agent actions: an id not in the list, or an action that cannot be undone (draft, contact update, filter approval or rejection), is refused and changes nothing
+  - note (supervisor 2026-11-09, keystone): `POST /agent/actions/undo` today takes `tool` and `target` from the request and falls through to archive undo for any unknown tool, so undoing a filter approval sends an undo-archive command, and a VIP mark the user set could be removed. Migrate the existing undo tests in `apps/backend/src/app-agent.test.ts` to undo by action id; keep their assertions, never delete them.
+- [x] 2026-11-09 · After an agent action is undone, the list of agent actions shows it as undone, and undoing it again is refused and changes nothing
+- [x] 2026-11-09 · An undone agent task leaves the open tasks without counting as finished: its history shows it as undone, not done
+- [x] 2026-11-09 · When the agent asks for a tool it may not use (sending or deleting mail), the backend refuses it, changes nothing, and the list of agent actions shows the refusal
+  - note (supervisor 2026-11-09, keystone): `decideAgentAction` in `packages/domain/src/agent-action.ts` has no caller outside its tests; the backend never records a refusal. Wire it into the backend's action path rather than adding a second check.
+- [x] 2026-11-09 · After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
+- [x] 2026-11-09 · After a backend restart, an agent undo of an archive or a label that the extension has not yet picked up is still waiting in that account's commands
+  - note (supervisor 2026-11-09): `undoneAgentArchiveMessageIds` and `undoneLabelRequests` in `apps/backend/src/app.ts` live only in memory; derive the pending undo commands from the stored, undone actions instead.
+- [x] 2026-11-09 · The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
+- [x] 2026-11-09 · On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
+- [x] 2026-11-09 · On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
+- [x] 2026-11-09 · On the agent page, choosing a past conversation shows its turns, and the next question continues it
+- [x] 2026-11-09 · On the agent page, a "What the agent did" list shows each action, with an Undo button only on reversible ones, and pressing Undo marks the action undone
+- [x] 2026-11-09 · The Claude agent adapter sends Claude the name, description and input schema of each tool passed in that turn, and answers Claude's tool_use with the matching tool from that same turn
+  - note (supervisor 2026-11-09, split from the shipped-wiring keystone after a sizing bail): today `createClaudeAgent` in `apps/backend/src/claude-agent.ts` sends no tool definitions and runs only the tools given when it was created, ignoring the `tools` passed to `respond`.
+- [x] 2026-11-09 · Every tool the backend offers the agent (the read tools, the eight actions, and the refused send_message and delete_message) carries a description and an input schema that names its required inputs
+- [x] 2026-11-09 · The production Claude request keeps each agent message's role and its tool_use and tool_result blocks (id, name, input), and returns Claude's stop reason, so a tool round trip reaches Claude intact
+  - note (supervisor 2026-11-09): `createMessageWith` in `apps/backend/src/main.ts` maps every message to `role: 'user'`, keeps only `type` and `input` of each block and drops `stop_reason`; triage, filter, summary and prioritization rely on it and must keep passing.
+- [x] 2026-11-09 · The production Claude request returns the text of each text block in Claude's answer, so the agent's final reply reaches the conversation
+  - note (supervisor 2026-11-09, split after a sizing bail): `createMessageWith` in `apps/backend/src/claude-message.ts` keeps only `type` for a text block; the test belongs in `claude-message.test.ts`.
+- [x] 2026-11-09 · The shipped backend answers agent messages through Claude on the agent model under `apps/backend/prompts/agent-v1.md`, and a search the agent asks for is answered from the stored messages, as composed by its production entry point
+  - note (supervisor 2026-11-09, keystone): `main.ts` creates no agent today and the prompt file does not exist; write the prompt as a versioned file. Check the composed agent gets the store-backed tools, including the refused ones.
+- [x] 2026-11-09 · The real Claude agent adapter returns the messages Claude cites, through a cite_sources tool Claude calls with the ids it relies on, so a production reply shows its citations, verified or not
+  - note (supervisor 2026-11-09, keystone): `createClaudeAgent` in `apps/backend/src/claude-agent.ts` returns only `text` and `costInUsd`; `app.ts` reads `reply.citations`, which only the test agents supply. Structured output goes through tool use (CLAUDE.md locked decision 13). Update `apps/backend/prompts/agent-v1.md` to say when to cite and that sending or deleting mail is refused.
+- [x] 2026-11-09 · The demo seeds an agent conversation with citations and agent actions, and the agent page is screenshot-verified over `scripts/demo.sh`
 - [x] 2026-11-08 · When the extension polls Gmail, a message the account sent (Gmail label `SENT`) is reported to the backend marked as sent by the user
 - [x] 2026-11-08 · When the extension polls Gmail, a message received in the inbox is reported marked as not sent by the user
   - hand-driven 2026-11-08: the exact-fields poll test was migrated to expect `sentByUser: false`, not deleted
