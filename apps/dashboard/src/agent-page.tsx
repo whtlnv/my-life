@@ -6,20 +6,22 @@ interface Turn {
   text: string;
 }
 
+async function askAgent(message: string): Promise<Turn[]> {
+  const response = await fetch('/agent/conversations', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+  const { turns } = (await response.json()) as { turns: Turn[] };
+  return turns;
+}
+
 export function AgentPage() {
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    void fetch('/agent/conversations', {
-      method: 'POST',
-      body: JSON.stringify({ message: question }),
-    })
-      .then((response) => response.json() as Promise<{ turns: Turn[] }>)
-      .then(({ turns: answered }) => {
-        setTurns(answered);
-      });
+    void askAgent(question).then(setTurns);
   };
 
   return (
