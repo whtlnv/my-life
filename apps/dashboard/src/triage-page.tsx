@@ -626,8 +626,8 @@ function postSlackVerdict(item: SlackTriageItem, key: string) {
 }
 
 function postSlackSend(item: SlackTriageItem, text: string) {
-  const { workspaceTeamId, conversationId } = item;
-  void postJson('/slack-sends', { workspaceTeamId, conversationId, text });
+  const { workspaceTeamId, conversationId, timestamp } = item;
+  void postJson('/slack-sends', { workspaceTeamId, conversationId, threadTimestamp: timestamp, text });
 }
 
 function SlackCard({ item }: { item: SlackTriageItem }) {

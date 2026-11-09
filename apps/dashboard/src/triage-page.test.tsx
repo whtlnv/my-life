@@ -1569,4 +1569,42 @@ describe('TriagePage', () => {
 
     expect(within(card).getByRole('button')).toBeDisabled();
   });
+  it('posts a reply composed on a Slack channel mention that starts no thread into a thread on that message', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'C0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: '<@U0000> can you look at the launch checklist?',
+          timestamp: '1762700000.000200',
+          permalink: 'https://app.slack.com/client/T0001/C0001/p1762700000000200',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    await user.click(card);
+    await user.keyboard('r');
+    await user.type(within(card).getByRole('textbox'), 'On it');
+    await user.click(within(card).getByRole('button'));
+
+    const postedSlackSendBodies = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/slack-sends')
+      .map(([, init]) => JSON.parse(String(init?.body)) as unknown);
+    expect(postedSlackSendBodies).toEqual([
+      { workspaceTeamId: 'T0001', conversationId: 'C0001', threadTimestamp: '1762700000.000200', text: 'On it' },
+    ]);
+  });
 });
