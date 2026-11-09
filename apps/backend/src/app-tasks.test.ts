@@ -608,4 +608,20 @@ describe('backend app: task proposals and tasks', () => {
     const after = await getJson<{ badgeCount: number }>(app, '/now');
     expect(after.badgeCount).toBe(before.badgeCount + 1);
   });
+
+  it('leaves an open task due later out of the GET /now badge count', async () => {
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-20' }] }),
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const before = await getJson<{ badgeCount: number }>(app, '/now');
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+
+    const after = await getJson<{ badgeCount: number }>(app, '/now');
+    expect(after.badgeCount).toBe(before.badgeCount);
+  });
 });
