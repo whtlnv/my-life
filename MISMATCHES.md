@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 23:31 · `apps/backend/src/app-agent.test.ts::calls the model and returns its reply while today's spend is below the daily spend ceiling`
+- Behavior: Below the daily spend ceiling, a message to the agent calls the model
+- Predicted: pass on first run (stated before running): the ceiling guard from 079aa75 only short-circuits at or above the ceiling (`isTriagePaused` uses `>=`), and otherwise falls through to `agent.respond()`
+- Actual: passed (1 passed, 8 skipped)
+- Type: passed unexpectedly
+- Resolution: the previous item delivered this behavior as the other branch of its guard; no failing test can drive it, so the test stays as a regression pin against the guard blocking below the ceiling, and the TODO item needs no green step.
+
 ## 2026-11-08 19:13 · `apps/backend/src/app-tasks.test.ts::keeps after a backend restart on the same database file a done task out of GET /tasks, a snoozed task hidden until its time with its waiting-on person, and each history unchanged`
 - Behavior: after a backend restart on the same database file, a done task stays out of `GET /tasks`, a snoozed one stays hidden until its time, the waiting-on person is kept and the history is unchanged
 - Predicted: test passes on first run (no right-reason failure available), because `openTaskEventStore` already persists every task event to SQLite and the task routes derive state from it
