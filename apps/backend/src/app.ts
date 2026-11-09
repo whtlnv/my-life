@@ -1213,6 +1213,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   };
+  const updateContactTool: AgentTool = {
+    name: 'update_contact',
+    run: (input) => {
+      const { email, ...details } = input as { email: string } & ContactDetails;
+      contactDetailsStore.save(email, details);
+      return Promise.resolve({});
+    },
+  };
   const createTaskToolFor = (conversationId: string): AgentTool => ({
     name: 'create_task',
     run: (input) => {
@@ -1255,6 +1263,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         labelMessageTool,
         createTaskToolFor(conversationId),
         markVipTool,
+        updateContactTool,
       ],
     });
     if (!reply) {

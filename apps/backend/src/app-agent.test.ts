@@ -718,4 +718,29 @@ describe('backend app: the agent', () => {
     const people = await getJson<{ vip: { emails: string[] }[] }>(app, '/people');
     expect(people.vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
   });
+  it('update_contact saves a note, organization and lists on the contact, as an edit from the People page would', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I will remember that.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Luis is my boss' });
+    const updateContactTool = offeredTools.find((tool) => tool.name === 'update_contact');
+
+    await updateContactTool?.run({
+      email: 'luis@example.com',
+      note: 'Luis is my boss',
+      organization: 'Psmutuus',
+      lists: ['leadership'],
+    });
+
+    const { contacts } = await getJson<{ contacts: unknown[] }>(app, '/contacts');
+    expect(contacts).toMatchObject([
+      { emails: ['luis@example.com'], note: 'Luis is my boss', organization: 'Psmutuus', lists: ['leadership'] },
+    ]);
+  });
 });
