@@ -997,16 +997,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks/:id/history', (context) =>
     context.json({ history: taskHistory(taskEventStore.loadAll(), context.req.param('id')) }),
   );
+  const currentOpenTasks = () => openTasks(taskEventStore.loadAll(), clock.now().toISOString());
   let taskRanksFromLastRun: TaskRanks['ranks'] = [];
   app.post('/prioritization-run', async (context) => {
-    const tasks = openTasks(taskEventStore.loadAll(), clock.now().toISOString()).map(
-      ({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }),
-    );
+    const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
     taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks })).ranks;
     return context.json({});
   });
   app.get('/tasks', (context) => {
-    const rankedOpenTasks = openTasks(taskEventStore.loadAll(), clock.now().toISOString()).map((task) => {
+    const rankedOpenTasks = currentOpenTasks().map((task) => {
       const ranked = taskRanksFromLastRun.find(({ taskId }) => taskId === task.id);
       return ranked === undefined ? task : { ...task, rank: ranked.rank, reason: ranked.reason };
     });
