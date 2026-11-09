@@ -55,4 +55,86 @@ describe('NeedsInputPage', () => {
     ]);
     expect(screen.queryByText(question.senderEmail)).not.toBeInTheDocument();
   });
+  it('lists each waiting task proposal with its title and account; pressing the confirm key sends POST /task-proposals/:id/confirmation and removes the proposal', async () => {
+    const proposal = {
+      id: 'message-7-0',
+      title: 'Send the signed contract',
+      due: '2026-11-10T17:00:00.000Z',
+      link: 'https://mail.google.com/mail/u/work@example.com/#all/message-7',
+      accountEmail: 'work@example.com',
+    };
+    const decisionRequests: { url: string; method: string | undefined }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === '/needs-input') {
+          return Promise.resolve(Response.json({ questions: [] }));
+        }
+        if (input === '/task-proposals') {
+          return Promise.resolve(Response.json({ proposals: [proposal] }));
+        }
+        if (typeof input === 'string' && input.startsWith('/task-proposals/')) {
+          decisionRequests.push({ url: input, method: init?.method });
+          return Promise.resolve(Response.json({ confirmed: proposal.id }));
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+    const user = userEvent.setup();
+
+    render(<NeedsInputPage />);
+
+    const list = await screen.findByRole('list', { name: 'Task proposals' });
+    const [row] = within(list).getAllByRole('listitem');
+    if (row === undefined) throw new Error('expected one task proposal row');
+    expect(within(row).getByText(proposal.title)).toBeInTheDocument();
+    expect(within(row).getByText(proposal.accountEmail)).toBeInTheDocument();
+    const confirmKey = within(row).getByRole('button', { name: /confirm/i }).getAttribute('aria-keyshortcuts');
+    if (confirmKey === null) throw new Error('expected the confirm button to carry its key');
+
+    await user.keyboard(confirmKey);
+
+    expect(decisionRequests).toEqual([{ url: `/task-proposals/${proposal.id}/confirmation`, method: 'POST' }]);
+    expect(screen.queryByText(proposal.title)).not.toBeInTheDocument();
+  });
+  it('pressing the reject key on a waiting task proposal sends POST /task-proposals/:id/rejection and removes the proposal', async () => {
+    const proposal = {
+      id: 'message-8-0',
+      title: 'Review the quarterly budget',
+      due: null,
+      link: 'https://mail.google.com/mail/u/work@example.com/#all/message-8',
+      accountEmail: 'work@example.com',
+    };
+    const decisionRequests: { url: string; method: string | undefined }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === '/needs-input') {
+          return Promise.resolve(Response.json({ questions: [] }));
+        }
+        if (input === '/task-proposals') {
+          return Promise.resolve(Response.json({ proposals: [proposal] }));
+        }
+        if (typeof input === 'string' && input.startsWith('/task-proposals/')) {
+          decisionRequests.push({ url: input, method: init?.method });
+          return Promise.resolve(Response.json({ rejected: proposal.id }));
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+    const user = userEvent.setup();
+
+    render(<NeedsInputPage />);
+
+    const list = await screen.findByRole('list', { name: 'Task proposals' });
+    const [row] = within(list).getAllByRole('listitem');
+    if (row === undefined) throw new Error('expected one task proposal row');
+    const rejectKey = within(row).getByRole('button', { name: /reject/i }).getAttribute('aria-keyshortcuts');
+    if (rejectKey === null) throw new Error('expected the reject button to carry its key');
+
+    await user.keyboard(rejectKey);
+
+    expect(decisionRequests).toEqual([{ url: `/task-proposals/${proposal.id}/rejection`, method: 'POST' }]);
+    expect(screen.queryByText(proposal.title)).not.toBeInTheDocument();
+  });
 });
