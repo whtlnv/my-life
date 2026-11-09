@@ -638,6 +638,29 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(everyoneElse.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
   });
 
+  it('gives each contact under Urgent at GET /people its organization and the time of its most recent message, alongside its reasons', async () => {
+    const tomorrowNoon = '2026-11-03T12:00:00-06:00';
+    const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { urgent } = (await response.json()) as {
+      urgent: { emails: string[]; reasons: string[]; organization: string; lastMessageAt: string }[];
+    };
+    expect(urgent).toMatchObject([
+      {
+        emails: ['luis@example.com'],
+        reasons: ['deadline'],
+        organization: 'example.com',
+        lastMessageAt: '2026-11-02T15:00:00.000Z',
+      },
+    ]);
+  });
+
   it('lists at GET /people a non-VIP contact whose triaged message carries a date more than 48 hours away under Everyone else and not under Urgent', async () => {
     const nextWeek = '2026-11-10T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [nextWeek] }));

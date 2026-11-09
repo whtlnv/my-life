@@ -1223,7 +1223,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       lastMessageAt: new Date(mostRecentMessageTime(contact)).toISOString(),
     });
     return {
-      urgent: urgentContacts,
+      urgent: urgentContacts.map(withOrganizationAndLastMessage),
       vip: contacts.filter(isVip).map(withOrganizationAndLastMessage),
       everyoneElse: contacts
         .filter((contact) => !isVip(contact) && !isUrgent(contact))
