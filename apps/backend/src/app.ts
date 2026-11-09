@@ -1231,11 +1231,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           other.threadId === message.threadId &&
           new Date(other.date).getTime() > new Date(message.date).getTime(),
       );
+    const awaitsReply = (message: ReportedMessage): boolean =>
+      message.sentByUser !== true && !userRepliedLaterInThread(message);
     const people = contactsByEmail(reportedSenders(), proposals)
       .filter((contact) =>
-        reportedMessages
-          .filter((message) => contact.messageIds.includes(message.id))
-          .some((message) => message.sentByUser !== true && !userRepliedLaterInThread(message)),
+        reportedMessages.some((message) => contact.messageIds.includes(message.id) && awaitsReply(message)),
       )
       .map((contact) => ({ email: contact.emails[0] ?? '' }));
     return context.json({ people });
