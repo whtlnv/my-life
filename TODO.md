@@ -18,7 +18,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 
 - [x] In the `direct-message` scenario, the Slack fake lists one DM conversation and returns its message from `conversations.history`
 - [x] In the `mention` scenario, the Slack fake's `search.messages` returns one channel message that mentions the user
-- [ ] In the `thread-reply` scenario, the Slack fake's `conversations.replies` returns a new reply in a thread the user wrote in
+- [x] In the `thread-reply` scenario, the Slack fake's `conversations.replies` returns a new reply in a thread the user wrote in
 - [ ] The Slack fake answers `users.info` with the display name of each user in the scenario
 - [ ] The Slack fake answers a request carrying the scenario's token
 - [ ] The Slack fake answers `invalid_auth` to a request carrying any other token

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { directMessageText, mentionMessageText, startSlackFakeServer, ownSlackUserId } from './slack-fake-server';
+import {
+  directMessageText,
+  mentionMessageText,
+  startSlackFakeServer,
+  ownSlackUserId,
+  threadReplyText,
+} from './slack-fake-server';
 
 describe('Slack fake server', () => {
   it('in the direct-message scenario lists one DM conversation and returns its message from conversations.history', async () => {
@@ -47,6 +53,27 @@ describe('Slack fake server', () => {
       expect(match?.channel.is_im).toBe(false);
       expect(match?.text).toBe(mentionMessageText);
       expect(match?.text).toContain(`<@${ownSlackUserId}>`);
+    } finally {
+      await slack.close();
+    }
+  });
+
+  it('in the thread-reply scenario returns a new reply in a thread the user wrote in from conversations.replies', async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    try {
+      const replies = (await (
+        await fetch(`${slack.url}/conversations.replies?channel=C0002&ts=1762700200.000300`, {
+          headers: { Authorization: 'Bearer xoxp-fake' },
+        })
+      ).json()) as { ok: boolean; messages: { text: string; user: string; ts: string; thread_ts: string }[] };
+
+      expect(replies.ok).toBe(true);
+      expect(replies.messages).toHaveLength(2);
+      const [parent, reply] = replies.messages;
+      expect(parent?.user).toBe(ownSlackUserId);
+      expect(reply?.user).not.toBe(ownSlackUserId);
+      expect(reply?.thread_ts).toBe(parent?.ts);
+      expect(reply?.text).toBe(threadReplyText);
     } finally {
       await slack.close();
     }

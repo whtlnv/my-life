@@ -1,13 +1,15 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type SlackScenario = 'direct-message' | 'mention';
+type SlackScenario = 'direct-message' | 'mention' | 'thread-reply';
 
 export const directMessageText = 'Can you review the proposal today?';
 
 export const ownSlackUserId = 'U0000';
 
 export const mentionMessageText = `<@${ownSlackUserId}> can you join the launch call?`;
+
+export const threadReplyText = 'Sounds good, I will send the numbers tonight.';
 
 const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {
@@ -30,6 +32,27 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
           },
         ],
       },
+    },
+  },
+  'thread-reply': {
+    '/conversations.replies': {
+      ok: true,
+      messages: [
+        {
+          type: 'message',
+          user: ownSlackUserId,
+          text: 'Can someone share the Q3 numbers?',
+          ts: '1762700200.000300',
+          thread_ts: '1762700200.000300',
+        },
+        {
+          type: 'message',
+          user: 'U0003',
+          text: threadReplyText,
+          ts: '1762700300.000400',
+          thread_ts: '1762700200.000300',
+        },
+      ],
     },
   },
 };
