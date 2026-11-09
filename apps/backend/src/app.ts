@@ -792,24 +792,37 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const needsInputQuestions = () => {
     const verdicts = verdictStore.loadAll();
-    const categoryQuestions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
+    const categoryQuestions = proposals.flatMap(({ messageId, accountEmail, category, disagreement, summary }) => {
       const alreadyAnswered = latestVerdictFor(messageId, verdicts) !== undefined;
       const choices = categoryQuestionChoices(category, disagreement);
       if (alreadyAnswered || choices === undefined) return [];
-      return [{ kind: 'category', messageId, accountEmail, choices }];
+      const message = reportedMessages.find((reported) => reported.id === messageId);
+      return [
+        { kind: 'category', messageId, accountEmail, choices, subject: message?.subject, summary, from: message?.from },
+      ];
     });
     const newSenderQuestions = proposals.flatMap(({ messageId, accountEmail, asks }) => {
       const message = reportedMessages.find((reported) => reported.id === messageId);
       const asksTheUser = asks !== undefined && asks.length > 0;
       if (!asksTheUser || message === undefined) return [];
-      const senderEmail = contactFromSender(message.from).email;
+      const { email: senderEmail, displayName: senderName } = contactFromSender(message.from);
       const senderWroteBefore = reportedMessages.some(
         (reported) => reported.id !== messageId && contactFromSender(reported.from).email === senderEmail,
       );
       const senderAlreadyAnswered =
         contactDetailsStore.markedEmails().has(senderEmail) || contactDetailsStore.userRemovedMark(senderEmail, 'vip');
       if (senderWroteBefore || senderAlreadyAnswered) return [];
-      return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
+      return [
+        {
+          kind: 'new-sender',
+          senderEmail,
+          messageId,
+          accountEmail,
+          choices: ['vip', 'ordinary'],
+          senderName,
+          asks: asks.map(({ ask }) => ask),
+        },
+      ];
     });
     return [...categoryQuestions, ...newSenderQuestions];
   };

@@ -93,7 +93,7 @@ describe('backend app: GET /needs-input', () => {
     ]);
   });
 
-  it('asks which category is right for a message proposed as unknown, offering every known category', async () => {
+  it('asks which category is right for a message proposed as unknown, offering every known category, with the message subject, summary and sender', async () => {
     const triage = triageAnswering({
       action: 'keep',
       category: 'unknown',
@@ -109,6 +109,9 @@ describe('backend app: GET /needs-input', () => {
         messageId: 'message-1',
         accountEmail: 'ana@example.com',
         choices: triageCategories.filter((category) => category !== 'unknown'),
+        subject: 'Budget review',
+        summary: 'Luis writes about the budget',
+        from: 'Luis <luis@example.com>',
       }),
     ]);
   });
@@ -171,7 +174,7 @@ describe('backend app: GET /needs-input', () => {
     ]);
   });
 
-  it('asks whether a sender with no earlier message is VIP or ordinary when their message asks the user for something', async () => {
+  it('asks whether a sender with no earlier message is VIP or ordinary when their message asks the user for something, naming the sender and the ask', async () => {
     const triage = triageAnswering({
       action: 'act',
       category: 'action',
@@ -189,6 +192,8 @@ describe('backend app: GET /needs-input', () => {
         messageId: 'message-1',
         accountEmail: 'ana@example.com',
         choices: ['vip', 'ordinary'],
+        senderName: 'Luis',
+        asks: ['Review the budget'],
       }),
     ]);
   });
