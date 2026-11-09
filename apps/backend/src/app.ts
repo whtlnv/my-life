@@ -619,11 +619,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.post('/slack-sends', async (context) => {
     const send = await context.req.json<SlackSendRequest>();
     const workspace = configuredSlackWorkspaces.find(({ teamId }) => teamId === send.workspaceTeamId);
-    await fetch(`${options.slackApiUrl ?? ''}/chat.postMessage`, {
+    const slackResponse = await fetch(`${options.slackApiUrl ?? ''}/chat.postMessage`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${workspace?.userToken ?? ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ channel: send.conversationId, thread_ts: send.threadTimestamp, text: send.text }),
     });
+    const slackResult = (await slackResponse.json()) as { ok: boolean; error?: string };
+    if (!slackResult.ok) {
+      return context.json({ error: slackResult.error }, 502);
+    }
     slackSends.push({ ...send, sentAt: clock.now().toISOString() });
     return context.json({});
   });

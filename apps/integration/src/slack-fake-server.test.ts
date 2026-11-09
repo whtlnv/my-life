@@ -897,4 +897,29 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('a send Slack rejects at POST /slack-sends returns the Slack error to the dashboard and records no send', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-revoked-token' }],
+      });
+
+      const response = await backend.request('/slack-sends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceTeamId: 'T0001', conversationId: 'D0001', text: 'On it, sending it tonight.' }),
+      });
+
+      expect(response.status).toBe(502);
+      expect(await response.json()).toEqual({ error: 'invalid_auth' });
+      const { sends } = (await (await backend.request('/slack-sends')).json()) as { sends: unknown[] };
+      expect(sends).toEqual([]);
+    } finally {
+      await slack.close();
+    }
+  });
 });
