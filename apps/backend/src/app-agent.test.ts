@@ -1042,4 +1042,33 @@ describe('backend app: the agent', () => {
     expect(response.status).toBe(409);
     expect(commands).toEqual(commandsBeforeUndo);
   });
+  it('an undone agent archive shows as undone in the list of agent actions, and undoing it again is refused and sends no new command', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Archived.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Archive the budget thread' });
+    await offeredTools.find((tool) => tool.name === 'archive_message')?.run({ messageId: 'message-1' });
+    const { actions: actionsBeforeUndo } = await getJson<{ actions: { id: string }[] }>(app, '/agent/actions');
+    const archiveActionId = actionsBeforeUndo[0]?.id;
+    await postJson(app, '/agent/actions/undo', { actionId: archiveActionId });
+    const { commands: commandsAfterFirstUndo } = (await (await getCommands(app, 'ana@example.com')).json()) as {
+      commands: unknown[];
+    };
+
+    const secondUndo = await postJson(app, '/agent/actions/undo', { actionId: archiveActionId });
+
+    const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect({ actions, secondUndoStatus: secondUndo.status, commands }).toMatchObject({
+      actions: [{ id: archiveActionId, tool: 'archive_message', undoable: true, undone: true }],
+      secondUndoStatus: 409,
+      commands: commandsAfterFirstUndo,
+    });
+  });
 });

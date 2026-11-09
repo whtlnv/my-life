@@ -58,7 +58,7 @@
   - note (supervisor 2026-11-09, keystone): today only archive and write draft are recorded (`recordingAction` in `apps/backend/src/app.ts`). Each action's target is what its undo needs: the message for archive and label (and the label name), the task id for create task, the contact for mark VIP.
 - [x] Undo names an action by its id from the list of agent actions: an id not in the list, or an action that cannot be undone (draft, contact update, filter approval or rejection), is refused and changes nothing
   - note (supervisor 2026-11-09, keystone): `POST /agent/actions/undo` today takes `tool` and `target` from the request and falls through to archive undo for any unknown tool, so undoing a filter approval sends an undo-archive command, and a VIP mark the user set could be removed. Migrate the existing undo tests in `apps/backend/src/app-agent.test.ts` to undo by action id; keep their assertions, never delete them.
-- [ ] After an agent action is undone, the list of agent actions shows it as undone, and undoing it again is refused and changes nothing
+- [x] After an agent action is undone, the list of agent actions shows it as undone, and undoing it again is refused and changes nothing
 - [ ] An undone agent task leaves the open tasks without counting as finished: its history shows it as undone, not done
 - [ ] When the agent asks for a tool it may not use (sending or deleting mail), the backend refuses it, changes nothing, and the list of agent actions shows the refusal
   - note (supervisor 2026-11-09, keystone): `decideAgentAction` in `packages/domain/src/agent-action.ts` has no caller outside its tests; the backend never records a refusal. Wire it into the backend's action path rather than adding a second check.
