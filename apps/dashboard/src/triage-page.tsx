@@ -66,6 +66,7 @@ interface SlackTriageItem {
   senderName: string;
   text: string;
   timestamp: string;
+  permalink: string;
 }
 
 interface TriageQueueResponse {
@@ -652,6 +653,9 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
         {item.senderName} · {item.workspaceTeamId}
       </p>
       <p>{item.text}</p>
+      <a href={item.permalink} target="_blank" rel="noreferrer">
+        Open in Slack ↗
+      </a>
       {composing && (
         <>
           <textarea

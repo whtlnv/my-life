@@ -1637,4 +1637,33 @@ describe('TriagePage', () => {
       { workspaceTeamId: 'T0001', conversationId: 'C0001', threadTimestamp: '1762700000.000200', text: 'On it' },
     ]);
   });
+  it('links a Slack card to its Slack permalink', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://acme.slack.com/archives/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    expect(within(card).getByRole('link')).toHaveAttribute(
+      'href',
+      'https://acme.slack.com/archives/D0001/p1762700000000100',
+    );
+  });
 });
