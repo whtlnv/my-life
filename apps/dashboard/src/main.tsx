@@ -11,9 +11,8 @@ import { StatementPage } from './statement-page';
 import './styles.css';
 import { TriagePage } from './triage-page';
 
-// One local page (CLAUDE.md locked decision 10): the now view at `/`, the triage queue at `#/triage`, and the
-// Phase 2 pages: categories, filters and the weekly expense statement; Phase 3's People and Needs input. A route may
-// carry a query (`#/people?contact=…`); the page is chosen by the part before it.
+// A route may carry a query (`#/people?contact=…`); the page is chosen by the part before it, and any other route is
+// the Now page.
 const pages: Record<string, ComponentType> = {
   [routes.people]: PeoplePage,
   [routes.needsInput]: NeedsInputPage,
