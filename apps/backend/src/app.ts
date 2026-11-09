@@ -1732,7 +1732,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     const withOrganizationAndLastMessage = (contact: { emails: string[]; messageIds: string[] }) => ({
       ...contact,
-      organization: senderDomain(primaryEmailOf(contact)),
+      organization:
+        contactDetailsStore.loadAll()[primaryEmailOf(contact)]?.organization ?? senderDomain(primaryEmailOf(contact)),
       lastMessageAt: new Date(mostRecentMessageTime(contact)).toISOString(),
     });
     const slackSenderAsContact = (message: SlackMessage) => ({

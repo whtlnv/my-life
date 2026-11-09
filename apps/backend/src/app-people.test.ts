@@ -129,6 +129,21 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     ]);
   });
 
+  it('gives a contact at GET /people the organization name POST /contacts-import brought for its email, not its sender domain', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postJson(app, '/contacts-import', {
+      accountEmail: 'ana@example.com',
+      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Acme', starred: false, lists: [] }],
+    });
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { everyoneElse } = (await response.json()) as { everyoneElse: { emails: string[]; organization: string }[] };
+    expect(everyoneElse).toMatchObject([{ emails: ['luis@example.com'], organization: 'Acme' }]);
+  });
+
   it('lists at GET /people a non-VIP contact whose triaged message carries a deadline inside 48 hours under Urgent with the reason "deadline", and not under Everyone else', async () => {
     const tomorrowNoon = '2026-11-03T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));
