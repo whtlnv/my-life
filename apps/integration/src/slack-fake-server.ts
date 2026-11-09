@@ -13,6 +13,8 @@ export const threadReplyText = 'Sounds good, I will send the numbers tonight.';
 
 const threadTimestamp = '1762700200.000300';
 
+const displayNameByUserId: Record<string, string> = { [ownSlackUserId]: 'me', U0003: 'Dana' };
+
 const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {
     '/conversations.list': { ok: true, channels: [{ id: 'D0001', is_im: true, user: 'U0001' }] },
@@ -62,9 +64,14 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
 export async function startSlackFakeServer(scenario: SlackScenario) {
   const responseByPath = responseByPathByScenario[scenario];
   const server = createServer((request, response) => {
-    const path = new URL(request.url ?? '/', 'http://fake').pathname;
+    const url = new URL(request.url ?? '/', 'http://fake');
     response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.end(JSON.stringify(responseByPath[path]));
+    if (url.pathname === '/users.info') {
+      const userId = url.searchParams.get('user') ?? '';
+      response.end(JSON.stringify({ ok: true, user: { id: userId, profile: { display_name: displayNameByUserId[userId] } } }));
+      return;
+    }
+    response.end(JSON.stringify(responseByPath[url.pathname]));
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
