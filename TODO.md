@@ -50,6 +50,9 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] When Slack answers 429 with `Retry-After`, the poll waits that long and retries, and the message is stored
 - [x] When one workspace answers `invalid_auth`, the poll does not retry it, and the other workspace's messages are still stored
 - [x] Slack messages stored before a backend restart are served after it
+- [ ] `POST /slack-poll` on a backend configured with a Slack workspace whose API URL points at the Slack fake (`direct-message` scenario) stores the scenario's DM, which `GET /slack-messages` then serves
+- [ ] After a successful `POST /slack-poll`, `GET /now` lists each configured Slack workspace with the time of its last successful poll
+- [ ] After a `POST /slack-poll` in which a workspace answers `invalid_auth`, `GET /now` gives that workspace no new last successful poll time, while the other workspace's time is recorded
 - [ ] The dashboard shows a Slack workspace as stale when its last successful poll is older than twice its polling interval
 - [ ] The dashboard shows a Slack workspace as fresh, with its last poll time, when its last successful poll is within twice its polling interval
 
