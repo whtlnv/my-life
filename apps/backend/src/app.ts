@@ -342,6 +342,10 @@ function isLaterUserReplyTo(message: ReportedMessage, other: ReportedMessage): b
   );
 }
 
+function primaryEmailOf(contact: { emails: string[] }): string {
+  return contact.emails[0] ?? '';
+}
+
 function sharePrimaryEmail(left: { emails: string[] }, right: { emails: string[] }): boolean {
   return left.emails[0] === right.emails[0];
 }
@@ -1141,7 +1145,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
     return context.json({
       contacts: contacts.map((contact) => {
-        const primaryEmail = contact.emails[0] ?? '';
+        const primaryEmail = primaryEmailOf(contact);
         return {
           ...contact,
           marks: markedEmails.has(primaryEmail) ? ['vip'] : [],
@@ -1191,10 +1195,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const isOnAlwaysMattersLine = (contact: { emails: string[]; messageIds: string[] }) =>
       options.profileDirectory !== undefined &&
       contact.messageIds.some((messageId) =>
-        alwaysMattersLineOfAccount(accountEmailByMessageId.get(messageId) ?? '').includes(contact.emails[0] ?? ''),
+        alwaysMattersLineOfAccount(accountEmailByMessageId.get(messageId) ?? '').includes(primaryEmailOf(contact)),
       );
     const isVip = (contact: { emails: string[]; messageIds: string[] }) => {
-      const primaryEmail = contact.emails[0] ?? '';
+      const primaryEmail = primaryEmailOf(contact);
       return (
         markedEmails.has(primaryEmail) ||
         (isOnAlwaysMattersLine(contact) && !contactDetailsStore.userRemovedMark(primaryEmail, 'vip'))
@@ -1240,7 +1244,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     const withOrganizationAndLastMessage = (contact: { emails: string[]; messageIds: string[] }) => ({
       ...contact,
-      organization: senderDomain(contact.emails[0] ?? ''),
+      organization: senderDomain(primaryEmailOf(contact)),
       lastMessageAt: new Date(mostRecentMessageTime(contact)).toISOString(),
     });
     return {
@@ -1271,7 +1275,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map((contact) => ({ contact, waitingTimes: waitingTimesOf(contact) }))
       .filter(({ waitingTimes }) => waitingTimes.length > 0)
       .map(({ contact, waitingTimes }) => ({
-        email: contact.emails[0] ?? '',
+        email: primaryEmailOf(contact),
         displayName: contact.displayName,
         waitingSince: new Date(Math.min(...waitingTimes)).toISOString(),
       }));
