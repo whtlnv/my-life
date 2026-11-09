@@ -16,7 +16,20 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
   return (await response.json()) as Response;
 }
 
+async function fetchOwnSlackUserId(input: PollSlackWorkspaceInput): Promise<string> {
+  const { user_id: ownSlackUserId } = await callSlack<{ user_id: string }>(input, '/auth.test');
+  return ownSlackUserId;
+}
+
 type SlackMessage = { user: string; text: string; ts: string };
+
+async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string): Promise<Match[]> {
+  const { messages } = await callSlack<{ messages: { matches: Match[] } }>(
+    input,
+    `/search.messages?query=${encodeURIComponent(query)}`,
+  );
+  return messages.matches;
+}
 
 function saveSlackMessage(input: PollSlackWorkspaceInput, conversationId: string, message: SlackMessage): void {
   input.store.saveMessage({
@@ -42,12 +55,10 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
 }
 
 async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
-  const { user_id: ownSlackUserId } = await callSlack<{ user_id: string }>(input, '/auth.test');
+  const ownSlackUserId = await fetchOwnSlackUserId(input);
   const mentionsQuery = `<@${ownSlackUserId}>`;
-  const { messages } = await callSlack<{
-    messages: { matches: (SlackMessage & { channel: { id: string } })[] };
-  }>(input, `/search.messages?query=${encodeURIComponent(mentionsQuery)}`);
-  for (const match of messages.matches) {
+  const matches = await searchSlackMessages<SlackMessage & { channel: { id: string } }>(input, mentionsQuery);
+  for (const match of matches) {
     saveSlackMessage(input, match.channel.id, match);
   }
 }
@@ -62,12 +73,10 @@ function newestStoredTimestampIn(store: SlackMessageStore, conversationId: strin
 }
 
 async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promise<void> {
-  const { user_id: ownSlackUserId } = await callSlack<{ user_id: string }>(input, '/auth.test');
+  const ownSlackUserId = await fetchOwnSlackUserId(input);
   const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
-  const { messages } = await callSlack<{
-    messages: { matches: { thread_ts?: string; channel: { id: string } }[] };
-  }>(input, `/search.messages?query=${encodeURIComponent(ownMessagesQuery)}`);
-  for (const match of messages.matches) {
+  const matches = await searchSlackMessages<{ thread_ts?: string; channel: { id: string } }>(input, ownMessagesQuery);
+  for (const match of matches) {
     if (match.thread_ts === undefined) {
       continue;
     }
