@@ -239,8 +239,12 @@ describe('the shipped backend (main.ts)', () => {
 
     await waitUntilRecorded(recorded, isPrioritizationRequest);
 
+    const prioritizationPrompt = readFileSync(new URL('../prompts/prioritization-v1.md', import.meta.url), 'utf8');
     expect(recorded.find(isPrioritizationRequest)).toEqual(
-      expect.objectContaining({ model: 'claude-opus-5-5', system: expect.stringMatching(/\S/) as unknown }),
+      expect.objectContaining({
+        model: 'claude-opus-5-5',
+        system: expect.stringContaining(prioritizationPrompt.trim()) as unknown,
+      }),
     );
   }, 30_000);
 
