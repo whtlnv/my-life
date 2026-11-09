@@ -1283,7 +1283,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const contactThreadIds = new Set(reportedMessages.filter(involvesContact).map((message) => message.threadId));
     const isUserReplyInContactThread = (message: ReportedMessage): boolean =>
       message.sentByUser === true && contactThreadIds.has(message.threadId);
-    const messages = reportedMessages
+    return reportedMessages
       .filter((message) => involvesContact(message) || isUserReplyInContactThread(message))
       .toSorted(newestFirst)
       .map((message) => {
@@ -1300,7 +1300,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           asks: (proposal?.asks ?? []).map((ask) => ({ ...ask, status: userRepliedLater ? 'answered' : 'open' })),
         };
       });
-    return messages;
   };
   app.get('/contacts/:email/timeline', (context) => {
     const messages = contactTimeline(context.req.param('email'));
