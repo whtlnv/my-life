@@ -1007,6 +1007,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   );
   const mergedCalendarEvents = () => mergeCalendarSnapshots(snapshotStore.loadAll().map((entry) => entry.snapshot));
   const currentOpenTasks = () => openTasks(taskEventStore.loadAll(), clock.now().toISOString());
+  const overdueOpenTasks = () =>
+    currentOpenTasks().filter(({ due }) => due !== undefined && due < clock.now().toISOString());
   const profileOfAccount = (accountEmail: string): string | undefined => {
     const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
     return existsSync(profilePath) ? readFileSync(profilePath, 'utf8') : undefined;
@@ -1324,7 +1326,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       badgeCount:
         badgeCount(events, clock, awaitingTheUser(proposals), verdictStore.loadAll()) +
         needsInputQuestions().length +
-        currentOpenTasks().filter(({ due }) => due !== undefined && due < clock.now().toISOString()).length,
+        overdueOpenTasks().length,
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
     });
   });
