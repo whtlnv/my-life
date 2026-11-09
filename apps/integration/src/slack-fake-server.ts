@@ -15,6 +15,8 @@ const threadTimestamp = '1762700200.000300';
 
 const threadParentText = 'Can someone share the Q3 numbers?';
 
+const noSearchMatches = { ok: true, messages: { matches: [] } };
+
 const displayNameByUserId: Record<string, string> = { [ownSlackUserId]: 'me', U0003: 'Dana' };
 
 function usersInfoResponse(userId: string) {
@@ -28,7 +30,7 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
       ok: true,
       messages: [{ type: 'message', user: 'U0001', text: directMessageText, ts: '1762700000.000100' }],
     },
-    '/search.messages': { ok: true, messages: { matches: [] } },
+    '/search.messages': noSearchMatches,
     '/auth.test': { ok: true, user_id: ownSlackUserId },
   },
   mention: {
@@ -131,7 +133,7 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
       const query = url.searchParams.get('query') ?? '';
       searchQueries.push(query);
       if (scenario === 'mention' && query.startsWith('from:')) {
-        response.end(JSON.stringify({ ok: true, messages: { matches: [] } }));
+        response.end(JSON.stringify(noSearchMatches));
         return;
       }
     }
