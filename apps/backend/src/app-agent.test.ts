@@ -659,6 +659,32 @@ describe('backend app: the agent', () => {
     const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
     expect(commands).toEqual([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Finance' })]);
   });
+  it("write_draft sends the replied-to message's account a create-draft command carrying the thread, recipients, subject and body", async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can draft a reply.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Draft a reply to Luis about the budget' });
+    const writeDraftTool = offeredTools.find((tool) => tool.name === 'write_draft');
+
+    await writeDraftTool?.run({ messageId: 'message-1', body: 'I will review it by Friday.' });
+
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect(commands).toEqual([
+      expect.objectContaining({
+        type: 'create-draft',
+        threadId: 'thread-1',
+        to: ['luis@example.com'],
+        subject: 'Re: Budget review',
+        body: 'I will review it by Friday.',
+      }),
+    ]);
+  });
   it('create_task with a source message creates an open task with the given title, linked to that message and its account', async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('I can make a task of that.');
     const app = createApp({

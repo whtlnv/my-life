@@ -171,6 +171,11 @@ interface LabelRequest {
   labelName: string;
 }
 
+interface DraftRequest {
+  messageId: string;
+  body: string;
+}
+
 function countMatchingWords(text: string | undefined, query: string): number {
   if (text === undefined) return 0;
   const textWords = text.split(/\W+/);
@@ -969,6 +974,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   const labelRequests: LabelRequest[] = [];
+  const draftRequests: DraftRequest[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
@@ -1018,12 +1024,26 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const labelCommands = labelRequests
       .filter(({ messageId }) => isMessageOfAccount(messageId))
       .map(({ messageId, labelName }) => ({ id: `label-${messageId}`, type: 'label', messageId, label: labelName }));
+    const draftCommands = draftRequests
+      .filter(({ messageId }) => isMessageOfAccount(messageId))
+      .map(({ messageId, body }) => {
+        const message = reportedMessageWithId(reportedMessages, messageId);
+        return {
+          id: `draft-${messageId}`,
+          type: 'create-draft',
+          threadId: message?.threadId,
+          to: [contactFromSender(String(message?.from)).email],
+          subject: `Re: ${String(message?.subject)}`,
+          body,
+        };
+      });
     const pendingCommands = [
       ...archiveCommands,
       ...filterCommands,
       ...deleteFilterCommands,
       ...undoAutomaticCommands,
       ...labelCommands,
+      ...draftCommands,
     ].filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: pendingCommands });
   });
@@ -1209,6 +1229,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   };
+  const writeDraftTool: AgentTool = {
+    name: 'write_draft',
+    run: (input) => {
+      draftRequests.push(input as DraftRequest);
+      return Promise.resolve({});
+    },
+  };
   const markVipTool: AgentTool = {
     name: 'mark_vip',
     run: (input) => {
@@ -1278,6 +1305,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         digestTool,
         archiveMessageTool,
         labelMessageTool,
+        writeDraftTool,
         createTaskToolFor(conversationId),
         markVipTool,
         updateContactTool,
