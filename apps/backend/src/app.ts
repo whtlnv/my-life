@@ -1086,21 +1086,24 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     role: 'assistant',
     text: reply?.text ?? agentUnavailableReply,
   });
-  app.post('/agent/conversations', async (context) => {
-    const { message } = await context.req.json<{ message: string }>();
-    if (hasReachedDailySpendCeiling()) {
-      const turns: ConversationTurn[] = [
-        { role: 'user', text: message },
-        { role: 'assistant', text: agentSpendCeilingReply },
-      ];
-      return context.json({ id: '', turns }, 201);
-    }
-    const reply = await options.agent?.respond({ turns: [{ role: 'user', text: message }] });
+  const spendCeilingTurn: ConversationTurn = { role: 'assistant', text: agentSpendCeilingReply };
+  const askAgent = async (turns: ConversationTurn[]) => {
+    const reply = await options.agent?.respond({ turns });
     if (reply) {
       logSpend(reply);
     }
+    return reply;
+  };
+  app.post('/agent/conversations', async (context) => {
+    const { message } = await context.req.json<{ message: string }>();
+    const userTurn: ConversationTurn = { role: 'user', text: message };
+    if (hasReachedDailySpendCeiling()) {
+      const turns: ConversationTurn[] = [userTurn, spendCeilingTurn];
+      return context.json({ id: '', turns }, 201);
+    }
+    const reply = await askAgent([userTurn]);
     const id = `conversation-${conversationStore.count() + 1}`;
-    const turns: ConversationTurn[] = [{ role: 'user', text: message }, assistantTurn(reply)];
+    const turns: ConversationTurn[] = [userTurn, assistantTurn(reply)];
     conversationStore.save(id, turns);
     return context.json({ id, turns }, 201);
   });
@@ -1109,15 +1112,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { message } = await context.req.json<{ message: string }>();
     const earlierTurns = conversationStore.load(id) ?? [];
     const turns: ConversationTurn[] = [...earlierTurns, { role: 'user', text: message }];
-    if (hasReachedDailySpendCeiling()) {
-      conversationStore.save(id, [...turns, { role: 'assistant', text: agentSpendCeilingReply }]);
-      return context.json({});
-    }
-    const reply = await options.agent?.respond({ turns });
-    if (reply) {
-      logSpend(reply);
-    }
-    conversationStore.save(id, [...turns, assistantTurn(reply)]);
+    const answer = hasReachedDailySpendCeiling()
+      ? spendCeilingTurn
+      : assistantTurn(await askAgent(turns));
+    conversationStore.save(id, [...turns, answer]);
     return context.json({});
   });
   app.get('/agent/conversations', (context) =>
