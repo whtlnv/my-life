@@ -33,7 +33,7 @@ interface SelectedTimeline extends Timeline {
 
 const emptyLists: PeopleLists = { vip: [], urgent: [], everyoneElse: [] };
 
-const timeInBusinessZone = (isoTime: string) =>
+const weekdayAndTimeInBusinessZone = (isoTime: string) =>
   new Intl.DateTimeFormat('en-GB', {
     weekday: 'short',
     hour: '2-digit',
@@ -95,7 +95,8 @@ const PeopleList = ({
                     {' · '}
                   </>
                 )}
-                last message <time dateTime={person.lastMessageAt}>{timeInBusinessZone(person.lastMessageAt)}</time>
+                last message{' '}
+                <time dateTime={person.lastMessageAt}>{weekdayAndTimeInBusinessZone(person.lastMessageAt)}</time>
               </p>
             </div>
             <div className="row-side">
