@@ -1,4 +1,4 @@
-import { createServer, type ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 type SlackScenario = 'direct-message' | 'mention' | 'thread-reply' | 'rate-limited';
@@ -75,6 +75,18 @@ function respondRateLimited(response: ServerResponse) {
   response.end();
 }
 
+function recordPostedMessage(request: IncomingMessage, response: ServerResponse, postedMessages: PostedMessage[]) {
+  let body = '';
+  request.on('data', (chunk: Buffer) => {
+    body += chunk.toString();
+  });
+  request.on('end', () => {
+    const message = JSON.parse(body) as { channel: string; thread_ts: string; text: string };
+    postedMessages.push({ channel: message.channel, threadTimestamp: message.thread_ts, text: message.text });
+    response.end(JSON.stringify({ ok: true }));
+  });
+}
+
 export async function startSlackFakeServer(scenario: SlackScenario) {
   const responseByPath = responseByPathByScenario[scenario];
   let rateLimitPending = scenario === 'rate-limited';
@@ -92,15 +104,7 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
       return;
     }
     if (url.pathname === '/chat.postMessage') {
-      let body = '';
-      request.on('data', (chunk: Buffer) => {
-        body += chunk.toString();
-      });
-      request.on('end', () => {
-        const message = JSON.parse(body) as { channel: string; thread_ts: string; text: string };
-        postedMessages.push({ channel: message.channel, threadTimestamp: message.thread_ts, text: message.text });
-        response.end(JSON.stringify({ ok: true }));
-      });
+      recordPostedMessage(request, response, postedMessages);
       return;
     }
     if (url.pathname === '/users.info') {
