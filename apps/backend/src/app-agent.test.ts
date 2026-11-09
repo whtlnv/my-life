@@ -41,6 +41,10 @@ async function undoAgentAction(app: ReturnType<typeof createApp>, tool: string, 
   return postJson(app, '/agent/actions/undo', { actionId: action?.id });
 }
 
+async function startConversation(app: ReturnType<typeof createApp>, message: string) {
+  return (await (await postJson(app, '/agent/conversations', { message })).json()) as { id: string };
+}
+
 function agentRecordingOfferedTools(text: string) {
   const offeredTools: OfferedTool[] = [];
   const agent = {
@@ -97,9 +101,7 @@ describe('backend app: the agent', () => {
       },
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
-    const created = (await (
-      await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' })
-    ).json()) as { id: string };
+    const created = await startConversation(app, 'What is on my plate today?');
 
     await postJson(app, `/agent/conversations/${created.id}/messages`, { message: 'Which one is urgent?' });
 
@@ -113,9 +115,7 @@ describe('backend app: the agent', () => {
     const replies = ['You have two open tasks today.', 'The budget review is urgent.'];
     const agent = { respond: () => Promise.resolve({ text: replies.shift() ?? '', costInUsd: 0.01 }) };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
-    const created = (await (
-      await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' })
-    ).json()) as { id: string };
+    const created = await startConversation(app, 'What is on my plate today?');
     await postJson(app, `/agent/conversations/${created.id}/messages`, { message: 'Which one is urgent?' });
 
     const opened = await getJson<{ id: string; turns: unknown[] }>(app, `/agent/conversations/${created.id}`);
@@ -134,12 +134,8 @@ describe('backend app: the agent', () => {
   it('lists each conversation with its first user message as its title, most recently active first', async () => {
     const agent = { respond: () => Promise.resolve({ text: 'Noted.', costInUsd: 0.01 }) };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
-    const first = (await (
-      await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' })
-    ).json()) as { id: string };
-    const second = (await (
-      await postJson(app, '/agent/conversations', { message: 'Who is waiting on me?' })
-    ).json()) as { id: string };
+    const first = await startConversation(app, 'What is on my plate today?');
+    const second = await startConversation(app, 'Who is waiting on me?');
     await postJson(app, `/agent/conversations/${first.id}/messages`, { message: 'Which one is urgent?' });
 
     const response = await app.request('/agent/conversations');
@@ -163,9 +159,7 @@ describe('backend app: the agent', () => {
       databasePath: temporaryDatabasePath(),
     };
     const beforeRestart = createApp(options);
-    const created = (await (
-      await postJson(beforeRestart, '/agent/conversations', { message: 'What is on my plate today?' })
-    ).json()) as { id: string };
+    const created = await startConversation(beforeRestart, 'What is on my plate today?');
     await postJson(beforeRestart, `/agent/conversations/${created.id}/messages`, { message: 'Which one is urgent?' });
 
     const afterRestart = createApp(options);
@@ -283,9 +277,7 @@ describe('backend app: the agent', () => {
       dailySpendCeilingInUsd: 1,
       agent,
     });
-    const created = (await (
-      await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' })
-    ).json()) as { id: string };
+    const created = await startConversation(app, 'What is on my plate today?');
     await postJson(app, `/agent/conversations/${created.id}/messages`, { message: 'Which one is urgent?' });
 
     await postJson(app, `/agent/conversations/${created.id}/messages`, { message: 'Who is waiting on me?' });
@@ -715,9 +707,7 @@ describe('backend app: the agent', () => {
       agent,
       databasePath: temporaryDatabasePath(),
     });
-    const created = (await (
-      await postJson(app, '/agent/conversations', { message: 'Remind me to call the accountant' })
-    ).json()) as { id: string };
+    const created = await startConversation(app, 'Remind me to call the accountant');
 
     await runTool('create_task', { title: 'Call the accountant' });
 
@@ -831,9 +821,7 @@ describe('backend app: the agent', () => {
       databasePath: temporaryDatabasePath(),
     });
     await proposeBudgetReview(app);
-    const created = (await (
-      await postJson(app, '/agent/conversations', { message: 'Archive the budget thread and draft a reply' })
-    ).json()) as { id: string };
+    const created = await startConversation(app, 'Archive the budget thread and draft a reply');
     await runTool('archive_message', { messageId: 'message-1' });
     currentTime = new Date('2026-11-02T15:11:00.000Z');
     await runTool('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
@@ -1106,9 +1094,7 @@ describe('backend app: the agent', () => {
       databasePath: temporaryDatabasePath(),
     });
     await proposeBudgetReview(app);
-    const created = (await (
-      await postJson(app, '/agent/conversations', { message: 'Delete the budget thread' })
-    ).json()) as { id: string };
+    const created = await startConversation(app, 'Delete the budget thread');
     const commandsBeforeRequest = await pendingCommandsOf(app, 'ana@example.com');
 
     const result = await runTool('delete_message', { messageId: 'message-1' });
@@ -1139,9 +1125,7 @@ describe('backend app: the agent', () => {
       databasePath: temporaryDatabasePath(),
     });
     await proposeBudgetReview(app);
-    const created = (await (
-      await postJson(app, '/agent/conversations', { message: 'Send Luis a reply about the budget' })
-    ).json()) as { id: string };
+    const created = await startConversation(app, 'Send Luis a reply about the budget');
     const commandsBeforeRequest = await pendingCommandsOf(app, 'ana@example.com');
 
     await runTool('send_message', { messageId: 'message-1', body: 'I will review it by Friday.' });
