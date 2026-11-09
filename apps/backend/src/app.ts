@@ -645,9 +645,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       sentByUser: true,
     });
   };
+  const isSendableToSlack = (send: SlackSendRequest): boolean =>
+    send.text !== '' && slackUserTokenFor(send.workspaceTeamId) !== '';
   app.post('/slack-sends', async (context) => {
     const send = await context.req.json<SlackSendRequest>();
-    if (send.text === '' || slackUserTokenFor(send.workspaceTeamId) === '') {
+    if (!isSendableToSlack(send)) {
       return context.body(null, 400);
     }
     const slackResult = await postSlackMessage(send);
