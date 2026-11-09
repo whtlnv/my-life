@@ -596,6 +596,30 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(everyoneElse.map(({ emails }) => emails)).toEqual([['marta@acme.com'], ['luis@example.com']]);
   });
 
+  it('gives each contact at GET /people, under VIP and under Everyone else, its organization and the time of its most recent message', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const [luisMessage, martaMessage] = budgetReviewReportWithSecondMessageFromMarta.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [luisMessage, { ...martaMessage, date: 'Mon, 2 Nov 2026 09:05:00 -0600' }],
+    });
+    await markContact(app, 'marta@acme.com', 'vip');
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, everyoneElse } = (await response.json()) as {
+      vip: { emails: string[]; organization: string; lastMessageAt: string }[];
+      everyoneElse: { emails: string[]; organization: string; lastMessageAt: string }[];
+    };
+    expect(vip).toMatchObject([
+      { emails: ['marta@acme.com'], organization: 'acme.com', lastMessageAt: '2026-11-02T15:05:00.000Z' },
+    ]);
+    expect(everyoneElse).toMatchObject([
+      { emails: ['luis@example.com'], organization: 'example.com', lastMessageAt: '2026-11-02T15:00:00.000Z' },
+    ]);
+  });
+
   it('lists at GET /people a non-VIP contact whose triaged message carries a deadline inside 48 hours under Urgent with the reason "deadline", and not under Everyone else', async () => {
     const tomorrowNoon = '2026-11-03T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));

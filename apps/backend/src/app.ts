@@ -1217,12 +1217,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((message) => contact.messageIds.includes(message.id))
           .map((message) => new Date(message.date).getTime()),
       );
+    const withOrganizationAndLastMessage = (contact: { emails: string[]; messageIds: string[] }) => ({
+      ...contact,
+      organization: senderDomain(contact.emails[0] ?? ''),
+      lastMessageAt: new Date(mostRecentMessageTime(contact)).toISOString(),
+    });
     return {
       urgent: urgentContacts,
-      vip: contacts.filter(isVip),
+      vip: contacts.filter(isVip).map(withOrganizationAndLastMessage),
       everyoneElse: contacts
         .filter((contact) => !isVip(contact) && !isUrgent(contact))
-        .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first)),
+        .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
+        .map(withOrganizationAndLastMessage),
     };
   };
   app.get('/people', (context) => context.json(peopleGroups()));
