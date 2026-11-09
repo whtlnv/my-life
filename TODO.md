@@ -37,7 +37,7 @@
 - [x] `archive_message` stores an archive verdict for the message attributed to the agent, and the message's account receives an archive command
 - [x] `archive_message` on a message id the store does not know returns an error to the model and records nothing
 - [x] `label_message` sends the message's account a label command with the given label name that leaves the message in the inbox
-- [ ] The extension applies a label command by adding the named label, creating it if missing, without removing the message from the inbox, then acknowledges the command
+- [x] The extension applies a label command by adding the named label, creating it if missing, without removing the message from the inbox, then acknowledges the command
 - [ ] `create_task` with a source message creates an open task with the given title, linked to that message and its account
 - [ ] `create_task` without a source message creates an open task linked to the agent conversation it came from
 - [ ] `mark_vip` puts the contact under VIP in the People view, as a Needs input answer would

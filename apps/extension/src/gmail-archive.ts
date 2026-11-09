@@ -28,7 +28,9 @@ export async function carryOutMessageCommands(options: CommandOptions) {
     const labelChanges =
       command.type === 'undo-automatic'
         ? { removeLabelIds: [labelId], addLabelIds: ['INBOX'] }
-        : { removeLabelIds: ['INBOX'], addLabelIds: [labelId] };
+        : command.type === 'label'
+          ? { removeLabelIds: [], addLabelIds: [labelId] }
+          : { removeLabelIds: ['INBOX'], addLabelIds: [labelId] };
     const labelResponse = await modifyMessageLabels(options.fetch, authorization, command.messageId, labelChanges);
     if (!labelResponse.ok) {
       continue;

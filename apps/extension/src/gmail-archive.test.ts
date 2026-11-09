@@ -206,4 +206,43 @@ describe('carryOutMessageCommands', () => {
       { request: 'modify message-to-archive', body: { removeLabelIds: ['INBOX'], addLabelIds: ['Label_77'] } },
     ]);
   });
+  it('adds the named label of a label command, created when missing, leaves the message in the inbox and acknowledges the command', async () => {
+    const events: { request: string; body?: unknown }[] = [];
+    const backendAndGmail: FetchFunction = (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === 'http://127.0.0.1:7777/commands') {
+        return Promise.resolve(
+          Response.json({
+            commands: [{ id: 'label-message-9', type: 'label', messageId: 'message-9', label: 'Clients/Acme' }],
+          }),
+        );
+      }
+      const acknowledgedCommandId = acknowledgementCommandId(url, init);
+      if (acknowledgedCommandId !== undefined) {
+        events.push({ request: `acknowledge ${acknowledgedCommandId}` });
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/labels` && init?.method === 'POST') {
+        const body = JSON.parse(init.body as string) as { name: string };
+        events.push({ request: 'create label', body });
+        return Promise.resolve(Response.json({ id: 'Label_acme', name: body.name, type: 'user' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/labels`) {
+        return Promise.resolve(Response.json({ labels: [inboxLabel, archivedLabel] }));
+      }
+      if (url.pathname.endsWith('/messages/message-9/modify') && init?.method === 'POST') {
+        events.push({ request: 'modify message-9', body: JSON.parse(init.body as string) });
+        return Promise.resolve(Response.json({ id: 'message-9', labelIds: [] }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    await runMessageCommands(backendAndGmail);
+
+    expect(events).toEqual([
+      { request: 'create label', body: expect.objectContaining({ name: 'Clients/Acme' }) as unknown },
+      { request: 'modify message-9', body: { removeLabelIds: [], addLabelIds: ['Label_acme'] } },
+      { request: 'acknowledge label-message-9' },
+    ]);
+  });
 });
