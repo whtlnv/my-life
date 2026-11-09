@@ -407,6 +407,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const accountEmailByMessageId = new Map<string, string>(
     storedMessages.map((message) => [message.id, message.accountEmail]),
   );
+  const accountEmailOfReported = (messageId: string): string => accountEmailByMessageId.get(messageId) ?? '';
   const automaticMessageIds = new Set(proposalStore.loadAutomaticMessageIds());
   // Overlapping runs once stored a proposal twice (append-only); the latest row per message is the one that counts.
   const latestStoredProposals = [
@@ -647,7 +648,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         if (hasReachedDailySpendCeiling()) {
           break;
         }
-        const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
+        const accountEmail = accountEmailOfReported(message.id);
         const examples = verdictExamplesFor(message);
         const result = await triage.propose(triageRequestFor(message, accountEmail), examples);
         const costInUsd = result.costInUsd;
@@ -1170,7 +1171,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((message) => involvesContact(message) || isUserReplyInContactThread(message))
       .toSorted(newestFirst)
       .map((message) => {
-        const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
+        const accountEmail = accountEmailOfReported(message.id);
         const proposal = latestProposalFor(proposals, message.id);
         const userRepliedLater = reportedMessages.some((other) => isLaterUserReplyTo(message, other));
         return {
@@ -1195,7 +1196,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const isOnAlwaysMattersLine = (contact: { emails: string[]; messageIds: string[] }) =>
       options.profileDirectory !== undefined &&
       contact.messageIds.some((messageId) =>
-        alwaysMattersLineOfAccount(accountEmailByMessageId.get(messageId) ?? '').includes(primaryEmailOf(contact)),
+        alwaysMattersLineOfAccount(accountEmailOfReported(messageId)).includes(primaryEmailOf(contact)),
       );
     const isVip = (contact: { emails: string[]; messageIds: string[] }) => {
       const primaryEmail = primaryEmailOf(contact);
@@ -1294,7 +1295,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map((message) => ({
         id: message.id,
         subject: message.subject,
-        accountEmail: accountEmailByMessageId.get(message.id) ?? '',
+        accountEmail: accountEmailOfReported(message.id),
       }));
     return context.json({ messages });
   });
