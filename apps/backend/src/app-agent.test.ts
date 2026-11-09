@@ -32,6 +32,15 @@ interface OfferedTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
+// Undoes the agent's action of that tool (and target, when given) by its id from the list of agent actions.
+async function undoAgentAction(app: ReturnType<typeof createApp>, tool: string, target?: string) {
+  const { actions } = await getJson<{ actions: { id: string; tool: string; target: string }[] }>(app, '/agent/actions');
+  const action = actions.find(
+    (candidate) => candidate.tool === tool && (target === undefined || candidate.target === target),
+  );
+  return postJson(app, '/agent/actions/undo', { actionId: action?.id });
+}
+
 function agentRecordingOfferedTools(text: string) {
   const offeredTools: OfferedTool[] = [];
   const agent = {
@@ -928,7 +937,7 @@ describe('backend app: the agent', () => {
     };
     const archiveLabel = commandsBeforeUndo.find((command) => command.messageId === 'message-1')?.label;
 
-    await postJson(app, '/agent/actions/undo', { tool: 'archive_message', target: 'message-1' });
+    await undoAgentAction(app, 'archive_message');
 
     const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
     expect(archiveLabel).toEqual(expect.any(String));
@@ -951,7 +960,7 @@ describe('backend app: the agent', () => {
       .find((tool) => tool.name === 'label_message')
       ?.run({ messageId: 'message-1', labelName: 'Finance' });
 
-    await postJson(app, '/agent/actions/undo', { tool: 'label_message', target: 'message-1' });
+    await undoAgentAction(app, 'label_message');
 
     const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
     expect(commands).toContainEqual(
@@ -971,7 +980,7 @@ describe('backend app: the agent', () => {
     await postJson(app, '/agent/conversations', { message: 'Luis is my boss, mark him VIP' });
     await offeredTools.find((tool) => tool.name === 'mark_vip')?.run({ email: 'luis@example.com' });
 
-    await postJson(app, '/agent/actions/undo', { tool: 'mark_vip', target: 'luis@example.com' });
+    await undoAgentAction(app, 'mark_vip');
 
     const people = await getJson<{ vip: { emails: string[] }[] }>(app, '/people');
     expect(people.vip).toEqual([]);
@@ -992,7 +1001,7 @@ describe('backend app: the agent', () => {
     const created = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
     const accountantTaskId = created.tasks.find(({ title }) => title === 'Call the accountant')?.id;
 
-    await postJson(app, '/agent/actions/undo', { tool: 'create_task', target: accountantTaskId });
+    await undoAgentAction(app, 'create_task', accountantTaskId);
 
     const { tasks } = await getJson<{ tasks: { title: string }[] }>(app, '/tasks');
     expect(tasks.map(({ title }) => title)).toEqual(['Call the bank']);
@@ -1039,7 +1048,7 @@ describe('backend app: the agent', () => {
       .find((tool) => tool.name === 'write_draft')
       ?.run({ messageId: 'message-1', body: 'I will review it by Friday.' });
 
-    const response = await postJson(app, '/agent/actions/undo', { tool: 'write_draft', target: 'message-1' });
+    const response = await undoAgentAction(app, 'write_draft');
 
     const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type: string }[] };
     expect(response.status).toBe(409);
