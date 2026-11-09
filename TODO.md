@@ -81,4 +81,4 @@
   - note (supervisor 2026-11-09, keystone): `main.ts` creates no agent today and the prompt file does not exist; write the prompt as a versioned file. Check the composed agent gets the store-backed tools, including the refused ones.
 - [x] The real Claude agent adapter returns the messages Claude cites, through a cite_sources tool Claude calls with the ids it relies on, so a production reply shows its citations, verified or not
   - note (supervisor 2026-11-09, keystone): `createClaudeAgent` in `apps/backend/src/claude-agent.ts` returns only `text` and `costInUsd`; `app.ts` reads `reply.citations`, which only the test agents supply. Structured output goes through tool use (CLAUDE.md locked decision 13). Update `apps/backend/prompts/agent-v1.md` to say when to cite and that sending or deleting mail is refused.
-- [ ] The demo seeds an agent conversation with citations and agent actions, and the agent page is screenshot-verified over `scripts/demo.sh`
+- [x] The demo seeds an agent conversation with citations and agent actions, and the agent page is screenshot-verified over `scripts/demo.sh`

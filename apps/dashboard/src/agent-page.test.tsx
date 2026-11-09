@@ -180,4 +180,36 @@ describe('AgentPage', () => {
     expect(sentUndos).toEqual([{ actionId: 'action-1' }]);
     expect(within(reversibleItem).queryByRole('button', { name: /Undo/ })).toBeNull();
   });
+
+  it('shows an action the list reports as already undone as undone, with no Undo button', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          input === '/agent/actions'
+            ? Response.json({
+                actions: [
+                  {
+                    id: 'action-1',
+                    tool: 'archive_message',
+                    target: 'message-1',
+                    conversationId: 'conversation-1',
+                    at: '2026-11-09T10:00:00.000Z',
+                    undoable: true,
+                    undone: true,
+                  },
+                ],
+              })
+            : new Response(null, { status: 404 }),
+        ),
+      ),
+    );
+
+    render(<AgentPage />);
+
+    const actionsSection = await screen.findByRole('region', { name: agentActionsHeading });
+    const item = (await within(actionsSection).findByText(/message-1/)).closest('li') as HTMLElement;
+    expect(within(item).getByText(new RegExp(undoneActionText))).toBeTruthy();
+    expect(within(item).queryByRole('button', { name: /Undo/ })).toBeNull();
+  });
 });

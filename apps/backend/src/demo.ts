@@ -565,11 +565,59 @@ const digestHeadings: { when: string; lines: (count: number) => string[] }[] = [
 
 const proposalByMessageId = new Map(messages.map((message) => [message.id, message.proposal]));
 
+// A scripted agent, as Opus would act on the seeded questions: it searches, acts through the offered tools (so every
+// action lands in the action log), and cites one message a search returned and one it did not (shown unverified).
+const runAgentTool = async (
+  tools: { name: string; run: (input: unknown) => Promise<unknown> }[] | undefined,
+  name: string,
+  input: unknown,
+) => tools?.find((tool) => tool.name === name)?.run(input);
+const demoAgent = {
+  respond: async ({
+    turns,
+    tools,
+  }: {
+    turns: { role: string; text: string }[];
+    tools?: { name: string; run: (input: unknown) => Promise<unknown> }[];
+  }) => {
+    const question = turns.at(-1)?.text ?? '';
+    if (question.includes('Luis')) {
+      await runAgentTool(tools, 'search_messages', { query: 'budget headcount' });
+      await runAgentTool(tools, 'create_task', {
+        title: 'Sign off the Q4 headcount line',
+        sourceMessageId: 'm-budget',
+      });
+      await runAgentTool(tools, 'archive_message', { messageId: 'm-sales-1' });
+      await runAgentTool(tools, 'write_draft', {
+        messageId: 'm-budget',
+        body: 'Luis, I will review the Q4 budget on Thursday and decide on the headcount line before Friday.',
+      });
+      return {
+        text:
+          'Luis needs your sign-off on the Q4 headcount line by Friday: the two open roles put the budget 6% over plan, ' +
+          'and Sofía is holding the board deck until you decide. I made a task for it, drafted a reply saying you will ' +
+          'decide by Friday, and archived the Meetwise pitch that was sitting next to it.',
+        citations: [{ id: 'm-budget' }, { id: 'm-board-deck' }],
+        costInUsd: 0.06,
+        model: 'claude-opus-5-5',
+      };
+    }
+    await runAgentTool(tools, 'search_messages', { query: 'contract' });
+    return {
+      text: 'Marta sent the client contract for signature; the first payment waits on it.',
+      citations: [{ id: 'm-contract' }],
+      costInUsd: 0.03,
+      model: 'claude-opus-5-5',
+    };
+  },
+};
+
 const app = createApp({
   allowedEmails: Object.values(accounts),
   databasePath,
   dashboardDirectory,
   dailySpendCeilingInUsd: 20,
+  agent: demoAgent,
   triage: {
     propose: (message) =>
       Promise.resolve({
@@ -699,6 +747,14 @@ async function seed(): Promise<void> {
     await app.request(`/task-proposals/${encodeURIComponent(proposal.id)}/${decision}`, { method: 'POST' });
   }
   await app.request('/prioritization-run', { method: 'POST' });
+  // Agent: two conversations, the first acting on Luis's budget email; the archive of the sales pitch is undone.
+  await postJson('/agent/conversations', { message: 'Who sent the client contract?' });
+  await postJson('/agent/conversations', { message: 'What does Luis need from me this week?' });
+  const { actions } = (await (await app.request('/agent/actions')).json()) as {
+    actions: { id: string; tool: string }[];
+  };
+  const archiveAction = actions.find(({ tool }) => tool === 'archive_message');
+  if (archiveAction !== undefined) await postJson('/agent/actions/undo', { actionId: archiveAction.id });
 }
 
 // Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).

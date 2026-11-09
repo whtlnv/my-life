@@ -1018,3 +1018,84 @@ code {
   color: var(--accent-text);
   text-decoration: underline;
 }
+
+/* ---------- agent ---------- */
+
+.agent-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.agent-conversations ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.agent-conversation {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-2);
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-conversation:hover {
+  background: var(--surface-2);
+}
+
+.agent-conversation.is-active {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.agent-turns {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.agent-turn {
+  max-width: 80%;
+  line-height: 1.5;
+}
+
+.agent-turn-user {
+  align-self: flex-end;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.agent-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.agent-composer input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+@media (max-width: 720px) {
+  .agent-layout {
+    grid-template-columns: 1fr;
+  }
+}

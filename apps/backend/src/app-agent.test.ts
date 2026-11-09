@@ -1237,7 +1237,7 @@ describe('backend app: the agent', () => {
         { id: createTaskActionId, tool: 'create_task', undoable: true, undone: true },
       ],
       undoStatus: 200,
-      commandTypes: expect.arrayContaining(['undo-automatic']),
+      commandTypes: expect.arrayContaining(['undo-automatic']) as unknown,
     });
   });
 
