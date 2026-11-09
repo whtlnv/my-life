@@ -135,7 +135,7 @@ export async function pollSlackWorkspaces({ workspaces, ...input }: PollSlackWor
     try {
       await pollSlackWorkspace({ ...input, workspace });
     } catch {
-      continue;
+      // A workspace that fails (e.g. invalid_auth) is skipped so the others are still polled.
     }
   }
 }
