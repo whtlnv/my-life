@@ -12,7 +12,7 @@ interface MessageCommand {
   type?: string;
 }
 
-// GET /commands lists every command kind for the account; filter commands carry no messageId.
+// GET /commands lists every command kind for the account; filter and draft commands carry no messageId.
 type ListedCommand = Omit<MessageCommand, 'messageId'> & { messageId?: string };
 
 interface GmailLabel {
