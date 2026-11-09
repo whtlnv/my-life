@@ -10,7 +10,7 @@
 - [x] A conversation and its turns are still there after the backend restarts
 - [x] The agent's requests use the configured agent model, Claude Opus 5.5 when no setting is given
 - [x] The agent's requests use the model named by the agent model setting when one is given
-- [ ] The agent's system prompt carries the versioned agent prompt file and the user's profile text
+- [x] The agent's system prompt carries the versioned agent prompt file and the user's profile text
 - [ ] Sending a message to the agent when no Anthropic key is configured answers that the agent is unavailable instead of crashing
 - [ ] Each agent call's cost is logged against the daily spend ceiling
 - [ ] Once the daily spend ceiling is reached, a message to the agent answers that the ceiling is reached and the model is not called
