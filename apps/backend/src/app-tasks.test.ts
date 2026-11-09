@@ -26,6 +26,13 @@ const confirmFirstTaskProposal = async (app: App) => {
   await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 };
 
+const confirmEveryTaskProposal = async (app: App) => {
+  const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+  for (const proposal of waiting.proposals) {
+    await postJson(app, `/task-proposals/${proposal.id}/confirmation`, {});
+  }
+};
+
 describe('backend app: task proposals and tasks', () => {
   it('lists at GET /task-proposals each ask extracted from a triaged message with its title, due time, message link and account', async () => {
     const triage = triageAnswering(
@@ -207,10 +214,7 @@ describe('backend app: task proposals and tasks', () => {
     const beforeRestart = createApp({ ...options, triage });
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
     await postTriageRun(beforeRestart);
-    const waiting = await getJson<{ proposals: { id: string; title: string }[] }>(beforeRestart, '/task-proposals');
-    for (const proposal of waiting.proposals) {
-      await postJson(beforeRestart, `/task-proposals/${proposal.id}/confirmation`, {});
-    }
+    await confirmEveryTaskProposal(beforeRestart);
     const open = await getJson<{ tasks: { id: string; title: string }[] }>(beforeRestart, '/tasks');
     const doneTaskId = open.tasks.find(({ title }) => title === 'Approve the budget')?.id;
     const snoozedTaskId = open.tasks.find(({ title }) => title === 'Send the slides')?.id;
@@ -387,10 +391,7 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
-    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    for (const proposal of waiting.proposals) {
-      await postJson(app, `/task-proposals/${proposal.id}/confirmation`, {});
-    }
+    await confirmEveryTaskProposal(app);
 
     await postJson(app, '/prioritization-run', {});
 
@@ -419,10 +420,7 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
-    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    for (const proposal of waiting.proposals) {
-      await postJson(app, `/task-proposals/${proposal.id}/confirmation`, {});
-    }
+    await confirmEveryTaskProposal(app);
     await postJson(app, '/prioritization-run', {});
     const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
     const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
@@ -466,10 +464,7 @@ describe('backend app: task proposals and tasks', () => {
     const beforeRestart = createApp({ ...options, triage, prioritization });
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
     await postTriageRun(beforeRestart);
-    const waiting = await getJson<{ proposals: { id: string }[] }>(beforeRestart, '/task-proposals');
-    for (const proposal of waiting.proposals) {
-      await postJson(beforeRestart, `/task-proposals/${proposal.id}/confirmation`, {});
-    }
+    await confirmEveryTaskProposal(beforeRestart);
     await postJson(beforeRestart, '/prioritization-run', {});
     const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(beforeRestart, '/tasks');
     const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
