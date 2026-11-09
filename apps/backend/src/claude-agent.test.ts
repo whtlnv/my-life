@@ -9,10 +9,11 @@ interface SentRequest {
   messages: { role: string; content: unknown }[];
 }
 
-// The model, prompt and profile of every test that asserts nothing about them.
+// The model, prompt, profile and pricing of every test that asserts nothing about them.
 function fixedAgentSetup() {
   return {
     model: 'claude-opus-5-5',
+    pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
     promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
     profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
   };
@@ -60,7 +61,6 @@ describe('Claude agent', () => {
     ];
     const agent = createClaudeAgent({
       ...fixedAgentSetup(),
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       tools: [
         {
           name: 'tasks',
@@ -106,7 +106,6 @@ describe('Claude agent', () => {
     ];
     const agent = createClaudeAgent({
       ...fixedAgentSetup(),
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       tools: [],
       createMessage: (request: SentRequest) => {
         sentRequests.push(request);
@@ -139,7 +138,6 @@ describe('Claude agent', () => {
     ];
     const agent = createClaudeAgent({
       ...fixedAgentSetup(),
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       tools: [
         {
           name: 'search_messages',
@@ -178,7 +176,6 @@ describe('Claude agent', () => {
     let modelCalls = 0;
     const agent = createClaudeAgent({
       ...fixedAgentSetup(),
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       maxToolRounds: 2,
       tools: [
         {
@@ -286,7 +283,6 @@ describe('Claude agent', () => {
     ];
     const agent = createClaudeAgent({
       ...fixedAgentSetup(),
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       createMessage: (request: SentRequest & { tools?: unknown }) => {
         sentRequests.push(request);
         return Promise.resolve(responses.shift() ?? responses[0]);
@@ -339,7 +335,6 @@ describe('Claude agent', () => {
     ];
     const agent = createClaudeAgent({
       ...fixedAgentSetup(),
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       createMessage: () => Promise.resolve(responses.shift() ?? responses[0]),
     });
 
@@ -364,7 +359,6 @@ describe('Claude agent', () => {
     ];
     const agent = createClaudeAgent({
       ...fixedAgentSetup(),
-      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       createMessage: (request) => {
         requests.push(structuredClone(request));
         return Promise.resolve(responses.shift() ?? responses[0]);
