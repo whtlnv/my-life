@@ -1236,11 +1236,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     const isAutomatedCategory = (category: string | undefined): boolean =>
       isDigestedCategory(category) || category === 'expense';
+    const isAutomatedMail = (message: ReportedMessage): boolean =>
+      message.listId !== undefined ||
+      isAutomatedCategory(proposals.find((proposal) => proposal.messageId === message.id)?.category);
     const awaitsReply = (message: ReportedMessage): boolean =>
-      message.sentByUser !== true &&
-      message.listId === undefined &&
-      !isAutomatedCategory(proposals.find((proposal) => proposal.messageId === message.id)?.category) &&
-      !userRepliedLaterInThread(message);
+      message.sentByUser !== true && !isAutomatedMail(message) && !userRepliedLaterInThread(message);
     const waitingTimesOf = (contact: { messageIds: string[] }): number[] =>
       reportedMessages
         .filter((message) => contact.messageIds.includes(message.id) && awaitsReply(message))
