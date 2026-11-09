@@ -26,7 +26,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 - [x] Create a Slack app with **user token scopes** `channels:history`, `groups:history`, `im:history`, `mpim:history`, `channels:read`, `groups:read`, `im:read`, `mpim:read`, `users:read`, `search:read`, `chat:write`. Redirect URL: the localhost one Claude gives you.
 - [x] One app per workspace, client ids and secrets in `.env` (2026-11-09).
 - [ ] In each app: **Reinstall to Workspace** (the scopes changed), then copy OAuth & Permissions → **User OAuth Token** (`xoxp-…`) into `.env` as `MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN` / `_2_`.
-- [ ] Say in `profile/accounts.md` which workspace is `T027T2P54BW` (psmutuus) and which is `T099H5TTQE8`.
+- [x] `profile/accounts.md` names the workspaces: `T027T2P54BW` is PS Mutuus, `T099H5TTQE8` is Erlia.
 
 ## 6. Telegram (Phase 5)
 
