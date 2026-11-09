@@ -35,11 +35,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Everyone else lists Sentry, AWS and newsletters beside people. Prefer the stored organization name, and leave out
   senders whose messages are all automated mail, as `GET /waiting-on` does.
 
-- **[apps/backend/src/app.ts:995] Pending agent label and draft commands live only in memory, keyed by message** (added: 2026-11-09)
-  `labelRequests` and `draftRequests` are arrays in `createApp`, so a backend restart before the extension polls loses the
-  label or draft the agent asked for (the action log still lists it). Their command ids are `label-<messageId>` and the draft
-  equivalent, so a second label or draft on the same message counts as already acknowledged and is never sent. Derive both
-  from the stored agent actions with the action id in the command id, as the undo commands already are.
 - **[apps/backend/src/main.ts:134] The agent's tools go to Claude with `strict: false`** (added: 2026-11-09)
   The agent tool schemas (`stringInputs` in `app.ts`) do not set `additionalProperties: false`, which strict tool use requires,
   so Claude's tool inputs are only checked for required properties by `claude-agent.ts`. Make the schemas strict and send
