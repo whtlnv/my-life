@@ -879,12 +879,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       timestamp: string;
       decision: string;
     }>();
-    ignoredSlackMessageKeys.add(slackMessageKey(verdict));
+    const verdictKey = slackMessageKey(verdict);
+    ignoredSlackMessageKeys.add(verdictKey);
     if (verdict.decision === 'act') {
-      const message = slackMessageStore.listMessages().find((stored) => slackMessageKey(stored) === slackMessageKey(verdict));
+      const message = slackMessageStore.listMessages().find((stored) => slackMessageKey(stored) === verdictKey);
       taskEventStore.save({
         type: 'proposal-confirmed',
-        taskId: `slack-${slackMessageKey(verdict)}`,
+        taskId: `slack-${verdictKey}`,
         at: clock.now().toISOString(),
         proposal: { title: String(message?.text), accountEmail: verdict.workspaceTeamId, link: slackPermalink(verdict) },
       });
