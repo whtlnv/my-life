@@ -1407,4 +1407,41 @@ describe('TriagePage', () => {
     expect(fetch).not.toHaveBeenCalledWith('/handled-for-you/message-2/undo', expect.anything());
     expect(within(handledSection).getByText('Globex pitches a webinar')).toBeInTheDocument();
   });
+
+  it('shows Slack items in their own group, one card per item with its sender, workspace and text', async () => {
+    const slackItem = (timestamp: string, senderName: string, workspaceTeamId: string, text: string) => ({
+      workspaceTeamId,
+      conversationId: 'D0001',
+      senderUserId: `U-${senderName}`,
+      senderName,
+      text,
+      timestamp,
+      permalink: `https://app.slack.com/client/${workspaceTeamId}/D0001/p${timestamp.replace('.', '')}`,
+      choices: ['ignore', 'act', 'reply'],
+    });
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        slackItem('1762700000.000100', 'Lucía Ramos', 'T0001', 'Can you review the deck before Friday?'),
+        slackItem('1762700100.000200', 'Diego Soto', 'T0002', 'The deploy is blocked on your approval'),
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    expect(sectionTitles).toHaveProperty('slack', expect.any(String));
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const cards = within(slackSection).getAllByRole('article');
+    expect(cards).toHaveLength(2);
+    const [luciaCard, diegoCard] = cards as [HTMLElement, HTMLElement];
+    expect(within(luciaCard).getByText(/Lucía Ramos/)).toBeInTheDocument();
+    expect(within(luciaCard).getByText(/T0001/)).toBeInTheDocument();
+    expect(within(luciaCard).getByText(/Can you review the deck before Friday\?/)).toBeInTheDocument();
+    expect(within(diegoCard).getByText(/Diego Soto/)).toBeInTheDocument();
+    expect(within(diegoCard).getByText(/T0002/)).toBeInTheDocument();
+    expect(within(diegoCard).getByText(/The deploy is blocked on your approval/)).toBeInTheDocument();
+  });
 });

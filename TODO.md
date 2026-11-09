@@ -64,7 +64,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] Confirming `act` on a Slack item creates an open task whose source link is the Slack message and whose account is the workspace
 - [x] A Slack item with a stored verdict stays out of the triage queue after a backend restart
 - [x] Confirming `reply` on a Slack item posts nothing to Slack
-- [ ] The triage page shows Slack items in their own group, each with its sender, workspace and text
+- [x] The triage page shows Slack items in their own group, each with its sender, workspace and text
 - [ ] On the triage page, the ignore key on a Slack item posts the `ignore` verdict and the act key posts the `act` verdict
 
 ### Waiting-on

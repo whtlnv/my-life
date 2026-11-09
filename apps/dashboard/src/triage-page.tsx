@@ -60,8 +60,16 @@ interface Digest {
   significantItems: { messageId: string; summary: string; accountEmail: string; link: string }[];
 }
 
+interface SlackTriageItem {
+  workspaceTeamId: string;
+  senderName: string;
+  text: string;
+  timestamp: string;
+}
+
 interface TriageQueueResponse {
   action: TriageItem[];
+  slackItems?: SlackTriageItem[];
   groups: TriageGroup[];
   digests?: Digest[];
   handledForYou?: TriageItem[];
@@ -75,6 +83,7 @@ export const sectionTitles = {
   digests: 'Digests',
   needsInput: 'Needs input',
   handledForYou: 'Handled for you',
+  slack: 'Slack',
 };
 export const noDueTimeText = 'No due time';
 export const nothingNeedsInputText = 'No questions waiting';
@@ -722,6 +731,19 @@ export function TriagePage() {
           />
         ))}
       </section>
+      {queue.slackItems !== undefined && (
+        <section aria-label={sectionTitles.slack} className="section">
+          <h2 className="section-title">{sectionTitles.slack}</h2>
+          {queue.slackItems.map((item) => (
+            <article key={`${item.workspaceTeamId}:${item.timestamp}`} className="card">
+              <p>
+                {item.senderName} · {item.workspaceTeamId}
+              </p>
+              <p>{item.text}</p>
+            </article>
+          ))}
+        </section>
+      )}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
