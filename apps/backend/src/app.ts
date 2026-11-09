@@ -869,20 +869,23 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
+  function describeSlackItems() {
+    return slackMessageStore
+      .listMessages()
+      .filter((message) => message.sentByUser !== true)
+      .map((message) => ({
+        ...message,
+        permalink: slackPermalink(message),
+        choices: ['ignore', 'act', 'reply'],
+      }));
+  }
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
     const undoneMessageIds = undoAutomaticStore.loadAll();
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: recordAndDescribeListedDigests(verdicts),
-      slackItems: slackMessageStore
-        .listMessages()
-        .filter((message) => message.sentByUser !== true)
-        .map((message) => ({
-          ...message,
-          permalink: slackPermalink(message),
-          choices: ['ignore', 'act', 'reply'],
-        })),
+      slackItems: describeSlackItems(),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
