@@ -37,6 +37,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/dashboard/src/agent-page.tsx:77] The agent action and conversation shapes are declared apart from the routes that build them** (added: 2026-11-09)
+  `AgentAction` and `ConversationSummary` here and `StoredAgentAction` in `apps/backend/src/agent-action-store.ts` (with the
+  `GET /agent/conversations` map in `app.ts`) must change together, and nothing ties them: a renamed field compiles and the
+  page shows an empty row. Deferred for the same reason as the `/triage-queue` and `/now` entries below: there is no
+  contract to share, and adding one is new `packages/contracts` surface delivered test-first.
 - **[packages/domain/src/task-state.ts:13] The task event `undone` reads as "marked not done" but hides the task** (added: 2026-11-09)
   `POST /agent/actions/undo` saves `{ type: 'undone' }` to withdraw an agent-created task, and `hidesTask` treats it like
   `done`, while `reopened` is what un-does a `done`; a reader takes `undone` for a reopen. Deferred because the type string is
