@@ -15,6 +15,16 @@ import {
 } from './app.test-support';
 import { openVerdictStore } from './verdict-store';
 
+// A cc-thread proposal as the escalating triage hands it on when its two models disagreed.
+const ccThreadProposalWithDisagreement = (disagreement: { firstCategory: string; secondCategory: string }) => ({
+  action: 'keep',
+  category: 'cc-thread',
+  summary: 'Luis copies the user on the budget thread',
+  extract: {},
+  reason: 'The user is only copied',
+  disagreement,
+});
+
 async function needsInputAfterTriagingBudgetReview(
   triage: NonNullable<AppOptions['triage']>,
 ): Promise<{ questions: unknown[] }> {
@@ -25,14 +35,9 @@ async function needsInputAfterTriagingBudgetReview(
 
 describe('backend app: GET /needs-input', () => {
   it('asks which category is right for a message whose two triage models disagreed, offering both categories', async () => {
-    const triage = triageAnswering({
-      action: 'keep',
-      category: 'cc-thread',
-      summary: 'Luis copies the user on the budget thread',
-      extract: {},
-      reason: 'The user is only copied',
-      disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
-    });
+    const triage = triageAnswering(
+      ccThreadProposalWithDisagreement({ firstCategory: 'action', secondCategory: 'cc-thread' }),
+    );
     const needsInput = await needsInputAfterTriagingBudgetReview(triage);
 
     expect(needsInput.questions).toEqual([
@@ -68,14 +73,9 @@ describe('backend app: GET /needs-input', () => {
       clock: clockAtTenPastThree,
       databasePath: temporaryDatabasePath(),
     };
-    const triage = triageAnswering({
-      action: 'keep',
-      category: 'cc-thread',
-      summary: 'Luis copies the user on the budget thread',
-      extract: {},
-      reason: 'The user is only copied',
-      disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
-    });
+    const triage = triageAnswering(
+      ccThreadProposalWithDisagreement({ firstCategory: 'action', secondCategory: 'cc-thread' }),
+    );
     const beforeRestart = createApp({ ...options, triage });
     await proposeBudgetReview(beforeRestart);
 
@@ -117,14 +117,9 @@ describe('backend app: GET /needs-input', () => {
 
   it('records the category chosen in answer to a category question as the message verdict, and asks the question no more', async () => {
     const databasePath = temporaryDatabasePath();
-    const triage = triageAnswering({
-      action: 'keep',
-      category: 'cc-thread',
-      summary: 'Luis copies the user on the budget thread',
-      extract: {},
-      reason: 'The user is only copied',
-      disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
-    });
+    const triage = triageAnswering(
+      ccThreadProposalWithDisagreement({ firstCategory: 'action', secondCategory: 'cc-thread' }),
+    );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
     await proposeBudgetReview(app);
 
@@ -142,14 +137,7 @@ describe('backend app: GET /needs-input', () => {
       propose: (message: { id: string }, examples?: unknown[]) => {
         examplesByMessageId.set(message.id, examples);
         return Promise.resolve({
-          proposal: {
-            action: 'keep',
-            category: 'cc-thread',
-            summary: 'Luis copies the user on the budget thread',
-            extract: {},
-            reason: 'The user is only copied',
-            disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
-          },
+          proposal: ccThreadProposalWithDisagreement({ firstCategory: 'action', secondCategory: 'cc-thread' }),
           costInUsd: 0,
           promptVersion: 'triage-v1',
         });
@@ -296,14 +284,9 @@ describe('backend app: GET /needs-input', () => {
     expect((await getJson<{ questions: unknown[] }>(app, '/needs-input')).questions).toEqual([]);
   });
   it('counts each unanswered Needs input question in the GET /now badge count', async () => {
-    const triage = triageAnswering({
-      action: 'keep',
-      category: 'cc-thread',
-      summary: 'Luis copies the user on the budget thread',
-      extract: {},
-      reason: 'The user is only copied',
-      disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
-    });
+    const triage = triageAnswering(
+      ccThreadProposalWithDisagreement({ firstCategory: 'action', secondCategory: 'cc-thread' }),
+    );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await proposeBudgetReview(app);
 
