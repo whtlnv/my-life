@@ -245,12 +245,12 @@ describe('backend app: task proposals and tasks', () => {
     );
     const handedTasks: unknown[] = [];
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string }[] }) => {
+      prioritize: (context: { tasks: { id: string }[] }) => {
         handedTasks.push(...context.tasks);
-        return {
+        return Promise.resolve({
           ranks: context.tasks.map(({ id }) => ({ taskId: id, rank: 1, reason: 'Due before the board meeting' })),
           costInUsd: 0.01,
-        };
+        });
       },
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
@@ -285,9 +285,9 @@ describe('backend app: task proposals and tasks', () => {
     );
     const handedProfiles: string[] = [];
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string }[]; profile: string }) => {
+      prioritize: (context: { tasks: { id: string }[]; profile: string }) => {
         handedProfiles.push(context.profile);
-        return { ranks: [], costInUsd: 0.01 };
+        return Promise.resolve({ ranks: [], costInUsd: 0.01 });
       },
     };
     const app = createApp({
@@ -311,9 +311,9 @@ describe('backend app: task proposals and tasks', () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     const handedCalendars: unknown[][] = [];
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string }[]; calendar: unknown[] }) => {
+      prioritize: (context: { tasks: { id: string }[]; calendar: unknown[] }) => {
         handedCalendars.push(context.calendar);
-        return { ranks: [], costInUsd: 0.01 };
+        return Promise.resolve({ ranks: [], costInUsd: 0.01 });
       },
     };
     const app = createApp({
@@ -354,9 +354,9 @@ describe('backend app: task proposals and tasks', () => {
     );
     const handedUrgentContacts: unknown[][] = [];
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string }[]; urgentContacts: unknown[] }) => {
+      prioritize: (context: { tasks: { id: string }[]; urgentContacts: unknown[] }) => {
         handedUrgentContacts.push(context.urgentContacts);
-        return { ranks: [], costInUsd: 0.01 };
+        return Promise.resolve({ ranks: [], costInUsd: 0.01 });
       },
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
@@ -377,14 +377,15 @@ describe('backend app: task proposals and tasks', () => {
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
     );
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string; title: string }[] }) => ({
-        ranks: context.tasks.map(({ id, title }) =>
-          title === 'Send the slides'
-            ? { taskId: id, rank: 1, reason: 'The board meets at four' }
-            : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
-        ),
-        costInUsd: 0.01,
-      }),
+      prioritize: (context: { tasks: { id: string; title: string }[] }) =>
+        Promise.resolve({
+          ranks: context.tasks.map(({ id, title }) =>
+            title === 'Send the slides'
+              ? { taskId: id, rank: 1, reason: 'The board meets at four' }
+              : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
+          ),
+          costInUsd: 0.01,
+        }),
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await postJson(app, '/mail-report', budgetReviewReport);
@@ -408,14 +409,15 @@ describe('backend app: task proposals and tasks', () => {
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
     );
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string; title: string }[] }) => ({
-        ranks: context.tasks.map(({ id, title }) =>
-          title === 'Send the slides'
-            ? { taskId: id, rank: 1, reason: 'The board meets at four' }
-            : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
-        ),
-        costInUsd: 0.01,
-      }),
+      prioritize: (context: { tasks: { id: string; title: string }[] }) =>
+        Promise.resolve({
+          ranks: context.tasks.map(({ id, title }) =>
+            title === 'Send the slides'
+              ? { taskId: id, rank: 1, reason: 'The board meets at four' }
+              : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
+          ),
+          costInUsd: 0.01,
+        }),
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await postJson(app, '/mail-report', budgetReviewReport);
@@ -454,14 +456,15 @@ describe('backend app: task proposals and tasks', () => {
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
     );
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string; title: string }[] }) => ({
-        ranks: context.tasks.map(({ id, title }) =>
-          title === 'Send the slides'
-            ? { taskId: id, rank: 1, reason: 'The board meets at four' }
-            : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
-        ),
-        costInUsd: 0.01,
-      }),
+      prioritize: (context: { tasks: { id: string; title: string }[] }) =>
+        Promise.resolve({
+          ranks: context.tasks.map(({ id, title }) =>
+            title === 'Send the slides'
+              ? { taskId: id, rank: 1, reason: 'The board meets at four' }
+              : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
+          ),
+          costInUsd: 0.01,
+        }),
     };
     const beforeRestart = createApp({ ...options, triage, prioritization });
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
@@ -495,8 +498,8 @@ describe('backend app: task proposals and tasks', () => {
       (taskId: string) => ({ ranks: [{ taskId, rank: 'first' }], costInUsd: 0.01 }),
     ];
     const prioritization = {
-      prioritize: async (context: { tasks: { id: string }[] }) =>
-        answers.shift()!(context.tasks[0]?.id ?? '') as unknown as { ranks: TaskRanks['ranks'] },
+      prioritize: (context: { tasks: { id: string }[] }) =>
+        Promise.resolve(answers.shift()?.(context.tasks[0]?.id ?? '') as unknown as { ranks: TaskRanks['ranks'] }),
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await postJson(app, '/mail-report', budgetReviewReport);
@@ -516,7 +519,7 @@ describe('backend app: task proposals and tasks', () => {
   it('logs the cost of each prioritization call at POST /prioritization-run against the daily spend, with the prioritization model', async () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     const prioritization = {
-      prioritize: async () => ({ ranks: [], costInUsd: 0.4, model: 'claude-opus-5-5' }),
+      prioritize: () => Promise.resolve({ ranks: [], costInUsd: 0.4, model: 'claude-opus-5-5' }),
     };
     const databasePath = temporaryDatabasePath();
     const app = createApp({
@@ -544,9 +547,9 @@ describe('backend app: task proposals and tasks', () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     let prioritizationCalls = 0;
     const prioritization = {
-      prioritize: async () => {
+      prioritize: () => {
         prioritizationCalls += 1;
-        return { ranks: [], costInUsd: 19, model: 'claude-opus-5-5' };
+        return Promise.resolve({ ranks: [], costInUsd: 19, model: 'claude-opus-5-5' });
       },
     };
     const app = createApp({
@@ -569,9 +572,9 @@ describe('backend app: task proposals and tasks', () => {
   it('makes a prioritization call at POST /prioritization-run again once the configured prioritization interval has elapsed since the last call, and none before', async () => {
     let prioritizationCalls = 0;
     const prioritization = {
-      prioritize: async () => {
+      prioritize: () => {
         prioritizationCalls += 1;
-        return { ranks: [] };
+        return Promise.resolve({ ranks: [] });
       },
     };
     let now = new Date('2026-11-02T15:10:00.000Z');
