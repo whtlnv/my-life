@@ -11,6 +11,8 @@ export const mentionMessageText = `<@${ownSlackUserId}> can you join the launch 
 
 export const threadReplyText = 'Sounds good, I will send the numbers tonight.';
 
+const threadTimestamp = '1762700200.000300';
+
 const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {
     '/conversations.list': { ok: true, channels: [{ id: 'D0001', is_im: true, user: 'U0001' }] },
@@ -42,15 +44,15 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
           type: 'message',
           user: ownSlackUserId,
           text: 'Can someone share the Q3 numbers?',
-          ts: '1762700200.000300',
-          thread_ts: '1762700200.000300',
+          ts: threadTimestamp,
+          thread_ts: threadTimestamp,
         },
         {
           type: 'message',
           user: 'U0003',
           text: threadReplyText,
           ts: '1762700300.000400',
-          thread_ts: '1762700200.000300',
+          thread_ts: threadTimestamp,
         },
       ],
     },
