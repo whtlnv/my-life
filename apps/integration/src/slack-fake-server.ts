@@ -5,9 +5,9 @@ type SlackScenario = 'direct-message' | 'mention';
 
 export const directMessageText = 'Can you review the proposal today?';
 
-export const userId = 'U0000';
+export const ownSlackUserId = 'U0000';
 
-export const mentionMessageText = `<@${userId}> can you join the launch call?`;
+export const mentionMessageText = `<@${ownSlackUserId}> can you join the launch call?`;
 
 const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {

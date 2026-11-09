@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { directMessageText, mentionMessageText, startSlackFakeServer, userId } from './slack-fake-server';
+import { directMessageText, mentionMessageText, startSlackFakeServer, ownSlackUserId } from './slack-fake-server';
 
 describe('Slack fake server', () => {
   it('in the direct-message scenario lists one DM conversation and returns its message from conversations.history', async () => {
@@ -33,7 +33,7 @@ describe('Slack fake server', () => {
     const slack = await startSlackFakeServer('mention');
     try {
       const search = (await (
-        await fetch(`${slack.url}/search.messages?query=${encodeURIComponent(`<@${userId}>`)}`, {
+        await fetch(`${slack.url}/search.messages?query=${encodeURIComponent(`<@${ownSlackUserId}>`)}`, {
           headers: { Authorization: 'Bearer xoxp-fake' },
         })
       ).json()) as {
@@ -46,7 +46,7 @@ describe('Slack fake server', () => {
       const [match] = search.messages.matches;
       expect(match?.channel.is_im).toBe(false);
       expect(match?.text).toBe(mentionMessageText);
-      expect(match?.text).toContain(`<@${userId}>`);
+      expect(match?.text).toContain(`<@${ownSlackUserId}>`);
     } finally {
       await slack.close();
     }
