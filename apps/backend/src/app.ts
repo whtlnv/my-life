@@ -1235,7 +1235,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return urgent ? [{ ...contact, reasons }] : [];
     });
     const isUrgent = (contact: { emails: string[] }) =>
-      urgentContacts.some((urgentContact) => urgentContact.emails[0] === contact.emails[0]);
+      urgentContacts.some((urgentContact) => sharePrimaryEmail(urgentContact, contact));
     const mostRecentMessageTime = (contact: { messageIds: string[] }) =>
       Math.max(
         ...reportedMessages
