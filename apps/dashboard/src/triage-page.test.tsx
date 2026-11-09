@@ -1539,4 +1539,34 @@ describe('TriagePage', () => {
     ]);
     expect(fetch).not.toHaveBeenCalledWith('/slack-verdicts', expect.anything());
   });
+  it('keeps the Slack composer\'s Send disabled while the reply text is empty', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    await user.click(card);
+    await user.keyboard('r');
+
+    expect(within(card).getByRole('button')).toBeDisabled();
+  });
 });

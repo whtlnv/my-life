@@ -98,7 +98,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A send Slack rejects returns the Slack error to the dashboard and records no send
 - [x] After a reply is sent, the person no longer appears in `GET /waiting-on` for that conversation
 - [x] Pressing the reply key on a Slack triage item opens a composer; its Send posts the typed text as an explicit send
-- [ ] The composer's Send is disabled while the text is empty
+- [x] The composer's Send is disabled while the text is empty
 
 ### Wiring and acceptance
 

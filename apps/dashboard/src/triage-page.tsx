@@ -661,6 +661,7 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
           <button
             type="button"
             className="button"
+            disabled={reply === ''}
             onClick={() => {
               postSlackSend(item, reply);
             }}
