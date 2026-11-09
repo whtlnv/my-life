@@ -108,7 +108,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] The shipped backend (`main.ts`), started with a workspace token and `MY_LIFE_SLACK_API_URL` pointed at the Slack fake, polls at the configured interval and serves the scenario's DM in `GET /triage-queue`, and its send route posts to the fake's `chat.postMessage`
 - [x] A poll records each workspace's name and URL from `auth.test` (`team`, `url`); `GET /now` lists each Slack workspace with its name, and each Slack triage item carries its workspace's name (keystone: the dashboard showed team ids)
 - [x] A Slack item's permalink is the workspace URL from `auth.test` followed by `archives/<conversation>/p<timestamp without the dot>`, Slack's own permalink form (keystone: the hand-built app.slack.com link did not open the message)
-- [ ] The user's own Slack identity (the `auth.test` user id of each workspace) is not listed in `GET /people`, even though their sent messages are stored
+- [x] The user's own Slack identity (the `auth.test` user id of each workspace) is not listed in `GET /people`, even though their sent messages are stored
 - [ ] A Slack item's text in `GET /triage-queue` shows each `<@U…>` mention as `@` and that user's display name, falling back to the user id when the name is unknown
 - [ ] On the triage page, a key other than the ignore, act and reply keys on a Slack item posts nothing
 - [ ] A Slack item on the triage page has Ignore, Task and Reply buttons with their keys and an Open in Slack link to its permalink; clicking Ignore or Task posts that verdict and clicking Reply opens the composer

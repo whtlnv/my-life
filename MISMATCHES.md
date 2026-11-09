@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 16:00 · `apps/backend/src/app-slack.test.ts::leaves out of GET /people the user's own Slack identity, whose sent messages are stored`
+- Behavior: `GET /people` does not list the user's own Slack identity among the Slack contacts
+- Predicted: AssertionError — `everyoneElse` holds both U0001 (Ana) and U0000 (the user), since every stored Slack message becomes a contact
+- Actual: first run PARSE_ERROR — the apostrophe in "user's" closed the single-quoted test name; after switching the name to double quotes, the predicted AssertionError (extra `[{ workspaceTeamId: 'T0001', userId: 'U0000' }]`)
+- Type: wrong-reason
+- Resolution: test-name quoting typo fixed in the test; the prediction held unchanged once the test parsed.
+
 ## 2026-11-09 14:03 · `packages/domain/src/contact-urgency.test.ts::lists only the reason "deadline" when a VIP contact's message carries a deadline inside the next 48 hours but has not yet waited a business day`
 - Behavior: An Urgent contact with only a deadline lists only the deadline reason
 - Predicted: passes; bab3a1c already makes contactUrgency push each reason on its own, so a deadline-only contact gets ['deadline']

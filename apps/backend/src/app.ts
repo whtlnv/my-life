@@ -1835,7 +1835,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((contact) => !isVip(contact) && !isUrgent(contact))
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
-        ...slackMessageStore.listMessages().map(slackSenderAsContact),
+        ...slackMessageStore
+          .listMessages()
+          .filter((message) => message.sentByUser !== true)
+          .map(slackSenderAsContact),
       ],
     };
   };
