@@ -11,6 +11,8 @@ export const mentionMessageText = `<@${ownSlackUserId}> can you join the launch 
 
 export const threadReplyText = 'Sounds good, I will send the numbers tonight.';
 
+export const postedMessageTimestamp = '1762704000.000500';
+
 const threadTimestamp = '1762700200.000300';
 
 const threadParentText = 'Can someone share the Q3 numbers?';
@@ -104,7 +106,7 @@ function recordPostedMessage(request: IncomingMessage, response: ServerResponse,
   request.on('end', () => {
     const message = JSON.parse(body) as { channel: string; thread_ts: string; text: string };
     postedMessages.push({ channel: message.channel, threadTimestamp: message.thread_ts, text: message.text });
-    response.end(JSON.stringify({ ok: true }));
+    response.end(JSON.stringify({ ok: true, channel: message.channel, ts: postedMessageTimestamp }));
   });
 }
 

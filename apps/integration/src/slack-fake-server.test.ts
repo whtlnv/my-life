@@ -11,6 +11,7 @@ import { pollSlackWorkspace, pollSlackWorkspaces } from '@my-life/backend/slack-
 import {
   directMessageText,
   mentionMessageText,
+  postedMessageTimestamp,
   startSlackFakeServer,
   ownSlackUserId,
   threadReplyText,
@@ -955,6 +956,38 @@ describe('Slack fake server', () => {
     } finally {
       await slack.close();
       rmSync(databaseDirectory, { recursive: true, force: true });
+    }
+  });
+
+  it("stores a reply sent at POST /slack-sends under the ts and channel chat.postMessage returns, sent by the user's own Slack id", async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      await backend.request('/slack-sends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceTeamId: 'T0001', conversationId: 'D0001', text: 'On it, sending it tonight.' }),
+      });
+      const { messages } = (await (await backend.request('/slack-messages')).json()) as { messages: unknown[] };
+
+      expect(messages).toEqual([
+        expect.objectContaining({
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: ownSlackUserId,
+          text: 'On it, sending it tonight.',
+          timestamp: postedMessageTimestamp,
+          sentByUser: true,
+        }),
+      ]);
+    } finally {
+      await slack.close();
     }
   });
 });
