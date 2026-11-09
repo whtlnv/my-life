@@ -176,11 +176,6 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
-interface LabelRequest {
-  messageId: string;
-  labelName: string;
-}
-
 interface DraftRequest {
   messageId: string;
   body: string;
@@ -992,7 +987,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     undoAutomaticStore.save(messageId);
     return context.body(null, 200);
   });
-  const labelRequests: LabelRequest[] = [];
   const draftRequests: DraftRequest[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
@@ -1057,9 +1051,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageId,
         label: labelName,
       }));
-    const labelCommands = labelRequests
-      .filter(({ messageId }) => isMessageOfAccount(messageId))
-      .map(({ messageId, labelName }) => ({ id: `label-${messageId}`, type: 'label', messageId, label: labelName }));
+    const labelCommands = agentActionStore
+      .loadAll()
+      .filter(({ tool, target, outcome }) => tool === 'label_message' && !outcome && isMessageOfAccount(target))
+      .map(({ id, target: messageId, labelName }) => ({ id: `label-${id}`, type: 'label', messageId, label: labelName }));
     const draftCommands = draftRequests
       .filter(({ messageId }) => isMessageOfAccount(messageId))
       .map((request) => createDraftCommand(request, reportedMessageWithId(reportedMessages, request.messageId)));
@@ -1271,10 +1266,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     name: 'label_message',
     description: 'Add a Gmail label to a message.',
     inputSchema: stringInputs('messageId', 'labelName'),
-    run: (input) => {
-      labelRequests.push(input as LabelRequest);
-      return Promise.resolve({});
-    },
+    // The label command is derived from the recorded action, so it survives a restart.
+    run: () => Promise.resolve({}),
   };
   const writeDraftTool: AgentTool = {
     name: 'write_draft',

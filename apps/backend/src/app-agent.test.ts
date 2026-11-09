@@ -1206,6 +1206,28 @@ describe('backend app: the agent', () => {
     );
   });
 
+  it("after a backend restart, a label the agent asked for that the extension has not picked up is still in the account's commands", async () => {
+    const { agent, runTool } = agentRecordingOfferedTools('Done.');
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    await proposeBudgetReview(beforeRestart);
+    await postJson(beforeRestart, '/agent/conversations', { message: 'Label the budget thread' });
+    await runTool('label_message', { messageId: 'message-1', labelName: 'Finance' });
+
+    const afterRestart = createApp(options);
+
+    const commands = await pendingCommandsOf(afterRestart, 'ana@example.com');
+    expect(commands).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Finance' })]),
+    );
+  });
+
   it('offers every agent tool with a description and an input schema that names its required inputs', async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('Noted.');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
