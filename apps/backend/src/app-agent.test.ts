@@ -5,10 +5,14 @@ import {
   budgetReviewReport,
   clockAtTenPastThree,
   getJson,
+  keepProposalExtracting,
   messageWithQuarterlyNumbersBody,
   postCalendarSnapshot,
   postJson,
+  proposeBudgetReview,
+  putJson,
   temporaryDatabasePath,
+  triageAnswering,
   weeklySync,
 } from './app.test-support';
 import { openSpendStore } from './spend-store';
@@ -463,6 +467,63 @@ describe('backend app: the agent', () => {
         expect.objectContaining({
           title: 'Tuesday evening review',
           meetLink: 'https://meet.google.com/tue-even-ing',
+        }),
+      ],
+    });
+  });
+
+  it('tasks returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'You have one open task.', costInUsd: 0.01 });
+      },
+    };
+    const triage = triageAnswering(
+      keepProposalExtracting({
+        asks: [{ ask: 'Approve the budget', due: '2026-11-05' }, { ask: 'Send the slides' }],
+      }),
+    );
+    const prioritization = {
+      prioritize: (context: { tasks: { id: string; title: string }[] }) =>
+        Promise.resolve({
+          ranks: context.tasks.map(({ id }, index) => ({ taskId: id, rank: index + 1, reason: 'Due soon' })),
+          costInUsd: 0.01,
+        }),
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage,
+      prioritization,
+      agent,
+    });
+    await proposeBudgetReview(app);
+    const proposals = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    for (const proposal of proposals.proposals) {
+      await postJson(app, `/task-proposals/${proposal.id}/confirmation`, {});
+    }
+    const open = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
+    const budgetTaskId = String(open.tasks.find(({ title }) => title === 'Approve the budget')?.id);
+    const slidesTaskId = String(open.tasks.find(({ title }) => title === 'Send the slides')?.id);
+    await putJson(app, `/tasks/${budgetTaskId}/waiting-on`, { person: 'luis@example.com' });
+    await postJson(app, `/tasks/${slidesTaskId}/done`, {});
+    await app.request('/prioritization-run', { method: 'POST' });
+    await postJson(app, '/agent/conversations', { message: 'What is open?' });
+    const tasksTool = offeredTools.find((tool) => tool.name === 'tasks');
+
+    const result = await tasksTool?.run({});
+
+    expect(result).toEqual({
+      tasks: [
+        expect.objectContaining({
+          title: 'Approve the budget',
+          rank: 1,
+          due: '2026-11-05',
+          waitingOn: 'luis@example.com',
+          accountEmail: 'ana@example.com',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
         }),
       ],
     });

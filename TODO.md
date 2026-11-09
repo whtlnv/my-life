@@ -27,7 +27,7 @@
 - [x] `read_thread` returns every stored message of the given message's thread with its body, oldest first, and no message from another thread
 - [x] `contact_timeline` returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them
 - [x] `calendar_day` returns the events of the given date across every account's calendars, in the business time zone, with their Meet links, and no event of another day
-- [ ] `tasks` returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks
+- [x] `tasks` returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks
 - [ ] `digest` returns the waiting digests with their account, category, count and summary lines
 - [ ] A reply that cites a message or event a tool returned in that turn shows the cited item with its link
 - [ ] A reply that cites a message or event no tool returned in that turn shows the citation as unverified, without a link

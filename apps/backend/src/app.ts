@@ -1150,10 +1150,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({ events });
     },
   };
+  const tasksTool: AgentTool = {
+    name: 'tasks',
+    run: () => {
+      const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
+      const tasks = currentOpenTasks().map((task) => ({
+        ...task,
+        rank: taskRanksFromLastRun.find(({ taskId }) => taskId === task.id)?.rank,
+      }));
+      return Promise.resolve({ tasks });
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
     const reply = await options.agent?.respond({
       turns,
-      tools: [searchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool],
+      tools: [searchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool, tasksTool],
     });
     if (reply) {
       logSpend(reply);
