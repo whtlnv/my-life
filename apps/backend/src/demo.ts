@@ -1,4 +1,6 @@
 import { mkdtempSync } from 'node:fs';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -612,12 +614,192 @@ const demoAgent = {
   },
 };
 
+// A scripted Slack Web API on its own local port, so the demo runs the real Slack poller: PS Mutuus has a DM from
+// Luis, a mention from Sofía in #general and Pedro's reply in a thread the user wrote in; Erlia has a DM from Ana.
+const slackTimestamp = (minutesAgo: number) => `${String(Math.floor(Date.now() / 1000) - minutesAgo * 60)}.000100`;
+interface DemoSlackMessage {
+  user: string;
+  text: string;
+  ts: string;
+  channel: string;
+  thread_ts?: string;
+}
+interface DemoSlackWorkspace {
+  teamId: string;
+  name: string;
+  url: string;
+  userToken: string;
+  ownUserId: string;
+  displayNames: Record<string, string>;
+  directMessages: DemoSlackMessage[];
+  mentions: DemoSlackMessage[];
+  ownThreadMessages: DemoSlackMessage[];
+  threadReplies: DemoSlackMessage[];
+}
+const ownThreadTimestamp = slackTimestamp(26 * 60);
+const demoSlackWorkspaces: DemoSlackWorkspace[] = [
+  {
+    teamId: 'TDEMOPSM',
+    name: 'PS Mutuus',
+    url: 'https://psmutuus-demo.slack.com/',
+    userToken: 'xoxp-demo-psmutuus',
+    ownUserId: 'UDEMOME1',
+    displayNames: {
+      UDEMOME1: 'Francisco',
+      UDEMOLUIS: 'Luis Pérez',
+      UDEMOSOFIA: 'Sofía Méndez',
+      UDEMOPEDRO: 'Pedro Ruiz',
+    },
+    directMessages: [
+      {
+        user: 'UDEMOLUIS',
+        text: 'Can you look at the Q4 numbers before tomorrow’s call? The board deck still has last month’s forecast.',
+        ts: slackTimestamp(180),
+        channel: 'DDEMOLUIS',
+      },
+    ],
+    mentions: [
+      {
+        user: 'UDEMOSOFIA',
+        text: '<@UDEMOME1> can you approve the vendor invoice by Friday? Finance closes the month on Monday.',
+        ts: slackTimestamp(95),
+        channel: 'CDEMOGENERAL',
+      },
+    ],
+    ownThreadMessages: [
+      {
+        user: 'UDEMOME1',
+        text: 'I’ll check with the carrier about the Thursday pickup.',
+        ts: ownThreadTimestamp,
+        channel: 'CDEMOOPS',
+        thread_ts: ownThreadTimestamp,
+      },
+    ],
+    threadReplies: [
+      {
+        user: 'UDEMOPEDRO',
+        text: 'Carrier confirmed pickup for Thursday 9:00. OK to tell the client?',
+        ts: slackTimestamp(40),
+        channel: 'CDEMOOPS',
+        thread_ts: ownThreadTimestamp,
+      },
+    ],
+  },
+  {
+    teamId: 'TDEMOERLIA',
+    name: 'Erlia',
+    url: 'https://erlia-demo.slack.com/',
+    userToken: 'xoxp-demo-erlia',
+    ownUserId: 'UDEMOME2',
+    displayNames: { UDEMOME2: 'Francisco', UDEMOANA: 'Ana Ruiz' },
+    directMessages: [
+      {
+        user: 'UDEMOANA',
+        text: 'Are we still on for the roadmap review at 4? I can move it to tomorrow if you need.',
+        ts: slackTimestamp(20),
+        channel: 'DDEMOANA',
+      },
+    ],
+    mentions: [],
+    ownThreadMessages: [],
+    threadReplies: [],
+  },
+];
+const slackPostedMessages: DemoSlackMessage[] = [];
+const newerThan = (oldest: string | null) => (message: DemoSlackMessage) =>
+  oldest === null || Number(message.ts) > Number(oldest);
+function answerSlack(path: string, query: URLSearchParams, workspace: DemoSlackWorkspace, body: string): unknown {
+  switch (path) {
+    case '/auth.test':
+      return {
+        ok: true,
+        user_id: workspace.ownUserId,
+        team_id: workspace.teamId,
+        team: workspace.name,
+        url: workspace.url,
+      };
+    case '/conversations.list':
+      return {
+        ok: true,
+        channels: [...new Set(workspace.directMessages.map(({ channel }) => channel))].map((id) => ({
+          id,
+          is_im: true,
+        })),
+      };
+    case '/conversations.history':
+      return {
+        ok: true,
+        messages: [...workspace.directMessages, ...slackPostedMessages]
+          .filter(({ channel }) => channel === query.get('channel'))
+          .filter(newerThan(query.get('oldest'))),
+      };
+    case '/search.messages': {
+      const ownMessagesQuery = `from:<@${workspace.ownUserId}>`;
+      const matches = query.get('query') === ownMessagesQuery ? workspace.ownThreadMessages : workspace.mentions;
+      return {
+        ok: true,
+        messages: { matches: matches.map((match) => ({ ...match, channel: { id: match.channel } })) },
+      };
+    }
+    case '/conversations.replies':
+      return {
+        ok: true,
+        messages: [...workspace.ownThreadMessages, ...workspace.threadReplies, ...slackPostedMessages]
+          .filter(({ channel, thread_ts }) => channel === query.get('channel') && thread_ts === query.get('ts'))
+          .filter(newerThan(query.get('oldest'))),
+      };
+    case '/users.info': {
+      const userId = query.get('user') ?? '';
+      const displayName = workspace.displayNames[userId];
+      return displayName === undefined
+        ? { ok: false, error: 'user_not_found' }
+        : { ok: true, user: { profile: { display_name: displayName } } };
+    }
+    case '/chat.postMessage': {
+      const { channel, thread_ts, text } = JSON.parse(body) as { channel: string; thread_ts?: string; text: string };
+      const ts = slackTimestamp(0);
+      slackPostedMessages.push({
+        user: workspace.ownUserId,
+        text,
+        ts,
+        channel,
+        ...(thread_ts === undefined ? {} : { thread_ts }),
+      });
+      return { ok: true, channel, ts };
+    }
+    default:
+      return { ok: false, error: 'unknown_method' };
+  }
+}
+const demoSlack = createServer((request, response) => {
+  let body = '';
+  request.on('data', (chunk: Buffer) => {
+    body += chunk.toString();
+  });
+  request.on('end', () => {
+    const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+    const token = (request.headers.authorization ?? '').replace('Bearer ', '');
+    const workspace = demoSlackWorkspaces.find(({ userToken }) => userToken === token);
+    const answer =
+      workspace === undefined
+        ? { ok: false, error: 'invalid_auth' }
+        : answerSlack(url.pathname, url.searchParams, workspace, body);
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(JSON.stringify(answer));
+  });
+});
+await new Promise<void>((resolve) => demoSlack.listen(0, '127.0.0.1', resolve));
+const demoSlackUrl = `http://127.0.0.1:${String((demoSlack.address() as AddressInfo).port)}`;
+
 const app = createApp({
   allowedEmails: Object.values(accounts),
   databasePath,
   dashboardDirectory,
   dailySpendCeilingInUsd: 20,
   agent: demoAgent,
+  slackApiUrl: demoSlackUrl,
+  slackWorkspaces: demoSlackWorkspaces.map(({ teamId, userToken }) => ({ teamId, userToken })),
+  slackPollingIntervalInMilliseconds: 60_000,
   triage: {
     propose: (message) =>
       Promise.resolve({
@@ -755,6 +937,8 @@ async function seed(): Promise<void> {
   };
   const archiveAction = actions.find(({ tool }) => tool === 'archive_message');
   if (archiveAction !== undefined) await postJson('/agent/actions/undo', { actionId: archiveAction.id });
+  // Slack: both workspaces are polled from the scripted Slack above.
+  await app.request('/slack-poll', { method: 'POST' });
 }
 
 // Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).
@@ -763,6 +947,7 @@ async function report(): Promise<void> {
   for (const accountEmail of Object.values(accounts)) {
     await postJson('/mail-report', { accountEmail, historyId: '2', messages: [] });
   }
+  await app.request('/slack-poll', { method: 'POST' });
 }
 
 await seed();
