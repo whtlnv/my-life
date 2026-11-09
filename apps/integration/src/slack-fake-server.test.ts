@@ -116,6 +116,21 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('started with a chosen own Slack user id answers auth.test with that id', async () => {
+    const chosenSlackUserId = 'U0999';
+    const slack = await startSlackFakeServer('direct-message', { ownSlackUserId: chosenSlackUserId });
+    try {
+      const identity = (await (
+        await fetch(`${slack.url}/auth.test`, { headers: { Authorization: `Bearer ${slack.token}` } })
+      ).json()) as { ok: boolean; user_id: string };
+
+      expect(identity.ok).toBe(true);
+      expect(identity.user_id).toBe(chosenSlackUserId);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it("answers a request carrying the scenario's token", async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {

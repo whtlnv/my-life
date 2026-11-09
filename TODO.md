@@ -31,7 +31,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A second poll of the same workspace stores only the DM messages newer than the first poll
 - [x] A poll stores the channel messages that mention the user
 - [x] The Slack fake answers `auth.test` with the scenario's own Slack user id
-- [ ] A Slack fake started with a chosen own Slack user id answers `auth.test` with that id
+- [x] A Slack fake started with a chosen own Slack user id answers `auth.test` with that id
 - [ ] The Slack fake records each `search.messages` query, and the test can read them back
 - [ ] In the `thread-reply` scenario, the Slack fake's `search.messages` for `from:<@U0000>` returns the message the user wrote, with its channel and `thread_ts`
 - [ ] In the `mention` scenario, the Slack fake's `search.messages` for `from:<@U0000>` returns no matches, while any other query still returns the mention

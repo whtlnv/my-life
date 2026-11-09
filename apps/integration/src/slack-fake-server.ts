@@ -90,7 +90,7 @@ function recordPostedMessage(request: IncomingMessage, response: ServerResponse,
   });
 }
 
-export async function startSlackFakeServer(scenario: SlackScenario) {
+export async function startSlackFakeServer(scenario: SlackScenario, options: { ownSlackUserId?: string } = {}) {
   const responseByPath = responseByPathByScenario[scenario];
   let rateLimitPending = scenario === 'rate-limited';
   const postedMessages: PostedMessage[] = [];
@@ -112,6 +112,10 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
     }
     if (url.pathname === '/users.info') {
       response.end(JSON.stringify(usersInfoResponse(url.searchParams.get('user') ?? '')));
+      return;
+    }
+    if (url.pathname === '/auth.test' && options.ownSlackUserId !== undefined) {
+      response.end(JSON.stringify({ ok: true, user_id: options.ownSlackUserId }));
       return;
     }
     response.end(JSON.stringify(responseByPath[url.pathname]));
