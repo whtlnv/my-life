@@ -438,7 +438,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const verdicts = verdictStore.loadAll();
     return reportedMessageStore.loadAll().flatMap(({ messageId, accountEmail, from, listId }) => {
       const verdict = latestVerdictFor(messageId, verdicts);
-      const action = proposals.find((proposal) => proposal.messageId === messageId)?.action ?? '';
+      const action = latestProposalFor(proposals, messageId)?.action ?? '';
       return verdict === undefined
         ? []
         : [
@@ -496,7 +496,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // A category the user chose in answer to a question outranks the one the model proposed.
   const categoryOfVerdict = (verdict: { messageId: string; correction?: unknown }): string =>
     (verdict.correction as { category?: string } | undefined)?.category ??
-    proposals.find((proposal) => proposal.messageId === verdict.messageId)?.category ??
+    latestProposalFor(proposals, verdict.messageId)?.category ??
     '';
   const verdictExamplesFor = (message: ReportedMessage) =>
     chooseVerdictExamples(
@@ -769,7 +769,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         summaryLines: digestSummaryStore.load(id),
         significantItems: significantItems.map((item) => ({
           messageId: item.messageId,
-          summary: proposals.find(({ messageId }) => messageId === item.messageId)?.summary,
+          summary: latestProposalFor(proposals, item.messageId)?.summary,
           accountEmail: item.accountEmail,
           link: gmailMessageLink(item),
         })),
@@ -1171,7 +1171,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .toSorted(newestFirst)
       .map((message) => {
         const accountEmail = accountEmailByMessageId.get(message.id) ?? '';
-        const proposal = proposals.find((candidate) => candidate.messageId === message.id);
+        const proposal = latestProposalFor(proposals, message.id);
         const userRepliedLater = reportedMessages.some((other) => isLaterUserReplyTo(message, other));
         return {
           id: message.id,
@@ -1208,7 +1208,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       reportedMessages
         .filter((message) => contact.messageIds.includes(message.id) || message.sentByUser === true)
         .map((message) => {
-          const proposal = proposals.find((candidate) => candidate.messageId === message.id);
+          const proposal = latestProposalFor(proposals, message.id);
           return {
             threadId: message.threadId,
             receivedAt: new Date(message.date).toISOString(),
@@ -1263,8 +1263,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const isAutomatedCategory = (category: string | undefined): boolean =>
       isDigestedCategory(category) || category === 'expense';
     const isAutomatedMail = (message: ReportedMessage): boolean =>
-      message.listId !== undefined ||
-      isAutomatedCategory(proposals.find((proposal) => proposal.messageId === message.id)?.category);
+      message.listId !== undefined || isAutomatedCategory(latestProposalFor(proposals, message.id)?.category);
     const awaitsReply = (message: ReportedMessage): boolean =>
       message.sentByUser !== true && !isAutomatedMail(message) && !userRepliedLaterInThread(message);
     const waitingTimesOf = (contact: { messageIds: string[] }): number[] =>
