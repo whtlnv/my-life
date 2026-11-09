@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 10:40 · `apps/integration/src/slack-fake-server.test.ts::a poll searches Slack for the messages written by the user id that the workspace's auth.test names`
+- Behavior: a poll searches Slack for `from:<@id>`, using the id that `auth.test` returns
+- Predicted: AssertionError, recorded search queries `['']` do not contain `from:<@U0000>`
+- Actual: SyntaxError: Unexpected end of JSON input (first written against the `thread-reply` scenario)
+- Type: wrong-reason
+- Resolution: the `thread-reply` scenario serves no `conversations.list` (and `mention` serves no `auth.test`), so the poll crashed on an empty fake response before it searched; the test now uses `direct-message`, which serves every endpoint the poll calls, and it fails as predicted.
+
 ## 2026-11-09 09:35 · `apps/integration/src/slack-fake-server.test.ts::in the mention scenario returns one channel message that mentions the user from search.messages`
 - Behavior: In the `mention` scenario, the Slack fake's `search.messages` returns one channel message that mentions the user
 - Predicted: TypeError in the fake's handler (no response table for `mention`) and the client fetch failing with "fetch failed" / socket hang up
