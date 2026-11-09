@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 interface Question {
   kind: string;
-  senderEmail: string;
+  senderEmail?: string;
   messageId: string;
   accountEmail: string;
   choices: string[];
