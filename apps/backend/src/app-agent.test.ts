@@ -371,4 +371,43 @@ describe('backend app: the agent', () => {
       ],
     });
   });
+
+  it('contact_timeline returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'Here is what Luis and you exchanged.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        budgetReviewReport.messages[0],
+        {
+          ...budgetReviewReport.messages[0],
+          id: 'message-2',
+          threadId: 'thread-2',
+          from: 'Marta <marta@acme.com>',
+          subject: 'Lunch on Thursday',
+          date: 'Wed, 4 Nov 2026 10:00:00 -0600',
+        },
+        {
+          ...budgetReviewReport.messages[0],
+          id: 'message-3',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          date: 'Tue, 3 Nov 2026 10:00:00 -0600',
+          sentByUser: true,
+        },
+      ],
+    });
+    await postJson(app, '/agent/conversations', { message: 'What did Luis and I talk about?' });
+    const contactTimeline = offeredTools.find((tool) => tool.name === 'contact_timeline');
+
+    const result = (await contactTimeline?.run({ email: 'luis@example.com' })) as { messages: { id: string }[] };
+
+    expect(result.messages.map((message) => message.id)).toEqual(['message-3', 'message-1']);
+  });
 });

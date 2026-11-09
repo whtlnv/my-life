@@ -1135,8 +1135,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({ messages });
     },
   };
+  const contactTimelineTool: AgentTool = {
+    name: 'contact_timeline',
+    run: (input) => {
+      const { email } = input as { email: string };
+      return Promise.resolve({ messages: contactTimeline(email) });
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
-    const reply = await options.agent?.respond({ turns, tools: [searchMessagesTool, readThreadTool] });
+    const reply = await options.agent?.respond({
+      turns,
+      tools: [searchMessagesTool, readThreadTool, contactTimelineTool],
+    });
     if (reply) {
       logSpend(reply);
     }
@@ -1262,8 +1272,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }),
     });
   });
-  app.get('/contacts/:email/timeline', (context) => {
-    const email = context.req.param('email');
+  const contactTimeline = (email: string) => {
     const namesContact = (messageIdentifier: string): boolean =>
       proposals.some(
         ({ messageId, people = [] }) =>
@@ -1291,6 +1300,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           asks: (proposal?.asks ?? []).map((ask) => ({ ...ask, status: userRepliedLater ? 'answered' : 'open' })),
         };
       });
+    return messages;
+  };
+  app.get('/contacts/:email/timeline', (context) => {
+    const messages = contactTimeline(context.req.param('email'));
     return context.json({ messages });
   });
   const peopleGroups = () => {

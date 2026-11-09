@@ -25,7 +25,7 @@
 - [x] `search_messages` returns the stored messages whose body, subject or summary contains the query words, each with its id, account, sender, subject, date and Gmail link, and leaves out messages without them
 - [x] `search_messages` ranks a message containing every query word above one containing only some of them (backlog: apps/backend/src/app.ts:990 `GET /search` scans every stored message instead of an SQLite FTS5 index)
 - [x] `read_thread` returns every stored message of the given message's thread with its body, oldest first, and no message from another thread
-- [ ] `contact_timeline` returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them
+- [x] `contact_timeline` returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them
 - [ ] `calendar_day` returns the events of the given date across every account's calendars, in the business time zone, with their Meet links, and no event of another day
 - [ ] `tasks` returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks
 - [ ] `digest` returns the waiting digests with their account, category, count and summary lines
