@@ -15,8 +15,8 @@ function toAnswerBlock(block: Anthropic.Beta.BetaContentBlock) {
   return { type: block.type };
 }
 
-// One Anthropic call shape for every adapter: a system prompt, the messages with their roles and blocks, strict
-// tools, low effort, fallbacks.
+// One Anthropic call shape for every adapter: a system prompt, the messages with their roles and blocks, tools
+// strict or not as each adapter asks, low effort, fallbacks.
 export function createMessageWith(client: Anthropic) {
   return async (request: ClaudeMessageRequest) => {
     const response = await client.beta.messages.create({
