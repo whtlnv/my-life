@@ -83,18 +83,21 @@ export function createClaudeAgent({
       const profile = readFileSync(join(profileDirectory, 'accounts.md'), 'utf8');
       const system = `${prompt}\n\n${profile}`;
       const messages: ClaudeAgentRequest['messages'] = turns.map(({ role, text }) => ({ role, content: text }));
-      let response = await createMessage({ model, system, messages });
-      let toolRounds = 0;
       let costInUsd = 0;
+      const sendMessages = async () => {
+        const sent = await createMessage({ model, system, messages });
+        if (sent) costInUsd += computeCostInUsd(sent.usage, pricing);
+        return sent;
+      };
+      let response = await sendMessages();
+      let toolRounds = 0;
       while (response?.stop_reason === 'tool_use') {
-        costInUsd += computeCostInUsd(response.usage, pricing);
         if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply };
         toolRounds += 1;
         const toolResults = await runRequestedTools(response.content, tools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
-        response = await createMessage({ model, system, messages });
+        response = await sendMessages();
       }
-      if (response) costInUsd += computeCostInUsd(response.usage, pricing);
       return { text: response?.content.find((block) => block.type === 'text')?.text, costInUsd };
     },
   };
