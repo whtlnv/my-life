@@ -877,7 +877,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       digests: recordAndDescribeListedDigests(verdicts),
       slackItems: slackMessageStore.listMessages().map((message) => ({
         ...message,
-        permalink: `https://app.slack.com/client/${message.workspaceTeamId}/${message.conversationId}/p${message.timestamp.replace('.', '')}`,
+        permalink: slackPermalink(message),
         choices: ['ignore', 'act', 'reply'],
       })),
       handledForYou: describeHandledForYou(proposals, clock).filter(
@@ -1874,6 +1874,10 @@ function organizationsByName(senders: { messageId: string; from: string }[], pro
     messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
   }
   return [...messageIdsByName].map(([name, messageIds]) => ({ name, messageIds }));
+}
+
+function slackPermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }): string {
+  return `https://app.slack.com/client/${message.workspaceTeamId}/${message.conversationId}/p${message.timestamp.replace('.', '')}`;
 }
 
 function senderDomain(from: string): string {
