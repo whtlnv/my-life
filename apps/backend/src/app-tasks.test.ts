@@ -592,4 +592,20 @@ describe('backend app: task proposals and tasks', () => {
     expect(callsBeforeTheInterval).toBe(1);
     expect(prioritizationCalls).toBe(2);
   });
+
+  it('counts an open task whose due time has passed in the GET /now badge count', async () => {
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-01' }] }),
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const before = await getJson<{ badgeCount: number }>(app, '/now');
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+
+    const after = await getJson<{ badgeCount: number }>(app, '/now');
+    expect(after.badgeCount).toBe(before.badgeCount + 1);
+  });
 });

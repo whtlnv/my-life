@@ -97,7 +97,7 @@
 - [x] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
 - [x] The _now_ waiting-on list leaves out a person whose last message the user has answered
 - [x] The badge count includes the unanswered Needs input questions
-- [ ] The badge count includes the open tasks whose due time has passed
+- [x] The badge count includes the open tasks whose due time has passed
 - [ ] The badge count leaves out the open tasks due later
 - [ ] The shipped backend (`apps/backend/src/main.ts`) serves `GET /people`, the timelines, `GET /needs-input` and the task routes, and runs the prioritization pass on its schedule through the real Claude adapter with its prompt file
 - [ ] `scripts/demo.sh` seeds VIP, urgent and ordinary contacts, Needs input questions and ranked tasks; the People, Needs input and _now_ pages are screenshot-verified against it

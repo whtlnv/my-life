@@ -1322,7 +1322,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
       badgeCount:
-        badgeCount(events, clock, awaitingTheUser(proposals), verdictStore.loadAll()) + needsInputQuestions().length,
+        badgeCount(events, clock, awaitingTheUser(proposals), verdictStore.loadAll()) +
+        needsInputQuestions().length +
+        currentOpenTasks().filter(({ due }) => due !== undefined && due < clock.now().toISOString()).length,
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
     });
   });
