@@ -344,4 +344,29 @@ describe('backend app: task proposals and tasks', () => {
       ]),
     ]);
   });
+
+  it('hands the prioritization port at POST /prioritization-run the urgent contacts with their reasons, the same ones GET /people lists as urgent', async () => {
+    const tomorrowNoon = '2026-11-03T12:00:00-06:00';
+    const triage = triageAnswering(
+      keepProposalExtracting({ dates: [tomorrowNoon], asks: [{ ask: 'Approve the budget' }] }),
+    );
+    const handedUrgentContacts: unknown[][] = [];
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string }[]; urgentContacts: unknown[] }) => {
+        handedUrgentContacts.push(context.urgentContacts);
+        return { ranks: [], costInUsd: 0.01 };
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    const people = await getJson<{ urgent: { emails: string[]; reasons: string[] }[] }>(app, '/people');
+
+    await postJson(app, '/prioritization-run', {});
+
+    expect(people.urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['deadline'] })]);
+    expect(handedUrgentContacts).toEqual([people.urgent]);
+  });
 });

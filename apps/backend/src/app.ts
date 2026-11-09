@@ -134,6 +134,7 @@ export interface AppOptions {
       tasks: { id: string; title: string; accountEmail: string; due: string | undefined }[];
       profile: string;
       calendar: ReturnType<typeof mergeCalendarSnapshots>;
+      urgentContacts: unknown[];
     }) => Promise<{ ranks: TaskRanks['ranks'] }>;
   };
   summary?: {
@@ -1013,7 +1014,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((accountProfile) => accountProfile !== undefined)
       .join('\n');
     const calendar = mergedCalendarEvents();
-    taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile, calendar })).ranks;
+    const urgentContacts = peopleGroups().urgent;
+    taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts }))
+      .ranks;
     return context.json({});
   });
   app.get('/tasks', (context) => {
@@ -1125,7 +1128,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.json({ messages });
   });
-  app.get('/people', (context) => {
+  const peopleGroups = () => {
     const markedEmails = contactDetailsStore.markedEmails();
     const contacts = contactsByEmail(reportedSenders(), proposals);
     const alwaysMattersLineOfAccount = (accountEmail: string) => {
@@ -1182,14 +1185,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((message) => contact.messageIds.includes(message.id))
           .map((message) => new Date(message.date).getTime()),
       );
-    return context.json({
+    return {
       urgent: urgentContacts,
       vip: contacts.filter(isVip),
       everyoneElse: contacts
         .filter((contact) => !isVip(contact) && !isUrgent(contact))
         .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first)),
-    });
-  });
+    };
+  };
+  app.get('/people', (context) => context.json(peopleGroups()));
   app.get('/organizations', (context) => {
     return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });
   });
