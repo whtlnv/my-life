@@ -1045,11 +1045,9 @@ describe('backend app: the agent', () => {
     const proposalId = await firstPendingFilterProposalId(app);
     await postJson(app, '/agent/conversations', { message: 'Approve the shop newsletters filter' });
     await runTool('approve_filter_proposal', { proposalId });
-    const { actions } = await getJson<{ actions: { id: string; tool: string }[] }>(app, '/agent/actions');
-    const approvalActionId = actions.find(({ tool }) => tool === 'approve_filter_proposal')?.id;
     const commandsBeforeUndo = await pendingCommandsOf(app, 'ana@example.com');
 
-    const response = await postJson(app, '/agent/actions/undo', { actionId: approvalActionId });
+    const response = await undoAgentAction(app, 'approve_filter_proposal');
 
     const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect(response.status).toBe(409);
