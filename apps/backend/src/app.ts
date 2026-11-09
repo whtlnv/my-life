@@ -1193,15 +1193,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       turns,
       tools: [citingSearchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool, tasksTool, digestTool],
     });
-    if (reply) {
-      logSpend(reply);
+    if (!reply) {
+      return undefined;
     }
-    return (
-      reply && {
-        ...reply,
-        citations: reply.citations?.map(({ id }) => messagesReturnedThisTurn.find((message) => message.id === id)),
-      }
-    );
+    logSpend(reply);
+    return {
+      ...reply,
+      citations: reply.citations?.map(({ id }) => messagesReturnedThisTurn.find((message) => message.id === id)),
+    };
   };
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
