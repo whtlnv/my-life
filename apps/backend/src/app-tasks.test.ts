@@ -546,9 +546,8 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await proposeBudgetReview(app);
     const before = await getJson<{ badgeCount: number }>(app, '/now');
-    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
 
-    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
+    await confirmFirstTaskProposal(app);
 
     const after = await getJson<{ badgeCount: number }>(app, '/now');
     return { before: before.badgeCount, after: after.badgeCount };
