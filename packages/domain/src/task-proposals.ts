@@ -6,7 +6,7 @@ export interface ExtractedAsk {
 export interface MessageWithAsks {
   accountEmail: string;
   link: string;
-  asks: ExtractedAsk[];
+  asks?: ExtractedAsk[];
 }
 
 export interface TaskProposal {
@@ -17,7 +17,7 @@ export interface TaskProposal {
 }
 
 export const taskProposals = (message: MessageWithAsks): TaskProposal[] =>
-  message.asks.map(({ ask, ...rest }) => ({
+  (message.asks ?? []).map(({ ask, ...rest }) => ({
     title: ask,
     ...rest,
     link: message.link,

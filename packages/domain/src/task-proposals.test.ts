@@ -28,4 +28,14 @@ describe('taskProposals', () => {
       },
     ]);
   });
+
+  it('produces no task proposal for a message whose extraction found no asks', () => {
+    const message = {
+      messageId: 'message-newsletter',
+      accountEmail: 'owner@example.com',
+      link: 'https://mail.google.com/mail/?authuser=owner%40example.com#all/message-newsletter',
+    };
+
+    expect(taskProposals(message)).toEqual([]);
+  });
 });

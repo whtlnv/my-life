@@ -63,7 +63,7 @@
 - [x] The dashboard shell shows a Needs input tab with the count of unanswered questions, and no count when there are none
 - [x] The Needs input page shows each question with its one-key answers; pressing an answer's key answers the question and removes it from the page
 - [x] Each ask the extraction finds in a message becomes a task proposal titled with the ask, carrying its due time, the message link and the account
-- [ ] A message whose extraction finds no asks produces no task proposal
+- [x] A message whose extraction finds no asks produces no task proposal
 - [ ] Confirming a task proposal creates an open task; rejecting it creates none
 - [ ] Marking a task done removes it from the open tasks
 - [ ] A task snoozed until a time is left out of the open tasks before that time
