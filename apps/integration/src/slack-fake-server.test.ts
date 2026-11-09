@@ -623,7 +623,10 @@ describe('Slack fake server', () => {
       });
 
       const storedReply = store.listMessages().find((message) => message.text === threadReplyText);
-      expect(storedReply).toMatchObject({ senderUserId: 'U0003', senderName: replySenderInfo.user.profile.display_name });
+      expect(storedReply).toMatchObject({
+        senderUserId: 'U0003',
+        senderName: replySenderInfo.user.profile.display_name,
+      });
     } finally {
       await slack.close();
     }
@@ -827,6 +830,40 @@ describe('Slack fake server', () => {
       expect(slackItems).toHaveLength(1);
       expect(response.status).toBe(200);
       expect(slack.postedMessages()).toEqual([]);
+    } finally {
+      await slack.close();
+    }
+  });
+
+  it("an explicit send at POST /slack-sends with a workspace, conversation and text posts the text to chat.postMessage with the user's token and records the send at GET /slack-sends", async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      const response = await backend.request('/slack-sends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceTeamId: 'T0001', conversationId: 'D0001', text: 'On it, sending it tonight.' }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(slack.postedMessages()).toEqual([
+        { channel: 'D0001', threadTimestamp: undefined, text: 'On it, sending it tonight.' },
+      ]);
+      const { sends } = (await (await backend.request('/slack-sends')).json()) as { sends: unknown[] };
+      expect(sends).toEqual([
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          text: 'On it, sending it tonight.',
+          sentAt: '2026-11-09T16:00:00.000Z',
+        },
+      ]);
     } finally {
       await slack.close();
     }

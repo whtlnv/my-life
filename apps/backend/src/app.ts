@@ -614,6 +614,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
     return context.json({});
   });
+  const slackSends: { workspaceTeamId: string; conversationId: string; text: string; sentAt: string }[] = [];
+  app.post('/slack-sends', async (context) => {
+    const send = await context.req.json<{ workspaceTeamId: string; conversationId: string; text: string }>();
+    const workspace = configuredSlackWorkspaces.find(({ teamId }) => teamId === send.workspaceTeamId);
+    await fetch(`${options.slackApiUrl ?? ''}/chat.postMessage`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${workspace?.userToken ?? ''}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel: send.conversationId, text: send.text }),
+    });
+    slackSends.push({ ...send, sentAt: clock.now().toISOString() });
+    return context.json({});
+  });
+  app.get('/slack-sends', (context) => context.json({ sends: slackSends }));
   app.post('/register', async (context) => {
     const { email } = await context.req.json<{ email: string }>();
     if (!isAllowed(email)) {

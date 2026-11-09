@@ -93,7 +93,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 
 ### Reply
 
-- [ ] An explicit send from the dashboard with a workspace, conversation and text posts the text to `chat.postMessage` with the user's token and records the send
+- [x] An explicit send from the dashboard with a workspace, conversation and text posts the text to `chat.postMessage` with the user's token and records the send
 - [ ] A send that names a thread posts the reply into that thread; a send without one posts to the conversation
 - [ ] A send Slack rejects returns the Slack error to the dashboard and records no send
 - [ ] After a reply is sent, the person no longer appears in `GET /waiting-on` for that conversation
