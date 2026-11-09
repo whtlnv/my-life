@@ -1,7 +1,3 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 
 import { createApp, currentTriagePromptVersion } from './app';
@@ -27,6 +23,7 @@ import {
   budgetReviewActTriage,
   proposeBudgetReview,
   confirmBudgetReviewProposal,
+  promptFile,
 } from './app.test-support';
 
 describe('backend app: mail reports, triage runs, the triage queue and verdicts', () => {
@@ -462,8 +459,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   });
 
   it('logs each triage spend at POST /triage-run with the triage model configured for the Claude adapter, not an empty string', async () => {
-    const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), 'triage-v1.md');
-    writeFileSync(promptPath, 'Classify this email and answer by calling propose_triage.');
+    const promptPath = promptFile('Classify this email and answer by calling propose_triage.', 'triage-v1.md');
     const triage = createClaudeTriage({
       model: 'claude-model-from-settings',
       promptPath,
