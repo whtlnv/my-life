@@ -133,6 +133,7 @@ export interface AppOptions {
     prioritize: (context: {
       tasks: { id: string; title: string; accountEmail: string; due: string | undefined }[];
       profile: string;
+      calendar: ReturnType<typeof mergeCalendarSnapshots>;
     }) => Promise<{ ranks: TaskRanks['ranks'] }>;
   };
   summary?: {
@@ -1010,7 +1011,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map(({ accountEmail }) => profileOfAccount(accountEmail))
       .filter((accountProfile) => accountProfile !== undefined)
       .join('\n');
-    taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile })).ranks;
+    const calendar = mergeCalendarSnapshots(snapshotStore.loadAll().map((entry) => entry.snapshot));
+    taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile, calendar })).ranks;
     return context.json({});
   });
   app.get('/tasks', (context) => {

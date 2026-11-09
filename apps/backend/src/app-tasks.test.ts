@@ -14,6 +14,8 @@ import {
   keepProposalExtracting,
   triageAnswering,
   temporaryDatabasePath,
+  postCalendarSnapshot,
+  weeklySync,
 } from './app.test-support';
 
 describe('backend app: task proposals and tasks', () => {
@@ -301,5 +303,45 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/prioritization-run', {});
 
     expect(handedProfiles).toEqual([expect.stringContaining(profileText)]);
+  });
+
+  it('hands the prioritization port at POST /prioritization-run today\'s calendar events across every account', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const handedCalendars: unknown[][] = [];
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string }[]; calendar: unknown[] }) => {
+        handedCalendars.push(context.calendar);
+        return { ranks: [], costInUsd: 0.01 };
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com', 'francisco@example.com'],
+      clock: clockAtTenPastThree,
+      triage,
+      prioritization,
+    });
+    const boardMeeting = {
+      ...weeklySync,
+      id: 'event-2',
+      iCalUID: 'event-2@google.com',
+      title: 'Board meeting',
+      start: '2026-11-02T18:00:00.000Z',
+      end: '2026-11-02T19:00:00.000Z',
+    };
+    await postCalendarSnapshot(app, 'ana@example.com', [weeklySync]);
+    await postCalendarSnapshot(app, 'francisco@example.com', [boardMeeting]);
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+
+    await postJson(app, '/prioritization-run', {});
+
+    expect(handedCalendars).toEqual([
+      expect.arrayContaining([
+        expect.objectContaining({ title: 'Weekly sync', start: '2026-11-02T15:00:00.000Z' }),
+        expect.objectContaining({ title: 'Board meeting', start: '2026-11-02T18:00:00.000Z' }),
+      ]),
+    ]);
   });
 });

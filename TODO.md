@@ -84,7 +84,7 @@
 - [x] The prioritization model is a backend setting (`MY_LIFE_PRIORITIZATION_MODEL`), default `claude-opus-5-5`
 - [x] `POST /prioritization-run` hands the prioritization port the open tasks (id, title, account, due time), and `GET /tasks` shows the rank and reason it returned for each task
 - [x] `POST /prioritization-run` hands the prioritization port the profile of each account the open tasks come from
-- [ ] `POST /prioritization-run` hands the prioritization port today's calendar events across every account
+- [x] `POST /prioritization-run` hands the prioritization port today's calendar events across every account
 - [ ] `POST /prioritization-run` hands the prioritization port the urgent contacts with their reasons, the same ones `GET /people` lists as urgent
 - [ ] `GET /tasks` returns the open tasks ordered by their stored rank, each with its reason
 - [ ] A prioritization answer that fails validation at `POST /prioritization-run` leaves the previous ranks and reasons in `GET /tasks`
