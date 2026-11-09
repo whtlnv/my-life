@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { answerGetsWith } from './fetch-stub.test-support';
 import { NeedsInputPage } from './needs-input-page';
 
 afterEach(() => {
@@ -62,15 +63,7 @@ describe('NeedsInputPage', () => {
       accountEmail: 'franciscoc@psmutuus.com',
       choices: ['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown'],
     };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) => {
-        if (input === '/needs-input') {
-          return Promise.resolve(Response.json({ questions: [question] }));
-        }
-        return Promise.resolve(new Response(null, { status: 404 }));
-      }),
-    );
+    answerGetsWith({ '/needs-input': { questions: [question] } });
 
     render(<NeedsInputPage />);
 
@@ -101,15 +94,7 @@ describe('NeedsInputPage', () => {
       senderName: 'Ana Ruiz',
       asks: ['Sign the onboarding form'],
     };
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) => {
-        if (input === '/needs-input') {
-          return Promise.resolve(Response.json({ questions: [categoryQuestion, newSenderQuestion] }));
-        }
-        return Promise.resolve(new Response(null, { status: 404 }));
-      }),
-    );
+    answerGetsWith({ '/needs-input': { questions: [categoryQuestion, newSenderQuestion] } });
 
     render(<NeedsInputPage />);
 
