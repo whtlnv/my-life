@@ -31,6 +31,7 @@ import {
   triageEffects,
   taskProposals,
   openTasks,
+  taskHistory,
   triageQueue,
   type CalendarSnapshot,
   type Clock,
@@ -987,6 +988,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     taskEventStore.save({ type: 'waiting-on', taskId, at: clock.now().toISOString(), person });
     return context.json({ waitingOn: person });
   });
+  app.get('/tasks/:id/history', (context) =>
+    context.json({ history: taskHistory(taskEventStore.loadAll(), context.req.param('id')) }),
+  );
   app.get('/tasks', (context) => {
     return context.json({
       tasks: [

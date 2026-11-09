@@ -128,6 +128,34 @@ describe('backend app: task proposals and tasks', () => {
     ]);
   });
 
+  it('lists at GET /tasks/:id/history the transitions made through the task routes, each with its clock time, oldest first', async () => {
+    let now = new Date('2026-11-02T15:10:00.000Z');
+    const clock = { now: () => now };
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+    const taskId = open.tasks[0]?.id;
+    now = new Date('2026-11-02T15:20:00.000Z');
+    await postJson(app, `/tasks/${taskId}/snooze`, { until: '2026-11-02T15:25:00.000Z' });
+    now = new Date('2026-11-02T15:30:00.000Z');
+    await postJson(app, `/tasks/${taskId}/done`, {});
+
+    const response = await app.request(`/tasks/${taskId}/history`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      history: [
+        { transition: 'created', at: '2026-11-02T15:10:00.000Z' },
+        { transition: 'snoozed', at: '2026-11-02T15:20:00.000Z' },
+        { transition: 'done', at: '2026-11-02T15:30:00.000Z' },
+      ],
+    });
+  });
+
   it('answers 404 at POST /tasks/:id/done for a task id it does not know', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 
