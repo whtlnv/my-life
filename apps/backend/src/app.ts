@@ -1413,12 +1413,12 @@ function senderDomain(from: string): string {
   return email.slice(email.indexOf('@') + 1);
 }
 
-// One contact per email: a message's sender and every person its extraction names with an email, each listing the
-// messages they sent or appear in. The sender's own display name wins over a name the extraction gives.
 function alwaysMattersLine(profile: string): string {
   return profile.split('\n').find((line) => line.startsWith('- Always matters:')) ?? '';
 }
 
+// One contact per email: a message's sender and every person its extraction names with an email, each listing the
+// messages they sent or appear in. The sender's own display name wins over a name the extraction gives.
 function contactsByEmail(senders: { messageId: string; from: string }[], proposals: Proposal[]) {
   const contacts = new Map<string, ListedContact>();
   const link = (email: string, displayName: string, messageId: string) => {
