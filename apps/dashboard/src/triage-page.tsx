@@ -625,6 +625,11 @@ function postSlackVerdict(item: SlackTriageItem, key: string) {
   void postJson('/slack-verdicts', { workspaceTeamId, conversationId, timestamp, decision: slackDecisionKeys[key] });
 }
 
+function postSlackSend(item: SlackTriageItem, text: string) {
+  const { workspaceTeamId, conversationId } = item;
+  void postJson('/slack-sends', { workspaceTeamId, conversationId, text });
+}
+
 function SlackCard({ item }: { item: SlackTriageItem }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
@@ -657,11 +662,7 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
             type="button"
             className="button"
             onClick={() => {
-              void postJson('/slack-sends', {
-                workspaceTeamId: item.workspaceTeamId,
-                conversationId: item.conversationId,
-                text: reply,
-              });
+              postSlackSend(item, reply);
             }}
           >
             Send
