@@ -65,17 +65,21 @@
 - [x] Each ask the extraction finds in a message becomes a task proposal titled with the ask, carrying its due time, the message link and the account
 - [x] A message whose extraction finds no asks produces no task proposal
 - [x] Confirming a task proposal creates an open task; rejecting it creates none
+- [ ] `GET /task-proposals` lists each waiting task proposal with its title, due time, message link and account; `POST /task-proposals/:id/confirmation` makes it an open task in `GET /tasks`, `POST /task-proposals/:id/rejection` drops it, and neither is listed again
+- [ ] The Needs input page lists the waiting task proposals, each confirmed or rejected with one key
 - [ ] Marking a task done removes it from the open tasks
 - [ ] A task snoozed until a time is left out of the open tasks before that time
 - [ ] A task snoozed until a time is back among the open tasks once that time has passed
 - [ ] A task can be given a waiting-on person, and the open tasks show it
 - [ ] A task's history lists every transition (created, done, snoozed, reopened, waiting-on set) with its timestamp, oldest first
+- [ ] After a backend restart on the same database file, every task keeps its state, snooze time, waiting-on person and history, and a decided task proposal is not listed again
 - [ ] The prioritization pass sends the open tasks with the profile, today's calendar, due dates and urgency to the model configured for prioritization (default Opus 5.5) and stores the rank and reason it returns for each task
 - [ ] A prioritization answer that fails the contract's validation is rejected, and the previous ranks stand
 - [ ] Each prioritization call's cost is logged against the daily spend, and no pass runs once the daily ceiling is reached
 - [ ] `GET /tasks` returns the open tasks ordered by their stored rank, each with its reason
 - [ ] A pinned task is first in `GET /tasks` whatever its rank; unpinning returns it to rank order
 - [ ] `POST /prioritization-run` runs the prioritization pass on demand
+- [ ] After a backend restart on the same database file, `GET /tasks` keeps each task's rank, reason and pin without a new prioritization call
 - [ ] The prioritization pass runs again once its configured interval has elapsed, and not before
 - [ ] The _now_ page shows the 3 highest-ranked open tasks with their reasons, and not the fourth
 - [ ] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
