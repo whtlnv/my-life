@@ -1206,6 +1206,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   };
+  const createTaskTool: AgentTool = {
+    name: 'create_task',
+    run: (input) => {
+      const { title, sourceMessageId } = input as { title: string; sourceMessageId: string };
+      const source = reportedMessageStore.loadAll().find((message) => message.messageId === sourceMessageId);
+      const accountEmail = String(source?.accountEmail);
+      taskEventStore.save({
+        type: 'proposal-confirmed',
+        taskId: `agent-${sourceMessageId}`,
+        at: clock.now().toISOString(),
+        proposal: { title, accountEmail, link: gmailMessageLink({ accountEmail, messageId: sourceMessageId }) },
+      });
+      return Promise.resolve({});
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
     const citingSearchMessagesTool: AgentTool = {
@@ -1227,6 +1242,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         digestTool,
         archiveMessageTool,
         labelMessageTool,
+        createTaskTool,
       ],
     });
     if (!reply) {

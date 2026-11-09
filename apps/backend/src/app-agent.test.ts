@@ -692,4 +692,35 @@ describe('backend app: the agent', () => {
     const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
     expect(commands).toEqual([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Finance' })]);
   });
+  it('create_task with a source message creates an open task with the given title, linked to that message and its account', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'I can make a task of that.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Make a task to review the budget' });
+    const createTaskTool = offeredTools.find((tool) => tool.name === 'create_task');
+
+    await createTaskTool?.run({ title: 'Review the budget', sourceMessageId: 'message-1' });
+
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(tasks).toEqual([
+      expect.objectContaining({
+        title: 'Review the budget',
+        status: 'open',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+        accountEmail: 'ana@example.com',
+      }),
+    ]);
+  });
 });
