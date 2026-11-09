@@ -88,6 +88,15 @@ async function waitUntilHealthy(baseUrl: string): Promise<void> {
   throw new Error('the shipped backend never answered /health');
 }
 
+async function waitUntilRecorded(
+  recorded: RecordedAnthropicRequest[],
+  matches: (request: RecordedAnthropicRequest) => boolean,
+): Promise<void> {
+  for (let attempt = 0; attempt < 50 && !recorded.some(matches); attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
 // Step back a day at a time until the day after it up to now holds a weekday.
 function oneBusinessDayAgo(): Date {
   const dayInMilliseconds = 24 * 60 * 60 * 1000;
@@ -226,9 +235,7 @@ describe('the shipped backend (main.ts)', () => {
     const isPrioritizationRequest = (request: RecordedAnthropicRequest) =>
       request.tools.some(({ name }) => name === 'rank_tasks');
 
-    for (let attempt = 0; attempt < 50 && !recorded.some(isPrioritizationRequest); attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
+    await waitUntilRecorded(recorded, isPrioritizationRequest);
 
     expect(recorded.find(isPrioritizationRequest)).toEqual(
       expect.objectContaining({ model: 'claude-opus-5-5', system: expect.stringMatching(/\S/) }),
