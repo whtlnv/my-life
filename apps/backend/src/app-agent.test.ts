@@ -1228,6 +1228,26 @@ describe('backend app: the agent', () => {
     );
   });
 
+  it('a second label the agent asks for on a message whose first label was picked up is still sent', async () => {
+    const { agent, runTool } = agentRecordingOfferedTools('Done.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Label the budget thread' });
+    await runTool('label_message', { messageId: 'message-1', labelName: 'Finance' });
+    const [firstLabel] = await pendingCommandsOf<{ id: string }>(app, 'ana@example.com');
+    await app.request(`/commands/${String(firstLabel?.id)}/acknowledgement`, { method: 'POST' });
+
+    await runTool('label_message', { messageId: 'message-1', labelName: 'Board' });
+
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
+    expect(commands).toEqual([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Board' })]);
+  });
+
   it('offers every agent tool with a description and an input schema that names its required inputs', async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('Noted.');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
