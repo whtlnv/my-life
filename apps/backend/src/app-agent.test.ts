@@ -667,4 +667,29 @@ describe('backend app: the agent', () => {
     expect(openVerdictStore(databasePath).loadAll()).toEqual([]);
     expect(await (await getCommands(app, 'ana@example.com')).json()).toMatchObject({ commands: [] });
   });
+
+  it("label_message sends the message's account a label command with the given label name that leaves the message in the inbox", async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'I can label that.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Label the budget thread as Finance' });
+    const labelTool = offeredTools.find((tool) => tool.name === 'label_message');
+
+    await labelTool?.run({ messageId: 'message-1', labelName: 'Finance' });
+
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect(commands).toEqual([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Finance' })]);
+  });
 });

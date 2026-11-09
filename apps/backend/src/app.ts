@@ -960,6 +960,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     undoAutomaticStore.save(messageId);
     return context.body(null, 200);
   });
+  const labelRequests: { messageId: string; labelName: string }[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
@@ -1006,11 +1007,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageId,
         label: automaticLabelName,
       }));
+    const labelCommands = labelRequests
+      .filter(({ messageId }) => isMessageOfAccount(messageId))
+      .map(({ messageId, labelName }) => ({ id: `label-${messageId}`, type: 'label', messageId, label: labelName }));
     const pendingCommands = [
       ...archiveCommands,
       ...filterCommands,
       ...deleteFilterCommands,
       ...undoAutomaticCommands,
+      ...labelCommands,
     ].filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: pendingCommands });
   });
@@ -1189,6 +1194,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   };
+  const labelMessageTool: AgentTool = {
+    name: 'label_message',
+    run: (input) => {
+      labelRequests.push(input as { messageId: string; labelName: string });
+      return Promise.resolve({});
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
     const citingSearchMessagesTool: AgentTool = {
@@ -1209,6 +1221,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         tasksTool,
         digestTool,
         archiveMessageTool,
+        labelMessageTool,
       ],
     });
     if (!reply) {
