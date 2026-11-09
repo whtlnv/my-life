@@ -443,4 +443,20 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it("a poll finds mentions by searching Slack for <@id> with the user id the workspace's auth.test names", async () => {
+    const chosenSlackUserId = 'U0999';
+    const slack = await startSlackFakeServer('direct-message', { ownSlackUserId: chosenSlackUserId });
+    try {
+      await pollSlackWorkspace({
+        fetch,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store: openSlackMessageStore(':memory:'),
+      });
+
+      expect(slack.searchQueries()).toContain(`<@${chosenSlackUserId}>`);
+    } finally {
+      await slack.close();
+    }
+  });
 });

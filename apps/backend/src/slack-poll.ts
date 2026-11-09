@@ -42,9 +42,11 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
 }
 
 async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
+  const { user_id: ownSlackUserId } = await callSlack<{ user_id: string }>(input, '/auth.test');
+  const mentionsQuery = `<@${ownSlackUserId}>`;
   const { messages } = await callSlack<{
     messages: { matches: (SlackMessage & { channel: { id: string } })[] };
-  }>(input, '/search.messages');
+  }>(input, `/search.messages?query=${encodeURIComponent(mentionsQuery)}`);
   for (const match of messages.matches) {
     saveSlackMessage(input, match.channel.id, match);
   }
