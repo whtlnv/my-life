@@ -73,7 +73,7 @@
 - [x] A task can be given a waiting-on person, and the open tasks show it
 - [x] A task's history lists every transition (created, done, snoozed, reopened, waiting-on set) with its timestamp, oldest first
 - [x] After a backend restart on the same database file, every task keeps its state, snooze time, waiting-on person and history, and a decided task proposal is not listed again
-- [ ] `POST /tasks/:id/done` marks a task done and it leaves `GET /tasks`; an unknown task answers 404
+- [x] `POST /tasks/:id/done` marks a task done and it leaves `GET /tasks`; an unknown task answers 404
 - [ ] `POST /tasks/:id/snooze` with an `until` time keeps the task out of `GET /tasks` until that time and back after it
 - [ ] `PUT /tasks/:id/waiting-on` sets the person the task waits on, shown with it in `GET /tasks`
 - [ ] `GET /tasks/:id/history` lists the task's transitions made through these routes, each with its time from the clock, oldest first

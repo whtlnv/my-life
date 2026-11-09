@@ -968,6 +968,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     taskEventStore.save({ type: 'proposal-rejected', taskId: id, at: clock.now().toISOString(), proposal });
     return context.json({ rejected: id });
   });
+  app.post('/tasks/:id/done', (context) => {
+    const taskId = context.req.param('id');
+    const isKnownTask = taskEventStore.loadAll().some((event) => event.taskId === taskId);
+    if (!isKnownTask) return context.body(null, 404);
+    taskEventStore.save({ type: 'done', taskId, at: clock.now().toISOString() });
+    return context.json({ done: taskId });
+  });
   app.get('/tasks', (context) => {
     return context.json({ tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...openTasks(taskEventStore.loadAll())] });
   });

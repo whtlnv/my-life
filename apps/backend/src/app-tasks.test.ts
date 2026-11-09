@@ -70,6 +70,30 @@ describe('backend app: task proposals and tasks', () => {
     expect(tasks.tasks).toEqual([]);
   });
 
+  it('drops a task marked done at POST /tasks/:id/done from GET /tasks', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+
+    const response = await postJson(app, `/tasks/${open.tasks[0]?.id}/done`, {});
+
+    const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(response.status).toBe(200);
+    expect(tasks.tasks).toEqual([]);
+  });
+
+  it('answers 404 at POST /tasks/:id/done for a task id it does not know', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    const response = await postJson(app, '/tasks/no-such-task/done', {});
+
+    expect(response.status).toBe(404);
+  });
+
   it('keeps a confirmed task proposal an open task, not listed again at GET /task-proposals, after a backend restart on the same database file', async () => {
     const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() };
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
