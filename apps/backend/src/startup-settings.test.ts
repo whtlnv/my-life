@@ -195,4 +195,21 @@ describe('startup settings', () => {
       reasons: ['unanswered ask'],
     });
   });
+
+  it('lists each Slack workspace with its team id and user token from MY_LIFE_SLACK_WORKSPACE_1_* and MY_LIFE_SLACK_WORKSPACE_2_*', () => {
+    const settings = readStartupSettings(
+      {
+        MY_LIFE_SLACK_WORKSPACE_1_TEAM_ID: 'T0001',
+        MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN: 'xoxp-first',
+        MY_LIFE_SLACK_WORKSPACE_2_TEAM_ID: 'T0002',
+        MY_LIFE_SLACK_WORKSPACE_2_USER_TOKEN: 'xoxp-second',
+      },
+      '/Users/ana',
+    );
+
+    expect(settings.slackWorkspaces).toEqual([
+      { teamId: 'T0001', userToken: 'xoxp-first' },
+      { teamId: 'T0002', userToken: 'xoxp-second' },
+    ]);
+  });
 });

@@ -21,6 +21,12 @@ export interface StartupSettings {
   dailySpendCeilingInUsd: number;
   triage: TriageAvailability;
   urgency: UrgencySettings;
+  slackWorkspaces: SlackWorkspaceSettings[];
+}
+
+export interface SlackWorkspaceSettings {
+  teamId: string | undefined;
+  userToken: string | undefined;
 }
 
 const defaultPort = 7777;
@@ -71,6 +77,17 @@ export function readStartupSettings(
       deadlineHours: defaultDeadlineHours,
       vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     },
+    slackWorkspaces: [readSlackWorkspace(environment, 1), readSlackWorkspace(environment, 2)],
+  };
+}
+
+function readSlackWorkspace(
+  environment: Record<string, string | undefined>,
+  workspaceNumber: number,
+): SlackWorkspaceSettings {
+  return {
+    teamId: environment[`MY_LIFE_SLACK_WORKSPACE_${workspaceNumber}_TEAM_ID`],
+    userToken: environment[`MY_LIFE_SLACK_WORKSPACE_${workspaceNumber}_USER_TOKEN`],
   };
 }
 
