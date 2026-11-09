@@ -166,6 +166,14 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
+interface AgentAction {
+  tool: string;
+  target: string;
+  conversationId: string;
+  at: string;
+  undoable: boolean;
+}
+
 interface LabelRequest {
   messageId: string;
   labelName: string;
@@ -1274,7 +1282,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   });
-  const agentActions: { tool: string; target: string; conversationId: string; at: string; undoable: boolean }[] = [];
+  const agentActions: AgentAction[] = [];
   const askAgent = async (turns: ConversationTurn[], conversationId: string) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
     const recordingAction = (tool: AgentTool, undoable: boolean): AgentTool => ({
