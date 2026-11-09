@@ -616,15 +616,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   type SlackSendRequest = { workspaceTeamId: string; conversationId: string; threadTimestamp?: string; text: string };
   const slackSends: (SlackSendRequest & { sentAt: string })[] = [];
-  app.post('/slack-sends', async (context) => {
-    const send = await context.req.json<SlackSendRequest>();
+  type SlackPostMessageResult = { ok: boolean; error?: string };
+  const postSlackMessage = async (send: SlackSendRequest): Promise<SlackPostMessageResult> => {
     const workspace = configuredSlackWorkspaces.find(({ teamId }) => teamId === send.workspaceTeamId);
     const slackResponse = await fetch(`${options.slackApiUrl ?? ''}/chat.postMessage`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${workspace?.userToken ?? ''}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ channel: send.conversationId, thread_ts: send.threadTimestamp, text: send.text }),
     });
-    const slackResult = (await slackResponse.json()) as { ok: boolean; error?: string };
+    return (await slackResponse.json()) as SlackPostMessageResult;
+  };
+  app.post('/slack-sends', async (context) => {
+    const send = await context.req.json<SlackSendRequest>();
+    const slackResult = await postSlackMessage(send);
     if (!slackResult.ok) {
       return context.json({ error: slackResult.error }, 502);
     }
