@@ -1270,6 +1270,28 @@ describe('backend app: the agent', () => {
     expect(commands).toEqual([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Board' })]);
   });
 
+  it('a second draft the agent writes on a message whose first draft was picked up is still sent', async () => {
+    const { agent, runTool } = agentRecordingOfferedTools('Done.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Draft a reply to Luis about the budget' });
+    await runTool('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
+    const [firstDraft] = await pendingCommandsOf<{ id: string }>(app, 'ana@example.com');
+    await app.request(`/commands/${String(firstDraft?.id)}/acknowledgement`, { method: 'POST' });
+
+    await runTool('write_draft', { messageId: 'message-1', body: 'Friday works; Monday at the latest.' });
+
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
+    expect(commands).toEqual([
+      expect.objectContaining({ type: 'create-draft', body: 'Friday works; Monday at the latest.' }),
+    ]);
+  });
+
   it('offers every agent tool with a description and an input schema that names its required inputs', async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('Noted.');
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
