@@ -81,7 +81,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A Slack contact's timeline lists their Slack messages newest first, each with its workspace and Slack permalink
 - [x] A VIP-marked Slack contact waiting more than 1 business day on a reply is listed as Urgent
 - [x] A VIP-marked Slack contact waiting less than 1 business day is not listed as Urgent
-- [ ] The People page shows a Slack contact with its channel tag and opens the contact's Slack timeline
+- [x] The People page shows a Slack contact with its channel tag and opens the contact's Slack timeline
 - [ ] `GET /people` gives a contact's stored organization name where the import or extraction has one (backlog: apps/backend/src/app.ts The People lists show domains, not organization names)
 - [ ] `GET /people` gives the sender's domain as the organization when no organization name is stored (backlog: apps/backend/src/app.ts The People lists show domains, not organization names)
 - [ ] `GET /people` leaves out a sender whose messages are all automated mail (backlog: apps/backend/src/app.ts The People lists … include automated senders)

@@ -2,12 +2,19 @@ import { useEffect, useState } from 'react';
 
 import { businessTimeZone } from './app-shell';
 
+interface SlackHandle {
+  workspaceTeamId: string;
+  userId: string;
+}
+
 interface PersonRow {
   displayName: string;
   emails: string[];
   organization: string;
-  lastMessageAt: string;
+  lastMessageAt?: string;
   reasons?: string[];
+  channel?: string;
+  slackHandles?: SlackHandle[];
 }
 
 interface PeopleLists {
@@ -23,8 +30,15 @@ interface TimelineMessage {
   link: string;
 }
 
+interface SlackTimelineMessage {
+  workspaceTeamId: string;
+  text: string;
+  timestamp: string;
+  permalink: string;
+}
+
 interface Timeline {
-  messages: TimelineMessage[];
+  messages: (TimelineMessage | SlackTimelineMessage)[];
 }
 
 interface SelectedTimeline extends Timeline {
@@ -74,6 +88,7 @@ const PeopleList = ({
                 >
                   {person.displayName}
                 </button>{' '}
+                {person.channel && <span className="pill">{person.channel}</span>}{' '}
                 {person.reasons?.map((reason) => (
                   <span key={reason} className="pill pill-danger">
                     {reason}
@@ -95,8 +110,12 @@ const PeopleList = ({
                     {' · '}
                   </>
                 )}
-                last message{' '}
-                <time dateTime={person.lastMessageAt}>{weekdayAndTimeInBusinessZone(person.lastMessageAt)}</time>
+                {person.lastMessageAt && (
+                  <>
+                    last message{' '}
+                    <time dateTime={person.lastMessageAt}>{weekdayAndTimeInBusinessZone(person.lastMessageAt)}</time>
+                  </>
+                )}
               </p>
             </div>
             <div className="row-side">
@@ -122,18 +141,31 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
     <h2 className="section-title">{timeline.displayName}</h2>
     <div className="card">
       <ul aria-label={`Timeline of ${timeline.displayName}`} className="rows">
-        {timeline.messages.map((message) => (
-          <li key={message.id} className="row">
-            <div className="row-main">
-              <p className="row-title">
-                <a href={message.link} target="_blank" rel="noreferrer">
-                  {message.subject}
-                </a>
-              </p>
-            </div>
-            <div className="row-side">{message.accountEmail}</div>
-          </li>
-        ))}
+        {timeline.messages.map((message) =>
+          'permalink' in message ? (
+            <li key={message.timestamp} className="row">
+              <div className="row-main">
+                <p className="row-title">
+                  <a href={message.permalink} target="_blank" rel="noreferrer">
+                    {message.text}
+                  </a>
+                </p>
+              </div>
+              <div className="row-side">{message.workspaceTeamId}</div>
+            </li>
+          ) : (
+            <li key={message.id} className="row">
+              <div className="row-main">
+                <p className="row-title">
+                  <a href={message.link} target="_blank" rel="noreferrer">
+                    {message.subject}
+                  </a>
+                </p>
+              </div>
+              <div className="row-side">{message.accountEmail}</div>
+            </li>
+          ),
+        )}
       </ul>
     </div>
   </section>
@@ -176,6 +208,11 @@ export const PeoplePage = () => {
   };
 
   const showTimeline = (person: PersonRow) => {
+    const [slackHandle] = person.slackHandles ?? [];
+    if (slackHandle) {
+      loadTimeline(`/slack-contacts/${slackHandle.workspaceTeamId}/${slackHandle.userId}/timeline`, person.displayName);
+      return;
+    }
     loadTimeline(`/contacts/${encodeURIComponent(person.emails[0] ?? '')}/timeline`, person.displayName);
   };
 

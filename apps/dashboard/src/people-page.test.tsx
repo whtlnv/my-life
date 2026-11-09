@@ -271,4 +271,47 @@ describe('PeoplePage', () => {
       'https://mail.google.com/mail/?authuser=work%40example.com#all/m5',
     );
   });
+  it("shows a Slack contact from GET /people with its channel tag, and opens its timeline from GET /slack-contacts/:workspaceTeamId/:userId/timeline with each message's text linked to its Slack permalink and its workspace", async () => {
+    const people = {
+      vip: [],
+      urgent: [],
+      everyoneElse: [
+        {
+          channel: 'slack',
+          displayName: 'Ana',
+          slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }],
+        },
+      ],
+    };
+    const timeline = {
+      messages: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U0001',
+          senderName: 'Ana',
+          text: 'Can you look at the contract today?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
+        },
+      ],
+    };
+    answerGetsWith({
+      '/people': people,
+      '/slack-contacts/T0001/U0001/timeline': timeline,
+    });
+
+    render(<PeoplePage />);
+
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    const contactRow = await within(everyoneElseList).findByRole('listitem');
+    expect(contactRow).toHaveTextContent(people.everyoneElse[0]?.channel ?? '');
+    await userEvent.click(within(contactRow).getByRole('button', { name: /Ana/ }));
+
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Ana' });
+    const [message] = timeline.messages as [(typeof timeline.messages)[number]];
+    const row = within(timelineList).getByRole('listitem');
+    expect(within(row).getByRole('link', { name: message.text })).toHaveAttribute('href', message.permalink);
+    expect(row).toHaveTextContent(message.workspaceTeamId);
+  });
 });
