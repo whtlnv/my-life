@@ -1,4 +1,4 @@
-// Staging helpers and fixtures shared by the createApp route tests (app*.test.ts).
+// Staging helpers and fixtures shared by the backend tests: the createApp route tests and the Claude adapter tests.
 
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -103,6 +103,12 @@ export function profileDirectoryWith(profileFiles: Record<string, string>): stri
     writeFileSync(join(profileDirectory, fileName), contents);
   }
   return profileDirectory;
+}
+
+export function promptFile(contents: string, fileName: string): string {
+  const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
+  writeFileSync(promptPath, contents);
+  return promptPath;
 }
 
 export const clockAtTenPastThree = { now: () => new Date('2026-11-02T15:10:00.000Z') };

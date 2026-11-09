@@ -1,18 +1,9 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { filterProposal } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
+import { promptFile } from './app.test-support';
 import { createClaudeFilter } from './claude-filter';
 import { readStartupSettings } from './startup-settings';
-
-function promptFile(contents: string, fileName: string): string {
-  const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
-  writeFileSync(promptPath, contents);
-  return promptPath;
-}
 
 interface SentRequest {
   model: string;

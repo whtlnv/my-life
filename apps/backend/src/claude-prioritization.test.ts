@@ -1,10 +1,7 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { taskRanks } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
+import { promptFile } from './app.test-support';
 import { createClaudePrioritization } from './claude-prioritization';
 import { readStartupSettings } from './startup-settings';
 
@@ -14,12 +11,6 @@ interface SentRequest {
   tools?: { name: string; strict?: boolean; input_schema: unknown }[];
   tool_choice?: unknown;
   messages?: { role: string; content: string }[];
-}
-
-function promptFile(contents: string, fileName: string): string {
-  const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
-  writeFileSync(promptPath, contents);
-  return promptPath;
 }
 
 function rankTasksAnswer(input: unknown, usage = { input_tokens: 0, output_tokens: 0 }) {

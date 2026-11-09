@@ -1,24 +1,19 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { triageProposal } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
-import { profileDirectoryWith } from './app.test-support';
+import { profileDirectoryWith, promptFile } from './app.test-support';
 import { createClaudeTriage } from './claude-triage';
 import { readStartupSettings } from './startup-settings';
 
 const defaultPricing = { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 };
 
-function promptFile(
+function triagePromptFile(
   contents = 'Classify this email and answer by calling propose_triage.',
   fileName = 'triage-v1.md',
 ): string {
-  const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
-  writeFileSync(promptPath, contents);
-  return promptPath;
+  return promptFile(contents, fileName);
 }
 
 interface SentRequest {
@@ -53,7 +48,7 @@ describe('Claude triage', () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
-      promptPath: promptFile(),
+      promptPath: triagePromptFile(),
       model: settings.triageModel,
       createMessage,
     });
@@ -64,7 +59,7 @@ describe('Claude triage', () => {
   });
 
   it("sends the prompt read from the versioned prompt file and reports that file's version", async () => {
-    const promptPath = promptFile('Classify this email for Ana.', 'triage-v7.md');
+    const promptPath = triagePromptFile('Classify this email for Ana.', 'triage-v7.md');
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
@@ -108,7 +103,7 @@ describe('Claude triage', () => {
     const triage = createClaudeTriage({
       pricing: defaultPricing,
       model: 'claude-opus-5-5',
-      promptPath: promptFile('Classify this email.'),
+      promptPath: triagePromptFile('Classify this email.'),
       profileDirectory: profileDirectoryWith(profileFiles),
       createMessage,
     });
@@ -127,7 +122,7 @@ describe('Claude triage', () => {
     const triage = createClaudeTriage({
       pricing: defaultPricing,
       model: 'claude-opus-5-5',
-      promptPath: promptFile('Classify this email.'),
+      promptPath: triagePromptFile('Classify this email.'),
       profileDirectory,
       createMessage,
     });
@@ -145,7 +140,7 @@ describe('Claude triage', () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
-      promptPath: promptFile(),
+      promptPath: triagePromptFile(),
       model: 'claude-opus-5-5',
       createMessage,
     });
@@ -179,7 +174,7 @@ describe('Claude triage', () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
-      promptPath: promptFile(),
+      promptPath: triagePromptFile(),
       model: 'claude-opus-5-5',
       createMessage,
     });
@@ -205,7 +200,7 @@ describe('Claude triage', () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
-      promptPath: promptFile(),
+      promptPath: triagePromptFile(),
       model: 'claude-opus-5-5',
       createMessage,
     });
@@ -228,7 +223,7 @@ describe('Claude triage', () => {
     const { sentRequests, createMessage } = recordRequests();
     const triage = createClaudeTriage({
       pricing: defaultPricing,
-      promptPath: promptFile(),
+      promptPath: triagePromptFile(),
       model: 'claude-opus-5-5',
       createMessage,
     });
@@ -311,7 +306,7 @@ describe('Claude triage', () => {
   ])('$rule', async ({ content, usage, proposal, expected }) => {
     const triage = createClaudeTriage({
       model: 'claude-opus-5-5',
-      promptPath: promptFile(),
+      promptPath: triagePromptFile(),
       pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
       createMessage: () => Promise.resolve({ content, usage }),
     });
@@ -351,7 +346,7 @@ describe('Claude triage', () => {
   });
 
   it('declares exactly one strict propose_triage tool built from the shared contract, leaves tool choice on auto and keeps the call instruction in the prompt file', async () => {
-    const promptPath = promptFile('Classify this email and answer by calling propose_triage.');
+    const promptPath = triagePromptFile('Classify this email and answer by calling propose_triage.');
     const sentRequests: Record<string, unknown>[] = [];
     const triage = createClaudeTriage({
       pricing: defaultPricing,
