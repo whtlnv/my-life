@@ -119,22 +119,30 @@ function TopTasks({ tasks, onDone }: { tasks: RankedTask[]; onDone: (taskId: str
   return (
     <section aria-label="Top tasks" className="section">
       <h2 className="section-title">Top tasks</h2>
-      <ul className="timeline">
-        {tasks.map((task) => (
-          <li key={task.id}>
-            <span>{task.title}</span>
-            <span>{task.reason}</span>
-            <button
-              type="button"
-              onClick={() => {
-                onDone(task.id);
-              }}
-            >
-              Done
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="card">
+        {tasks.length === 0 && <p className="muted">No ranked tasks yet</p>}
+        <ul className="rows">
+          {tasks.map((task) => (
+            <li key={task.id} className="row">
+              <div className="row-main">
+                <p className="row-title">{task.title}</p>
+                <p className="row-detail">{task.reason}</p>
+              </div>
+              <div className="row-side">
+                <button
+                  type="button"
+                  className="button button-quiet"
+                  onClick={() => {
+                    onDone(task.id);
+                  }}
+                >
+                  Done
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
@@ -151,23 +159,37 @@ function longestWaitFirst(people: WaitingPerson[]): WaitingPerson[] {
 
 const millisecondsPerDay = 86_400_000;
 
+const millisecondsPerHour = 3_600_000;
+
 export function waitingDurationText(waitingSince: string, now: Date): string {
-  const days = Math.floor((now.getTime() - new Date(waitingSince).getTime()) / millisecondsPerDay);
-  return `${days} days`;
+  const waitedMilliseconds = now.getTime() - new Date(waitingSince).getTime();
+  const days = Math.floor(waitedMilliseconds / millisecondsPerDay);
+  const hours = Math.floor(waitedMilliseconds / millisecondsPerHour);
+  if (days === 0) return hours === 0 ? '< 1 h' : `${String(hours)} h`;
+  return days === 1 ? '1 day' : `${String(days)} days`;
 }
 
 function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
   return (
     <section aria-label="Waiting on you" className="section">
       <h2 className="section-title">Waiting on you</h2>
-      <ul className="timeline">
-        {people.map((person) => (
-          <li key={person.email}>
-            <a href={`${routes.people}?contact=${encodeURIComponent(person.email)}`}>{person.displayName}</a>
-            <span>{waitingDurationText(person.waitingSince, new Date())}</span>
-          </li>
-        ))}
-      </ul>
+      <div className="card">
+        {people.length === 0 && <p className="muted">Nobody is waiting on you</p>}
+        <ul className="rows">
+          {people.map((person) => (
+            <li key={person.email} className="row">
+              <div className="row-main">
+                <p className="row-title">
+                  <a href={`${routes.people}?contact=${encodeURIComponent(person.email)}`}>{person.displayName}</a>
+                </p>
+              </div>
+              <div className="row-side">
+                <span>{waitingDurationText(person.waitingSince, new Date())}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }

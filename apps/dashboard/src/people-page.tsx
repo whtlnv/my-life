@@ -32,9 +32,12 @@ interface SelectedTimeline extends Timeline {
 const emptyLists: PeopleLists = { vip: [], urgent: [], everyoneElse: [] };
 
 const timeInBusinessZone = (isoTime: string) =>
-  new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' }).format(
-    new Date(isoTime),
-  );
+  new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Mexico_City',
+  }).format(new Date(isoTime));
 
 const PeopleList = ({
   title,
@@ -49,36 +52,88 @@ const PeopleList = ({
   onSelectOrganization: (organization: string) => void;
   vipAction: { label: string; onClick: (person: PersonRow) => void };
 }) => (
-  <section>
-    <h2>{title}</h2>
-    <ul aria-label={title}>
-      {people.map((person) => (
-        <li key={person.displayName}>
-          <button type="button" onClick={() => onSelect(person)}>
-            {person.displayName}
-          </button>{' '}
-          <button type="button" onClick={() => onSelectOrganization(person.organization)}>
-            {person.organization}
-          </button>{' '}
-          <time dateTime={person.lastMessageAt}>{timeInBusinessZone(person.lastMessageAt)}</time>{' '}
-          {person.reasons?.join(', ')}{' '}
-          <button type="button" onClick={() => vipAction.onClick(person)}>
-            {vipAction.label}
-          </button>
-        </li>
-      ))}
-    </ul>
+  <section className="section">
+    <h2 className="section-title">
+      {title} <span className="count">{people.length}</span>
+    </h2>
+    <div className="card">
+      {people.length === 0 && <p className="muted">Nobody here</p>}
+      <ul aria-label={title} className="rows">
+        {people.map((person) => (
+          <li key={person.displayName} className="row">
+            <div className="row-main">
+              <p className="row-title">
+                <button
+                  type="button"
+                  className="row-link"
+                  onClick={() => {
+                    onSelect(person);
+                  }}
+                >
+                  {person.displayName}
+                </button>{' '}
+                {person.reasons?.map((reason) => (
+                  <span key={reason} className="pill pill-danger">
+                    {reason}
+                  </span>
+                ))}
+              </p>
+              <p className="row-detail">
+                {person.organization && (
+                  <>
+                    <button
+                      type="button"
+                      className="row-link"
+                      onClick={() => {
+                        onSelectOrganization(person.organization);
+                      }}
+                    >
+                      {person.organization}
+                    </button>
+                    {' · '}
+                  </>
+                )}
+                last message <time dateTime={person.lastMessageAt}>{timeInBusinessZone(person.lastMessageAt)}</time>
+              </p>
+            </div>
+            <div className="row-side">
+              <button
+                type="button"
+                className="button button-quiet"
+                onClick={() => {
+                  vipAction.onClick(person);
+                }}
+              >
+                {vipAction.label}
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   </section>
 );
 
 const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
-  <ul aria-label={`Timeline of ${timeline.displayName}`}>
-    {timeline.messages.map((message) => (
-      <li key={message.id}>
-        <a href={message.link}>{message.subject}</a> {message.accountEmail}
-      </li>
-    ))}
-  </ul>
+  <section className="section">
+    <h2 className="section-title">{timeline.displayName}</h2>
+    <div className="card">
+      <ul aria-label={`Timeline of ${timeline.displayName}`} className="rows">
+        {timeline.messages.map((message) => (
+          <li key={message.id} className="row">
+            <div className="row-main">
+              <p className="row-title">
+                <a href={message.link} target="_blank" rel="noreferrer">
+                  {message.subject}
+                </a>
+              </p>
+            </div>
+            <div className="row-side">{message.accountEmail}</div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
 );
 
 const personRequestedByLocation = (lists: PeopleLists): PersonRow | undefined => {
@@ -104,7 +159,7 @@ export const PeoplePage = () => {
   };
 
   const setVipMark = (method: 'PUT' | 'DELETE') => (person: PersonRow) => {
-    void fetch(`/contacts/${encodeURIComponent(person.emails[0] as string)}/marks/vip`, { method }).then(loadPeople);
+    void fetch(`/contacts/${encodeURIComponent(person.emails[0] ?? '')}/marks/vip`, { method }).then(loadPeople);
   };
   const markVip = { label: 'Mark VIP', onClick: setVipMark('PUT') };
   const removeVip = { label: 'Remove VIP', onClick: setVipMark('DELETE') };
@@ -112,11 +167,13 @@ export const PeoplePage = () => {
   const loadTimeline = (path: string, displayName: string) => {
     void fetch(path)
       .then((response) => response.json() as Promise<Timeline>)
-      .then((timeline) => setSelected({ ...timeline, displayName }));
+      .then((timeline) => {
+        setSelected({ ...timeline, displayName });
+      });
   };
 
   const showTimeline = (person: PersonRow) => {
-    loadTimeline(`/contacts/${encodeURIComponent(person.emails[0] as string)}/timeline`, person.displayName);
+    loadTimeline(`/contacts/${encodeURIComponent(person.emails[0] ?? '')}/timeline`, person.displayName);
   };
 
   useEffect(() => {
@@ -132,28 +189,41 @@ export const PeoplePage = () => {
 
   return (
     <main>
-      <PeopleList
-        title="VIP"
-        people={lists.vip}
-        onSelect={showTimeline}
-        onSelectOrganization={showOrganizationTimeline}
-        vipAction={removeVip}
-      />
-      <PeopleList
-        title="Urgent"
-        people={lists.urgent}
-        onSelect={showTimeline}
-        onSelectOrganization={showOrganizationTimeline}
-        vipAction={markVip}
-      />
-      <PeopleList
-        title="Everyone else"
-        people={lists.everyoneElse}
-        onSelect={showTimeline}
-        onSelectOrganization={showOrganizationTimeline}
-        vipAction={markVip}
-      />
-      {selected && <ContactTimeline timeline={selected} />}
+      <header className="page-header">
+        <h1 className="page-title">People</h1>
+      </header>
+      <div className="now-grid">
+        <div>
+          <PeopleList
+            title="VIP"
+            people={lists.vip}
+            onSelect={showTimeline}
+            onSelectOrganization={showOrganizationTimeline}
+            vipAction={removeVip}
+          />
+          <PeopleList
+            title="Urgent"
+            people={lists.urgent}
+            onSelect={showTimeline}
+            onSelectOrganization={showOrganizationTimeline}
+            vipAction={markVip}
+          />
+          <PeopleList
+            title="Everyone else"
+            people={lists.everyoneElse}
+            onSelect={showTimeline}
+            onSelectOrganization={showOrganizationTimeline}
+            vipAction={markVip}
+          />
+        </div>
+        <aside>
+          {selected ? (
+            <ContactTimeline timeline={selected} />
+          ) : (
+            <p className="empty">Pick a person or an organization to see their timeline</p>
+          )}
+        </aside>
+      </div>
     </main>
   );
 };

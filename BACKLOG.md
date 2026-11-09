@@ -28,6 +28,15 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   proposals that produced an archive command or a task. A digest's listed message ids are also overwritten by every
   `GET /triage-queue`, so a second open tab widens what the first tab's confirm reaches.
 
+- **[packages/domain/src/contact-urgency.ts:58] Urgency counts deadlines in messages that only mention a contact, and stops at the first reason** (added: 2026-11-08)
+  A contact's messages include every message that names them, so a deadline in Luis's message makes Sofía, merely
+  mentioned there, urgent for "deadline"; and `contactUrgency` returns one reason, so her own four-day-old unanswered
+  ask never shows. Count deadlines only from messages the contact sent or was asked in, and return every reason.
+- **[apps/backend/src/app.ts] The People lists show domains, not organization names, and include automated senders** (added: 2026-11-08)
+  `GET /people` gives a sender's domain (`psmutuus.com`) where the import or extraction has a name (Mutuus), and
+  Everyone else lists Sentry, AWS and newsletters beside people. Prefer the stored organization name, and leave out
+  senders whose messages are all automated mail, as `GET /waiting-on` does.
+
 ## Out of Scope
 
 - **[apps/dashboard/src/triage-page.tsx:567] The Handled for you copy spells the backend's automatic label** (added: 2026-11-08)

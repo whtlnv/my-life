@@ -156,7 +156,9 @@ describe('NeedsInputPage', () => {
     if (row === undefined) throw new Error('expected one task proposal row');
     expect(within(row).getByText(proposal.title)).toBeInTheDocument();
     expect(within(row).getByText(proposal.accountEmail)).toBeInTheDocument();
-    const confirmKey = within(row).getByRole('button', { name: /confirm/i }).getAttribute('aria-keyshortcuts');
+    const confirmKey = within(row)
+      .getByRole('button', { name: /confirm/i })
+      .getAttribute('aria-keyshortcuts');
     if (confirmKey === null) throw new Error('expected the confirm button to carry its key');
 
     await user.keyboard(confirmKey);
@@ -196,7 +198,9 @@ describe('NeedsInputPage', () => {
     const list = await screen.findByRole('list', { name: 'Task proposals' });
     const [row] = within(list).getAllByRole('listitem');
     if (row === undefined) throw new Error('expected one task proposal row');
-    const rejectKey = within(row).getByRole('button', { name: /reject/i }).getAttribute('aria-keyshortcuts');
+    const rejectKey = within(row)
+      .getByRole('button', { name: /reject/i })
+      .getAttribute('aria-keyshortcuts');
     if (rejectKey === null) throw new Error('expected the reject button to carry its key');
 
     await user.keyboard(rejectKey);

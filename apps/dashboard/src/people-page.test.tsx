@@ -61,7 +61,13 @@ describe('PeoplePage', () => {
     const expectations = [
       { list: 'VIP', name: 'Ana Ruiz', organization: 'Mutuus', at: '2026-11-06T15:00:00.000Z', time: '09:00' },
       { list: 'Urgent', name: 'Luis Ortega', organization: 'Erlia', at: '2026-11-05T16:30:00.000Z', time: '10:30' },
-      { list: 'Everyone else', name: 'Marta Soto', organization: 'Acme', at: '2026-11-04T17:45:00.000Z', time: '11:45' },
+      {
+        list: 'Everyone else',
+        name: 'Marta Soto',
+        organization: 'Acme',
+        at: '2026-11-04T17:45:00.000Z',
+        time: '11:45',
+      },
     ];
     for (const { list, name, organization, at, time } of expectations) {
       const rows = within(await screen.findByRole('list', { name: list })).getAllByRole('listitem');

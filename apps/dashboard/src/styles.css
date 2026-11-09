@@ -170,6 +170,7 @@ kbd {
   margin: 0 auto;
   padding: 0 var(--space-5);
   height: 52px;
+  gap: var(--space-4);
 }
 
 .wordmark {
@@ -190,6 +191,7 @@ kbd {
 }
 
 .tab {
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -226,7 +228,7 @@ kbd {
 
 .sources {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--space-2);
   margin-left: auto;
 }
@@ -998,4 +1000,21 @@ code {
 .card-note {
   color: var(--muted);
   font-size: 13px;
+}
+
+/* ---------- people ---------- */
+
+.row-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row-link:hover {
+  color: var(--accent-text);
+  text-decoration: underline;
 }

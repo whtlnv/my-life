@@ -434,7 +434,13 @@ describe('DashboardApp', () => {
 
   it('marks a task on the now page done with one click, and it leaves the page', async () => {
     let openTasks = [
-      { id: 'task-1', title: 'Send the slides', account: 'work@example.com', rank: 1, reason: 'The board meets at four' },
+      {
+        id: 'task-1',
+        title: 'Send the slides',
+        account: 'work@example.com',
+        rank: 1,
+        reason: 'The board meets at four',
+      },
       { id: 'task-2', title: 'Approve the budget', account: 'work@example.com', rank: 2, reason: 'Due today' },
     ];
     const fetchStub = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -537,5 +543,16 @@ describe('DashboardApp', () => {
     const expectedDuration = waitingDurationText(anaWaitingSince, new Date());
     expect(expectedDuration).toMatch(/\b5\b/);
     expect(anaRow).toHaveTextContent(expectedDuration);
+  });
+});
+
+describe('waitingDurationText', () => {
+  it.each([
+    { waited: '20 minutes', waitingSince: '2026-11-09T14:40:00.000Z', expected: '< 1 h' },
+    { waited: '3 hours', waitingSince: '2026-11-09T12:00:00.000Z', expected: '3 h' },
+    { waited: '1 day', waitingSince: '2026-11-08T15:00:00.000Z', expected: '1 day' },
+    { waited: '5 days', waitingSince: '2026-11-04T15:00:00.000Z', expected: '5 days' },
+  ])('says $expected for someone who has waited $waited', ({ waitingSince, expected }) => {
+    expect(waitingDurationText(waitingSince, new Date('2026-11-09T15:00:00.000Z'))).toBe(expected);
   });
 });

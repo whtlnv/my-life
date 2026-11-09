@@ -116,7 +116,8 @@ describe('AppShell', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
-        const body = input === '/now' ? nowWithNothingToTriage : input === '/needs-input' ? twoUnansweredQuestions : null;
+        const body =
+          input === '/now' ? nowWithNothingToTriage : input === '/needs-input' ? twoUnansweredQuestions : null;
         return Promise.resolve(
           body === null
             ? new Response(null, { status: 404 })
