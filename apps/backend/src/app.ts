@@ -1048,7 +1048,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const labelCommands = agentActionStore
       .loadAll()
       .filter(({ tool, target, outcome }) => tool === 'label_message' && !outcome && isMessageOfAccount(target))
-      .map(({ id, target: messageId, labelName }) => ({ id: `label-${id}`, type: 'label', messageId, label: labelName }));
+      .map(({ id, target: messageId, labelName }) => ({
+        id: `label-${id}`,
+        type: 'label',
+        messageId,
+        label: labelName,
+      }));
     const draftCommands = agentActionStore
       .loadAll()
       .filter(({ tool, target, outcome }) => tool === 'write_draft' && !outcome && isMessageOfAccount(target))
