@@ -1,7 +1,3 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
@@ -25,6 +21,7 @@ import {
   keepProposalExtracting,
   shopNewsletterArchiveProposal,
   expenseInvoiceProposal,
+  profileDirectoryWith,
 } from './app.test-support';
 
 describe('backend app: contacts, organizations and the Google Contacts import', () => {
@@ -525,11 +522,9 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('lists at GET /people under VIP, and not under Everyone else, a contact whose email is on the "Always matters" line of the profile of the account that received its message', async () => {
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(
-      join(profileDirectory, 'example.md'),
-      '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
-    );
+    const profileDirectory = profileDirectoryWith({
+      'example.md': '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, profileDirectory });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
 
@@ -545,11 +540,9 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('lists at GET /people under Everyone else, and not under VIP, a contact on the "Always matters" line whose vip mark the user removed through DELETE /contacts/:email/marks/vip', async () => {
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(
-      join(profileDirectory, 'example.md'),
-      '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
-    );
+    const profileDirectory = profileDirectoryWith({
+      'example.md': '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, profileDirectory });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
 
@@ -566,7 +559,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('still answers at GET /people, with no "Always matters" VIPs, when the profile directory has no profile file for the account that received the messages', async () => {
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+    const profileDirectory = profileDirectoryWith({});
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, profileDirectory });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
 

@@ -2,16 +2,13 @@
 // startup settings and the Claude adapters is pinned from the outside.
 
 import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { type AddressInfo, createServer as createNetServer } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { budgetReviewReport, temporaryDatabasePath } from './app.test-support';
+import { budgetReviewReport, profileDirectoryWith, temporaryDatabasePath } from './app.test-support';
 
 interface RecordedAnthropicRequest {
   model: string;
@@ -213,11 +210,9 @@ describe('the shipped backend (main.ts)', () => {
   }, 30_000);
   it('lists at GET /people under VIP a contact on the "Always matters" line of a profile in MY_LIFE_PROFILE_DIRECTORY', async () => {
     fakeAnthropic = await startFakeAnthropic([]);
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-    writeFileSync(
-      join(profileDirectory, 'example.md'),
-      '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
-    );
+    const profileDirectory = profileDirectoryWith({
+      'example.md': '## People\n\n- Always matters: luis@example.com\n- Never matters: (to fill)\n',
+    });
     const baseUrl = await startShippedBackend(fakeAnthropic, {
       MY_LIFE_PROFILE_DIRECTORY: profileDirectory,
     });

@@ -1,7 +1,3 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import type { TaskRanks } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
@@ -19,6 +15,7 @@ import {
   temporaryDatabasePath,
   postCalendarSnapshot,
   weeklySync,
+  profileDirectoryWith,
 } from './app.test-support';
 import { openSpendStore } from './spend-store';
 
@@ -276,9 +273,8 @@ describe('backend app: task proposals and tasks', () => {
   });
 
   it('hands the prioritization port at POST /prioritization-run the profile of the account the open tasks come from', async () => {
-    const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
     const profileText = '## Purpose\n\nBoard work for Acme; the budget review closes this week.\n';
-    writeFileSync(join(profileDirectory, 'example.md'), profileText);
+    const profileDirectory = profileDirectoryWith({ 'example.md': profileText });
     const triage = triageAnswering(
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-05' }] }),
     );

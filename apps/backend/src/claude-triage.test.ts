@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { triageProposal } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
+import { profileDirectoryWith } from './app.test-support';
 import { createClaudeTriage } from './claude-triage';
 import { readStartupSettings } from './startup-settings';
 
@@ -18,14 +19,6 @@ function promptFile(
   const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
   writeFileSync(promptPath, contents);
   return promptPath;
-}
-
-function profileDirectoryWith(profileFiles: Record<string, string>): string {
-  const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
-  for (const [fileName, contents] of Object.entries(profileFiles)) {
-    writeFileSync(join(profileDirectory, fileName), contents);
-  }
-  return profileDirectory;
 }
 
 interface SentRequest {

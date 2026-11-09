@@ -97,6 +97,14 @@ export const switchCategory = (app: App, category: string, mode: string) =>
 
 export const temporaryDatabasePath = () => join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
 
+export function profileDirectoryWith(profileFiles: Record<string, string>): string {
+  const profileDirectory = mkdtempSync(join(tmpdir(), 'my-life-profile-'));
+  for (const [fileName, contents] of Object.entries(profileFiles)) {
+    writeFileSync(join(profileDirectory, fileName), contents);
+  }
+  return profileDirectory;
+}
+
 export const clockAtTenPastThree = { now: () => new Date('2026-11-02T15:10:00.000Z') };
 
 export const budgetReviewReport = {
