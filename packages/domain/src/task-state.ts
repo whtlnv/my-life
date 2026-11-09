@@ -17,8 +17,11 @@ export interface Task extends TaskProposal {
   status: 'open';
 }
 
-const hidesTask = (event: TaskEvent, now?: string): boolean =>
-  event.type === 'done' || (event.type === 'snoozed' && now !== undefined && Date.parse(event.until) > Date.parse(now));
+const hidesTask = (event: TaskEvent, now?: string): boolean => {
+  if (event.type === 'done') return true;
+  if (event.type !== 'snoozed' || now === undefined) return false;
+  return Date.parse(event.until) > Date.parse(now);
+};
 
 export const openTasks = (events: TaskEvent[], now?: string): Task[] => {
   const hiddenTaskIds = events.filter((event) => hidesTask(event, now)).map((event) => event.taskId);
