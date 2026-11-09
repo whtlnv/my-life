@@ -4,10 +4,12 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Config gaps (locked decision 21 says polling defaults are config, not code)
 
-- `apps/backend/src/app.ts` hard-codes the Calendar polling interval (5 min, staleness at twice that) and `businessTimeZone`
+- `apps/backend/src/app.ts` hard-codes the Calendar polling interval (`pollingIntervalsInMilliseconds.calendar`, 5 min,
+  staleness at twice that) and `apps/backend/src/startup-settings.ts` the constant `businessTimeZone`
   (`America/Mexico_City`); `apps/extension/src/extension-start.ts` hard-codes the same interval, and
   `apps/extension/src/entrypoints/background.ts` the time zone. Promote all four to settings with these defaults when a second
-  source (Gmail, Phase 1) needs its own interval.
+  source (Gmail, Phase 1) needs its own interval. (Location corrected 2026-11-08: the backend time zone moved to
+  `startup-settings.ts`.)
 
 ## Structural
 
@@ -17,10 +19,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
   scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
   agent (Phase 4) needs ranking.
-- **[apps/backend/src/app.ts:897] The first imported organization sticks for good** (added: 2026-11-08; location corrected 2026-11-08)
-  An imported organization is saved in the same details record a user edit writes, so `organizationAlreadyStored` treats
-  it as set by the user and a later import (a contact who changed jobs) never updates it. Fix by storing imported and
-  user-set fields apart; the user-set one wins.
 
 - **[apps/backend/src/app.ts:243] _Handled for you_ lists automatic `keep` proposals, where nothing was done** (added: 2026-11-08)
   `describeHandledForYou` keeps every `madeAutomatic` proposal made today, so an automatic category's `keep` shows in the
@@ -39,14 +37,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
-- **[apps/backend/src/app.ts:996] `findTaskProposal` asserts the task proposal exists (lint: Forbidden non-null assertion)** (added: 2026-11-08)
-  An unknown id at `POST /task-proposals/:id/confirmation` or `/rejection` destructures `undefined` and answers 500, and
-  the lint wall fails on the `!`. Deferred because removing it means choosing an answer for an unknown id (404, as
-  `POST /tasks/:id/done` gives), a behavior change delivered test-first.
-- **[apps/backend/src/app.ts:1056] `POST /prioritization-run` asserts a prioritization port is configured (lint: Forbidden non-null assertion)** (added: 2026-11-08)
-  An app built without `prioritization` throws on every run and answers 500, and the lint wall fails on the `!`.
-  Deferred because removing it means choosing what an unconfigured run does (skip, as `POST /triage-run` does without
-  triage), a behavior change delivered test-first.
 - **[apps/backend/src/app.ts:1214] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08)
   `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
   reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
@@ -74,9 +64,9 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   reordered or added column compiles and shows amounts under the wrong heading. Deferred for the same reason as the
   `/triage-queue` and `/now` entries below: there is no statement contract to share the column list from, and adding one is
   new `packages/contracts` surface delivered test-first.
-- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08)
-  `new URL(input instanceof Request ? input.url : input.toString())` opens 30 fake `fetch` functions across eight
-  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 30 times.
+- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08)
+  `new URL(input instanceof Request ? input.url : input.toString())` opens 31 fake `fetch` functions across eight
+  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 31 times.
   Deferred because two of those files (`calendar-poll.test.ts`, `gmail-poll.test.ts`) sit outside 2aaf298..HEAD and the
   extension has no shared test-helper module to hoist it into.
 - **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
@@ -88,20 +78,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:320] `createApp` is one 736-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08)
-  The file is 1085 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:377] `createApp` is one 1013-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08)
+  The file is 1464 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
-- **[packages/domain/src/expense-statement.ts:26] `localCalendarDate` is defined four times** (added: 2026-11-07; location corrected 2026-11-08)
-  Identical `Intl.DateTimeFormat('en-CA', …)` helpers sit in `expense-statement.ts`, `now-view.ts`, `triage-spend.ts` and
-  as `businessDateOf` in `apps/backend/src/app.ts`, so a fix to the business-date rule has to be made four
-  times. Deferred because the domain has no shared date module and `now-view.ts` and `triage-spend.ts` are outside
-  2aaf298..HEAD.
-- **[apps/dashboard/src/filters-page.tsx:46] A fourth dashboard copy of the business time zone** (added: 2026-11-07)
-  `timeInBusinessZone` hard-codes `America/Mexico_City`, as `app-shell.tsx`, `triage-page.tsx` and `dashboard-app.tsx` do.
-  Deferred to the `dashboard-app.tsx` entry below: no dashboard module holds shared constants, and the time zone is due to
-  come from `GET /now` when it becomes a setting.
 - **[apps/extension/src/extension-start.ts:8] The extension's 60 s Gmail poll is coupled to the backend's Gmail staleness interval** (added: 2026-11-07)
   `gmailPollIntervalMilliseconds` sets how often the extension really polls, while the backend judges mail staleness by
   `MY_LIFE_GMAIL_POLLING_INTERVAL_SECONDS` (default in `apps/backend/src/startup-settings.ts`); setting that variable marks a
@@ -129,6 +110,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `defaultPort` and `defaultBackendUrl` in `apps/extension/src/backend-url.ts` must change together, but nothing ties them. Deferred
   because the fix has to edit `backend-url.ts`, which is outside aa9e97f..HEAD, and no existing shared package holds plain
   constants (`packages/contracts` holds zod schemas).
-- **[apps/dashboard/src/dashboard-app.tsx:43] Dashboard hard-codes the business time zone** (added: 2026-11-02; description corrected 2026-11-07)
-  This is a third copy of `America/Mexico_City`, alongside the two (backend `app.ts`, extension `background.ts`) in § Config gaps. Deferred to the same change: when the time
+- **[apps/dashboard/src/app-shell.tsx:33] Dashboard hard-codes the business time zone** (added: 2026-11-02; description corrected 2026-11-07; location corrected 2026-11-08)
+  `businessTimeZone` here, which every dashboard page imports, is a third copy of `America/Mexico_City`, alongside the two
+  (backend `startup-settings.ts`, extension `background.ts`) in § Config gaps. Deferred to the same change: when the time
   zone becomes a setting, the dashboard should get it from `GET /now`, which changes behavior.
