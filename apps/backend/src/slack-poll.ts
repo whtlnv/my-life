@@ -31,16 +31,23 @@ async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query:
   return messages.matches;
 }
 
-function saveSlackMessage(
+async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string | undefined> {
+  const { user } = await callSlack<{ user: { profile: { display_name?: string } } }>(input, `/users.info?user=${userId}`);
+  return user.profile.display_name;
+}
+
+async function saveSlackMessage(
   input: PollSlackWorkspaceInput,
   conversationId: string,
   message: SlackMessage,
   { threadTimestamp, ownSlackUserId }: { threadTimestamp?: string; ownSlackUserId?: string } = {},
-): void {
+): Promise<void> {
+  const senderName = await fetchSlackDisplayName(input, message.user);
   input.store.saveMessage({
     workspaceTeamId: input.workspace.teamId,
     conversationId,
     senderUserId: message.user,
+    senderName,
     text: message.text,
     timestamp: message.ts,
     threadTimestamp,
@@ -71,7 +78,7 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
       `/conversations.history?channel=${channel.id}${oldestParameter}`,
     );
     for (const message of messages) {
-      saveSlackMessage(input, channel.id, message, { ownSlackUserId });
+      await saveSlackMessage(input, channel.id, message, { ownSlackUserId });
     }
   }
 }
@@ -81,7 +88,7 @@ async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
   const mentionsQuery = `<@${ownSlackUserId}>`;
   const matches = await searchSlackMessages<SlackMessage & { channel: { id: string } }>(input, mentionsQuery);
   for (const match of matches) {
-    saveSlackMessage(input, match.channel.id, match);
+    await saveSlackMessage(input, match.channel.id, match);
   }
 }
 
@@ -100,7 +107,7 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
       `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}${oldestParameter}`,
     );
     for (const reply of replies) {
-      saveSlackMessage(input, match.channel.id, reply, { threadTimestamp: match.thread_ts });
+      await saveSlackMessage(input, match.channel.id, reply, { threadTimestamp: match.thread_ts });
     }
   }
 }

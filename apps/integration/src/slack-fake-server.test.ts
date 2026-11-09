@@ -565,4 +565,26 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it("a stored Slack message carries its sender's Slack display name", async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      const replySenderInfo = (await (
+        await fetch(`${slack.url}/users.info?user=U0003`, { headers: { Authorization: `Bearer ${slack.token}` } })
+      ).json()) as { user: { profile: { display_name: string } } };
+
+      await pollSlackWorkspace({
+        fetch,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      const storedReply = store.listMessages().find((message) => message.text === threadReplyText);
+      expect(storedReply).toMatchObject({ senderUserId: 'U0003', senderName: replySenderInfo.user.profile.display_name });
+    } finally {
+      await slack.close();
+    }
+  });
 });
