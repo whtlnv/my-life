@@ -1551,7 +1551,7 @@ describe('TriagePage', () => {
     await user.keyboard('r');
     const composer = within(card).getByRole('textbox');
     await user.type(composer, 'Yes, I will send comments tomorrow');
-    await user.click(within(card).getByRole('button'));
+    await user.click(within(card).getByRole('button', { name: 'Send' }));
 
     const postedSlackSends = vi
       .mocked(fetch)
@@ -1569,7 +1569,7 @@ describe('TriagePage', () => {
     ]);
     expect(fetch).not.toHaveBeenCalledWith('/slack-verdicts', expect.anything());
   });
-  it('keeps the Slack composer\'s Send disabled while the reply text is empty', async () => {
+  it("keeps the Slack composer's Send disabled while the reply text is empty", async () => {
     answerGetTriageQueueWith({
       action: [],
       groups: [],
@@ -1597,7 +1597,7 @@ describe('TriagePage', () => {
     await user.click(card);
     await user.keyboard('r');
 
-    expect(within(card).getByRole('button')).toBeDisabled();
+    expect(within(card).getByRole('button', { name: 'Send' })).toBeDisabled();
   });
   it('posts a reply composed on a Slack channel mention that starts no thread into a thread on that message', async () => {
     answerGetTriageQueueWith({
@@ -1627,7 +1627,7 @@ describe('TriagePage', () => {
     await user.click(card);
     await user.keyboard('r');
     await user.type(within(card).getByRole('textbox'), 'On it');
-    await user.click(within(card).getByRole('button'));
+    await user.click(within(card).getByRole('button', { name: 'Send' }));
 
     const postedSlackSendBodies = vi
       .mocked(fetch)
