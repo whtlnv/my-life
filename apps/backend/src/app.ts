@@ -163,10 +163,16 @@ export interface AppOptions {
   };
 }
 
+interface AgentToolInputSchema {
+  type: 'object';
+  properties: Record<string, { type: 'string' }>;
+  required: string[];
+}
+
 interface AgentTool {
   name: string;
   description: string;
-  inputSchema: { type: 'object'; properties: Record<string, { type: 'string' }>; required: string[] };
+  inputSchema: AgentToolInputSchema;
   run: (input: unknown) => Promise<unknown>;
 }
 
@@ -180,7 +186,7 @@ interface DraftRequest {
   body: string;
 }
 
-function stringInputs(...required: string[]): AgentTool['inputSchema'] {
+function stringInputs(...required: string[]): AgentToolInputSchema {
   return {
     type: 'object',
     properties: Object.fromEntries(required.map((name) => [name, { type: 'string' as const }])),
