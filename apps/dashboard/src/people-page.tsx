@@ -136,6 +136,19 @@ const PeopleList = ({
   </section>
 );
 
+const TimelineRow = ({ href, title, side }: { href: string; title: string; side: string }) => (
+  <li className="row">
+    <div className="row-main">
+      <p className="row-title">
+        <a href={href} target="_blank" rel="noreferrer">
+          {title}
+        </a>
+      </p>
+    </div>
+    <div className="row-side">{side}</div>
+  </li>
+);
+
 const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
   <section className="section">
     <h2 className="section-title">{timeline.displayName}</h2>
@@ -143,27 +156,14 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
       <ul aria-label={`Timeline of ${timeline.displayName}`} className="rows">
         {timeline.messages.map((message) =>
           'permalink' in message ? (
-            <li key={message.timestamp} className="row">
-              <div className="row-main">
-                <p className="row-title">
-                  <a href={message.permalink} target="_blank" rel="noreferrer">
-                    {message.text}
-                  </a>
-                </p>
-              </div>
-              <div className="row-side">{message.workspaceTeamId}</div>
-            </li>
+            <TimelineRow
+              key={message.timestamp}
+              href={message.permalink}
+              title={message.text}
+              side={message.workspaceTeamId}
+            />
           ) : (
-            <li key={message.id} className="row">
-              <div className="row-main">
-                <p className="row-title">
-                  <a href={message.link} target="_blank" rel="noreferrer">
-                    {message.subject}
-                  </a>
-                </p>
-              </div>
-              <div className="row-side">{message.accountEmail}</div>
-            </li>
+            <TimelineRow key={message.id} href={message.link} title={message.subject} side={message.accountEmail} />
           ),
         )}
       </ul>
