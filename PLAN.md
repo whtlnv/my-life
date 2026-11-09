@@ -11,7 +11,7 @@ Phases (locked decision 17):
 - **Phase 2b:** capture: bodies kept locally, extraction v2, contacts and organizations, the Google Contacts import, body backfill and retriage, `GET /search` — code delivered 2026-11-08 (`DONE.md`); the real-account walk-through is `docs/phase-2b-walkthrough.md`.
 - **Phase 2c:** rolling digests (system updates, sales, calendar and Drive) with Haiku-written summary lines and one confirm per digest; a _Handled for you_ strip with undo — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-2c-*.jpg`); the real-account walk-through is `docs/phase-2c-walkthrough.md`.
 - **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contact and organization timelines), Needs input (category and new-sender questions, task proposals), tasks with states and the prioritization pass, waiting-on — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-3-*.jpg`); the real-account walk-through is `docs/phase-3-walkthrough.md`. Not built: the "significant alert not yet opened" urgent rule, identity-merge questions and the todo-list import (decisions and `PENDING_TASKS.md` § 4 below).
-- **Phase 4:** the in-app agent: chat over mail, contacts, calendar and tasks on Opus, with tools; acts within safeguards (archive, label, draft, task; never delete, never send).
+- **Phase 4:** the in-app agent (the Agent tab): chat over mail, contacts, calendar and tasks on `MY_LIFE_AGENT_MODEL` (default Opus 5.5) under `apps/backend/prompts/agent-v1.md`, cited sources, eight actions through the domain guardrail (`decideAgentAction`; send and delete refused and recorded), a stored action log with undo by action id, the extension's create-draft command — code delivered 2026-11-09 (`DONE.md`); `scripts/demo.sh` seeds it. Not built: FTS5 search and local embeddings (keyword scan still enough); the gaps in `BACKLOG.md` dated 2026-11-09.
 - **Phase 5:** Slack, as a channel in the People view.
 - **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view.
 - **Phase 7:** Gemini meeting notes from Drive.
@@ -21,28 +21,11 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
-## Phase 4 in progress (handoff 2026-11-09)
+## Start here (handoff 2026-11-09, after Phase 4)
 
-`TODO.md` holds Phase 4 (the agent), planned at `d03140c`: 42 items done, 15 left. Resume with `/tdd-supervise` (it
-resumes an in-progress TODO list). The tree is clean, the full suite is green (709 tests) and the lint wall is clean.
-Not pushed since `d09553d` (Phase 3); push after the phase closes.
+Read `CLAUDE.md` first. **Phases 2b through 4 are delivered** (`DONE.md`). Phase 4 added the Agent tab: conversations stored and resumable; the Claude agent adapter (`apps/backend/src/claude-agent.ts`) sends each turn's tools with descriptions and schemas and offers `cite_sources`; the read tools; the actions go through `decideAgentAction` in `packages/domain/src/agent-action.ts` and land in `agent-action-store.ts`; `POST /agent/actions/undo` takes an action id only; the extension carries out create-draft commands (browser base64, never sends).
 
-Done: conversations (create, continue, list, reopen, stored), the agent model setting (default Opus 5.5) and prompt
-file, the no-key and spend-ceiling guards, the tool loop (unknown tool, schema errors, round limit, cost of every
-call), the six read tools, cited and unverified citations, the action guardrail (send or delete is refused and
-recorded), and the actions archive, label (with the extension side), create task, mark VIP, update contact, approve
-and reject filter proposals, and `write_draft` (backend side). Left, in order: the extension's create-draft command
-(see the note on that item), the action list and undo, the action log's restart item, the Agent page, the shipped
-wiring keystone, and the demo screenshot.
-
-Watch for, beyond the Phase 3 list below: the agent route first called the port with no turns and the real adapter
-reported no cost (keystones fixed both); the action log lives only in the domain until its restart item; check the
-shipped wiring passes the store-backed tools to the real adapter. Every `claude -p` gets `--model` and
-`ANTHROPIC_MODEL` (the scratchpad drivers set both).
-
-## Start here (handoff 2026-11-08, after Phase 3)
-
-Read `CLAUDE.md` first. **Phases 2b, 2c and 3 are delivered** (`DONE.md`). Phase 3 added: the extension reports the user's sent mail (`sentByUser`), which is never triaged; business days and urgency in `packages/domain/src/contact-urgency.ts` (deadline inside 48 h, a date-only deadline lasting its business day; VIP waiting 1 business day; unanswered ask 2 business days, `MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS`); `GET /people` with VIP (marks and profiles' "Always matters" line), Urgent and Everyone else; contact and organization timelines; `GET /needs-input` (category questions when the two triage models disagree or say `unknown`, new-sender questions) answered with number keys; task proposals from extracted asks, task states, snooze, waiting-on and history; the prioritization pass (`prompts/prioritization-v1.md`, `MY_LIFE_PRIORITIZATION_MODEL`, default Opus 5.5) on a schedule and at `POST /prioritization-run`; the _now_ page's top 3 tasks and waiting-on list; the badge counts questions and overdue tasks. `scripts/demo.sh` seeds all of it.
+**Next:** Phase 5 (Slack) waits on `PENDING_TASKS.md` § 5 (the Slack app in both workspaces). Until it is checked, nothing in Phase 5 can start; the 2026-11-09 entries in `BACKLOG.md` (in-memory agent label and draft commands, non-strict agent tools, the flaky Now block test) are the useful work meanwhile.
 
 **Waiting on the user**, not built:
 
@@ -52,7 +35,10 @@ Read `CLAUDE.md` first. **Phases 2b, 2c and 3 are delivered** (`DONE.md`). Phase
 
 **Next:** `/tdd-supervise` on Phase 4. Before planning it, check BACKLOG's Phase 3 entries (urgency counts mentions and stops at one reason; the People lists show domains and automated senders).
 
-What the supervision showed in Phase 3 — check these every cycle:
+What the supervision showed in Phases 3 and 4 — check these every cycle:
+
+- **Minimal greens build a test-only path beside the real one:** in Phase 4 the undo route took `tool`/`target` from the request and fell through to archive, the domain guardrail had no caller, the real Claude adapter sent no tool definitions, dropped text blocks and returned no citations, and `main.ts` created no agent — every test passed against fake agents. Read the shipped composition and the real adapter before trusting a green.
+- **Tests run in Node; the extension runs in a service worker:** a Node `Buffer` in extension code passes every test and fails in Chrome.
 
 - **Mocked dashboard tests hide missing backend fields:** the People page crashed on `lastMessageAt` and `organization` the route never sent; waiting-on returned bare emails. Run the demo and open every new page before the phase closes.
 - **The shipped dashboard routes pages in `apps/dashboard/src/main.tsx`, which no test covers:** People and Needs input fell through to Now.
@@ -60,15 +46,6 @@ What the supervision showed in Phase 3 — check these every cycle:
 - **Restart items get greened on the narrowest case:** the task restart passed with one confirmed proposal while done, snooze and waiting-on were not stored.
 - **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
 - **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
-
-## Phase 4 — The agent
-
-Outcome: a chat inside the web app that answers questions over everything the app knows and acts within safeguards.
-
-- Claude Opus 5.5 with tools over the local stores: `search_messages` (FTS5), `read_thread`, `contact_timeline`, `calendar_day`, `tasks`, `digest`. Every claim links to the message or event it came from. Conversations are stored locally and resumable.
-- Actions, each a tool that goes through the same code path as a dashboard verdict and is recorded append-only: archive and label messages, create a task, mark a contact VIP, approve or reject a filter proposal, write a reply as a Gmail draft (never sent). The agent never deletes anything and never sends; the dashboard shows what the agent did, with undo where the action is reversible.
-- Teach through chat: "Luis is my boss, always VIP" updates the contact record like a Needs input answer would.
-- Retrieval stays keyword plus structure first; local embeddings (`sqlite-vec`) only if measured recall on real questions proves too weak (record the measurement in `docs/decisions/`).
 
 ## Phase 5 — Slack
 
