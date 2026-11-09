@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createApp } from './app';
+import { agentUnavailableReply, createApp } from './app';
 import { clockAtTenPastThree, getJson, postJson, temporaryDatabasePath } from './app.test-support';
 
 describe('backend app: the agent', () => {
@@ -113,5 +113,17 @@ describe('backend app: the agent', () => {
         { role: 'assistant', text: 'The budget review is urgent.' },
       ],
     });
+  });
+  it('answers that the agent is unavailable when no Anthropic key is configured', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+    const response = await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' });
+
+    expect(response.status).toBe(201);
+    const conversation = (await response.json()) as { turns: { role: string; text: string }[] };
+    expect(conversation.turns).toEqual([
+      { role: 'user', text: 'What is on my plate today?' },
+      { role: 'assistant', text: agentUnavailableReply },
+    ]);
   });
 });
