@@ -60,6 +60,7 @@ import { openReportedMessageStore, type ReportedMessageHeaders } from './reporte
 import { openSpendStore } from './spend-store';
 import { openTaskEventStore } from './task-event-store';
 import {
+  businessTimeZone,
   defaultDeadlineHours,
   defaultGmailPollingIntervalInMilliseconds,
   defaultUnansweredAskBusinessDays,
@@ -174,8 +175,6 @@ const pollingIntervalsInMilliseconds = {
   mail: defaultGmailPollingIntervalInMilliseconds,
   calendar: 5 * 60 * 1000,
 };
-
-const businessTimeZone = 'America/Mexico_City';
 
 // The label an automatic archive puts on a message and its undo takes off again.
 const automaticLabelName = 'my-life/auto';
