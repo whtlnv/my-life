@@ -21,6 +21,25 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
+## Phase 4 in progress (handoff 2026-11-09)
+
+`TODO.md` holds Phase 4 (the agent), planned at `d03140c`: 42 items done, 15 left. Resume with `/tdd-supervise` (it
+resumes an in-progress TODO list). The tree is clean, the full suite is green (709 tests) and the lint wall is clean.
+Not pushed since `d09553d` (Phase 3); push after the phase closes.
+
+Done: conversations (create, continue, list, reopen, stored), the agent model setting (default Opus 5.5) and prompt
+file, the no-key and spend-ceiling guards, the tool loop (unknown tool, schema errors, round limit, cost of every
+call), the six read tools, cited and unverified citations, the action guardrail (send or delete is refused and
+recorded), and the actions archive, label (with the extension side), create task, mark VIP, update contact, approve
+and reject filter proposals, and `write_draft` (backend side). Left, in order: the extension's create-draft command
+(see the note on that item), the action list and undo, the action log's restart item, the Agent page, the shipped
+wiring keystone, and the demo screenshot.
+
+Watch for, beyond the Phase 3 list below: the agent route first called the port with no turns and the real adapter
+reported no cost (keystones fixed both); the action log lives only in the domain until its restart item; check the
+shipped wiring passes the store-backed tools to the real adapter. Every `claude -p` gets `--model` and
+`ANTHROPIC_MODEL` (the scratchpad drivers set both).
+
 ## Start here (handoff 2026-11-08, after Phase 3)
 
 Read `CLAUDE.md` first. **Phases 2b, 2c and 3 are delivered** (`DONE.md`). Phase 3 added: the extension reports the user's sent mail (`sentByUser`), which is never triaged; business days and urgency in `packages/domain/src/contact-urgency.ts` (deadline inside 48 h, a date-only deadline lasting its business day; VIP waiting 1 business day; unanswered ask 2 business days, `MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS`); `GET /people` with VIP (marks and profiles' "Always matters" line), Urgent and Everyone else; contact and organization timelines; `GET /needs-input` (category questions when the two triage models disagree or say `unknown`, new-sender questions) answered with number keys; task proposals from extracted asks, task states, snooze, waiting-on and history; the prioritization pass (`prompts/prioritization-v1.md`, `MY_LIFE_PRIORITIZATION_MODEL`, default Opus 5.5) on a schedule and at `POST /prioritization-run`; the _now_ page's top 3 tasks and waiting-on list; the badge counts questions and overdue tasks. `scripts/demo.sh` seeds all of it.

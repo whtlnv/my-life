@@ -46,6 +46,7 @@
 - [x] `reject_filter_proposal` stores a rejection, and the proposal leaves the filter proposals list
 - [x] `write_draft` sends the replied-to message's account a create-draft command carrying the thread, recipients, subject and body
 - [ ] The extension carries out a create-draft command by creating a Gmail draft in that thread, never sending it, then acknowledges the command
+  - note (handoff 2026-11-09): a first attempt was discarded. It treated every command from `GET /commands` as a draft (an archive or label command would have been turned into a draft and acknowledged), acknowledged even when the Gmail request failed, and was not called from `extension-start.ts`. The test must include an archive command beside the draft command, a failed Gmail answer, and the wiring.
 - [ ] The list of agent actions shows every action newest first, with its tool, target, conversation, time and whether it can be undone
 - [ ] Undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label
 - [ ] Undoing an agent label sends the message's account a command that removes that label
