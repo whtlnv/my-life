@@ -44,17 +44,30 @@ function asksSomething(message: UrgencyMessage): boolean {
   return (message.asks ?? []).length > 0;
 }
 
-function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: number): boolean {
+const isDateOnly = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date);
+
+const businessDateOf = (instant: number, timeZone: string) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(new Date(instant));
+
+// A date-only deadline ("2026-11-09", as the extraction may give it) lasts until the end of that day in the business
+// time zone; one with a time is an instant.
+function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: number, timeZone: string): boolean {
   const deadlineWindowMilliseconds = deadlineHours * 60 * 60 * 1000;
+  const nowMilliseconds = Date.parse(now);
   return (message.dates ?? []).some((date) => {
-    const millisecondsUntilDate = Date.parse(date) - Date.parse(now);
+    if (isDateOnly(date)) {
+      const today = businessDateOf(nowMilliseconds, timeZone);
+      const windowEnd = businessDateOf(nowMilliseconds + deadlineWindowMilliseconds, timeZone);
+      return date >= today && date <= windowEnd;
+    }
+    const millisecondsUntilDate = Date.parse(date) - nowMilliseconds;
     return millisecondsUntilDate >= 0 && millisecondsUntilDate <= deadlineWindowMilliseconds;
   });
 }
 
 export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; reasons: string[] } {
   const { messages, now, settings } = input;
-  if (messages.some((message) => hasDeadlineSoon(message, now, settings.deadlineHours))) {
+  if (messages.some((message) => hasDeadlineSoon(message, now, settings.deadlineHours, settings.timeZone))) {
     return { urgent: true, reasons: ['deadline'] };
   }
   if (

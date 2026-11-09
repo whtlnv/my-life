@@ -91,6 +91,24 @@ describe('contactUrgency', () => {
     });
   });
 
+  it('is urgent, with the reason "deadline", on the evening of a date-only deadline for that day in the business time zone', () => {
+    const mondayNineAm = '2026-11-09T15:00:00.000Z';
+    const mondaySevenPmInMexicoCity = '2026-11-10T01:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-contract',
+        receivedAt: mondayNineAm,
+        sentByUser: false,
+        asks: [{ ask: 'Sign the renewal contract' }],
+        dates: ['2026-11-09'],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: mondaySevenPmInMexicoCity, settings: urgencySettings })).toEqual(
+      { urgent: true, reasons: ['deadline'] },
+    );
+  });
+
   it('is not urgent when a message from the contact carries an extracted deadline more than 48 hours away', () => {
     const mondayNineAm = '2026-11-09T15:00:00.000Z';
     const mondayTenAm = '2026-11-09T16:00:00.000Z';
@@ -129,7 +147,7 @@ describe('contactUrgency', () => {
     });
   });
 
-  it('is not urgent when a non-VIP contact\'s message that asks nothing has waited several business days for a reply', () => {
+  it("is not urgent when a non-VIP contact's message that asks nothing has waited several business days for a reply", () => {
     const mondayFivePm = '2026-11-09T23:00:00.000Z';
     const thursdayFivePm = '2026-11-12T23:00:00.000Z';
     const messages = [
