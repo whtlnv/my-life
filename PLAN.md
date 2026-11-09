@@ -25,15 +25,13 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 Read `CLAUDE.md` first. **Phases 2b through 4 are delivered** (`DONE.md`). Phase 4 added the Agent tab: conversations stored and resumable; the Claude agent adapter (`apps/backend/src/claude-agent.ts`) sends each turn's tools with descriptions and schemas and offers `cite_sources`; the read tools; the actions go through `decideAgentAction` in `packages/domain/src/agent-action.ts` and land in `agent-action-store.ts`; `POST /agent/actions/undo` takes an action id only; the extension carries out create-draft commands (browser base64, never sends).
 
-**Next:** Phase 5 (Slack) waits on `PENDING_TASKS.md` § 5 (the Slack app in both workspaces). Until it is checked, nothing in Phase 5 can start; the 2026-11-09 entries in `BACKLOG.md` (in-memory agent label and draft commands, non-strict agent tools, the flaky Now block test) are the useful work meanwhile.
+**Next:** Phase 5 (Slack). The two apps exist with their user scopes and credentials in `.env`; it starts once each workspace's user token is in `.env` (`PENDING_TASKS.md` § 5).
 
 **Waiting on the user**, not built:
 
 - What "not yet opened" means for the significant-alert urgent rule (Gmail's `UNREAD` label, or seen in the app).
 - When to propose "same person?" merges, and from what (locked decision 22 says the model proposes them).
 - The todo-list import: `PENDING_TASKS.md` § 4 (the path).
-
-**Next:** `/tdd-supervise` on Phase 4. Before planning it, check BACKLOG's Phase 3 entries (urgency counts mentions and stops at one reason; the People lists show domains and automated senders).
 
 What the supervision showed in Phases 3 and 4 — check these every cycle:
 
@@ -51,7 +49,7 @@ What the supervision showed in Phases 3 and 4 — check these every cycle:
 
 Outcome: DMs, mentions and threads the user is in from both workspaces join the People view as a channel, feed triage and waiting-on; replies are sent from the dashboard.
 
-- Slack app with user scopes; OAuth install flow served by the backend on localhost; tokens in the local store.
+- One Slack app per workspace with user scopes (decided with the user 2026-11-09): each workspace's user token (`xoxp-…`) is pasted into `.env` as `MY_LIFE_SLACK_WORKSPACE_<n>_USER_TOKEN` beside its team id; no OAuth flow is built.
 - Backend polls `conversations.history` for DMs and `search.messages` for mentions every 60 s per workspace.
 - Domain: a Slack message becomes a triage item (`ignore` / `act` / `reply`) and, when unanswered, a waiting-on entry.
 - Reply composer in the dashboard → `chat.postMessage` as the user, only on an explicit send.
