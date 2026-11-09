@@ -44,24 +44,24 @@ function missingRequiredProperties(inputSchema: unknown, input: unknown) {
   return required.filter((property) => !(property in (input as object)));
 }
 
+async function runRequestedTool(block: ClaudeAgentContentBlock, tools: ClaudeAgentTool[]) {
+  const tool = tools.find((candidate) => candidate.name === block.name);
+  if (!tool) return { type: 'tool_result', tool_use_id: block.id, is_error: true };
+  const missing = missingRequiredProperties(tool.inputSchema, block.input);
+  if (missing.length > 0) {
+    return {
+      type: 'tool_result',
+      tool_use_id: block.id,
+      is_error: true,
+      content: `Missing required input: ${missing.join(', ')}`,
+    };
+  }
+  return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(await tool.run(block.input)) };
+}
+
 function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgentTool[]) {
   return Promise.all(
-    content
-      .filter((block) => block.type === 'tool_use')
-      .map(async (block) => {
-        const tool = tools.find((candidate) => candidate.name === block.name);
-        if (!tool) return { type: 'tool_result', tool_use_id: block.id, is_error: true };
-        const missing = missingRequiredProperties(tool.inputSchema, block.input);
-        if (missing.length > 0) {
-          return {
-            type: 'tool_result',
-            tool_use_id: block.id,
-            is_error: true,
-            content: `Missing required input: ${missing.join(', ')}`,
-          };
-        }
-        return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(await tool.run(block.input)) };
-      }),
+    content.filter((block) => block.type === 'tool_use').map((block) => runRequestedTool(block, tools)),
   );
 }
 
