@@ -30,7 +30,15 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A poll of a workspace stores each DM message with its workspace, conversation, sender, text and timestamp
 - [x] A second poll of the same workspace stores only the DM messages newer than the first poll
 - [x] A poll stores the channel messages that mention the user
-- [ ] A poll stores a new reply in a thread the user wrote in
+- [ ] The Slack fake answers `auth.test` with the scenario's own Slack user id
+- [ ] A Slack fake started with a chosen own Slack user id answers `auth.test` with that id
+- [ ] The Slack fake records each `search.messages` query, and the test can read them back
+- [ ] In the `thread-reply` scenario, the Slack fake's `search.messages` for `from:<@U0000>` returns the message the user wrote, with its channel and `thread_ts`
+- [ ] In the `mention` scenario, the Slack fake's `search.messages` for `from:<@U0000>` returns no matches, while any other query still returns the mention
+- [ ] A poll searches Slack for the messages written by the user id that the workspace's `auth.test` names
+- [ ] When the Slack fake is started with another own Slack user id, the poll searches for the messages written by that id
+- [ ] A poll stores a reply by someone else in a thread the user wrote in, with the thread's channel and the reply's sender, text and timestamp
+- [ ] A second poll of the same workspace stores only the thread replies newer than the first poll
 - [ ] A poll does not store a reply in a thread the user never wrote in
 - [ ] A DM message the user sent is stored as sent by the user
 - [ ] A stored Slack message carries its sender's Slack display name
