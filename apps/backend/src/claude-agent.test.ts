@@ -82,4 +82,39 @@ describe('Claude agent', () => {
       ],
     });
   });
+
+  it('sends an error result back to the model when it asks for a tool that does not exist, and still returns its following text', async () => {
+    const sentRequests: SentRequest[] = [];
+    const responses = [
+      {
+        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'weather', input: {} }],
+        stop_reason: 'tool_use',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+      {
+        content: [{ type: 'text', text: 'I cannot check the weather.' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+    ];
+    const agent = createClaudeAgent({
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
+      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      tools: [],
+      createMessage: (request: SentRequest) => {
+        sentRequests.push(request);
+        return Promise.resolve(responses.shift() ?? responses[0]);
+      },
+    });
+
+    const reply = await agent.respond({ turns: [{ role: 'user', text: 'Will it rain?' }] });
+
+    expect(reply.text).toBe('I cannot check the weather.');
+    expect(sentRequests[1]?.messages.at(-1)).toMatchObject({
+      role: 'user',
+      content: [{ type: 'tool_result', tool_use_id: 'tool-use-1', is_error: true }],
+    });
+  });
 });

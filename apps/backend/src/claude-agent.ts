@@ -43,11 +43,11 @@ function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgen
   return Promise.all(
     content
       .filter((block) => block.type === 'tool_use')
-      .map(async (block) => ({
-        type: 'tool_result',
-        tool_use_id: block.id,
-        content: JSON.stringify(await tools.find((tool) => tool.name === block.name)?.run(block.input)),
-      })),
+      .map(async (block) => {
+        const tool = tools.find((candidate) => candidate.name === block.name);
+        if (!tool) return { type: 'tool_result', tool_use_id: block.id, is_error: true };
+        return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(await tool.run(block.input)) };
+      }),
   );
 }
 
