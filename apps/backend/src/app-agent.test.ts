@@ -931,4 +931,25 @@ describe('backend app: the agent', () => {
     const people = await getJson<{ vip: { emails: string[] }[] }>(app, '/people');
     expect(people.vip).toEqual([]);
   });
+  it('undoing an agent-created task removes it from the open tasks and leaves the other agent tasks open', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can make tasks of those.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await postJson(app, '/agent/conversations', { message: 'Remind me to call the accountant and the bank' });
+    const createTaskTool = offeredTools.find((tool) => tool.name === 'create_task');
+    await createTaskTool?.run({ title: 'Call the accountant' });
+    await createTaskTool?.run({ title: 'Call the bank' });
+    const created = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
+    const accountantTaskId = created.tasks.find(({ title }) => title === 'Call the accountant')?.id;
+
+    await postJson(app, '/agent/actions/undo', { tool: 'create_task', target: accountantTaskId });
+
+    const { tasks } = await getJson<{ tasks: { title: string }[] }>(app, '/tasks');
+    expect(tasks.map(({ title }) => title)).toEqual(['Call the bank']);
+  });
 });
