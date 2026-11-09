@@ -53,6 +53,7 @@ import { openFilterProposalRejectionStore } from './filter-proposal-rejection-st
 import { openPrioritizationStore } from './prioritization-store';
 import { openUndoAutomaticStore } from './undo-automatic-store';
 import { openFilterProposalStore } from './filter-proposal-store';
+import { type ConversationTurn, openConversationStore } from './conversation-store';
 import { openDigestSummaryStore } from './digest-summary-store';
 import { openListedDigestStore } from './listed-digest-store';
 import { openMailSourceStore } from './mail-source-store';
@@ -155,11 +156,6 @@ export interface AppOptions {
       items: { summary: string }[];
     }) => Promise<{ lines: string[]; costInUsd: number; model?: string }>;
   };
-}
-
-interface ConversationTurn {
-  role: 'user' | 'assistant';
-  text: string;
 }
 
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
@@ -1083,11 +1079,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.json({});
   });
-  const conversations = new Map<string, ConversationTurn[]>();
-  const saveConversation = (id: string, turns: ConversationTurn[]) => {
-    conversations.delete(id);
-    conversations.set(id, turns);
-  };
+  const conversationStore = openConversationStore(databasePath);
   const assistantTurn = (reply: { text: string } | undefined): ConversationTurn => ({
     role: 'assistant',
     text: reply?.text ?? '',
@@ -1095,30 +1087,30 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
     const reply = await options.agent?.respond();
-    const id = `conversation-${conversations.size + 1}`;
+    const id = `conversation-${conversationStore.count() + 1}`;
     const turns: ConversationTurn[] = [{ role: 'user', text: message }, assistantTurn(reply)];
-    saveConversation(id, turns);
+    conversationStore.save(id, turns);
     return context.json({ id, turns }, 201);
   });
   app.post('/agent/conversations/:id/messages', async (context) => {
     const id = context.req.param('id');
     const { message } = await context.req.json<{ message: string }>();
-    const earlierTurns = conversations.get(id) ?? [];
+    const earlierTurns = conversationStore.load(id) ?? [];
     const turns: ConversationTurn[] = [...earlierTurns, { role: 'user', text: message }];
     const reply = await options.agent?.respond({ turns });
-    saveConversation(id, [...turns, assistantTurn(reply)]);
+    conversationStore.save(id, [...turns, assistantTurn(reply)]);
     return context.json({});
   });
   app.get('/agent/conversations', (context) =>
     context.json({
-      conversations: [...conversations]
-        .reverse()
+      conversations: conversationStore
+        .listMostRecentlyActiveFirst()
         .map(([id, turns]) => ({ id, title: turns[0]?.text })),
     }),
   );
   app.get('/agent/conversations/:id', (context) => {
     const id = context.req.param('id');
-    return context.json({ id, turns: conversations.get(id) });
+    return context.json({ id, turns: conversationStore.load(id) });
   });
   app.put('/tasks/:id/pin', async (context) => {
     const taskId = context.req.param('id');

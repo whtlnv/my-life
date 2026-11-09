@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
-import { clockAtTenPastThree, getJson, postJson } from './app.test-support';
+import { clockAtTenPastThree, getJson, postJson, temporaryDatabasePath } from './app.test-support';
 
 describe('backend app: the agent', () => {
   it("creates a conversation on the user's first message and returns the model's text reply as its assistant turn", async () => {
@@ -82,6 +82,35 @@ describe('backend app: the agent', () => {
       conversations: [
         { id: first.id, title: 'What is on my plate today?' },
         { id: second.id, title: 'Who is waiting on me?' },
+      ],
+    });
+  });
+
+  it('still returns a conversation and its turns after the backend restarts', async () => {
+    const replies = ['You have two open tasks today.', 'The budget review is urgent.'];
+    const agent = { respond: () => Promise.resolve({ text: replies.shift() ?? '', costInUsd: 0.01 }) };
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      agent,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    const created = (await (
+      await postJson(beforeRestart, '/agent/conversations', { message: 'What is on my plate today?' })
+    ).json()) as { id: string };
+    await postJson(beforeRestart, `/agent/conversations/${created.id}/messages`, { message: 'Which one is urgent?' });
+
+    const afterRestart = createApp(options);
+    const opened = await getJson<{ id: string; turns: unknown[] }>(afterRestart, `/agent/conversations/${created.id}`);
+
+    expect(opened).toEqual({
+      id: created.id,
+      turns: [
+        { role: 'user', text: 'What is on my plate today?' },
+        { role: 'assistant', text: 'You have two open tasks today.' },
+        { role: 'user', text: 'Which one is urgent?' },
+        { role: 'assistant', text: 'The budget review is urgent.' },
       ],
     });
   });
