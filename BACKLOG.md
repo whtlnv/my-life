@@ -37,6 +37,15 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[packages/domain/src/task-state.ts:13] The task event `undone` reads as "marked not done" but hides the task** (added: 2026-11-09)
+  `POST /agent/actions/undo` saves `{ type: 'undone' }` to withdraw an agent-created task, and `hidesTask` treats it like
+  `done`, while `reopened` is what un-does a `done`; a reader takes `undone` for a reopen. Deferred because the type string is
+  stored in the task event log and returned by the task history route, which `app-agent.test.ts` pins as `undone`, so a
+  rename changes stored data and the API output.
+- **[packages/domain/src/agent-action.ts:19] `decideAgentAction` returns `effects` that no caller reads** (added: 2026-11-09)
+  `recordingAction` in `apps/backend/src/app.ts` reads only `record.outcome` and runs the tool itself, so `effects` looks
+  like the list of actions to perform while nothing performs it. Deferred because `agent-action.test.ts` asserts the field
+  in two tests, so dropping it changes the function's tested output; it is a `/test-quality` matter first.
 - **[apps/backend/src/app.ts:1214] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08)
   `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
   reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
