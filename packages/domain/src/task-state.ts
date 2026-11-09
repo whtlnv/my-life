@@ -10,6 +10,7 @@ interface ProposalEvent {
 export type TaskEvent =
   | ProposalEvent
   | { type: 'done'; taskId: string; at: string }
+  | { type: 'undone'; taskId: string; at: string }
   | { type: 'reopened'; taskId: string; at: string }
   | { type: 'snoozed'; taskId: string; at: string; until: string }
   | { type: 'waiting-on'; taskId: string; at: string; person: string };
@@ -21,7 +22,7 @@ export interface Task extends TaskProposal {
 }
 
 const hidesTask = (event: TaskEvent, now?: string): boolean => {
-  if (event.type === 'done') return true;
+  if (event.type === 'done' || event.type === 'undone') return true;
   if (event.type !== 'snoozed' || now === undefined) return false;
   return Date.parse(event.until) > Date.parse(now);
 };

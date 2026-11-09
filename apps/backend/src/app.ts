@@ -1391,13 +1391,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({});
   });
   app.post('/agent/actions/undo', async (context) => {
-    const { tool, target, actionId } = await context.req.json<{ tool: string; target: string; actionId?: string }>();
-    const action = agentActions.find(({ id }) => id === actionId);
+    const request = await context.req.json<{ tool: string; target: string; actionId?: string }>();
+    const action = agentActions.find(({ id }) => id === request.actionId);
+    const { tool, target } = action ?? request;
     const cannotBeUndone = tool === 'write_draft' || action?.undoable === false || action?.undone === true;
     if (cannotBeUndone) return context.body(null, 409);
     if (action !== undefined) action.undone = true;
     const labelRequest = labelRequests.find(({ messageId }) => messageId === target);
-    if (tool === 'create_task') taskEventStore.save({ type: 'done', taskId: target, at: clock.now().toISOString() });
+    if (tool === 'create_task') taskEventStore.save({ type: 'undone', taskId: target, at: clock.now().toISOString() });
     else if (tool === 'mark_vip') contactDetailsStore.removeMark(target, 'vip');
     else if (tool === 'label_message' && labelRequest !== undefined) undoneLabelRequests.push(labelRequest);
     else undoneAgentArchiveMessageIds.push(target);

@@ -995,6 +995,33 @@ describe('backend app: the agent', () => {
     const { tasks } = await getJson<{ tasks: { title: string }[] }>(app, '/tasks');
     expect(tasks.map(({ title }) => title)).toEqual(['Call the bank']);
   });
+  it("an undone agent-created task's history shows it as undone, not done", async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can make a task of that.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await postJson(app, '/agent/conversations', { message: 'Remind me to call the accountant' });
+    await offeredTools.find((tool) => tool.name === 'create_task')?.run({ title: 'Call the accountant' });
+    const { actions } = await getJson<{ actions: { id: string; tool: string; target: string }[] }>(
+      app,
+      '/agent/actions',
+    );
+    const createTaskAction = actions.find(({ tool }) => tool === 'create_task');
+
+    await postJson(app, '/agent/actions/undo', { actionId: createTaskAction?.id });
+
+    const { history } = await getJson<{ history: { transition: string }[] }>(
+      app,
+      `/tasks/${String(createTaskAction?.target)}/history`,
+    );
+    const transitions = history.map(({ transition }) => transition);
+    expect(transitions).toContain('undone');
+    expect(transitions).not.toContain('done');
+  });
   it('undoing an agent draft is refused and sends the account no command beyond the draft itself', async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('I can draft a reply.');
     const app = createApp({
