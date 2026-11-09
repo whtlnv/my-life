@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
-import { clockAtTenPastThree, postJson } from './app.test-support';
+import { clockAtTenPastThree, getJson, postJson } from './app.test-support';
 
 describe('backend app: the agent', () => {
   it("creates a conversation on the user's first message and returns the model's text reply as its assistant turn", async () => {
@@ -41,5 +41,26 @@ describe('backend app: the agent', () => {
       { role: 'assistant', text: 'You have two open tasks today.' },
       { role: 'user', text: 'Which one is urgent?' },
     ]);
+  });
+  it('returns every turn of an opened conversation in the order it was said', async () => {
+    const replies = ['You have two open tasks today.', 'The budget review is urgent.'];
+    const agent = { respond: () => Promise.resolve({ text: replies.shift() ?? '', costInUsd: 0.01 }) };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    const created = (await (
+      await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' })
+    ).json()) as { id: string };
+    await postJson(app, `/agent/conversations/${created.id}/messages`, { message: 'Which one is urgent?' });
+
+    const opened = await getJson<{ id: string; turns: unknown[] }>(app, `/agent/conversations/${created.id}`);
+
+    expect(opened).toEqual({
+      id: created.id,
+      turns: [
+        { role: 'user', text: 'What is on my plate today?' },
+        { role: 'assistant', text: 'You have two open tasks today.' },
+        { role: 'user', text: 'Which one is urgent?' },
+        { role: 'assistant', text: 'The budget review is urgent.' },
+      ],
+    });
   });
 });
