@@ -29,6 +29,9 @@ import {
   isTriagePaused,
   mergeCalendarSnapshots,
   triageEffects,
+  taskProposals,
+  openTasks,
+  type TaskEvent,
   triageQueue,
   type CalendarSnapshot,
   type Clock,
@@ -71,7 +74,7 @@ type Proposal = Parameters<typeof triageQueue>[0][number] & {
   organization?: string;
   people?: { name: string; email?: string }[];
   dates?: string[];
-  asks?: { ask: string }[];
+  asks?: { ask: string; due?: string }[];
   threadState?: string;
   disagreement?: { firstCategory: string; secondCategory: string };
 };
@@ -941,8 +944,29 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     ].filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: pendingCommands });
   });
+  const taskEvents: TaskEvent[] = [];
+  const listedTaskProposals = () =>
+    proposals.flatMap((proposal) =>
+      taskProposals({ accountEmail: proposal.accountEmail, link: gmailMessageLink(proposal), asks: proposal.asks ?? [] }).map(
+        (taskProposal, index) => ({ id: `${proposal.messageId}-${index}`, ...taskProposal }),
+      ),
+    );
+  app.get('/task-proposals', (context) => {
+    const decidedIds = taskEvents.map((event) => event.taskId);
+    return context.json({ proposals: listedTaskProposals().filter(({ id }) => !decidedIds.includes(id)) });
+  });
+  app.post('/task-proposals/:id/confirmation', (context) => {
+    const { id, ...proposal } = listedTaskProposals().find(({ id }) => id === context.req.param('id'))!;
+    taskEvents.push({ type: 'proposal-confirmed', taskId: id, at: clock.now().toISOString(), proposal });
+    return context.json({ confirmed: id });
+  });
+  app.post('/task-proposals/:id/rejection', (context) => {
+    const { id, ...proposal } = listedTaskProposals().find(({ id }) => id === context.req.param('id'))!;
+    taskEvents.push({ type: 'proposal-rejected', taskId: id, at: clock.now().toISOString(), proposal });
+    return context.json({ rejected: id });
+  });
   app.get('/tasks', (context) => {
-    return context.json({ tasks: confirmedTasks(proposals, verdictStore.loadAll()) });
+    return context.json({ tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...openTasks(taskEvents)] });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
   const rejectUnknownMark: MiddlewareHandler = async (context, next) => {

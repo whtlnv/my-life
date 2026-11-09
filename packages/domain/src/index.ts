@@ -16,3 +16,5 @@ export { expenseStatement, type ExpenseProposal } from './expense-statement';
 export { digests, isDigestedCategory } from './digests';
 export { messageBody, type MessagePart } from './message-body';
 export { contactUrgency } from './contact-urgency';
+export { taskProposals } from './task-proposals';
+export { openTasks, type TaskEvent } from './task-state';

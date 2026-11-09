@@ -65,7 +65,7 @@
 - [x] Each ask the extraction finds in a message becomes a task proposal titled with the ask, carrying its due time, the message link and the account
 - [x] A message whose extraction finds no asks produces no task proposal
 - [x] Confirming a task proposal creates an open task; rejecting it creates none
-- [ ] `GET /task-proposals` lists each waiting task proposal with its title, due time, message link and account; `POST /task-proposals/:id/confirmation` makes it an open task in `GET /tasks`, `POST /task-proposals/:id/rejection` drops it, and neither is listed again
+- [x] `GET /task-proposals` lists each waiting task proposal with its title, due time, message link and account; `POST /task-proposals/:id/confirmation` makes it an open task in `GET /tasks`, `POST /task-proposals/:id/rejection` drops it, and neither is listed again
 - [ ] The Needs input page lists the waiting task proposals, each confirmed or rejected with one key
 - [ ] Marking a task done removes it from the open tasks
 - [ ] A task snoozed until a time is left out of the open tasks before that time
