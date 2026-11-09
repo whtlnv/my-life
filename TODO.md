@@ -75,7 +75,7 @@
 - [x] After a backend restart on the same database file, every task keeps its state, snooze time, waiting-on person and history, and a decided task proposal is not listed again
 - [x] `POST /tasks/:id/done` marks a task done and it leaves `GET /tasks`; an unknown task answers 404
 - [x] `POST /tasks/:id/snooze` with an `until` time keeps the task out of `GET /tasks` until that time and back after it
-- [ ] `PUT /tasks/:id/waiting-on` sets the person the task waits on, shown with it in `GET /tasks`
+- [x] `PUT /tasks/:id/waiting-on` sets the person the task waits on, shown with it in `GET /tasks`
 - [ ] `GET /tasks/:id/history` lists the task's transitions made through these routes, each with its time from the clock, oldest first
 - [ ] After a backend restart on the same database file, a task marked done stays out of `GET /tasks`, a snoozed one stays hidden until its time, a waiting-on person is kept and the history is unchanged
 - [ ] The prioritization pass sends the open tasks with the profile, today's calendar, due dates and urgency to the model configured for prioritization (default Opus 5.5) and stores the rank and reason it returns for each task

@@ -981,6 +981,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     taskEventStore.save({ type: 'snoozed', taskId, at: clock.now().toISOString(), until });
     return context.json({ snoozed: taskId });
   });
+  app.put('/tasks/:id/waiting-on', async (context) => {
+    const taskId = context.req.param('id');
+    const { person } = await context.req.json<{ person: string }>();
+    taskEventStore.save({ type: 'waiting-on', taskId, at: clock.now().toISOString(), person });
+    return context.json({ waitingOn: person });
+  });
   app.get('/tasks', (context) => {
     return context.json({
       tasks: [

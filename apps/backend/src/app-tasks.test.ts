@@ -106,6 +106,28 @@ describe('backend app: task proposals and tasks', () => {
     expect(afterSnooze.tasks).toEqual([expect.objectContaining({ title: 'Approve the budget', status: 'open' })]);
   });
 
+  it('shows at GET /tasks the person set with PUT /tasks/:id/waiting-on as the task waiting-on person', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+
+    const response = await app.request(`/tasks/${open.tasks[0]?.id}/waiting-on`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ person: 'luis@example.com' }),
+    });
+
+    const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(response.status).toBe(200);
+    expect(tasks.tasks).toEqual([
+      expect.objectContaining({ title: 'Approve the budget', waitingOn: 'luis@example.com' }),
+    ]);
+  });
+
   it('answers 404 at POST /tasks/:id/done for a task id it does not know', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 
