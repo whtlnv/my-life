@@ -70,7 +70,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 ### Waiting-on
 
 - [x] A Slack DM from someone else that the user has not answered later in the same conversation appears in `GET /waiting-on` with channel `slack`, waiting since its timestamp
-- [ ] A Slack DM the user answered later in the same conversation does not appear in `GET /waiting-on`
+- [x] A Slack DM the user answered later in the same conversation does not appear in `GET /waiting-on`
 - [ ] A Slack mention the user answered in its thread does not appear in `GET /waiting-on`
 - [ ] `GET /waiting-on` orders email and Slack people together by how long they have waited
 

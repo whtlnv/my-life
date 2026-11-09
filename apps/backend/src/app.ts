@@ -1749,9 +1749,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         displayName: contact.displayName,
         waitingSince: new Date(Math.min(...waitingTimes)).toISOString(),
       }));
-    const slackPeople = slackMessageStore
-      .listMessages()
+    const slackMessages = slackMessageStore.listMessages();
+    const slackPeople = slackMessages
       .filter((message) => message.sentByUser !== true)
+      .filter(
+        (message) =>
+          !slackMessages.some(
+            (reply) =>
+              reply.sentByUser === true &&
+              reply.conversationId === message.conversationId &&
+              Number(reply.timestamp) > Number(message.timestamp),
+          ),
+      )
       .map((message) => ({
         channel: 'slack',
         displayName: message.senderName,

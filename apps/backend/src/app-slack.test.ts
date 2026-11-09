@@ -175,4 +175,31 @@ describe('createApp Slack messages', () => {
       expect.objectContaining({ channel: 'slack', displayName: 'Ana', waitingSince: '2025-11-09T14:53:20.000Z' }),
     ]);
   });
+
+  it('leaves out of GET /waiting-on a Slack DM the user answered later in the same conversation', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackMessageStore = openSlackMessageStore(databasePath);
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0000',
+      senderName: 'Francisco',
+      text: 'Yes, looking at it now.',
+      timestamp: '1762701000.000100',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([]);
+  });
 });
