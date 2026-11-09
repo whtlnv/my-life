@@ -82,6 +82,46 @@ describe('NeedsInputPage', () => {
     expect(keys).toHaveLength(question.choices.length);
     expect(new Set(keys).size).toBe(question.choices.length);
   });
+  it("shows each question's context: subject, summary and sender for a category question, the sender's name and ask for a new-sender question", async () => {
+    const categoryQuestion = {
+      kind: 'category',
+      messageId: 'message-4',
+      accountEmail: 'franciscoc@psmutuus.com',
+      choices: ['action', 'sales'],
+      subject: 'Budget review',
+      summary: 'Luis writes about the budget',
+      from: 'Luis <luis@example.com>',
+    };
+    const newSenderQuestion = {
+      kind: 'new-sender',
+      senderEmail: 'ana@newclient.example',
+      messageId: 'message-5',
+      accountEmail: 'franciscoc@psmutuus.com',
+      choices: ['vip', 'ordinary'],
+      senderName: 'Ana Ruiz',
+      asks: ['Sign the onboarding form'],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        if (input === '/needs-input') {
+          return Promise.resolve(Response.json({ questions: [categoryQuestion, newSenderQuestion] }));
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<NeedsInputPage />);
+
+    const list = await screen.findByRole('list', { name: 'Questions' });
+    const [categoryRow, newSenderRow] = within(list).getAllByRole('listitem');
+    if (categoryRow === undefined || newSenderRow === undefined) throw new Error('expected two question rows');
+    expect(within(categoryRow).getByText(categoryQuestion.subject)).toBeInTheDocument();
+    expect(within(categoryRow).getByText(categoryQuestion.summary)).toBeInTheDocument();
+    expect(within(categoryRow).getByText(categoryQuestion.from)).toBeInTheDocument();
+    expect(within(newSenderRow).getByText(newSenderQuestion.senderName)).toBeInTheDocument();
+    expect(within(newSenderRow).getByText(newSenderQuestion.asks[0] ?? '')).toBeInTheDocument();
+  });
   it('lists each waiting task proposal with its title and account; pressing the confirm key sends POST /task-proposals/:id/confirmation and removes the proposal', async () => {
     const proposal = {
       id: 'message-7-0',

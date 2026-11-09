@@ -6,6 +6,11 @@ interface Question {
   messageId: string;
   accountEmail: string;
   choices: string[];
+  subject?: string;
+  summary?: string;
+  from?: string;
+  senderName?: string;
+  asks?: string[];
 }
 
 interface TaskProposal {
@@ -100,6 +105,13 @@ export function NeedsInputPage() {
         {questions.map((question) => (
           <li key={question.messageId}>
             <span>{question.senderEmail}</span>
+            <span>{question.subject}</span>
+            <span>{question.summary}</span>
+            <span>{question.from}</span>
+            <span>{question.senderName}</span>
+            {question.asks?.map((ask) => (
+              <span key={ask}>{ask}</span>
+            ))}
             {question.choices.map((choice, index) => (
               <button key={choice} type="button" aria-keyshortcuts={keyOf(index)}>
                 <kbd>{keyOf(index)}</kbd> {choice}
