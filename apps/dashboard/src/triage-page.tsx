@@ -621,8 +621,10 @@ function HandledForYouSection({
 const slackDecisionKeys: Record<string, string> = { i: 'ignore', t: 'act' };
 
 function postSlackVerdict(item: SlackTriageItem, key: string) {
+  const decision = slackDecisionKeys[key];
+  if (decision === undefined) return;
   const { workspaceTeamId, conversationId, timestamp } = item;
-  void postJson('/slack-verdicts', { workspaceTeamId, conversationId, timestamp, decision: slackDecisionKeys[key] });
+  void postJson('/slack-verdicts', { workspaceTeamId, conversationId, timestamp, decision });
 }
 
 function postSlackSend(item: SlackTriageItem, text: string) {

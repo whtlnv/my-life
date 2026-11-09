@@ -1492,6 +1492,36 @@ describe('TriagePage', () => {
       },
     ]);
   });
+  it('posts no Slack verdict when a key other than the ignore, act and reply keys is pressed on a Slack card', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: 'Lunch is moved to Thursday',
+          timestamp: '1762700000.000100',
+          permalink: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    await user.click(card);
+    await user.keyboard('x');
+
+    expect(fetch).not.toHaveBeenCalledWith('/slack-verdicts', expect.anything());
+  });
   it('opens a composer when the reply key `r` is pressed on a Slack card, and its Send posts the typed text as an explicit send to that conversation', async () => {
     answerGetTriageQueueWith({
       action: [],
