@@ -23,6 +23,8 @@ import {
   triageAnsweringByMessageId,
   budgetReviewReportWithSecondMessageFromMarta,
   keepProposalExtracting,
+  shopNewsletterArchiveProposal,
+  expenseInvoiceProposal,
 } from './app.test-support';
 
 describe('backend app: contacts, organizations and the Google Contacts import', () => {
@@ -1093,5 +1095,74 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(people).toEqual([
       { email: 'luis@example.com', displayName: 'Luis Pérez', waitingSince: '2026-11-02T15:00:00.000Z' },
     ]);
+  });
+
+  it('leaves out of GET /waiting-on a sender whose only waiting message carries a List-Id, and keeps a sender writing in person', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
+    const luisMondayMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMondayMessage,
+        {
+          ...luisMondayMessage,
+          id: 'message-2',
+          threadId: 'thread-2',
+          from: 'Vendor News <news@vendor.example>',
+          subject: 'Weekly digest',
+          listId: '<digest.vendor.example>',
+        },
+      ],
+    });
+
+    const response = await app.request('/waiting-on');
+
+    const { people } = (await response.json()) as { people: { email: string }[] };
+    expect(people.map(({ email }) => email)).toEqual(['luis@example.com']);
+  });
+
+  it('leaves out of GET /waiting-on a sender whose waiting message was proposed in an automated category, and keeps a sender whose message was proposed as an action', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const triage = triageAnsweringByMessageId({
+      'message-1': {
+        action: 'act',
+        category: 'action',
+        summary: 'Luis asks for a budget review',
+        extract: {},
+        reason: 'Luis asks the user directly',
+      },
+      'message-2': shopNewsletterArchiveProposal,
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+    await postTriageRun(app);
+
+    const response = await app.request('/waiting-on');
+
+    const { people } = (await response.json()) as { people: { email: string }[] };
+    expect(people.map(({ email }) => email)).toEqual(['luis@example.com']);
+  });
+
+  it('leaves out of GET /waiting-on a sender whose waiting message was proposed as an expense, and keeps a sender whose message was proposed as an action', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const triage = triageAnsweringByMessageId({
+      'message-1': {
+        action: 'act',
+        category: 'action',
+        summary: 'Luis asks for a budget review',
+        extract: {},
+        reason: 'Luis asks the user directly',
+      },
+      'message-2': expenseInvoiceProposal('Acme', '2026-11-02'),
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+    await postTriageRun(app);
+
+    const response = await app.request('/waiting-on');
+
+    const { people } = (await response.json()) as { people: { email: string }[] };
+    expect(people.map(({ email }) => email)).toEqual(['luis@example.com']);
   });
 });

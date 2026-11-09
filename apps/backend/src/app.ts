@@ -1234,8 +1234,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           other.threadId === message.threadId &&
           new Date(other.date).getTime() > new Date(message.date).getTime(),
       );
+    const isAutomatedCategory = (category: string | undefined): boolean =>
+      isDigestedCategory(category) || category === 'expense';
     const awaitsReply = (message: ReportedMessage): boolean =>
-      message.sentByUser !== true && !userRepliedLaterInThread(message);
+      message.sentByUser !== true &&
+      message.listId === undefined &&
+      !isAutomatedCategory(proposals.find((proposal) => proposal.messageId === message.id)?.category) &&
+      !userRepliedLaterInThread(message);
     const waitingTimesOf = (contact: { messageIds: string[] }): number[] =>
       reportedMessages
         .filter((message) => contact.messageIds.includes(message.id) && awaitsReply(message))
