@@ -19,7 +19,17 @@ export interface AgentActionDecision {
   readonly effects: readonly AgentActionEffect[];
 }
 
-const allowedTools = new Set(['archive_message']);
+// The actions the agent may carry out. Anything else (sending or deleting mail above all) is refused.
+const allowedTools = new Set([
+  'archive_message',
+  'label_message',
+  'write_draft',
+  'create_task',
+  'mark_vip',
+  'update_contact',
+  'approve_filter_proposal',
+  'reject_filter_proposal',
+]);
 
 export function decideAgentAction(request: AgentActionRequest): AgentActionDecision {
   if (allowedTools.has(request.tool)) {

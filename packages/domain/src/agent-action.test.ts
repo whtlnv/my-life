@@ -42,4 +42,23 @@ describe('decideAgentAction', () => {
       effects: [{ tool: 'archive_message', input: { messageId: 'message-1' } }],
     });
   });
+
+  it('carries out every action the agent may take, and refuses deleting mail like sending it', () => {
+    const outcomeOf = (tool: string) =>
+      decideAgentAction({ tool, input: {}, conversationId: 'conversation-1', requestedAt: '2026-11-09T15:12:00.000Z' })
+        .record.outcome;
+    const mayTake = [
+      'archive_message',
+      'label_message',
+      'write_draft',
+      'create_task',
+      'mark_vip',
+      'update_contact',
+      'approve_filter_proposal',
+      'reject_filter_proposal',
+    ];
+
+    expect(mayTake.map(outcomeOf)).toEqual(mayTake.map(() => 'carried-out'));
+    expect(['send_message', 'delete_message'].map(outcomeOf)).toEqual(['refused', 'refused']);
+  });
 });
