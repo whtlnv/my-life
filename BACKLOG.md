@@ -39,10 +39,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   The agent tool schemas (`stringInputs` in `app.ts`) do not set `additionalProperties: false`, which strict tool use requires,
   so Claude's tool inputs are only checked for required properties by `claude-agent.ts`. Make the schemas strict and send
   `strict: true` when a malformed tool input is seen in practice, or with the next change to the agent tools.
-- **[apps/dashboard/src/dashboard-app.test.tsx:24] The Now block test is flaky** (added: 2026-11-09)
-  "shows the current event's title, join link and attendees in the Now block" failed several times during Phase 4 cycles,
-  stuck on "Loading", and passed on a rerun with no change. Find the race (likely a fetch stub or a timer) before it hides a
-  real failure.
 
 ## Out of Scope
 
