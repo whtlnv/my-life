@@ -15,6 +15,10 @@ const threadTimestamp = '1762700200.000300';
 
 const displayNameByUserId: Record<string, string> = { [ownSlackUserId]: 'me', U0003: 'Dana' };
 
+function usersInfoResponse(userId: string) {
+  return { ok: true, user: { id: userId, profile: { display_name: displayNameByUserId[userId] } } };
+}
+
 const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {
     '/conversations.list': { ok: true, channels: [{ id: 'D0001', is_im: true, user: 'U0001' }] },
@@ -67,8 +71,7 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
     const url = new URL(request.url ?? '/', 'http://fake');
     response.writeHead(200, { 'Content-Type': 'application/json' });
     if (url.pathname === '/users.info') {
-      const userId = url.searchParams.get('user') ?? '';
-      response.end(JSON.stringify({ ok: true, user: { id: userId, profile: { display_name: displayNameByUserId[userId] } } }));
+      response.end(JSON.stringify(usersInfoResponse(url.searchParams.get('user') ?? '')));
       return;
     }
     response.end(JSON.stringify(responseByPath[url.pathname]));
