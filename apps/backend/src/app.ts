@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { Hono, type MiddlewareHandler } from 'hono';
@@ -42,7 +42,7 @@ import {
 } from '@my-life/domain';
 
 import { openAcknowledgementStore } from './acknowledgement-store';
-import { profileFileName } from './claude-triage';
+import { profileFileName, readOptionalFile } from './claude-triage';
 import { openCreatedFilterStore } from './created-filter-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openContactDetailsStore, type ContactDetails, type ImportedContactRecord } from './contact-details-store';
@@ -1039,10 +1039,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const currentOpenTasks = () => openTasks(taskEventStore.loadAll(), clock.now().toISOString());
   const overdueOpenTasks = () =>
     currentOpenTasks().filter(({ due }) => due !== undefined && due < clock.now().toISOString());
-  const profileOfAccount = (accountEmail: string): string | undefined => {
-    const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
-    return existsSync(profilePath) ? readFileSync(profilePath, 'utf8') : undefined;
-  };
+  const profileOfAccount = (accountEmail: string): string | undefined =>
+    readOptionalFile(join(options.profileDirectory ?? '', profileFileName(accountEmail)));
   let lastPrioritizationCallAt: number | undefined;
   const isInsidePrioritizationInterval = (): boolean =>
     options.prioritizationIntervalInMilliseconds !== undefined &&

@@ -34,7 +34,7 @@ export function profileFileName(accountEmail: string): string {
   return `${domainName}.md`;
 }
 
-function readOptionalFile(path: string): string | undefined {
+export function readOptionalFile(path: string): string | undefined {
   return existsSync(path) ? readFileSync(path, 'utf8') : undefined;
 }
 
