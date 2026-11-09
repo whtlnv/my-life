@@ -9,6 +9,7 @@ import {
   budgetReviewReport,
   keepProposalExtracting,
   triageAnswering,
+  temporaryDatabasePath,
 } from './app.test-support';
 
 describe('backend app: task proposals and tasks', () => {
@@ -67,5 +68,22 @@ describe('backend app: task proposals and tasks', () => {
     const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     expect(stillWaiting.proposals).toEqual([]);
     expect(tasks.tasks).toEqual([]);
+  });
+
+  it('keeps a confirmed task proposal an open task, not listed again at GET /task-proposals, after a backend restart on the same database file', async () => {
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() };
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const beforeRestart = createApp({ ...options, triage });
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+    await postTriageRun(beforeRestart);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(beforeRestart, '/task-proposals');
+    await postJson(beforeRestart, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+
+    const afterRestart = createApp(options);
+    const stillWaiting = await getJson<{ proposals: unknown[] }>(afterRestart, '/task-proposals');
+    const tasks = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
+
+    expect(stillWaiting.proposals).toEqual([]);
+    expect(tasks.tasks).toEqual([expect.objectContaining({ title: 'Approve the budget', status: 'open' })]);
   });
 });

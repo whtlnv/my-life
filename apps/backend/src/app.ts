@@ -31,7 +31,6 @@ import {
   triageEffects,
   taskProposals,
   openTasks,
-  type TaskEvent,
   triageQueue,
   type CalendarSnapshot,
   type Clock,
@@ -55,6 +54,7 @@ import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
 import { openSpendStore } from './spend-store';
+import { openTaskEventStore } from './task-event-store';
 import { defaultGmailPollingIntervalInMilliseconds } from './startup-settings';
 import { openVerdictStore, type StoredVerdict } from './verdict-store';
 
@@ -370,6 +370,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // The messages each digest held when GET /triage-queue last listed it: a confirm reaches only those.
   const listedDigestStore = openListedDigestStore(databasePath);
   const undoAutomaticStore = openUndoAutomaticStore(databasePath);
+  const taskEventStore = openTaskEventStore(databasePath);
   // Messages reported before this process started are reloaded, so a restart never strands a message untriaged.
   const storedMessages = reportedMessageStore.loadReportedMessages();
   const reportedMessages: ReportedMessage[] = storedMessages;
@@ -944,7 +945,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     ].filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: pendingCommands });
   });
-  const taskEvents: TaskEvent[] = [];
   const listedTaskProposals = () =>
     proposals.flatMap((proposal) =>
       taskProposals({
@@ -955,21 +955,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
   const findTaskProposal = (taskId: string) => listedTaskProposals().find(({ id }) => id === taskId)!;
   app.get('/task-proposals', (context) => {
-    const decidedIds = taskEvents.map((event) => event.taskId);
+    const decidedIds = taskEventStore.loadAll().map((event) => event.taskId);
     return context.json({ proposals: listedTaskProposals().filter(({ id }) => !decidedIds.includes(id)) });
   });
   app.post('/task-proposals/:id/confirmation', (context) => {
     const { id, ...proposal } = findTaskProposal(context.req.param('id'));
-    taskEvents.push({ type: 'proposal-confirmed', taskId: id, at: clock.now().toISOString(), proposal });
+    taskEventStore.save({ type: 'proposal-confirmed', taskId: id, at: clock.now().toISOString(), proposal });
     return context.json({ confirmed: id });
   });
   app.post('/task-proposals/:id/rejection', (context) => {
     const { id, ...proposal } = findTaskProposal(context.req.param('id'));
-    taskEvents.push({ type: 'proposal-rejected', taskId: id, at: clock.now().toISOString(), proposal });
+    taskEventStore.save({ type: 'proposal-rejected', taskId: id, at: clock.now().toISOString(), proposal });
     return context.json({ rejected: id });
   });
   app.get('/tasks', (context) => {
-    return context.json({ tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...openTasks(taskEvents)] });
+    return context.json({ tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...openTasks(taskEventStore.loadAll())] });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
   const rejectUnknownMark: MiddlewareHandler = async (context, next) => {
