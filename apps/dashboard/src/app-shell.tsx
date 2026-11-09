@@ -42,7 +42,7 @@ export const routes = {
   statement: '#/statement',
 } as const;
 
-function timeInBusinessZone(isoTime: string): string {
+export function timeInBusinessZone(isoTime: string): string {
   return new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { businessTimeZone, routes } from './app-shell';
+import { businessTimeZone, routes, timeInBusinessZone } from './app-shell';
 
 interface NowEvent {
   id: string;
@@ -39,12 +39,6 @@ interface NowResponse {
   next: NextEvent[];
   laterToday: LaterTodayEvent[];
   accounts: AccountReport[];
-}
-
-function timeInBusinessZone(isoTime: string): string {
-  return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: businessTimeZone }).format(
-    new Date(isoTime),
-  );
 }
 
 function todayInBusinessZone(): string {
