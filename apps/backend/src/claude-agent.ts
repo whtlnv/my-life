@@ -39,6 +39,18 @@ interface ClaudeAgentDependencies {
   createMessage: (request: ClaudeAgentRequest) => Promise<ClaudeAgentResponse | undefined>;
 }
 
+function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgentTool[]) {
+  return Promise.all(
+    content
+      .filter((block) => block.type === 'tool_use')
+      .map(async (block) => ({
+        type: 'tool_result',
+        tool_use_id: block.id,
+        content: JSON.stringify(await tools.find((tool) => tool.name === block.name)?.run(block.input)),
+      })),
+  );
+}
+
 export function createClaudeAgent({
   model,
   promptPath,
@@ -54,15 +66,7 @@ export function createClaudeAgent({
       const messages: ClaudeAgentRequest['messages'] = turns.map(({ role, text }) => ({ role, content: text }));
       let response = await createMessage({ model, system, messages });
       while (response?.stop_reason === 'tool_use') {
-        const toolResults = await Promise.all(
-          response.content
-            .filter((block) => block.type === 'tool_use')
-            .map(async (block) => ({
-              type: 'tool_result',
-              tool_use_id: block.id,
-              content: JSON.stringify(await tools.find((tool) => tool.name === block.name)?.run(block.input)),
-            })),
-        );
+        const toolResults = await runRequestedTools(response.content, tools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
         response = await createMessage({ model, system, messages });
       }
