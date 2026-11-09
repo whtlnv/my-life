@@ -379,4 +379,31 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('a second poll of the same workspace asks Slack only for the thread replies newer than the first poll', async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      const repliesRequests: URL[] = [];
+      const recordingFetch: typeof fetch = (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        if (url.pathname === '/conversations.replies') repliesRequests.push(url);
+        return fetch(request, init);
+      };
+      const poll = () =>
+        pollSlackWorkspace({
+          fetch: recordingFetch,
+          apiUrl: slack.url,
+          workspace: { teamId: 'T0001', userToken: slack.token },
+          store,
+        });
+
+      await poll();
+      repliesRequests.length = 0;
+      await poll();
+
+      expect(repliesRequests.map((url) => url.searchParams.get('oldest'))).toEqual(['1762700300.000400']);
+    } finally {
+      await slack.close();
+    }
+  });
 });

@@ -57,9 +57,16 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
     messages: { matches: { thread_ts: string; channel: { id: string } }[] };
   }>(input, `/search.messages?query=${encodeURIComponent(ownMessagesQuery)}`);
   for (const match of messages.matches) {
+    const newestStoredTimestamp = input.store
+      .listMessages()
+      .filter((message) => message.conversationId === match.channel.id)
+      .map((message) => message.timestamp)
+      .sort()
+      .at(-1);
+    const oldestParameter = newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
     const { messages: replies } = await callSlack<{ messages: SlackMessage[] }>(
       input,
-      `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}`,
+      `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}${oldestParameter}`,
     );
     for (const reply of replies) {
       saveSlackMessage(input, match.channel.id, reply);
