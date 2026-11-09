@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 export const unverifiedCitationText = 'Unverified citation';
@@ -32,13 +32,53 @@ async function askAgent(message: string): Promise<Turn[]> {
   return turns;
 }
 
+interface ConversationSummary {
+  id: string;
+  title: string;
+}
+
+async function listConversations(): Promise<ConversationSummary[]> {
+  const response = await fetch('/agent/conversations');
+  if (!response.ok) {
+    return [];
+  }
+  const { conversations } = (await response.json()) as { conversations?: ConversationSummary[] };
+  return conversations ?? [];
+}
+
+async function loadTurns(conversationId: string): Promise<Turn[]> {
+  const response = await fetch(`/agent/conversations/${conversationId}`);
+  const { turns } = (await response.json()) as { turns: Turn[] };
+  return turns;
+}
+
+async function continueConversation(conversationId: string, message: string): Promise<Turn[]> {
+  await fetch(`/agent/conversations/${conversationId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+  return loadTurns(conversationId);
+}
+
 export function AgentPage() {
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [conversationId, setConversationId] = useState<string>();
+
+  useEffect(() => {
+    void listConversations().then(setConversations);
+  }, []);
+
+  const choose = (id: string) => {
+    setConversationId(id);
+    void loadTurns(id).then(setTurns);
+  };
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    void askAgent(question).then(setTurns);
+    const reply = conversationId === undefined ? askAgent(question) : continueConversation(conversationId, question);
+    void reply.then(setTurns);
   };
 
   return (
@@ -46,6 +86,20 @@ export function AgentPage() {
       <header className="page-header">
         <h1 className="page-title">Agent</h1>
       </header>
+      <ul>
+        {conversations.map((conversation) => (
+          <li key={conversation.id}>
+            <button
+              type="button"
+              onClick={() => {
+                choose(conversation.id);
+              }}
+            >
+              {conversation.title}
+            </button>
+          </li>
+        ))}
+      </ul>
       <ol>
         {turns.map((turn, index) => (
           <li key={index}>

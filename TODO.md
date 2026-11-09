@@ -68,7 +68,7 @@
 - [x] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
 - [x] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
 - [x] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
-- [ ] On the agent page, choosing a past conversation shows its turns, and the next question continues it
+- [x] On the agent page, choosing a past conversation shows its turns, and the next question continues it
 - [ ] On the agent page, a "What the agent did" list shows each action, with an Undo button only on reversible ones, and pressing Undo marks the action undone
 - [ ] The shipped backend answers agent messages through Claude with the agent model and the real store-backed tools, as composed by its production entry point
   - note (supervisor 2026-11-09, keystone): `createClaudeAgent` in `apps/backend/src/claude-agent.ts` never sends tool definitions to Claude (`createMessage` gets only model, system, messages) and ignores the `tools` passed to `respond`, so in production the agent can call no tool at all. The test must see each offered tool's name, description and input schema in the request (send_message and delete_message included, so refusals can be recorded) and a tool_use answered by the store-backed tool.
