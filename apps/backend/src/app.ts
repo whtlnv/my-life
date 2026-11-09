@@ -138,7 +138,7 @@ export interface AppOptions {
       profile: string;
       calendar: ReturnType<typeof mergeCalendarSnapshots>;
       urgentContacts: unknown[];
-    }) => Promise<{ ranks: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
+    }) => Promise<{ ranks?: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
   };
   summary?: {
     summarize: (request: {

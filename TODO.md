@@ -99,5 +99,5 @@
 - [x] The badge count includes the unanswered Needs input questions
 - [x] The badge count includes the open tasks whose due time has passed
 - [x] The badge count leaves out the open tasks due later
-- [ ] The shipped backend (`apps/backend/src/main.ts`) serves `GET /people`, the timelines, `GET /needs-input` and the task routes, and runs the prioritization pass on its schedule through the real Claude adapter with its prompt file
+- [x] The shipped backend (`apps/backend/src/main.ts`) serves `GET /people`, the timelines, `GET /needs-input` and the task routes, and runs the prioritization pass on its schedule through the real Claude adapter with its prompt file
 - [ ] `scripts/demo.sh` seeds VIP, urgent and ordinary contacts, Needs input questions and ranked tasks; the People, Needs input and _now_ pages are screenshot-verified against it

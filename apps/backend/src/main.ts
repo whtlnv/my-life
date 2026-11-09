@@ -6,6 +6,7 @@ import { serve } from '@hono/node-server';
 
 import { createApp, currentTriagePromptVersion } from './app';
 import { createClaudeFilter } from './claude-filter';
+import { createClaudePrioritization } from './claude-prioritization';
 import { createClaudeSummary } from './claude-summary';
 import { createClaudeTriage, type ClaudePricing, type ClaudeRequest } from './claude-triage';
 import { createEscalatingTriage } from './escalating-triage';
@@ -18,6 +19,7 @@ const settings = readStartupSettings(process.env, homedir());
 const promptPath = fileURLToPath(new URL(`../prompts/${currentTriagePromptVersion}.md`, import.meta.url));
 const filterPromptPath = fileURLToPath(new URL('../prompts/filter-v1.md', import.meta.url));
 const digestSummaryPromptPath = fileURLToPath(new URL('../prompts/digest-summary-v1.md', import.meta.url));
+const prioritizationPromptPath = fileURLToPath(new URL('../prompts/prioritization-v1.md', import.meta.url));
 const profileDirectory =
   process.env.MY_LIFE_PROFILE_DIRECTORY ?? fileURLToPath(new URL('../../../profile', import.meta.url));
 const triageRunIntervalInMilliseconds = 30_000;
@@ -121,6 +123,22 @@ const summary =
           }),
       });
 
+const prioritization =
+  claude === undefined
+    ? undefined
+    : createClaudePrioritization({
+        model: settings.prioritizationModel,
+        promptPath: prioritizationPromptPath,
+        pricing: pricingFor(settings.prioritizationModel),
+        createMessage: (request) =>
+          claude.createMessage({
+            model: request.model,
+            system: request.system,
+            messages: request.messages,
+            tools: request.tools.map((tool) => ({ ...tool, strict: true })),
+          }),
+      });
+
 const app = createApp({
   allowedEmails: settings.allowedEmails,
   databasePath: settings.databasePath,
@@ -132,11 +150,18 @@ const app = createApp({
   ...(triage === undefined ? {} : { triage }),
   ...(filter === undefined ? {} : { filter }),
   ...(summary === undefined ? {} : { summary }),
+  ...(prioritization === undefined ? {} : { prioritization }),
 });
 
 function runTriage(): void {
   Promise.resolve(app.request('/triage-run', { method: 'POST' })).catch((error: unknown) => {
     console.error('triage run failed', error);
+  });
+}
+
+function runPrioritization(): void {
+  Promise.resolve(app.request('/prioritization-run', { method: 'POST' })).catch((error: unknown) => {
+    console.error('prioritization run failed', error);
   });
 }
 
@@ -149,6 +174,7 @@ serve({ fetch: app.fetch, port: settings.port, hostname: '127.0.0.1' }, (info) =
   );
   if (triage !== undefined) {
     runTriage();
+    runPrioritization();
     setInterval(runTriage, triageRunIntervalInMilliseconds);
   }
 });

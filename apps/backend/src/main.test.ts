@@ -15,6 +15,7 @@ import { budgetReviewReport, temporaryDatabasePath } from './app.test-support';
 
 interface RecordedAnthropicRequest {
   model: string;
+  system?: unknown;
   tools: { name: string }[];
 }
 
@@ -216,5 +217,21 @@ describe('the shipped backend (main.ts)', () => {
     const { vip } = await getJson<{ vip: { emails: string[] }[] }>(`${baseUrl}/people`);
 
     expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+  }, 30_000);
+
+  it('runs the prioritization pass on its own at startup, asking the default prioritization model through rank_tasks under its prompt file', async () => {
+    const recorded: RecordedAnthropicRequest[] = [];
+    fakeAnthropic = await startFakeAnthropic(recorded);
+    await startShippedBackend(fakeAnthropic, {});
+    const isPrioritizationRequest = (request: RecordedAnthropicRequest) =>
+      request.tools.some(({ name }) => name === 'rank_tasks');
+
+    for (let attempt = 0; attempt < 50 && !recorded.some(isPrioritizationRequest); attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    expect(recorded.find(isPrioritizationRequest)).toEqual(
+      expect.objectContaining({ model: 'claude-opus-5-5', system: expect.stringMatching(/\S/) }),
+    );
   }, 30_000);
 });

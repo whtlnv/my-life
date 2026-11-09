@@ -18,7 +18,7 @@ interface ClaudePrioritizationDependencies {
 }
 
 interface PrioritizationContext {
-  tasks: { id: string; title: string; accountEmail: string; due?: string; waitingOn?: string }[];
+  tasks: { id: string; title: string; accountEmail: string; due?: string | undefined; waitingOn?: string }[];
   profile: string;
   calendar: unknown[];
   urgentContacts: unknown[];
