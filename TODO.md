@@ -1,3 +1,57 @@
 # TODO.md — working set
 
 
+## Phase 4 — The agent
+
+- [ ] When the user sends a first message to the agent, a new conversation is created and the model's text reply is returned as the conversation's assistant turn
+- [ ] A second message in the same conversation sends the earlier user and assistant turns to the model along with the new one
+- [ ] Opening a conversation returns every turn in the order it was said
+- [ ] The list of conversations shows each with its first user message as its title, most recently active first
+- [ ] A conversation and its turns are still there after the backend restarts
+- [ ] The agent's requests use the configured agent model, Claude Opus 5.5 when no setting is given
+- [ ] The agent's requests use the model named by the agent model setting when one is given
+- [ ] The agent's system prompt carries the versioned agent prompt file and the user's profile text
+- [ ] Sending a message to the agent when no Anthropic key is configured answers that the agent is unavailable instead of crashing
+- [ ] Each agent call's cost is logged against the daily spend ceiling
+- [ ] Once the daily spend ceiling is reached, a message to the agent answers that the ceiling is reached and the model is not called
+- [ ] Below the daily spend ceiling, a message to the agent calls the model
+- [ ] When the model asks for a tool, the tool's result is sent back to the model and the model's following text becomes the reply
+- [ ] When the model asks for a tool that does not exist, an error result goes back to the model and the turn still completes
+- [ ] When a tool's input fails its schema, a validation error goes back to the model and the tool does not run
+- [ ] When the model keeps asking for tools past the configured round limit, the turn stops and the reply says it stopped
+- [ ] `search_messages` returns the stored messages whose body, subject or summary contains the query words, each with its id, account, sender, subject, date and Gmail link, and leaves out messages without them
+- [ ] `search_messages` ranks a message containing every query word above one containing only some of them (backlog: apps/backend/src/app.ts:990 `GET /search` scans every stored message instead of an SQLite FTS5 index)
+- [ ] `read_thread` returns every stored message of the given message's thread with its body, oldest first, and no message from another thread
+- [ ] `contact_timeline` returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them
+- [ ] `calendar_day` returns the events of the given date across every account's calendars, in the business time zone, with their Meet links, and no event of another day
+- [ ] `tasks` returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks
+- [ ] `digest` returns the waiting digests with their account, category, count and summary lines
+- [ ] A reply that cites a message or event a tool returned in that turn shows the cited item with its link
+- [ ] A reply that cites a message or event no tool returned in that turn shows the citation as unverified, without a link
+- [ ] An agent action outside the allowed set (anything that sends or deletes) is refused, recorded as refused, and changes nothing
+- [ ] An allowed agent action is carried out and recorded with the conversation it came from and the time
+- [ ] `archive_message` stores an archive verdict for the message attributed to the agent, and the message's account receives an archive command
+- [ ] `archive_message` on a message id the store does not know returns an error to the model and records nothing
+- [ ] `label_message` sends the message's account a label command with the given label name that leaves the message in the inbox
+- [ ] The extension applies a label command by adding the named label, creating it if missing, without removing the message from the inbox, then acknowledges the command
+- [ ] `create_task` with a source message creates an open task with the given title, linked to that message and its account
+- [ ] `create_task` without a source message creates an open task linked to the agent conversation it came from
+- [ ] `mark_vip` puts the contact under VIP in the People view, as a Needs input answer would
+- [ ] `update_contact` saves a note, organization or lists on the contact, as an edit from the People page would ("Luis is my boss" is kept as his note)
+- [ ] `approve_filter_proposal` stores an approval for the proposal, and its account receives the create-filter command
+- [ ] `reject_filter_proposal` stores a rejection, and the proposal leaves the filter proposals list
+- [ ] `write_draft` sends the replied-to message's account a create-draft command carrying the thread, recipients, subject and body
+- [ ] The extension carries out a create-draft command by creating a Gmail draft in that thread, never sending it, then acknowledges the command
+- [ ] The list of agent actions shows every action newest first, with its tool, target, conversation, time and whether it can be undone
+- [ ] Undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label
+- [ ] Undoing an agent label sends the message's account a command that removes that label
+- [ ] Undoing an agent VIP mark removes the mark
+- [ ] Undoing an agent-created task removes it from the open tasks
+- [ ] Undoing an agent action that cannot be reversed (a draft, a filter approval already carried out) is refused and changes nothing
+- [ ] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
+- [ ] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
+- [ ] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
+- [ ] On the agent page, choosing a past conversation shows its turns, and the next question continues it
+- [ ] On the agent page, a "What the agent did" list shows each action, with an Undo button only on reversible ones, and pressing Undo marks the action undone
+- [ ] The shipped backend answers agent messages through Claude with the agent model and the real store-backed tools, as composed by its production entry point
+- [ ] The demo seeds an agent conversation with citations and agent actions, and the agent page is screenshot-verified over `scripts/demo.sh`
