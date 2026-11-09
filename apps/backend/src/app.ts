@@ -62,6 +62,7 @@ import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
 import { openSlackMessageStore } from './slack-message-store';
+import { pollSlackWorkspaces } from './slack-poll';
 import { openSpendStore } from './spend-store';
 import { openTaskEventStore } from './task-event-store';
 import {
@@ -134,6 +135,8 @@ export interface AppOptions {
   dashboardDirectory?: string;
   profileDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
+  slackApiUrl?: string;
+  slackWorkspaces?: { teamId: string; userToken: string }[];
   urgency?: { unansweredAskBusinessDays: number };
   triage?: {
     propose: (message: TriageRequest, examples?: unknown[]) => Promise<TriageResult>;
@@ -572,6 +575,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
+  app.post('/slack-poll', async (context) => {
+    await pollSlackWorkspaces({
+      fetch,
+      apiUrl: options.slackApiUrl ?? '',
+      workspaces: options.slackWorkspaces ?? [],
+      store: slackMessageStore,
+    });
+    return context.json({});
+  });
   app.post('/register', async (context) => {
     const { email } = await context.req.json<{ email: string }>();
     if (!isAllowed(email)) {

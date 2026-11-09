@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { createApp } from '@my-life/backend/app';
 import { openSlackMessageStore } from '@my-life/backend/slack-message-store';
 import { pollSlackWorkspace, pollSlackWorkspaces } from '@my-life/backend/slack-poll';
 
@@ -667,6 +668,25 @@ describe('Slack fake server', () => {
       expect(store.listMessages()).toEqual([
         expect.objectContaining({ workspaceTeamId: 'T0001', text: directMessageText }),
       ]);
+    } finally {
+      await slack.close();
+    }
+  });
+  it("POST /slack-poll on a backend whose Slack API URL points at the fake stores the direct-message scenario's DM, which GET /slack-messages then serves", async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      await backend.request('/slack-poll', { method: 'POST' });
+      const { messages } = (await (await backend.request('/slack-messages')).json()) as {
+        messages: { workspaceTeamId: string; text: string }[];
+      };
+
+      expect(messages).toEqual([expect.objectContaining({ workspaceTeamId: 'T0001', text: directMessageText })]);
     } finally {
       await slack.close();
     }
