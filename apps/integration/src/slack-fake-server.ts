@@ -128,7 +128,12 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
       return;
     }
     if (url.pathname === '/search.messages') {
-      searchQueries.push(url.searchParams.get('query') ?? '');
+      const query = url.searchParams.get('query') ?? '';
+      searchQueries.push(query);
+      if (scenario === 'mention' && query.startsWith('from:')) {
+        response.end(JSON.stringify({ ok: true, messages: { matches: [] } }));
+        return;
+      }
     }
     if (url.pathname === '/users.info') {
       response.end(JSON.stringify(usersInfoResponse(url.searchParams.get('user') ?? '')));

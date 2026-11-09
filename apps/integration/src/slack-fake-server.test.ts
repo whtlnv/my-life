@@ -105,6 +105,27 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('in the mention scenario returns no matches from search.messages for from:<@U0000>, while any other query still returns the mention', async () => {
+    const slack = await startSlackFakeServer('mention');
+    try {
+      const search = async (query: string) =>
+        (await (
+          await fetch(`${slack.url}/search.messages?query=${encodeURIComponent(query)}`, {
+            headers: { Authorization: `Bearer ${slack.token}` },
+          })
+        ).json()) as { ok: boolean; messages: { matches: { text: string }[] } };
+
+      const ownMessages = await search(`from:<@${ownSlackUserId}>`);
+      const mentions = await search(`<@${ownSlackUserId}>`);
+
+      expect(ownMessages.ok).toBe(true);
+      expect(ownMessages.messages.matches).toEqual([]);
+      expect(mentions.messages.matches.map((match) => match.text)).toEqual([mentionMessageText]);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('answers users.info with the display name of each user in the scenario', async () => {
     const slack = await startSlackFakeServer('thread-reply');
     try {
