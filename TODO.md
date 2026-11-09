@@ -30,6 +30,7 @@
 - [x] `tasks` returns the open tasks with priority, due time, waiting-on person, account and source link, and leaves out done tasks
 - [x] `digest` returns the waiting digests with their account, category, count and summary lines
 - [x] A reply that cites a message or event a tool returned in that turn shows the cited item with its link
+- [ ] A turn stopped at the tool-round limit still reports the cost of every model call it made, so it is logged against the daily spend
 - [ ] A reply that cites a message or event no tool returned in that turn shows the citation as unverified, without a link
 - [ ] An agent action outside the allowed set (anything that sends or deletes) is refused, recorded as refused, and changes nothing
 - [ ] An allowed agent action is carried out and recorded with the conversation it came from and the time
