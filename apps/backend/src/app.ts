@@ -1026,17 +1026,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map(({ messageId, labelName }) => ({ id: `label-${messageId}`, type: 'label', messageId, label: labelName }));
     const draftCommands = draftRequests
       .filter(({ messageId }) => isMessageOfAccount(messageId))
-      .map(({ messageId, body }) => {
-        const message = reportedMessageWithId(reportedMessages, messageId);
-        return {
-          id: `draft-${messageId}`,
-          type: 'create-draft',
-          threadId: message?.threadId,
-          to: [contactFromSender(String(message?.from)).email],
-          subject: `Re: ${String(message?.subject)}`,
-          body,
-        };
-      });
+      .map((request) => createDraftCommand(request, reportedMessageWithId(reportedMessages, request.messageId)));
     const pendingCommands = [
       ...archiveCommands,
       ...filterCommands,
@@ -1693,6 +1683,17 @@ function latestProposalFor<T extends { messageId: string }>(proposals: T[], mess
 
 function reportedMessageWithId(messages: ReportedMessage[], messageId: string): ReportedMessage | undefined {
   return messages.find((message) => message.id === messageId);
+}
+
+function createDraftCommand({ messageId, body }: DraftRequest, repliedToMessage: ReportedMessage | undefined) {
+  return {
+    id: `draft-${messageId}`,
+    type: 'create-draft',
+    threadId: repliedToMessage?.threadId,
+    to: [contactFromSender(String(repliedToMessage?.from)).email],
+    subject: `Re: ${String(repliedToMessage?.subject)}`,
+    body,
+  };
 }
 
 // One organization per name: each reported message lists under the organization its latest proposal names, or
