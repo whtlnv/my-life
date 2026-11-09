@@ -243,4 +243,10 @@ describe('startup settings', () => {
 
     expect(settings.slackApiUrl).toBe('https://slack.com/api');
   });
+
+  it('calls the Slack API at MY_LIFE_SLACK_API_URL when it is set', () => {
+    const settings = readStartupSettings({ MY_LIFE_SLACK_API_URL: 'http://localhost:4100/api' }, '/Users/ana');
+
+    expect(settings.slackApiUrl).toBe('http://localhost:4100/api');
+  });
 });

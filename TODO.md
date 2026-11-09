@@ -12,7 +12,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] With `MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS` unset, the Slack polling interval is 60 s
 - [x] With `MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS=30`, the Slack polling interval is 30 s
 - [x] With `MY_LIFE_SLACK_API_URL` unset, the Slack API base URL is `https://slack.com/api`
-- [ ] With `MY_LIFE_SLACK_API_URL` set, the Slack API base URL is that value
+- [x] With `MY_LIFE_SLACK_API_URL` set, the Slack API base URL is that value
 
 ### Slack fake server
 

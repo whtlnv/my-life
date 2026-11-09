@@ -84,7 +84,7 @@ export function readStartupSettings(
     slackPollingIntervalInMilliseconds: secondsToMilliseconds(
       parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, defaultSlackPollingIntervalInSeconds),
     ),
-    slackApiUrl: 'https://slack.com/api',
+    slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? 'https://slack.com/api',
   };
 }
 
