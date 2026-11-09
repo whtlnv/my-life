@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 13:23 · `apps/backend/src/app-slack.test.ts::lists at GET /slack-contacts/:workspaceTeamId/:userId/timeline the Slack messages of that contact, newest first, each with its workspace and Slack permalink`
+- Behavior: A Slack contact's timeline lists their Slack messages newest first, each with its workspace and Slack permalink
+- Predicted: AssertionError — the route is missing, so `messages` is undefined instead of the two messages
+- Actual: SyntaxError — `getJson` parses Hono's plain-text `404 Not Found` body as JSON
+- Type: right-reason mismatch
+- Resolution: The route is still what's missing; a missing route surfaces as a JSON parse error through `getJson`, not as an assertion. Kept the test as written.
+
 ## 2026-11-09 13:08 · `apps/backend/src/app-slack.test.ts::leaves out of GET /waiting-on a Slack mention the user answered in its thread`
 - Behavior: A Slack mention the user answered in its thread does not appear in `GET /waiting-on`
 - Predicted: passes on first run (no right-reason failure available): `userRepliedLaterInConversation` already hides any message followed by a later `sentByUser` message in the same `conversationId`, and a thread reply shares its channel's conversation id

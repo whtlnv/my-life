@@ -272,4 +272,48 @@ describe('createApp Slack messages', () => {
       }),
     ]);
   });
+  it('lists at GET /slack-contacts/:workspaceTeamId/:userId/timeline the Slack messages of that contact, newest first, each with its workspace and Slack permalink', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackMessageStore = openSlackMessageStore(databasePath);
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Did you get the contract?',
+      timestamp: '1762699000.000100',
+    });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0002',
+      senderName: 'Bruno',
+      text: '<@U0000> can you review the launch plan?',
+      timestamp: '1762699500.000100',
+    });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/slack-contacts/T0001/U0001/timeline');
+
+    expect(messages).toEqual([
+      expect.objectContaining({
+        workspaceTeamId: 'T0001',
+        text: 'Can you look at the contract today?',
+        permalink: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
+      }),
+      expect.objectContaining({
+        workspaceTeamId: 'T0001',
+        text: 'Did you get the contract?',
+        permalink: 'https://app.slack.com/client/T0001/D0001/p1762699000000100',
+      }),
+    ]);
+  });
 });

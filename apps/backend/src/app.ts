@@ -576,6 +576,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
+  app.get('/slack-contacts/:workspaceTeamId/:userId/timeline', (context) => {
+    const { workspaceTeamId, userId } = context.req.param();
+    const messages = slackMessageStore
+      .listMessages()
+      .filter((message) => message.workspaceTeamId === workspaceTeamId && message.senderUserId === userId)
+      .sort((first, second) => Number(second.timestamp) - Number(first.timestamp))
+      .map((message) => ({ ...message, permalink: slackPermalink(message) }));
+    return context.json({ messages });
+  });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
   interface SlackWorkspacePoll {
     teamId: string;
