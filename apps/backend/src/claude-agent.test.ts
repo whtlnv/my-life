@@ -310,9 +310,11 @@ describe('Claude agent', () => {
       ],
     });
 
-    expect(sentRequests[0]?.tools).toEqual([
-      { name: 'tasks', description: 'The open tasks.', input_schema: { type: 'object', properties: {} } },
-    ]);
+    expect(sentRequests[0]?.tools).toContainEqual({
+      name: 'tasks',
+      description: 'The open tasks.',
+      input_schema: { type: 'object', properties: {} },
+    });
     expect(sentRequests[1]?.messages.at(-1)).toEqual({
       role: 'user',
       content: [
@@ -351,5 +353,38 @@ describe('Claude agent', () => {
     const reply = await agent.respond({ turns: [{ role: 'user', text: 'Did Luis send the numbers?' }] });
 
     expect(reply.citations).toEqual([{ id: 'message-1' }, { id: 'event-2' }]);
+  });
+  it('offers Claude a cite_sources tool that takes the cited ids, and answers its call without an error', async () => {
+    const requests: { tools?: { name: string; description: string; input_schema: unknown }[]; messages: unknown[] }[] =
+      [];
+    const responses = [
+      {
+        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'cite_sources', input: { ids: ['message-1'] } }],
+        stop_reason: 'tool_use',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+      {
+        content: [{ type: 'text', text: 'Luis sent the quarterly numbers.' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+    ];
+    const agent = createClaudeAgent({
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
+      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: (request) => {
+        requests.push(structuredClone(request));
+        return Promise.resolve(responses.shift() ?? responses[0]);
+      },
+    });
+
+    await agent.respond({ turns: [{ role: 'user', text: 'Did Luis send the numbers?' }], tools: [] });
+
+    const citeSources = requests[0]?.tools?.find(({ name }) => name === 'cite_sources');
+    expect(citeSources?.description).toMatch(/\S/);
+    expect(citeSources?.input_schema).toMatchObject({ required: ['ids'] });
+    expect(JSON.stringify(requests[1]?.messages.at(-1))).not.toContain('is_error');
   });
 });

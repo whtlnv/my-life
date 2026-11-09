@@ -75,6 +75,20 @@ function citedSources(content: ClaudeAgentContentBlock[]) {
   );
 }
 
+// Claude names the messages and events its answer rests on by calling this tool; the backend then checks each id
+// against what the turn's searches returned and marks the rest unverified.
+const citeSourcesTool: ClaudeAgentTool = {
+  name: 'cite_sources',
+  description:
+    'Cite the messages and events your answer relies on, by the ids the other tools returned. Call it once before answering.',
+  inputSchema: {
+    type: 'object',
+    properties: { ids: { type: 'array', items: { type: 'string' } } },
+    required: ['ids'],
+  },
+  run: () => Promise.resolve({ cited: true }),
+};
+
 function toToolDefinition({ name, description, inputSchema }: ClaudeAgentTool) {
   return { name, description, input_schema: inputSchema };
 }
@@ -93,11 +107,12 @@ export function createClaudeAgent({
   return {
     respond: async ({
       turns,
-      tools: turnTools = tools,
+      tools: offeredTools = tools,
     }: {
       turns: { role: string; text: string }[];
       tools?: ClaudeAgentTool[];
     }) => {
+      const turnTools = [...offeredTools, citeSourcesTool];
       const prompt = readFileSync(promptPath, 'utf8');
       const profile = readFileSync(join(profileDirectory, 'accounts.md'), 'utf8');
       const system = `${prompt}\n\n${profile}`;
