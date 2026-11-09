@@ -9,9 +9,10 @@ const urgencySettings = {
   vipWaitingBusinessDays: 1,
 };
 
+const mondayFivePm = '2026-11-09T23:00:00.000Z';
+
 describe('contactUrgency', () => {
   it('is urgent, with the reason "unanswered ask", when the contact asked the user something 2 business days ago and nobody answered', () => {
-    const mondayFivePm = '2026-11-09T23:00:00.000Z';
     const wednesdayFivePm = '2026-11-11T23:00:00.000Z';
     const messages = [
       {
@@ -29,7 +30,6 @@ describe('contactUrgency', () => {
   });
 
   it('is not urgent when the contact asked the user something only 1 business day ago and nobody answered', () => {
-    const mondayFivePm = '2026-11-09T23:00:00.000Z';
     const tuesdayFivePm = '2026-11-10T23:00:00.000Z';
     const messages = [
       {
@@ -47,7 +47,6 @@ describe('contactUrgency', () => {
   });
 
   it('is not urgent when the user answered the ask in the same thread, however old the ask', () => {
-    const mondayFivePm = '2026-11-09T23:00:00.000Z';
     const tuesdayNineAm = '2026-11-10T15:00:00.000Z';
     const threeWeeksLater = '2026-11-30T23:00:00.000Z';
     const messages = [
@@ -130,7 +129,6 @@ describe('contactUrgency', () => {
   });
 
   it('is urgent, with the reason "VIP waiting", when a VIP contact\'s message has waited a business day for a reply', () => {
-    const mondayFivePm = '2026-11-09T23:00:00.000Z';
     const tuesdayFivePm = '2026-11-10T23:00:00.000Z';
     const messages = [
       {
@@ -148,7 +146,6 @@ describe('contactUrgency', () => {
   });
 
   it("is not urgent when a non-VIP contact's message that asks nothing has waited several business days for a reply", () => {
-    const mondayFivePm = '2026-11-09T23:00:00.000Z';
     const thursdayFivePm = '2026-11-12T23:00:00.000Z';
     const messages = [
       {
