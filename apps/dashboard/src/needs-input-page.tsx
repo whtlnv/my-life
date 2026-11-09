@@ -16,6 +16,10 @@ interface TaskProposal {
 
 const confirmKey = 'c';
 const rejectKey = 'r';
+const decisionByKey: Record<string, string> = {
+  [confirmKey]: 'confirmation',
+  [rejectKey]: 'rejection',
+};
 
 // One key per answer: the answer's first letter.
 function keyOf(choice: string): string {
@@ -32,6 +36,10 @@ function postAnswer(question: Question, choice: string): void {
       answer: choice,
     }),
   });
+}
+
+function postDecision(proposal: TaskProposal, decision: string): void {
+  void fetch(`/task-proposals/${proposal.id}/${decision}`, { method: 'POST' });
 }
 
 export function NeedsInputPage() {
@@ -75,9 +83,9 @@ export function NeedsInputPage() {
     const [proposal] = proposals;
     if (proposal === undefined) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      const decision = { [confirmKey]: 'confirmation', [rejectKey]: 'rejection' }[event.key];
+      const decision = decisionByKey[event.key];
       if (decision === undefined) return;
-      void fetch(`/task-proposals/${proposal.id}/${decision}`, { method: 'POST' });
+      postDecision(proposal, decision);
       setProposals((current) => current.filter((candidate) => candidate !== proposal));
     };
     document.addEventListener('keydown', onKeyDown);
