@@ -3,6 +3,7 @@ import { backfillBodiesOnce } from './body-backfill';
 import { pollCalendarOnce } from './calendar-poll';
 import { importContactsOnce } from './contacts-import';
 import { carryOutMessageCommands } from './gmail-archive';
+import { carryOutDraftCommands } from './gmail-draft';
 import { carryOutFilterCommands } from './gmail-filter';
 import { pollGmailOnce } from './gmail-poll';
 import type { FetchFunction } from './fetch-function';
@@ -54,6 +55,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     const accountRequestOptions = { fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl };
     await carryOutMessageCommands(accountRequestOptions);
     await carryOutFilterCommands(accountRequestOptions);
+    await carryOutDraftCommands(accountRequestOptions);
     await backfillBodiesOnce(accountRequestOptions);
   };
   const pollGmailAndLogFailure = logFailure('Gmail poll failed', pollGmail);

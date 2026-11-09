@@ -407,6 +407,74 @@ describe('startExtension', () => {
     ]);
   });
 
+  it('carries out a pending create-draft command by creating a Gmail draft in its thread, never sending it, beside an archive command, and acknowledges the draft only once Gmail created it', async () => {
+    const events: string[] = [];
+    const createdDrafts: { threadId: string; raw: string }[] = [];
+    const acknowledgedCommandIds = new Set<string>();
+    let gmailRefusesNextDraft = true;
+    const pendingCommands = [
+      { id: 'command-1', messageId: 'message-7' },
+      {
+        id: 'draft-message-1',
+        type: 'create-draft',
+        threadId: 'thread-1',
+        to: ['luis@example.com'],
+        subject: 'Re: Budget review',
+        body: 'I will review it by Friday.',
+      },
+    ];
+    const fakeFetch = routedFetch((url, init) => {
+      if (url.origin === 'https://gmail.googleapis.com' && url.pathname.includes('/send')) {
+        events.push(`send ${url.pathname}`);
+        return jsonResponse({});
+      }
+      if (isGmailLabelsRead(url, init)) {
+        return jsonResponse({ labels: [{ id: 'Label_9', name: 'my-life/archived' }] });
+      }
+      if (url.pathname.endsWith('/modify') && init?.method === 'POST') {
+        events.push(`modify ${url.pathname}`);
+        return jsonResponse({ id: 'message-7' });
+      }
+      if (url.href === `${gmailApi}/users/me/drafts` && init?.method === 'POST') {
+        if (gmailRefusesNextDraft) {
+          gmailRefusesNextDraft = false;
+          events.push('draft refused');
+          return Promise.resolve(Response.json({ error: { code: 500, message: 'Backend Error' } }, { status: 500 }));
+        }
+        const { message } = requestBody(init) as { message: { threadId: string; raw: string } };
+        createdDrafts.push(message);
+        events.push('draft created');
+        return jsonResponse({ id: 'gmail-draft-1', message: { id: 'draft-message', threadId: message.threadId } });
+      }
+      if (url.href === pendingCommandsUrl) {
+        return jsonResponse({ commands: pendingCommands.filter((command) => !acknowledgedCommandIds.has(command.id)) });
+      }
+      if (isAcknowledgementPost(url, init)) {
+        const commandId = url.pathname.split('/')[2] ?? '';
+        acknowledgedCommandIds.add(commandId);
+        events.push(`acknowledge ${commandId}`);
+        return acceptedRequest();
+      }
+      return defaultRoute(url, init);
+    });
+
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
+    await scheduledPolls.get(oneMinute)?.();
+
+    expect(events).toEqual([
+      'modify /gmail/v1/users/me/messages/message-7/modify',
+      'acknowledge command-1',
+      'draft refused',
+      'draft created',
+      'acknowledge draft-message-1',
+    ]);
+    expect(createdDrafts.map(({ threadId }) => threadId)).toEqual(['thread-1']);
+    const draftMessage = Buffer.from(createdDrafts[0]?.raw ?? '', 'base64url').toString('utf8');
+    expect(draftMessage).toContain('To: luis@example.com');
+    expect(draftMessage).toContain('Subject: Re: Budget review');
+    expect(draftMessage).toContain('I will review it by Friday.');
+  });
+
   it('imports the Google Contacts at start and again once a day, and a scheduled Gmail poll imports none', async () => {
     const contactsImports: unknown[] = [];
     const fakeFetch = routedFetch(recordingPostsTo('/contacts-import', contactsImports));
