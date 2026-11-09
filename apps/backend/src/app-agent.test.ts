@@ -1228,6 +1228,28 @@ describe('backend app: the agent', () => {
     );
   });
 
+  it("after a backend restart, a draft the agent wrote that the extension has not picked up is still in the account's commands", async () => {
+    const { agent, runTool } = agentRecordingOfferedTools('Done.');
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    await proposeBudgetReview(beforeRestart);
+    await postJson(beforeRestart, '/agent/conversations', { message: 'Draft a reply to Luis about the budget' });
+    await runTool('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
+
+    const afterRestart = createApp(options);
+
+    const commands = await pendingCommandsOf(afterRestart, 'ana@example.com');
+    expect(commands).toEqual([
+      expect.objectContaining({ type: 'create-draft', threadId: 'thread-1', body: 'I will review it by Friday.' }),
+    ]);
+  });
+
   it('a second label the agent asks for on a message whose first label was picked up is still sent', async () => {
     const { agent, runTool } = agentRecordingOfferedTools('Done.');
     const app = createApp({

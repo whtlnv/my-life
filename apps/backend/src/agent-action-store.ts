@@ -9,6 +9,7 @@ export interface StoredAgentAction {
   undoable: boolean;
   undone?: boolean;
   labelName?: string;
+  body?: string;
   outcome?: 'refused';
 }
 

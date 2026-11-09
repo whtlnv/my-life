@@ -176,11 +176,6 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
-interface DraftRequest {
-  messageId: string;
-  body: string;
-}
-
 function stringInputs(...required: string[]): AgentToolInputSchema {
   return {
     type: 'object',
@@ -987,7 +982,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     undoAutomaticStore.save(messageId);
     return context.body(null, 200);
   });
-  const draftRequests: DraftRequest[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
     const verdicts = verdictStore.loadAll();
@@ -1055,9 +1049,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .loadAll()
       .filter(({ tool, target, outcome }) => tool === 'label_message' && !outcome && isMessageOfAccount(target))
       .map(({ id, target: messageId, labelName }) => ({ id: `label-${id}`, type: 'label', messageId, label: labelName }));
-    const draftCommands = draftRequests
-      .filter(({ messageId }) => isMessageOfAccount(messageId))
-      .map((request) => createDraftCommand(request, reportedMessageWithId(reportedMessages, request.messageId)));
+    const draftCommands = agentActionStore
+      .loadAll()
+      .filter(({ tool, target, outcome }) => tool === 'write_draft' && !outcome && isMessageOfAccount(target))
+      .map((action) => createDraftCommand(action, reportedMessageWithId(reportedMessages, action.target)));
     const pendingCommands = [
       ...archiveCommands,
       ...filterCommands,
@@ -1273,10 +1268,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     name: 'write_draft',
     description: 'Write a Gmail draft reply to a message. Never sends it.',
     inputSchema: stringInputs('messageId', 'body'),
-    run: (input) => {
-      draftRequests.push(input as DraftRequest);
-      return Promise.resolve({});
-    },
+    // The draft command is derived from the recorded action, so it survives a restart.
+    run: () => Promise.resolve({}),
   };
   const markVipTool: AgentTool = {
     name: 'mark_vip',
@@ -1344,7 +1337,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const proposalTarget = (input: unknown) => (input as { proposalId: string }).proposalId;
     const createdTaskTarget = (_input: unknown, result: unknown) => (result as { taskId: string }).taskId;
     const recordAction = (
-      action: Pick<StoredAgentAction, 'tool' | 'target' | 'undoable' | 'outcome' | 'labelName'>,
+      action: Pick<StoredAgentAction, 'tool' | 'target' | 'undoable' | 'outcome' | 'labelName' | 'body'>,
     ): void => {
       agentActionStore.save({
         id: `action-${String(agentActionStore.loadAll().length + 1)}`,
@@ -1372,8 +1365,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           return { error: `The agent may not use ${tool.name}` };
         }
         const result = await tool.run(input);
-        const { labelName } = input as Pick<StoredAgentAction, 'labelName'>;
-        recordAction({ tool: tool.name, target: targetOf(input, result), undoable, ...(labelName && { labelName }) });
+        const { labelName, body } = input as Pick<StoredAgentAction, 'labelName' | 'body'>;
+        recordAction({
+          tool: tool.name,
+          target: targetOf(input, result),
+          undoable,
+          ...(labelName && { labelName }),
+          ...(body && { body }),
+        });
         return result;
       },
     });
@@ -1806,9 +1805,9 @@ function reportedMessageWithId(messages: ReportedMessage[], messageId: string): 
   return messages.find((message) => message.id === messageId);
 }
 
-function createDraftCommand({ messageId, body }: DraftRequest, repliedToMessage: ReportedMessage | undefined) {
+function createDraftCommand({ id, body }: StoredAgentAction, repliedToMessage: ReportedMessage | undefined) {
   return {
-    id: `draft-${messageId}`,
+    id: `draft-${id}`,
     type: 'create-draft',
     threadId: repliedToMessage?.threadId,
     to: [contactFromSender(String(repliedToMessage?.from)).email],
