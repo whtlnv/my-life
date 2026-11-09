@@ -60,7 +60,7 @@
   - note (supervisor 2026-11-09, keystone): `POST /agent/actions/undo` today takes `tool` and `target` from the request and falls through to archive undo for any unknown tool, so undoing a filter approval sends an undo-archive command, and a VIP mark the user set could be removed. Migrate the existing undo tests in `apps/backend/src/app-agent.test.ts` to undo by action id; keep their assertions, never delete them.
 - [x] After an agent action is undone, the list of agent actions shows it as undone, and undoing it again is refused and changes nothing
 - [x] An undone agent task leaves the open tasks without counting as finished: its history shows it as undone, not done
-- [ ] When the agent asks for a tool it may not use (sending or deleting mail), the backend refuses it, changes nothing, and the list of agent actions shows the refusal
+- [x] When the agent asks for a tool it may not use (sending or deleting mail), the backend refuses it, changes nothing, and the list of agent actions shows the refusal
   - note (supervisor 2026-11-09, keystone): `decideAgentAction` in `packages/domain/src/agent-action.ts` has no caller outside its tests; the backend never records a refusal. Wire it into the backend's action path rather than adding a second check.
 - [ ] After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
 - [ ] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page

@@ -174,6 +174,7 @@ interface AgentAction {
   at: string;
   undoable: boolean;
   undone?: boolean;
+  outcome?: 'refused';
 }
 
 interface LabelRequest {
@@ -1330,6 +1331,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         return result;
       },
     });
+    const refusedSendMessageTool: AgentTool = {
+      name: 'send_message',
+      run: (input) => {
+        agentActions.push({
+          id: `action-${String(agentActions.length + 1)}`,
+          tool: 'send_message',
+          target: messageTarget(input),
+          conversationId,
+          at: clock.now().toISOString(),
+          undoable: false,
+          outcome: 'refused',
+        });
+        return Promise.resolve({ error: 'Sending messages is not allowed' });
+      },
+    };
     const citingSearchMessagesTool: AgentTool = {
       name: searchMessagesTool.name,
       run: async (input) => {
@@ -1355,6 +1371,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         recordingAction(updateContactTool, false, emailTarget),
         recordingAction(approveFilterProposalTool, false, proposalTarget),
         recordingAction(rejectFilterProposalTool, false, proposalTarget),
+        refusedSendMessageTool,
       ],
     });
     if (!reply) {

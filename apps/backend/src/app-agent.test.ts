@@ -1098,4 +1098,34 @@ describe('backend app: the agent', () => {
       commands: commandsAfterFirstUndo,
     });
   });
+  it('a send_message request from the agent is refused, sends the account no command, and the list of agent actions shows the refusal', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I cannot send that.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    const created = (await (
+      await postJson(app, '/agent/conversations', { message: 'Send Luis a reply about the budget' })
+    ).json()) as { id: string };
+    const { commands: commandsBeforeRequest } = (await (await getCommands(app, 'ana@example.com')).json()) as {
+      commands: unknown[];
+    };
+
+    await offeredTools
+      .find((tool) => tool.name === 'send_message')
+      ?.run({ messageId: 'message-1', body: 'I will review it by Friday.' });
+
+    const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect({ actions, commands }).toMatchObject({
+      actions: [
+        { tool: 'send_message', target: 'message-1', conversationId: created.id, outcome: 'refused', undoable: false },
+      ],
+      commands: commandsBeforeRequest,
+    });
+  });
 });
