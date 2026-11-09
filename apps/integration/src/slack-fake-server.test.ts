@@ -805,6 +805,24 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('after a POST /slack-poll, GET /now lists each Slack workspace with the name its auth.test gives as team', async () => {
+    const slack = await startSlackFakeServer('direct-message', { workspaceName: 'Acme Studio' });
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      await backend.request('/slack-poll', { method: 'POST' });
+      const now = (await (await backend.request('/now')).json()) as { slackWorkspaces?: unknown };
+
+      expect(now.slackWorkspaces).toEqual([expect.objectContaining({ teamId: 'T0001', name: 'Acme Studio' })]);
+    } finally {
+      await slack.close();
+    }
+  });
 
   it('confirming reply at POST /slack-verdicts on a polled Slack DM posts nothing to Slack', async () => {
     const slack = await startSlackFakeServer('direct-message');

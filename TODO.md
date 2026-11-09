@@ -106,7 +106,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A sent Slack reply is stored with the `ts` and `channel` `chat.postMessage` returns and the user's own Slack id, so the next poll does not store it a second time (keystone: the send was stored under the Mac's clock)
 - [x] `POST /slack-sends` with empty text, or with a workspace that is not configured, is refused with 400 and posts nothing to Slack
 - [x] The shipped backend (`main.ts`), started with a workspace token and `MY_LIFE_SLACK_API_URL` pointed at the Slack fake, polls at the configured interval and serves the scenario's DM in `GET /triage-queue`, and its send route posts to the fake's `chat.postMessage`
-- [ ] A poll records each workspace's name and URL from `auth.test` (`team`, `url`); `GET /now` lists each Slack workspace with its name, and each Slack triage item carries its workspace's name (keystone: the dashboard showed team ids)
+- [x] A poll records each workspace's name and URL from `auth.test` (`team`, `url`); `GET /now` lists each Slack workspace with its name, and each Slack triage item carries its workspace's name (keystone: the dashboard showed team ids)
 - [ ] A Slack item's permalink is the workspace URL from `auth.test` followed by `archives/<conversation>/p<timestamp without the dot>`, Slack's own permalink form (keystone: the hand-built app.slack.com link did not open the message)
 - [ ] The user's own Slack identity (the `auth.test` user id of each workspace) is not listed in `GET /people`, even though their sent messages are stored
 - [ ] A Slack item's text in `GET /triage-queue` shows each `<@U…>` mention as `@` and that user's display name, falling back to the user id when the name is unknown

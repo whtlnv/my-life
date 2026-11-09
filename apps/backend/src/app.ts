@@ -588,6 +588,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
   interface SlackWorkspacePoll {
     teamId: string;
+    name?: string;
     lastSuccessfulPollAt?: string;
   }
   let slackWorkspacePolls: SlackWorkspacePoll[] | undefined;
@@ -602,6 +603,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       stale: !isAccountFresh({ email: poll.teamId, lastReportedAt, pollingIntervalInMilliseconds }, clock),
     };
   };
+  const fetchSlackWorkspaceName = async (userToken: string): Promise<string> => {
+    const slackResponse = await fetch(`${options.slackApiUrl ?? ''}/auth.test`, {
+      headers: { Authorization: `Bearer ${userToken}` },
+    });
+    const { team } = (await slackResponse.json()) as { team: string };
+    return team;
+  };
   app.post('/slack-poll', async (context) => {
     const succeededTeamIds = await pollSlackWorkspaces({
       fetch,
@@ -609,8 +617,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       workspaces: configuredSlackWorkspaces,
       store: slackMessageStore,
     });
-    slackWorkspacePolls = configuredSlackWorkspaces.map(({ teamId }) =>
-      succeededTeamIds.has(teamId) ? { teamId, lastSuccessfulPollAt: clock.now().toISOString() } : { teamId },
+    slackWorkspacePolls = await Promise.all(
+      configuredSlackWorkspaces.map(async ({ teamId, userToken }) =>
+        succeededTeamIds.has(teamId)
+          ? { teamId, name: await fetchSlackWorkspaceName(userToken), lastSuccessfulPollAt: clock.now().toISOString() }
+          : { teamId },
+      ),
     );
     return context.json({});
   });
