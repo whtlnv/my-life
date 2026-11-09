@@ -9,6 +9,7 @@ import {
   contactsImport,
   type ContactsImport,
   mailReport,
+  taskRanks,
   type TaskRanks,
   triageCategories,
   type HealthResponse,
@@ -1015,8 +1016,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .join('\n');
     const calendar = mergedCalendarEvents();
     const urgentContacts = peopleGroups().urgent;
-    taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts }))
-      .ranks;
+    const answer = taskRanks.safeParse(
+      await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts }),
+    );
+    if (answer.success) {
+      taskRanksFromLastRun = answer.data.ranks;
+    }
     return context.json({});
   });
   app.get('/tasks', (context) => {

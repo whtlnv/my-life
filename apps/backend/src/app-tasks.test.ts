@@ -2,6 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import type { TaskRanks } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
@@ -398,6 +399,31 @@ describe('backend app: task proposals and tasks', () => {
     expect(tasks.tasks).toEqual([
       expect.objectContaining({ title: 'Send the slides', rank: 1, reason: 'The board meets at four' }),
       expect.objectContaining({ title: 'Approve the budget', rank: 2, reason: 'Due at the end of the week' }),
+    ]);
+  });
+
+  it('keeps at GET /tasks the previous ranks and reasons when a prioritization answer fails validation at POST /prioritization-run', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const answers = [
+      (taskId: string) => ({ ranks: [{ taskId, rank: 1, reason: 'Due before the board meeting' }], costInUsd: 0.01 }),
+      (taskId: string) => ({ ranks: [{ taskId, rank: 'first' }], costInUsd: 0.01 }),
+    ];
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string }[] }) =>
+        answers.shift()!(context.tasks[0]?.id ?? '') as unknown as { ranks: TaskRanks['ranks'] },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, '/prioritization-run', {});
+
+    await postJson(app, '/prioritization-run', {});
+
+    const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(tasks.tasks).toEqual([
+      expect.objectContaining({ title: 'Approve the budget', rank: 1, reason: 'Due before the board meeting' }),
     ]);
   });
 });
