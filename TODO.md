@@ -103,4 +103,5 @@
 - [x] `GET /waiting-on` lists each person with their display name and the time of their oldest message still waiting for the user's reply, and the _now_ page shows both
 - [x] `GET /waiting-on` leaves out senders whose waiting messages are all automated mail (proposals in system-update, sales, calendar-drive or expense, or with a List-Id)
 - [x] Opening `#/people?contact=<email>` (the waiting-on link) shows that contact's timeline on the People page
+- [ ] `GET /people` gives each contact in every list its organization and the time of its most recent message (`lastMessageAt`), the fields the People page renders
 - [ ] `scripts/demo.sh` seeds VIP, urgent and ordinary contacts, Needs input questions and ranked tasks; the People, Needs input and _now_ pages are screenshot-verified against it
