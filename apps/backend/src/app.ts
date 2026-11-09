@@ -914,8 +914,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     filterProposalRejectionStore.save(context.req.param('id'));
     return context.body(null, 200);
   });
+  const approveFilterProposal = (proposalId: string): void => {
+    filterProposalApprovalStore.save(proposalId, clock.now().toISOString());
+  };
   app.post('/filter-proposals/:id/approval', (context) => {
-    filterProposalApprovalStore.save(context.req.param('id'), clock.now().toISOString());
+    approveFilterProposal(context.req.param('id'));
     return context.body(null, 200);
   });
   app.post('/commands/:id/acknowledgement', async (context) => {
@@ -1224,7 +1227,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const approveFilterProposalTool: AgentTool = {
     name: 'approve_filter_proposal',
     run: (input) => {
-      filterProposalApprovalStore.save((input as { proposalId: string }).proposalId, clock.now().toISOString());
+      approveFilterProposal((input as { proposalId: string }).proposalId);
       return Promise.resolve({});
     },
   };
