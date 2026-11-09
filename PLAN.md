@@ -25,7 +25,7 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 Read `CLAUDE.md` first. **Phases 2b through 4 are delivered** (`DONE.md`). Phase 4 added the Agent tab: conversations stored and resumable; the Claude agent adapter (`apps/backend/src/claude-agent.ts`) sends each turn's tools with descriptions and schemas and offers `cite_sources`; the read tools; the actions go through `decideAgentAction` in `packages/domain/src/agent-action.ts` and land in `agent-action-store.ts`; `POST /agent/actions/undo` takes an action id only; the extension carries out create-draft commands (browser base64, never sends).
 
-**Next:** Phase 5 (Slack). The two apps exist with their user scopes and credentials in `.env`; it starts once each workspace's user token is in `.env` (`PENDING_TASKS.md` § 5).
+**Next:** Phase 5 (Slack). The two apps exist with their user scopes and credentials in `.env`; it is built against the Slack fake server; the user tokens (`PENDING_TASKS.md` § 5) are needed only to run it against the real workspaces.
 
 **Waiting on the user**, not built:
 
