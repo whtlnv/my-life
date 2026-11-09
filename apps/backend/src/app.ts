@@ -149,7 +149,7 @@ export interface AppOptions {
     }) => Promise<{ ranks?: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
   };
   agent?: {
-    respond: (request?: { turns: ConversationTurn[] }) => Promise<{ text: string; costInUsd: number }>;
+    respond: (request?: { turns: ConversationTurn[] }) => Promise<{ text: string; costInUsd: number; model?: string }>;
   };
   summary?: {
     summarize: (request: {
@@ -1088,6 +1088,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
     const reply = await options.agent?.respond();
+    if (reply) {
+      logSpend(reply);
+    }
     const id = `conversation-${conversationStore.count() + 1}`;
     const turns: ConversationTurn[] = [{ role: 'user', text: message }, assistantTurn(reply)];
     conversationStore.save(id, turns);

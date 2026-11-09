@@ -12,7 +12,7 @@
 - [x] The agent's requests use the model named by the agent model setting when one is given
 - [x] The agent's system prompt carries the versioned agent prompt file and the user's profile text
 - [x] Sending a message to the agent when no Anthropic key is configured answers that the agent is unavailable instead of crashing
-- [ ] Each agent call's cost is logged against the daily spend ceiling
+- [x] Each agent call's cost is logged against the daily spend ceiling
 - [ ] Once the daily spend ceiling is reached, a message to the agent answers that the ceiling is reached and the model is not called
 - [ ] Below the daily spend ceiling, a message to the agent calls the model
 - [ ] When the model asks for a tool, the tool's result is sent back to the model and the model's following text becomes the reply

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { agentUnavailableReply, createApp } from './app';
 import { clockAtTenPastThree, getJson, postJson, temporaryDatabasePath } from './app.test-support';
+import { openSpendStore } from './spend-store';
 
 describe('backend app: the agent', () => {
   it("creates a conversation on the user's first message and returns the model's text reply as its assistant turn", async () => {
@@ -114,6 +115,23 @@ describe('backend app: the agent', () => {
       ],
     });
   });
+  it("logs the cost of each agent call against the daily spend, with the agent's model", async () => {
+    const agent = {
+      respond: () =>
+        Promise.resolve({ text: 'You have two open tasks today.', costInUsd: 0.03, model: 'claude-opus-5-5' }),
+    };
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, agent });
+
+    await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' });
+
+    expect(openSpendStore(databasePath).loadAll()).toContainEqual({
+      spentAt: '2026-11-02T15:10:00.000Z',
+      model: 'claude-opus-5-5',
+      costInUsd: 0.03,
+    });
+  });
+
   it('answers that the agent is unavailable when no Anthropic key is configured', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 
