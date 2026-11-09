@@ -28,11 +28,11 @@ export function createMessageWith(client: Anthropic) {
       fallbacks: 'default',
     });
     return {
-      content: response.content.map((block) =>
-        block.type === 'tool_use'
-          ? { type: block.type, id: block.id, name: block.name, input: block.input }
-          : { type: block.type },
-      ),
+      content: response.content.map((block) => {
+        if (block.type === 'tool_use') return { type: block.type, id: block.id, name: block.name, input: block.input };
+        if (block.type === 'text') return { type: block.type, text: block.text };
+        return { type: block.type };
+      }),
       stop_reason: response.stop_reason,
       usage: { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens },
     };

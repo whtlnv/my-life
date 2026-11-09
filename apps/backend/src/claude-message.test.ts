@@ -72,4 +72,36 @@ describe('the production Claude request', () => {
       stop_reason: 'tool_use',
     });
   });
+
+  it("returns the text of each text block in Claude's answer", async () => {
+    fakeAnthropic = await startFakeAnthropic([], {
+      id: 'message-from-fake',
+      type: 'message',
+      role: 'assistant',
+      model: 'claude-opus-5-5',
+      content: [
+        { type: 'text', text: 'The budget email is from Luis.' },
+        { type: 'text', text: 'He asks for an answer by Friday.' },
+      ],
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      usage: { input_tokens: 100, output_tokens: 20 },
+    });
+    const port = (fakeAnthropic.address() as AddressInfo).port;
+    const createMessage = createMessageWith(
+      new Anthropic({ apiKey: 'test-key', baseURL: `http://127.0.0.1:${String(port)}` }),
+    );
+
+    const response = await createMessage({
+      model: 'claude-opus-5-5',
+      system: 'You are the operator of Ana’s working life.',
+      messages: [{ role: 'user', content: 'Who sent the budget email?' }],
+      tools: [],
+    });
+
+    expect(response.content).toEqual([
+      { type: 'text', text: 'The budget email is from Luis.' },
+      { type: 'text', text: 'He asks for an answer by Friday.' },
+    ]);
+  });
 });
