@@ -94,6 +94,43 @@ describe('AppShell', () => {
     expect(tab).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
+  it('has a Needs input tab linking to the Needs input page with the count of unanswered questions', async () => {
+    const nowWithNothingToTriage = JSON.stringify(nowWithNoAccountsAndNothingToTriage);
+    const twoUnansweredQuestions = JSON.stringify({
+      questions: [
+        {
+          kind: 'category',
+          messageId: 'message-1',
+          accountEmail: 'work@example.com',
+          choices: ['action', 'sales'],
+        },
+        {
+          kind: 'new-sender',
+          senderEmail: 'luis@example.com',
+          messageId: 'message-2',
+          accountEmail: 'work@example.com',
+          choices: ['vip', 'ordinary'],
+        },
+      ],
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const body = input === '/now' ? nowWithNothingToTriage : input === '/needs-input' ? twoUnansweredQuestions : null;
+        return Promise.resolve(
+          body === null
+            ? new Response(null, { status: 404 })
+            : new Response(body, { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+
+    render(<AppShell route="#/needs-input">{null}</AppShell>);
+
+    const tab = await screen.findByRole('link', { name: /needs input.*2/i });
+    expect(tab).toHaveAttribute('href', '#/needs-input');
+    expect(tab).toHaveAttribute('aria-current', 'page');
+  });
   it('still renders the tabs and the page when the backend cannot be reached', async () => {
     vi.stubGlobal(
       'fetch',

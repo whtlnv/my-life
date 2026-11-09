@@ -60,7 +60,7 @@
 - [x] `GET /needs-input` asks nothing about a sender with earlier messages whose message asks the user for something
 - [x] Answering "VIP" to a new-sender question marks the contact VIP, and the question is not asked again
 - [x] Answering "ordinary" to a new-sender question leaves the contact unmarked, and the question is not asked again
-- [ ] The dashboard shell shows a Needs input tab with the count of unanswered questions, and no count when there are none
+- [x] The dashboard shell shows a Needs input tab with the count of unanswered questions, and no count when there are none
 - [ ] The Needs input page shows each question with its one-key answers; pressing an answer's key answers the question and removes it from the page
 - [ ] Each ask the extraction finds in a message becomes a task proposal titled with the ask, carrying its due time, the message link and the account
 - [ ] A message whose extraction finds no asks produces no task proposal

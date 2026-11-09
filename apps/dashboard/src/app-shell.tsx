@@ -34,6 +34,7 @@ export const routes = {
   now: '#/',
   people: '#/people',
   triage: '#/triage',
+  needsInput: '#/needs-input',
   categories: '#/categories',
   filters: '#/filters',
   statement: '#/statement',
@@ -94,6 +95,7 @@ function Tab({ href, current, children }: { href: string; current: boolean; chil
 // so a stale account is visible from anywhere.
 export function AppShell({ route, children }: { route: string; children: ReactNode }) {
   const [status, setStatus] = useState<ShellStatus>(emptyStatus);
+  const [unansweredQuestions, setUnansweredQuestions] = useState(0);
 
   useEffect(() => {
     const loadStatus = () =>
@@ -102,6 +104,12 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
         .then(setStatus)
         .catch(() => undefined);
     loadStatus();
+    void fetch('/needs-input')
+      .then((response) => response.json() as Promise<{ questions: unknown[] }>)
+      .then(({ questions }) => {
+        setUnansweredQuestions(questions.length);
+      })
+      .catch(() => undefined);
     const interval = setInterval(loadStatus, statusRefreshIntervalMilliseconds);
     return () => {
       clearInterval(interval);
@@ -126,6 +134,10 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             <Tab href={routes.triage} current={route === routes.triage}>
               Triage
               {status.badgeCount > 0 && <span className="count">{status.badgeCount}</span>}
+            </Tab>
+            <Tab href={routes.needsInput} current={route === routes.needsInput}>
+              Needs input
+              {unansweredQuestions > 0 && <span className="count">{unansweredQuestions}</span>}
             </Tab>
             <Tab href={routes.categories} current={route === routes.categories}>
               Categories
