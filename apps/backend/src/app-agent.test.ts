@@ -858,9 +858,7 @@ describe('backend app: the agent', () => {
     await reportTriageAndConfirmShopNewsletters(app);
     await proposeBudgetReview(app);
     const proposalId = await firstPendingFilterProposalId(app);
-    const created = (await (await postJson(app, '/agent/conversations', { message: 'Tidy up my inbox' })).json()) as {
-      id: string;
-    };
+    const created = await startConversation(app, 'Tidy up my inbox');
     await runTool('archive_message', { messageId: 'message-1' });
     await runTool('label_message', { messageId: 'message-1', labelName: 'Finance' });
     await runTool('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
