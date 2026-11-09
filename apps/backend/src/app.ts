@@ -947,21 +947,24 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const taskEvents: TaskEvent[] = [];
   const listedTaskProposals = () =>
     proposals.flatMap((proposal) =>
-      taskProposals({ accountEmail: proposal.accountEmail, link: gmailMessageLink(proposal), asks: proposal.asks ?? [] }).map(
-        (taskProposal, index) => ({ id: `${proposal.messageId}-${index}`, ...taskProposal }),
-      ),
+      taskProposals({
+        accountEmail: proposal.accountEmail,
+        link: gmailMessageLink(proposal),
+        asks: proposal.asks ?? [],
+      }).map((taskProposal, index) => ({ id: `${proposal.messageId}-${index}`, ...taskProposal })),
     );
+  const findTaskProposal = (taskId: string) => listedTaskProposals().find(({ id }) => id === taskId)!;
   app.get('/task-proposals', (context) => {
     const decidedIds = taskEvents.map((event) => event.taskId);
     return context.json({ proposals: listedTaskProposals().filter(({ id }) => !decidedIds.includes(id)) });
   });
   app.post('/task-proposals/:id/confirmation', (context) => {
-    const { id, ...proposal } = listedTaskProposals().find(({ id }) => id === context.req.param('id'))!;
+    const { id, ...proposal } = findTaskProposal(context.req.param('id'));
     taskEvents.push({ type: 'proposal-confirmed', taskId: id, at: clock.now().toISOString(), proposal });
     return context.json({ confirmed: id });
   });
   app.post('/task-proposals/:id/rejection', (context) => {
-    const { id, ...proposal } = listedTaskProposals().find(({ id }) => id === context.req.param('id'))!;
+    const { id, ...proposal } = findTaskProposal(context.req.param('id'));
     taskEvents.push({ type: 'proposal-rejected', taskId: id, at: clock.now().toISOString(), proposal });
     return context.json({ rejected: id });
   });
