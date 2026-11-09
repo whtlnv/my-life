@@ -47,7 +47,7 @@ describe('DashboardApp', () => {
     render(<DashboardApp />);
 
     const nowBlock = await screen.findByRole('region', { name: 'Now' });
-    expect(within(nowBlock).getByText('Daily standup')).toBeInTheDocument();
+    expect(await within(nowBlock).findByText('Daily standup')).toBeInTheDocument();
     expect(within(nowBlock).getByRole('link', { name: /join/i })).toHaveAttribute(
       'href',
       'https://meet.google.com/abc-defg-hij',

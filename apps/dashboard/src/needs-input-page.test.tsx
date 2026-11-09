@@ -68,9 +68,7 @@ describe('NeedsInputPage', () => {
     render(<NeedsInputPage />);
 
     const list = await screen.findByRole('list', { name: 'Questions' });
-    const keys = within(list)
-      .getAllByRole('button')
-      .map((answer) => answer.getAttribute('aria-keyshortcuts'));
+    const keys = (await within(list).findAllByRole('button')).map((answer) => answer.getAttribute('aria-keyshortcuts'));
 
     expect(keys).toHaveLength(question.choices.length);
     expect(new Set(keys).size).toBe(question.choices.length);
@@ -99,7 +97,7 @@ describe('NeedsInputPage', () => {
     render(<NeedsInputPage />);
 
     const list = await screen.findByRole('list', { name: 'Questions' });
-    const [categoryRow, newSenderRow] = within(list).getAllByRole('listitem');
+    const [categoryRow, newSenderRow] = await within(list).findAllByRole('listitem');
     if (categoryRow === undefined || newSenderRow === undefined) throw new Error('expected two question rows');
     expect(within(categoryRow).getByText(categoryQuestion.subject)).toBeInTheDocument();
     expect(within(categoryRow).getByText(categoryQuestion.summary)).toBeInTheDocument();
