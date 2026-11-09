@@ -250,4 +250,26 @@ describe('createApp Slack messages', () => {
       { displayName: 'Luis', waitingSince: '2026-11-02T15:00:00.000Z' },
     ]);
   });
+  it('lists at GET /people, under Everyone else on channel slack, the sender of a Slack message as a contact with a Slack handle of its workspace and user id', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([
+      expect.objectContaining({
+        channel: 'slack',
+        displayName: 'Ana',
+        slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }],
+      }),
+    ]);
+  });
 });

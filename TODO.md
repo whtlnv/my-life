@@ -77,7 +77,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 
 ### People view
 
-- [ ] `GET /people` lists a Slack sender as a contact with a Slack handle (workspace and user id) and channel `slack`
+- [x] `GET /people` lists a Slack sender as a contact with a Slack handle (workspace and user id) and channel `slack`
 - [ ] A Slack contact's timeline lists their Slack messages newest first, each with its workspace and Slack permalink
 - [ ] A VIP-marked Slack contact waiting more than 1 business day on a reply is listed as Urgent
 - [ ] A VIP-marked Slack contact waiting less than 1 business day is not listed as Urgent

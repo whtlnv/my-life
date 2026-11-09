@@ -1721,10 +1721,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return {
       urgent: urgentContacts.map(withOrganizationAndLastMessage),
       vip: contacts.filter(isVip).map(withOrganizationAndLastMessage),
-      everyoneElse: contacts
-        .filter((contact) => !isVip(contact) && !isUrgent(contact))
-        .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
-        .map(withOrganizationAndLastMessage),
+      everyoneElse: [
+        ...contacts
+          .filter((contact) => !isVip(contact) && !isUrgent(contact))
+          .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
+          .map(withOrganizationAndLastMessage),
+        ...slackMessageStore.listMessages().map((message) => ({
+          channel: 'slack',
+          displayName: message.senderName,
+          slackHandles: [{ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }],
+        })),
+      ],
     };
   };
   app.get('/people', (context) => context.json(peopleGroups()));
