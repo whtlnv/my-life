@@ -63,4 +63,26 @@ describe('backend app: the agent', () => {
       ],
     });
   });
+
+  it('lists each conversation with its first user message as its title, most recently active first', async () => {
+    const agent = { respond: () => Promise.resolve({ text: 'Noted.', costInUsd: 0.01 }) };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    const first = (await (
+      await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' })
+    ).json()) as { id: string };
+    const second = (await (
+      await postJson(app, '/agent/conversations', { message: 'Who is waiting on me?' })
+    ).json()) as { id: string };
+    await postJson(app, `/agent/conversations/${first.id}/messages`, { message: 'Which one is urgent?' });
+
+    const response = await app.request('/agent/conversations');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      conversations: [
+        { id: first.id, title: 'What is on my plate today?' },
+        { id: second.id, title: 'Who is waiting on me?' },
+      ],
+    });
+  });
 });

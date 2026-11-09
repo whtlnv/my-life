@@ -1083,7 +1083,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.json({});
   });
-  let conversationTurns: ConversationTurn[] = [];
+  const conversations = new Map<string, ConversationTurn[]>();
+  const saveConversation = (id: string, turns: ConversationTurn[]) => {
+    conversations.delete(id);
+    conversations.set(id, turns);
+  };
   const assistantTurn = (reply: { text: string } | undefined): ConversationTurn => ({
     role: 'assistant',
     text: reply?.text ?? '',
@@ -1091,18 +1095,29 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
     const reply = await options.agent?.respond();
-    conversationTurns = [{ role: 'user', text: message }, assistantTurn(reply)];
-    return context.json({ id: 'conversation-1', turns: conversationTurns }, 201);
+    const id = `conversation-${conversations.size + 1}`;
+    const turns: ConversationTurn[] = [{ role: 'user', text: message }, assistantTurn(reply)];
+    saveConversation(id, turns);
+    return context.json({ id, turns }, 201);
   });
   app.post('/agent/conversations/:id/messages', async (context) => {
+    const id = context.req.param('id');
     const { message } = await context.req.json<{ message: string }>();
-    conversationTurns = [...conversationTurns, { role: 'user', text: message }];
-    const reply = await options.agent?.respond({ turns: conversationTurns });
-    conversationTurns = [...conversationTurns, assistantTurn(reply)];
+    const earlierTurns = conversations.get(id) ?? [];
+    const turns: ConversationTurn[] = [...earlierTurns, { role: 'user', text: message }];
+    const reply = await options.agent?.respond({ turns });
+    saveConversation(id, [...turns, assistantTurn(reply)]);
     return context.json({});
   });
+  app.get('/agent/conversations', (context) =>
+    context.json({
+      conversations: [...conversations]
+        .reverse()
+        .map(([id, turns]) => ({ id, title: turns[0]?.text })),
+    }),
+  );
   app.get('/agent/conversations/:id', (context) =>
-    context.json({ id: context.req.param('id'), turns: conversationTurns }),
+    context.json({ id: context.req.param('id'), turns: conversations.get(context.req.param('id')) }),
   );
   app.put('/tasks/:id/pin', async (context) => {
     const taskId = context.req.param('id');
