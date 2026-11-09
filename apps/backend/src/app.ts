@@ -869,10 +869,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
+  const ignoredSlackMessageKeys = new Set<string>();
+  const slackMessageKey = (message: { workspaceTeamId: string; conversationId: string; timestamp: string }) =>
+    `${message.workspaceTeamId}/${message.conversationId}/${message.timestamp}`;
+  app.post('/slack-verdicts', async (context) => {
+    ignoredSlackMessageKeys.add(slackMessageKey(await context.req.json()));
+    return context.body(null, 200);
+  });
   function describeSlackItems() {
     return slackMessageStore
       .listMessages()
       .filter((message) => message.sentByUser !== true)
+      .filter((message) => !ignoredSlackMessageKeys.has(slackMessageKey(message)))
       .map((message) => ({
         ...message,
         permalink: slackPermalink(message),

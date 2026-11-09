@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
-import { getJson, temporaryDatabasePath } from './app.test-support';
+import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openSlackMessageStore } from './slack-message-store';
 
 describe('createApp Slack messages', () => {
@@ -67,6 +67,30 @@ describe('createApp Slack messages', () => {
 
     const { slackItems } = await getJson<{ slackItems: unknown[] }>(app, '/triage-queue');
 
+    expect(slackItems).toEqual([]);
+  });
+
+  it('removes from GET /triage-queue a Slack item once the user confirms ignore on it at POST /slack-verdicts', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const response = await postJson(app, '/slack-verdicts', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      timestamp: '1762700000.000100',
+      decision: 'ignore',
+    });
+    const { slackItems } = await getJson<{ slackItems: unknown[] }>(app, '/triage-queue');
+
+    expect(response.status).toBe(200);
     expect(slackItems).toEqual([]);
   });
 });
