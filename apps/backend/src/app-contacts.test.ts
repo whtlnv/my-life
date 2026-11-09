@@ -24,6 +24,8 @@ import {
   profileDirectoryWith,
 } from './app.test-support';
 
+const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+
 describe('backend app: contacts, organizations and the Google Contacts import', () => {
   it.each([
     {
@@ -691,7 +693,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('lists at GET /people a VIP contact whose message has waited more than 1 business day for a reply under both VIP and Urgent, with the reason "VIP waiting"', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     await postJson(app, '/mail-report', budgetReviewReport);
     await markContact(app, 'luis@example.com', 'vip');
@@ -708,7 +709,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('does not list at GET /people under Urgent a VIP contact whose message the user answered in the thread, nor a VIP contact whose message arrived less than 1 business day ago', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = budgetReviewReport.messages[0];
     await postJson(app, '/mail-report', {
@@ -748,7 +748,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('lists at GET /people under Urgent, with the reason "unanswered ask", a non-VIP contact whose ask has waited 2 business days with no reply from the user', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Review the budget' }] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
@@ -1087,7 +1086,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('lists at GET /waiting-on a contact whose last message the user has not answered, and leaves out a contact whose last message the user answered in the thread', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = budgetReviewReport.messages[0];
     await postJson(app, '/mail-report', {
@@ -1120,7 +1118,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('gives each person at GET /waiting-on their display name and the time of their oldest message still waiting for a reply', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = { ...budgetReviewReport.messages[0], from: 'Luis Pérez <luis@example.com>' };
     await postJson(app, '/mail-report', {
@@ -1140,7 +1137,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('leaves out of GET /waiting-on a sender whose only waiting message carries a List-Id, and keeps a sender writing in person', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = budgetReviewReport.messages[0];
     await postJson(app, '/mail-report', {
@@ -1165,7 +1161,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('leaves out of GET /waiting-on a sender whose waiting message was proposed in an automated category, and keeps a sender whose message was proposed as an action', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const triage = triageAnsweringByMessageId({
       'message-1': {
         action: 'act',
@@ -1187,7 +1182,6 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   });
 
   it('leaves out of GET /waiting-on a sender whose waiting message was proposed as an expense, and keeps a sender whose message was proposed as an action', async () => {
-    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
     const triage = triageAnsweringByMessageId({
       'message-1': {
         action: 'act',
