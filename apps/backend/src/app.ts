@@ -167,6 +167,7 @@ interface AgentTool {
 }
 
 interface AgentAction {
+  id: string;
   tool: string;
   target: string;
   conversationId: string;
@@ -1292,24 +1293,39 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         sourceMessageId === undefined
           ? `#/agent/${conversationId}`
           : gmailMessageLink({ accountEmail, messageId: sourceMessageId });
+      const taskId = `agent-${sourceMessageId ?? `${conversationId}-${String(taskEventStore.loadAll().length + 1)}`}`;
       taskEventStore.save({
         type: 'proposal-confirmed',
-        taskId: `agent-${sourceMessageId ?? `${conversationId}-${String(taskEventStore.loadAll().length + 1)}`}`,
+        taskId,
         at: clock.now().toISOString(),
         proposal: { title, accountEmail, link },
       });
-      return Promise.resolve({});
+      return Promise.resolve({ taskId });
     },
   });
   const agentActions: AgentAction[] = [];
   const askAgent = async (turns: ConversationTurn[], conversationId: string) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
-    const recordingAction = (tool: AgentTool, undoable: boolean): AgentTool => ({
+    const messageTarget = (input: unknown) => (input as { messageId: string }).messageId;
+    const emailTarget = (input: unknown) => (input as { email: string }).email;
+    const proposalTarget = (input: unknown) => (input as { proposalId: string }).proposalId;
+    const recordingAction = (
+      tool: AgentTool,
+      undoable: boolean,
+      targetOf: (input: unknown, result: unknown) => string,
+    ): AgentTool => ({
       name: tool.name,
-      run: (input) => {
-        const target = (input as { messageId: string }).messageId;
-        agentActions.push({ tool: tool.name, target, conversationId, at: clock.now().toISOString(), undoable });
-        return tool.run(input);
+      run: async (input) => {
+        const result = await tool.run(input);
+        agentActions.push({
+          id: `action-${String(agentActions.length + 1)}`,
+          tool: tool.name,
+          target: targetOf(input, result),
+          conversationId,
+          at: clock.now().toISOString(),
+          undoable,
+        });
+        return result;
       },
     });
     const citingSearchMessagesTool: AgentTool = {
@@ -1329,14 +1345,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         calendarDayTool,
         tasksTool,
         digestTool,
-        recordingAction(archiveMessageTool, true),
-        labelMessageTool,
-        recordingAction(writeDraftTool, false),
-        createTaskToolFor(conversationId),
-        markVipTool,
-        updateContactTool,
-        approveFilterProposalTool,
-        rejectFilterProposalTool,
+        recordingAction(archiveMessageTool, true, messageTarget),
+        recordingAction(labelMessageTool, true, messageTarget),
+        recordingAction(writeDraftTool, false, messageTarget),
+        recordingAction(createTaskToolFor(conversationId), true, (_input, result) => (result as { taskId: string }).taskId),
+        recordingAction(markVipTool, true, emailTarget),
+        recordingAction(updateContactTool, false, emailTarget),
+        recordingAction(approveFilterProposalTool, false, proposalTarget),
+        recordingAction(rejectFilterProposalTool, false, proposalTarget),
       ],
     });
     if (!reply) {

@@ -868,6 +868,49 @@ describe('backend app: the agent', () => {
       },
     ]);
   });
+  it('lists every kind of agent action with an id, its tool, target and conversation, and only archive, label, create task and mark VIP as undoable', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Done.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: shopNewsletterArchiveTriage(),
+      filter: filterAnswering(shopNewslettersFilterProposal),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await reportTriageAndConfirmShopNewsletters(app);
+    await proposeBudgetReview(app);
+    const proposalId = await firstPendingFilterProposalId(app);
+    const created = (await (await postJson(app, '/agent/conversations', { message: 'Tidy up my inbox' })).json()) as {
+      id: string;
+    };
+    const run = (name: string, input: unknown) => offeredTools.find((tool) => tool.name === name)?.run(input);
+    await run('archive_message', { messageId: 'message-1' });
+    await run('label_message', { messageId: 'message-1', labelName: 'Finance' });
+    await run('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
+    await run('create_task', { title: 'Review the budget', sourceMessageId: 'message-1' });
+    await run('mark_vip', { email: 'luis@example.com' });
+    await run('update_contact', { email: 'luis@example.com', note: 'Luis is my boss' });
+    await run('approve_filter_proposal', { proposalId });
+    await run('reject_filter_proposal', { proposalId });
+    const { tasks } = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
+    const taskId = tasks.find(({ title }) => title === 'Review the budget')?.id;
+
+    const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
+
+    const conversationId = created.id;
+    const id = expect.any(String) as unknown;
+    expect(actions).toMatchObject([
+      { id, tool: 'reject_filter_proposal', target: proposalId, conversationId, undoable: false },
+      { id, tool: 'approve_filter_proposal', target: proposalId, conversationId, undoable: false },
+      { id, tool: 'update_contact', target: 'luis@example.com', conversationId, undoable: false },
+      { id, tool: 'mark_vip', target: 'luis@example.com', conversationId, undoable: true },
+      { id, tool: 'create_task', target: taskId, conversationId, undoable: true },
+      { id, tool: 'write_draft', target: 'message-1', conversationId, undoable: false },
+      { id, tool: 'label_message', target: 'message-1', conversationId, undoable: true },
+      { id, tool: 'archive_message', target: 'message-1', conversationId, undoable: true },
+    ]);
+  });
   it("undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label", async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('Archived.');
     const app = createApp({
