@@ -15,7 +15,8 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
     headers: { Authorization: `Bearer ${input.workspace.userToken}` },
   });
   if (response.status === 429) {
-    await input.wait?.(Number(response.headers.get('Retry-After')) * 1000);
+    const retryAfterMilliseconds = Number(response.headers.get('Retry-After')) * 1000;
+    await input.wait?.(retryAfterMilliseconds);
     return callSlack<Response>(input, path);
   }
   return (await response.json()) as Response;
