@@ -238,7 +238,7 @@ describe('the shipped backend (main.ts)', () => {
     await waitUntilRecorded(recorded, isPrioritizationRequest);
 
     expect(recorded.find(isPrioritizationRequest)).toEqual(
-      expect.objectContaining({ model: 'claude-opus-5-5', system: expect.stringMatching(/\S/) }),
+      expect.objectContaining({ model: 'claude-opus-5-5', system: expect.stringMatching(/\S/) as unknown }),
     );
   }, 30_000);
 });
