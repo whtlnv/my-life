@@ -179,6 +179,31 @@ const messages: DemoMessage[] = [
     },
   },
   {
+    id: 'm-sofia-forecast',
+    accountEmail: accounts.psmutuus,
+    from: 'Sofía Méndez <sofia@psmutuus.com>',
+    subject: 'Q1 forecast inputs',
+    minutesAgo: 4 * 24 * 60,
+    snippet: '¿Me pasas tus supuestos de contratación para Q1? Los necesito para cerrar el forecast.',
+    body:
+      '¿Me pasas tus supuestos de contratación para Q1? Los necesito para cerrar el forecast.\n\n' +
+      'Con eso cierro la versión que va al consejo.\n',
+    proposal: {
+      action: 'act',
+      category: 'action',
+      summary: 'Sofía needs your Q1 hiring assumptions to close the forecast for the board',
+      extract: { asker: 'Sofía Méndez', ask: 'Send your Q1 hiring assumptions' },
+      reason: 'Finance asks you for an input',
+      taskDraft: { title: 'Send Sofía the Q1 hiring assumptions' },
+      people: [{ name: 'Sofía Méndez', email: 'sofia@psmutuus.com', role: 'sender' }],
+      organization: 'Mutuus',
+      asks: [{ ask: 'Send Sofía your Q1 hiring assumptions' }],
+      commitments: [],
+      dates: [],
+      threadState: 'Sofía waits on your hiring assumptions to close the Q1 forecast',
+    },
+  },
+  {
     id: 'm-intro',
     accountEmail: accounts.gmail,
     from: 'Pedro Alcántara <pedro.alcantara@gmail.com>',
@@ -553,6 +578,30 @@ const app = createApp({
         promptVersion: currentTriagePromptVersion,
       }),
   },
+  // Scripted ranks, as Opus would give them: the dated client contract first, then the board decision, then the rest.
+  prioritization: {
+    prioritize: ({ tasks }) => {
+      const order = ['contract', 'headcount', 'role', 'hiring', 'carrier'];
+      const position = (title: string) => {
+        const index = order.findIndex((word) => title.toLowerCase().includes(word));
+        return index === -1 ? order.length : index;
+      };
+      const reasons: Record<string, string> = {
+        contract: 'Due today: the first payment waits on your signature',
+        headcount: 'Luis and the board deck are blocked on this decision',
+        role: 'Luis and the board deck are blocked on this decision',
+        hiring: 'Sofía has waited four days and the forecast goes to the board',
+      };
+      const ranks = tasks
+        .toSorted((left, right) => position(left.title) - position(right.title))
+        .map((task, index) => ({
+          taskId: task.id,
+          rank: index + 1,
+          reason: reasons[order[position(task.title)] ?? ''] ?? 'Can wait until the urgent work is done',
+        }));
+      return Promise.resolve({ ranks, costInUsd: 0.04, model: 'claude-opus-5-5' });
+    },
+  },
   // Scripted digest headings, as Haiku would write them: matched on an item summary, else a plain count.
   summary: {
     summarize: ({ items }) => {
@@ -641,6 +690,15 @@ async function seed(): Promise<void> {
   }
   // A closing run rewrites the headings of the digests the verdicts above took items from.
   await app.request('/triage-run', { method: 'POST' });
+  // Tasks: every proposal the asks made is confirmed but Pedro's, then the prioritization pass ranks them.
+  const taskProposals = (await (await app.request('/task-proposals')).json()) as {
+    proposals: { id: string; title: string }[];
+  };
+  for (const proposal of taskProposals.proposals) {
+    const decision = proposal.title.includes('carrier') ? 'rejection' : 'confirmation';
+    await app.request(`/task-proposals/${encodeURIComponent(proposal.id)}/${decision}`, { method: 'POST' });
+  }
+  await app.request('/prioritization-run', { method: 'POST' });
 }
 
 // Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).
