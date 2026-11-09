@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./app": "./src/app.ts"
+    "./app": "./src/app.ts",
+    "./slack-message-store": "./src/slack-message-store.ts",
+    "./slack-poll": "./src/slack-poll.ts"
   },
   "scripts": {
     "start": "tsx src/main.ts",

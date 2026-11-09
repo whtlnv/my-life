@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { openSlackMessageStore } from '@my-life/backend/slack-message-store';
+import { pollSlackWorkspace } from '@my-life/backend/slack-poll';
+
 import {
   directMessageText,
   mentionMessageText,
@@ -158,6 +161,32 @@ describe('Slack fake server', () => {
       expect(posted.ok).toBe(true);
       expect(slack.postedMessages()).toEqual([
         { channel: 'C0002', threadTimestamp: '1762700200.000300', text: 'On it, numbers tonight.' },
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
+
+  it('polling the direct-message scenario stores its DM message with its workspace, conversation, sender, text and timestamp', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const store = openSlackMessageStore(':memory:');
+
+      await pollSlackWorkspace({
+        fetch,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      expect(store.listMessages()).toEqual([
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U0001',
+          text: directMessageText,
+          timestamp: '1762700000.000100',
+        },
       ]);
     } finally {
       await slack.close();

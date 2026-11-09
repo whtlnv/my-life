@@ -27,7 +27,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 
 ### Polling
 
-- [ ] A poll of a workspace stores each DM message with its workspace, conversation, sender, text and timestamp
+- [x] A poll of a workspace stores each DM message with its workspace, conversation, sender, text and timestamp
 - [ ] A second poll of the same workspace stores only the DM messages newer than the first poll
 - [ ] A poll stores the channel messages that mention the user
 - [ ] A poll stores a new reply in a thread the user wrote in
