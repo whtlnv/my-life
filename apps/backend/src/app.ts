@@ -647,7 +647,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   app.post('/slack-sends', async (context) => {
     const send = await context.req.json<SlackSendRequest>();
-    if (send.text === '') {
+    if (send.text === '' || slackUserTokenFor(send.workspaceTeamId) === '') {
       return context.body(null, 400);
     }
     const slackResult = await postSlackMessage(send);

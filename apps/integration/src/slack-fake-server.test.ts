@@ -1013,4 +1013,27 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('a send to a workspace with no configured user token at POST /slack-sends is refused with 400 and posts nothing to Slack', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      const response = await backend.request('/slack-sends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceTeamId: 'T9999', conversationId: 'D0001', text: 'On my way' }),
+      });
+
+      expect(response.status).toBe(400);
+      expect(slack.postedMessages()).toEqual([]);
+    } finally {
+      await slack.close();
+    }
+  });
 });
