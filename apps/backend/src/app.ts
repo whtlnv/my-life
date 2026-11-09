@@ -147,6 +147,9 @@ export interface AppOptions {
       urgentContacts: unknown[];
     }) => Promise<{ ranks?: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
   };
+  agent?: {
+    respond: () => Promise<{ text: string; costInUsd: number }>;
+  };
   summary?: {
     summarize: (request: {
       items: { summary: string }[];
@@ -1074,6 +1077,20 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       prioritizationStore.saveRanks(answer.data.ranks);
     }
     return context.json({});
+  });
+  app.post('/agent/conversations', async (context) => {
+    const { message } = await context.req.json<{ message: string }>();
+    const reply = await options.agent?.respond();
+    return context.json(
+      {
+        id: 'conversation-1',
+        turns: [
+          { role: 'user', text: message },
+          { role: 'assistant', text: reply?.text },
+        ],
+      },
+      201,
+    );
   });
   app.put('/tasks/:id/pin', async (context) => {
     const taskId = context.req.param('id');
