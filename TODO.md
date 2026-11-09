@@ -86,7 +86,7 @@
 - [x] `POST /prioritization-run` hands the prioritization port the profile of each account the open tasks come from
 - [x] `POST /prioritization-run` hands the prioritization port today's calendar events across every account
 - [x] `POST /prioritization-run` hands the prioritization port the urgent contacts with their reasons, the same ones `GET /people` lists as urgent
-- [ ] `GET /tasks` returns the open tasks ordered by their stored rank, each with its reason
+- [x] `GET /tasks` returns the open tasks ordered by their stored rank, each with its reason
 - [ ] A prioritization answer that fails validation at `POST /prioritization-run` leaves the previous ranks and reasons in `GET /tasks`
 - [ ] Each prioritization call's cost is logged against the daily spend with the prioritization model, and `POST /prioritization-run` makes no call once the daily ceiling is reached
 - [ ] A pinned task is first in `GET /tasks` whatever its rank; unpinning returns it to rank order

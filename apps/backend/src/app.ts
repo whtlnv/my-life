@@ -1024,6 +1024,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const ranked = taskRanksFromLastRun.find(({ taskId }) => taskId === task.id);
       return ranked === undefined ? task : { ...task, rank: ranked.rank, reason: ranked.reason };
     });
+    rankedOpenTasks.sort(
+      (first, second) =>
+        ('rank' in first ? first.rank : Infinity) - ('rank' in second ? second.rank : Infinity),
+    );
     return context.json({
       tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...rankedOpenTasks],
     });

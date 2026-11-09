@@ -369,4 +369,35 @@ describe('backend app: task proposals and tasks', () => {
     expect(people.urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['deadline'] })]);
     expect(handedUrgentContacts).toEqual([people.urgent]);
   });
+
+  it('lists at GET /tasks the open tasks ordered by the rank the last prioritization run stored, each with its reason', async () => {
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
+    );
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string; title: string }[] }) => ({
+        ranks: context.tasks.map(({ id, title }) =>
+          title === 'Send the slides'
+            ? { taskId: id, rank: 1, reason: 'The board meets at four' }
+            : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
+        ),
+        costInUsd: 0.01,
+      }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    for (const proposal of waiting.proposals) {
+      await postJson(app, `/task-proposals/${proposal.id}/confirmation`, {});
+    }
+
+    await postJson(app, '/prioritization-run', {});
+
+    const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(tasks.tasks).toEqual([
+      expect.objectContaining({ title: 'Send the slides', rank: 1, reason: 'The board meets at four' }),
+      expect.objectContaining({ title: 'Approve the budget', rank: 2, reason: 'Due at the end of the week' }),
+    ]);
+  });
 });
