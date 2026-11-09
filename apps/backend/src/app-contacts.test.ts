@@ -1041,4 +1041,37 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     expect(response.status).toBe(400);
     expect(contacts).toEqual([]);
   });
+
+  it('lists at GET /waiting-on a contact whose last message the user has not answered, and leaves out a contact whose last message the user answered in the thread', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
+    const luisMondayMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMondayMessage,
+        {
+          ...luisMondayMessage,
+          id: 'message-reply',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+          sentByUser: true,
+        },
+        {
+          ...luisMondayMessage,
+          id: 'message-2',
+          threadId: 'thread-2',
+          from: 'Marta <marta@acme.com>',
+          date: 'Tue, 3 Nov 2026 08:00:00 -0600',
+        },
+      ],
+    });
+
+    const response = await app.request('/waiting-on');
+
+    expect(response.status).toBe(200);
+    const { people } = (await response.json()) as { people: { email: string }[] };
+    expect(people.map(({ email }) => email)).toEqual(['marta@acme.com']);
+  });
 });

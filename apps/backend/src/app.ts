@@ -1026,7 +1026,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const calendar = mergedCalendarEvents();
     const urgentContacts = peopleGroups().urgent;
     const result = await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts });
-    spendStore.save({ spentAt: clock.now().toISOString(), model: result.model ?? '', costInUsd: result.costInUsd ?? 0 });
+    spendStore.save({
+      spentAt: clock.now().toISOString(),
+      model: result.model ?? '',
+      costInUsd: result.costInUsd ?? 0,
+    });
     const answer = taskRanks.safeParse(result);
     if (answer.success) {
       prioritizationStore.saveRanks(answer.data.ranks);
@@ -1219,6 +1223,23 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     };
   };
   app.get('/people', (context) => context.json(peopleGroups()));
+  app.get('/waiting-on', (context) => {
+    const userRepliedLaterInThread = (message: ReportedMessage): boolean =>
+      reportedMessages.some(
+        (other) =>
+          other.sentByUser === true &&
+          other.threadId === message.threadId &&
+          new Date(other.date).getTime() > new Date(message.date).getTime(),
+      );
+    const people = contactsByEmail(reportedSenders(), proposals)
+      .filter((contact) =>
+        reportedMessages
+          .filter((message) => contact.messageIds.includes(message.id))
+          .some((message) => message.sentByUser !== true && !userRepliedLaterInThread(message)),
+      )
+      .map((contact) => ({ email: contact.emails[0] ?? '' }));
+    return context.json({ people });
+  });
   app.get('/organizations', (context) => {
     return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });
   });

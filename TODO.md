@@ -95,7 +95,7 @@
 - [x] The _now_ page shows the 3 highest-ranked open tasks with their reasons, and not the fourth
 - [x] Each task on the _now_ page can be marked done with one click, and it leaves the page
 - [x] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
-- [ ] The _now_ waiting-on list leaves out a person whose last message the user has answered
+- [x] The _now_ waiting-on list leaves out a person whose last message the user has answered
 - [ ] The badge count includes the unanswered Needs input questions
 - [ ] The badge count includes the open tasks whose due time has passed
 - [ ] The badge count leaves out the open tasks due later
