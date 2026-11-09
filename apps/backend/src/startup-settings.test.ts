@@ -129,6 +129,12 @@ describe('startup settings', () => {
     expect(settings.agentModel).toBe('claude-opus-5-5');
   });
 
+  it('runs the agent on claude-sonnet-5-5 when MY_LIFE_AGENT_MODEL is claude-sonnet-5-5', () => {
+    const settings = readStartupSettings({ MY_LIFE_AGENT_MODEL: 'claude-sonnet-5-5' }, '/Users/ana');
+
+    expect(settings.agentModel).toBe('claude-sonnet-5-5');
+  });
+
   it('refuses to start triage and names ANTHROPIC_API_KEY as the reason when the key is unset', () => {
     const settings = readStartupSettings({}, '/Users/ana');
 
