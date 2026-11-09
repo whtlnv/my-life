@@ -23,7 +23,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] The Slack fake answers a request carrying the scenario's token
 - [x] The Slack fake answers `invalid_auth` to a request carrying any other token
 - [x] In the `rate-limited` scenario, the Slack fake answers the first request with 429 and a `Retry-After` header, and the next one normally
-- [ ] A message posted to the Slack fake's `chat.postMessage` can be read back by the test, with its channel, thread and text
+- [x] A message posted to the Slack fake's `chat.postMessage` can be read back by the test, with its channel, thread and text
 
 ### Polling
 

@@ -143,4 +143,24 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('records a message posted to chat.postMessage with its channel, thread and text', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const posted = (await (
+        await fetch(`${slack.url}/chat.postMessage`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${slack.token}`, 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({ channel: 'C0002', thread_ts: '1762700200.000300', text: 'On it, numbers tonight.' }),
+        })
+      ).json()) as { ok: boolean };
+
+      expect(posted.ok).toBe(true);
+      expect(slack.postedMessages()).toEqual([
+        { channel: 'C0002', threadTimestamp: '1762700200.000300', text: 'On it, numbers tonight.' },
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
 });

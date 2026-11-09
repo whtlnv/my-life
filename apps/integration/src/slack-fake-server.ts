@@ -68,6 +68,8 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
 
 const token = 'xoxp-fake';
 
+type PostedMessage = { channel: string; threadTimestamp: string; text: string };
+
 function respondRateLimited(response: ServerResponse) {
   response.writeHead(429, { 'Retry-After': '1' });
   response.end();
@@ -76,6 +78,7 @@ function respondRateLimited(response: ServerResponse) {
 export async function startSlackFakeServer(scenario: SlackScenario) {
   const responseByPath = responseByPathByScenario[scenario];
   let rateLimitPending = scenario === 'rate-limited';
+  const postedMessages: PostedMessage[] = [];
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://fake');
     if (rateLimitPending) {
@@ -86,6 +89,18 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
     response.writeHead(200, { 'Content-Type': 'application/json' });
     if (request.headers.authorization !== `Bearer ${token}`) {
       response.end(JSON.stringify({ ok: false, error: 'invalid_auth' }));
+      return;
+    }
+    if (url.pathname === '/chat.postMessage') {
+      let body = '';
+      request.on('data', (chunk: Buffer) => {
+        body += chunk.toString();
+      });
+      request.on('end', () => {
+        const message = JSON.parse(body) as { channel: string; thread_ts: string; text: string };
+        postedMessages.push({ channel: message.channel, threadTimestamp: message.thread_ts, text: message.text });
+        response.end(JSON.stringify({ ok: true }));
+      });
       return;
     }
     if (url.pathname === '/users.info') {
@@ -99,6 +114,7 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
   return {
     url: `http://127.0.0.1:${String(port)}`,
     token,
+    postedMessages: () => postedMessages,
     close: () =>
       new Promise<void>((resolve) =>
         server.close(() => {
