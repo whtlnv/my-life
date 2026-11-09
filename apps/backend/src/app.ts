@@ -874,12 +874,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.post('/slack-verdicts', async (context) => {
     const verdict = await context.req.json<SlackVerdict>();
     const verdictKey = slackMessageKey(verdict);
-    slackMessageStore.saveVerdict({
-      workspaceTeamId: verdict.workspaceTeamId,
-      conversationId: verdict.conversationId,
-      timestamp: verdict.timestamp,
-      decision: verdict.decision,
-    });
+    slackMessageStore.saveVerdict(verdict);
     if (verdict.decision === 'act') {
       const message = slackMessageStore.listMessages().find((stored) => slackMessageKey(stored) === verdictKey);
       taskEventStore.save({
