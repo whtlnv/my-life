@@ -1375,7 +1375,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.post('/agent/actions/undo', async (context) => {
     const { tool, target } = await context.req.json<{ tool: string; target: string }>();
     const labelRequest = labelRequests.find(({ messageId }) => messageId === target);
-    if (tool === 'label_message' && labelRequest !== undefined) undoneLabelRequests.push(labelRequest);
+    if (tool === 'mark_vip') contactDetailsStore.removeMark(target, 'vip');
+    else if (tool === 'label_message' && labelRequest !== undefined) undoneLabelRequests.push(labelRequest);
     else undoneAgentArchiveMessageIds.push(target);
     return context.body(null, 200);
   });

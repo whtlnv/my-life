@@ -913,4 +913,22 @@ describe('backend app: the agent', () => {
       expect.objectContaining({ type: 'remove-label', messageId: 'message-1', label: 'Finance' }),
     );
   });
+  it('undoing an agent VIP mark removes the contact from VIP in the People view', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Marked.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Luis is my boss, mark him VIP' });
+    await offeredTools.find((tool) => tool.name === 'mark_vip')?.run({ email: 'luis@example.com' });
+
+    await postJson(app, '/agent/actions/undo', { tool: 'mark_vip', target: 'luis@example.com' });
+
+    const people = await getJson<{ vip: { emails: string[] }[] }>(app, '/people');
+    expect(people.vip).toEqual([]);
+  });
 });
