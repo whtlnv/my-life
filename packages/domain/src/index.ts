@@ -18,4 +18,5 @@ export { digests, isDigestedCategory } from './digests';
 export { messageBody, type MessagePart } from './message-body';
 export { contactUrgency, type UrgencySettings } from './contact-urgency';
 export { taskProposals } from './task-proposals';
+export { decideAgentAction } from './agent-action';
 export { openTasks, taskHistory, type TaskEvent } from './task-state';

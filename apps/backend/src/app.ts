@@ -36,6 +36,7 @@ import {
   openTasks,
   taskHistory,
   triageQueue,
+  decideAgentAction,
   type CalendarSnapshot,
   type Clock,
   type ExpenseProposal,
@@ -1310,6 +1311,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ...action,
       });
     };
+    // Every action goes through the domain guardrail: a refused one is recorded and never runs.
     const recordingAction = (
       tool: AgentTool,
       undoable: boolean,
@@ -1317,23 +1319,23 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     ): AgentTool => ({
       name: tool.name,
       run: async (input) => {
+        const { record } = decideAgentAction({
+          tool: tool.name,
+          input: input as Record<string, unknown>,
+          conversationId,
+          requestedAt: clock.now().toISOString(),
+        });
+        if (record.outcome === 'refused') {
+          recordAction({ tool: tool.name, target: messageTarget(input), undoable: false, outcome: 'refused' });
+          return { error: `The agent may not use ${tool.name}` };
+        }
         const result = await tool.run(input);
         recordAction({ tool: tool.name, target: targetOf(input, result), undoable });
         return result;
       },
     });
-    const refusedSendMessageTool: AgentTool = {
-      name: 'send_message',
-      run: (input) => {
-        recordAction({
-          tool: 'send_message',
-          target: messageTarget(input),
-          undoable: false,
-          outcome: 'refused',
-        });
-        return Promise.resolve({ error: 'Sending messages is not allowed' });
-      },
-    };
+    const forbiddenTool = (name: string): AgentTool =>
+      recordingAction({ name, run: () => Promise.resolve({}) }, false, messageTarget);
     const citingSearchMessagesTool: AgentTool = {
       name: searchMessagesTool.name,
       run: async (input) => {
@@ -1359,7 +1361,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         recordingAction(updateContactTool, false, emailTarget),
         recordingAction(approveFilterProposalTool, false, proposalTarget),
         recordingAction(rejectFilterProposalTool, false, proposalTarget),
-        refusedSendMessageTool,
+        forbiddenTool('send_message'),
+        forbiddenTool('delete_message'),
       ],
     });
     if (!reply) {

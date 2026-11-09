@@ -1130,6 +1130,41 @@ describe('backend app: the agent', () => {
       commands: commandsAfterFirstUndo,
     });
   });
+  it('a delete_message request from the agent is refused, keeps the message, sends the account no command, and the list of agent actions shows the refusal', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I cannot delete that.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    const created = (await (
+      await postJson(app, '/agent/conversations', { message: 'Delete the budget thread' })
+    ).json()) as { id: string };
+    const { commands: commandsBeforeRequest } = (await (await getCommands(app, 'ana@example.com')).json()) as {
+      commands: unknown[];
+    };
+
+    const result = await offeredTools.find((tool) => tool.name === 'delete_message')?.run({ messageId: 'message-1' });
+
+    const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect({ result, actions, commands }).toMatchObject({
+      result: { error: expect.any(String) as unknown },
+      actions: [
+        {
+          tool: 'delete_message',
+          target: 'message-1',
+          conversationId: created.id,
+          outcome: 'refused',
+          undoable: false,
+        },
+      ],
+      commands: commandsBeforeRequest,
+    });
+  });
   it('a send_message request from the agent is refused, sends the account no command, and the list of agent actions shows the refusal', async () => {
     const { agent, offeredTools } = agentRecordingOfferedTools('I cannot send that.');
     const app = createApp({
