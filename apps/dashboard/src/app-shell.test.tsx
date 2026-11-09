@@ -87,8 +87,7 @@ describe('AppShell', () => {
     expect(screen.getByRole('link', { name: 'Now' })).not.toHaveAttribute('aria-current');
   });
   it('has a Needs input tab linking to the Needs input page with the count of unanswered questions', async () => {
-    const nowWithNothingToTriage = JSON.stringify(nowWithNoAccountsAndNothingToTriage);
-    const twoUnansweredQuestions = JSON.stringify({
+    const twoUnansweredQuestions = {
       questions: [
         {
           kind: 'category',
@@ -104,19 +103,8 @@ describe('AppShell', () => {
           choices: ['vip', 'ordinary'],
         },
       ],
-    });
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((input: RequestInfo | URL) => {
-        const body =
-          input === '/now' ? nowWithNothingToTriage : input === '/needs-input' ? twoUnansweredQuestions : null;
-        return Promise.resolve(
-          body === null
-            ? new Response(null, { status: 404 })
-            : new Response(body, { headers: { 'content-type': 'application/json' } }),
-        );
-      }),
-    );
+    };
+    answerGetsWith({ '/now': nowWithNoAccountsAndNothingToTriage, '/needs-input': twoUnansweredQuestions });
 
     render(<AppShell route="#/needs-input">{null}</AppShell>);
 
