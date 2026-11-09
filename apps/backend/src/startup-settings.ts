@@ -22,6 +22,7 @@ export interface StartupSettings {
   triage: TriageAvailability;
   urgency: UrgencySettings;
   slackWorkspaces: SlackWorkspaceSettings[];
+  slackPollingIntervalInMilliseconds: number;
 }
 
 export interface SlackWorkspaceSettings {
@@ -78,6 +79,7 @@ export function readStartupSettings(
       vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     },
     slackWorkspaces: readSlackWorkspaces(environment),
+    slackPollingIntervalInMilliseconds: 60_000,
   };
 }
 

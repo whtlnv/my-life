@@ -225,4 +225,10 @@ describe('startup settings', () => {
 
     expect(settings.slackWorkspaces).toEqual([{ teamId: 'T0001', userToken: 'xoxp-first' }]);
   });
+
+  it('polls Slack every 60 seconds when MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.slackPollingIntervalInMilliseconds).toBe(60_000);
+  });
 });
