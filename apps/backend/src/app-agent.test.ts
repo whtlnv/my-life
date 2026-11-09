@@ -952,4 +952,25 @@ describe('backend app: the agent', () => {
     const { tasks } = await getJson<{ tasks: { title: string }[] }>(app, '/tasks');
     expect(tasks.map(({ title }) => title)).toEqual(['Call the bank']);
   });
+  it('undoing an agent draft is refused and sends the account no command beyond the draft itself', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can draft a reply.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Draft a reply to Luis about the budget' });
+    await offeredTools
+      .find((tool) => tool.name === 'write_draft')
+      ?.run({ messageId: 'message-1', body: 'I will review it by Friday.' });
+
+    const response = await postJson(app, '/agent/actions/undo', { tool: 'write_draft', target: 'message-1' });
+
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type: string }[] };
+    expect(response.status).toBe(409);
+    expect(commands.map(({ type }) => type)).toEqual(['create-draft']);
+  });
 });
