@@ -22,7 +22,7 @@
 - [x] The first message of a new conversation reaches the model: the agent port receives that message as the conversation's only user turn, and the Claude agent adapter sends it (today the route calls `respond()` with no turns, which the real adapter cannot take)
 - [x] The Claude agent adapter reports the cost of every model call in a turn, tool rounds included, from the response usage and the configured pricing
 - [x] A follow-up message in a conversation logs its spend and, once the daily ceiling is reached, answers that the ceiling is reached without calling the model, like a first message
-- [ ] `search_messages` returns the stored messages whose body, subject or summary contains the query words, each with its id, account, sender, subject, date and Gmail link, and leaves out messages without them
+- [x] `search_messages` returns the stored messages whose body, subject or summary contains the query words, each with its id, account, sender, subject, date and Gmail link, and leaves out messages without them
 - [ ] `search_messages` ranks a message containing every query word above one containing only some of them (backlog: apps/backend/src/app.ts:990 `GET /search` scans every stored message instead of an SQLite FTS5 index)
 - [ ] `read_thread` returns every stored message of the given message's thread with its body, oldest first, and no message from another thread
 - [ ] `contact_timeline` returns the messages a contact sent, received or is named in, newest first, and no message that does not involve them

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { agentSpendCeilingReply, agentUnavailableReply, createApp } from './app';
-import { clockAtTenPastThree, getJson, postJson, temporaryDatabasePath } from './app.test-support';
+import {
+  budgetReviewReport,
+  clockAtTenPastThree,
+  getJson,
+  messageWithQuarterlyNumbersBody,
+  postJson,
+  temporaryDatabasePath,
+} from './app.test-support';
 import { openSpendStore } from './spend-store';
 
 describe('backend app: the agent', () => {
@@ -250,5 +257,46 @@ describe('backend app: the agent', () => {
       { role: 'user', text: 'Who is waiting on me?' },
       { role: 'assistant', text: agentSpendCeilingReply },
     ]);
+  });
+
+  it('gives the agent a search_messages tool that returns the stored messages containing the query words, with their id, account, sender, subject, date and Gmail link, and leaves out the others', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'Found it.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        messageWithQuarterlyNumbersBody,
+        {
+          ...budgetReviewReport.messages[0],
+          id: 'message-2',
+          threadId: 'thread-2',
+          subject: 'Lunch on Thursday',
+          body: 'Hi Ana, are you free for lunch? Luis',
+        },
+      ],
+    });
+    await postJson(app, '/agent/conversations', { message: 'Find the quarterly numbers' });
+    const searchMessages = offeredTools.find((tool) => tool.name === 'search_messages');
+
+    const result = await searchMessages?.run({ query: 'quarterly numbers' });
+
+    expect(result).toEqual({
+      messages: [
+        {
+          id: 'message-1',
+          accountEmail: 'ana@example.com',
+          from: 'Luis <luis@example.com>',
+          subject: 'Budget review',
+          date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+          link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+        },
+      ],
+    });
   });
 });

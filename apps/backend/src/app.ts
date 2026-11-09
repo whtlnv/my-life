@@ -149,13 +149,21 @@ export interface AppOptions {
     }) => Promise<{ ranks?: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
   };
   agent?: {
-    respond: (request?: { turns: ConversationTurn[] }) => Promise<{ text: string; costInUsd: number; model?: string }>;
+    respond: (request?: {
+      turns: ConversationTurn[];
+      tools?: AgentTool[];
+    }) => Promise<{ text: string; costInUsd: number; model?: string }>;
   };
   summary?: {
     summarize: (request: {
       items: { summary: string }[];
     }) => Promise<{ lines: string[]; costInUsd: number; model?: string }>;
   };
+}
+
+interface AgentTool {
+  name: string;
+  run: (input: unknown) => Promise<unknown>;
 }
 
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
@@ -1087,8 +1095,29 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     text: reply?.text ?? agentUnavailableReply,
   });
   const spendCeilingTurn: ConversationTurn = { role: 'assistant', text: agentSpendCeilingReply };
+  const searchMessagesTool: AgentTool = {
+    name: 'search_messages',
+    run: (input) => {
+      const { query } = input as { query: string };
+      const words = query.split(/\W+/);
+      const messages = reportedMessages
+        .filter((message) => words.every((word) => message.body?.split(/\W+/).includes(word)))
+        .map((message) => {
+          const accountEmail = accountEmailOfReported(message.id);
+          return {
+            id: message.id,
+            accountEmail,
+            from: message.from,
+            subject: message.subject,
+            date: message.date,
+            link: gmailMessageLink({ accountEmail, messageId: message.id }),
+          };
+        });
+      return Promise.resolve({ messages });
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
-    const reply = await options.agent?.respond({ turns });
+    const reply = await options.agent?.respond({ turns, tools: [searchMessagesTool] });
     if (reply) {
       logSpend(reply);
     }
