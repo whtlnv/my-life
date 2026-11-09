@@ -72,7 +72,7 @@ describe('PeoplePage', () => {
     for (const { list, name, organization, at, time } of expectations) {
       const rows = within(await screen.findByRole('list', { name: list })).getAllByRole('listitem');
       expect(rows).toHaveLength(1);
-      const row = rows[0] as HTMLElement;
+      const [row] = rows as [HTMLElement];
       expect(row).toHaveTextContent(name);
       expect(row).toHaveTextContent(organization);
       expect(row).toHaveTextContent(time);
@@ -162,9 +162,10 @@ describe('PeoplePage', () => {
     const rows = within(timelineList).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
     for (const [index, message] of timeline.messages.entries()) {
-      const row = rows[index] as HTMLElement;
-      expect(within(row).getByRole('link', { name: message.subject })).toHaveAttribute('href', message.link);
-      expect(row).toHaveTextContent(message.accountEmail);
+      const link = within(timelineList).getByRole('link', { name: message.subject });
+      expect(rows[index]).toContainElement(link);
+      expect(link).toHaveAttribute('href', message.link);
+      expect(rows[index]).toHaveTextContent(message.accountEmail);
     }
   });
   it("shows a selected organization's timeline from GET /organizations/:name/timeline, newest first, each message with its account", async () => {
@@ -211,9 +212,8 @@ describe('PeoplePage', () => {
     const rows = within(timelineList).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
     for (const [index, message] of timeline.messages.entries()) {
-      const row = rows[index] as HTMLElement;
-      expect(row).toHaveTextContent(message.subject);
-      expect(row).toHaveTextContent(message.accountEmail);
+      expect(rows[index]).toHaveTextContent(message.subject);
+      expect(rows[index]).toHaveTextContent(message.accountEmail);
     }
   });
 
