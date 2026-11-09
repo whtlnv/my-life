@@ -1750,17 +1750,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         waitingSince: new Date(Math.min(...waitingTimes)).toISOString(),
       }));
     const slackMessages = slackMessageStore.listMessages();
+    const userRepliedLaterInConversation = (message: (typeof slackMessages)[number]): boolean =>
+      slackMessages.some(
+        (reply) =>
+          reply.sentByUser === true &&
+          reply.conversationId === message.conversationId &&
+          Number(reply.timestamp) > Number(message.timestamp),
+      );
     const slackPeople = slackMessages
-      .filter((message) => message.sentByUser !== true)
-      .filter(
-        (message) =>
-          !slackMessages.some(
-            (reply) =>
-              reply.sentByUser === true &&
-              reply.conversationId === message.conversationId &&
-              Number(reply.timestamp) > Number(message.timestamp),
-          ),
-      )
+      .filter((message) => message.sentByUser !== true && !userRepliedLaterInConversation(message))
       .map((message) => ({
         channel: 'slack',
         displayName: message.senderName,
