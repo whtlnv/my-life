@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 16:24 · `apps/dashboard/src/triage-page.test.tsx::gives a Slack card Ignore, Task and Reply buttons, each labelled with its key `i`, `t` and `r``
+- Behavior: A Slack item on the triage page has Ignore, Task and Reply buttons labelled with their keys `i`, `t` and `r`
+- Predicted: AssertionError — the card renders no buttons, so the label/key pairs are `[]`
+- Actual: TestingLibraryElementError — `getAllByRole('button')` throws when the card has no buttons, before the assertion runs
+- Type: right-reason mismatch
+- Resolution: Same missing behavior (no buttons on the card); the getAll* query throws when it finds nothing instead of returning `[]`. The failure is right-reason, so the test stays as written.
+
 ## 2026-11-09 16:00 · `apps/backend/src/app-slack.test.ts::leaves out of GET /people the user's own Slack identity, whose sent messages are stored`
 - Behavior: `GET /people` does not list the user's own Slack identity among the Slack contacts
 - Predicted: AssertionError — `everyoneElse` holds both U0001 (Ana) and U0000 (the user), since every stored Slack message becomes a contact

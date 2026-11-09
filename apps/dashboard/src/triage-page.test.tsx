@@ -1666,4 +1666,41 @@ describe('TriagePage', () => {
       'https://acme.slack.com/archives/D0001/p1762700000000100',
     );
   });
+
+  it('gives a Slack card Ignore, Task and Reply buttons, each labelled with its key `i`, `t` and `r`', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://acme.slack.com/archives/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    const buttonKeys = within(card)
+      .getAllByRole('button')
+      .map((button) => [
+        button.textContent?.replace(button.querySelector('kbd')?.textContent ?? '', '').trim(),
+        button.querySelector('kbd')?.textContent,
+      ]);
+    expect(buttonKeys).toEqual([
+      ['Ignore', 'i'],
+      ['Task', 't'],
+      ['Reply', 'r'],
+    ]);
+  });
 });

@@ -656,6 +656,15 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
       <a href={item.permalink} target="_blank" rel="noreferrer">
         Open in Slack ↗
       </a>
+      <button type="button" className="button">
+        Ignore <Key>i</Key>
+      </button>
+      <button type="button" className="button">
+        Task <Key>t</Key>
+      </button>
+      <button type="button" className="button">
+        Reply <Key>r</Key>
+      </button>
       {composing && (
         <>
           <textarea
