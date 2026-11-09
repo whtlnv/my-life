@@ -77,7 +77,7 @@
 - [x] `POST /tasks/:id/snooze` with an `until` time keeps the task out of `GET /tasks` until that time and back after it
 - [x] `PUT /tasks/:id/waiting-on` sets the person the task waits on, shown with it in `GET /tasks`
 - [x] `GET /tasks/:id/history` lists the task's transitions made through these routes, each with its time from the clock, oldest first
-- [ ] After a backend restart on the same database file, a task marked done stays out of `GET /tasks`, a snoozed one stays hidden until its time, a waiting-on person is kept and the history is unchanged
+- [x] After a backend restart on the same database file, a task marked done stays out of `GET /tasks`, a snoozed one stays hidden until its time, a waiting-on person is kept and the history is unchanged
 - [ ] The prioritization pass sends the open tasks with the profile, today's calendar, due dates and urgency to the model configured for prioritization (default Opus 5.5) and stores the rank and reason it returns for each task
 - [ ] A prioritization answer that fails the contract's validation is rejected, and the previous ranks stand
 - [ ] Each prioritization call's cost is logged against the daily spend, and no pass runs once the daily ceiling is reached

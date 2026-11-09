@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 19:13 · `apps/backend/src/app-tasks.test.ts::keeps after a backend restart on the same database file a done task out of GET /tasks, a snoozed task hidden until its time with its waiting-on person, and each history unchanged`
+- Behavior: after a backend restart on the same database file, a done task stays out of `GET /tasks`, a snoozed one stays hidden until its time, the waiting-on person is kept and the history is unchanged
+- Predicted: test passes on first run (no right-reason failure available), because `openTaskEventStore` already persists every task event to SQLite and the task routes derive state from it
+- Actual: passed on first run; a mutation check (restarted app on a fresh database) fails with `AssertionError: expected [] to deeply equal [ ObjectContaining{…} ]`, so the test is not vacuous
+- Type: passed unexpectedly (predicted pass)
+- Resolution: the behavior was delivered by the earlier task-route items, which save every transition to `task_events`; the test is kept as a regression pin rather than rewritten to fail artificially, and no green step is needed
+
 ## 2026-11-08 18:47 · `packages/domain/src/task-state.test.ts::brings a task snoozed until a time written with a UTC offset back among the open tasks once that time has passed`
 - Behavior: A task snoozed until a time is back among the open tasks once that time has passed
 - Predicted: the plain version (Z-formatted `until` earlier than `now`) would fail because the task stays hidden

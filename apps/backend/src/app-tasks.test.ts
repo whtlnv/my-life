@@ -180,4 +180,46 @@ describe('backend app: task proposals and tasks', () => {
     expect(stillWaiting.proposals).toEqual([]);
     expect(tasks.tasks).toEqual([expect.objectContaining({ title: 'Approve the budget', status: 'open' })]);
   });
+
+  it('keeps after a backend restart on the same database file a done task out of GET /tasks, a snoozed task hidden until its time with its waiting-on person, and each history unchanged', async () => {
+    let now = new Date('2026-11-02T15:10:00.000Z');
+    const options = { allowedEmails: ['ana@example.com'], clock: { now: () => now }, databasePath: temporaryDatabasePath() };
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
+    );
+    const beforeRestart = createApp({ ...options, triage });
+    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
+    await postTriageRun(beforeRestart);
+    const waiting = await getJson<{ proposals: { id: string; title: string }[] }>(beforeRestart, '/task-proposals');
+    for (const proposal of waiting.proposals) {
+      await postJson(beforeRestart, `/task-proposals/${proposal.id}/confirmation`, {});
+    }
+    const open = await getJson<{ tasks: { id: string; title: string }[] }>(beforeRestart, '/tasks');
+    const doneTaskId = open.tasks.find(({ title }) => title === 'Approve the budget')?.id;
+    const snoozedTaskId = open.tasks.find(({ title }) => title === 'Send the slides')?.id;
+    now = new Date('2026-11-02T15:20:00.000Z');
+    await postJson(beforeRestart, `/tasks/${doneTaskId}/done`, {});
+    await beforeRestart.request(`/tasks/${snoozedTaskId}/waiting-on`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ person: 'luis@example.com' }),
+    });
+    await postJson(beforeRestart, `/tasks/${snoozedTaskId}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
+    const doneHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${doneTaskId}/history`);
+    const snoozedHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${snoozedTaskId}/history`);
+
+    const afterRestart = createApp(options);
+    const whileSnoozed = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
+    const doneHistoryAfter = await getJson<unknown>(afterRestart, `/tasks/${doneTaskId}/history`);
+    const snoozedHistoryAfter = await getJson<unknown>(afterRestart, `/tasks/${snoozedTaskId}/history`);
+    now = new Date('2026-11-02T17:01:00.000Z');
+    const afterSnooze = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
+
+    expect(whileSnoozed.tasks).toEqual([]);
+    expect(afterSnooze.tasks).toEqual([
+      expect.objectContaining({ title: 'Send the slides', status: 'open', waitingOn: 'luis@example.com' }),
+    ]);
+    expect(doneHistoryAfter).toEqual(doneHistoryBefore);
+    expect(snoozedHistoryAfter).toEqual(snoozedHistoryBefore);
+  });
 });
