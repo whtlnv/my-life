@@ -1492,4 +1492,51 @@ describe('TriagePage', () => {
       },
     ]);
   });
+  it('opens a composer when the reply key `r` is pressed on a Slack card, and its Send posts the typed text as an explicit send to that conversation', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    await user.click(card);
+    await user.keyboard('r');
+    const composer = within(card).getByRole('textbox');
+    await user.type(composer, 'Yes, I will send comments tomorrow');
+    await user.click(within(card).getByRole('button'));
+
+    const postedSlackSends = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/slack-sends')
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(String(init?.body)) as unknown }));
+    expect(postedSlackSends).toEqual([
+      {
+        method: 'POST',
+        body: expect.objectContaining({
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          text: 'Yes, I will send comments tomorrow',
+        }) as unknown,
+      },
+    ]);
+    expect(fetch).not.toHaveBeenCalledWith('/slack-verdicts', expect.anything());
+  });
 });

@@ -625,24 +625,59 @@ function postSlackVerdict(item: SlackTriageItem, key: string) {
   void postJson('/slack-verdicts', { workspaceTeamId, conversationId, timestamp, decision: slackDecisionKeys[key] });
 }
 
+function SlackCard({ item }: { item: SlackTriageItem }) {
+  const [composing, setComposing] = useState(false);
+  const [reply, setReply] = useState('');
+  return (
+    <article
+      className="card"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === 'r') {
+          setComposing(true);
+          return;
+        }
+        postSlackVerdict(item, event.key);
+      }}
+    >
+      <p>
+        {item.senderName} · {item.workspaceTeamId}
+      </p>
+      <p>{item.text}</p>
+      {composing && (
+        <>
+          <textarea
+            value={reply}
+            onChange={(event) => {
+              setReply(event.target.value);
+            }}
+          />
+          <button
+            type="button"
+            className="button"
+            onClick={() => {
+              void postJson('/slack-sends', {
+                workspaceTeamId: item.workspaceTeamId,
+                conversationId: item.conversationId,
+                text: reply,
+              });
+            }}
+          >
+            Send
+          </button>
+        </>
+      )}
+    </article>
+  );
+}
+
 function SlackSection({ items }: { items: SlackTriageItem[] }) {
   return (
     <section aria-label={sectionTitles.slack} className="section">
       <h2 className="section-title">{sectionTitles.slack}</h2>
       {items.map((item) => (
-        <article
-          key={`${item.workspaceTeamId}:${item.timestamp}`}
-          className="card"
-          tabIndex={0}
-          onKeyDown={(event) => {
-            postSlackVerdict(item, event.key);
-          }}
-        >
-          <p>
-            {item.senderName} · {item.workspaceTeamId}
-          </p>
-          <p>{item.text}</p>
-        </article>
+        <SlackCard key={`${item.workspaceTeamId}:${item.timestamp}`} item={item} />
       ))}
     </section>
   );
