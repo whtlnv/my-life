@@ -9,6 +9,7 @@ import {
   messageWithQuarterlyNumbersBody,
   postCalendarSnapshot,
   postJson,
+  postTriageRun,
   proposeBudgetReview,
   putJson,
   temporaryDatabasePath,
@@ -524,6 +525,47 @@ describe('backend app: the agent', () => {
           waitingOn: 'luis@example.com',
           accountEmail: 'ana@example.com',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+        }),
+      ],
+    });
+  });
+
+  it('digest returns the waiting digests with their account, category, count and summary lines', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'One digest is waiting.', costInUsd: 0.01 });
+      },
+    };
+    const triage = triageAnswering({
+      action: 'archive',
+      category: 'system-update',
+      summary: 'GitHub build passed',
+      extract: { system: 'GitHub', severity: 'low', significant: false },
+      reason: 'A routine notification',
+    });
+    const summaryLines = ['GitHub: 1 notice since Monday, none significant'];
+    const summary = { summarize: () => Promise.resolve({ lines: summaryLines, costInUsd: 0.01 }) };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary, agent });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' }],
+    });
+    await postTriageRun(app);
+    await postJson(app, '/agent/conversations', { message: 'What digests are waiting?' });
+    const digestTool = offeredTools.find((tool) => tool.name === 'digest');
+
+    const result = await digestTool?.run({});
+
+    expect(result).toEqual({
+      digests: [
+        expect.objectContaining({
+          accountEmail: 'ana@example.com',
+          category: 'system-update',
+          count: 1,
+          summaryLines,
         }),
       ],
     });

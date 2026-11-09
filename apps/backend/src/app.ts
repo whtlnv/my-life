@@ -1161,10 +1161,25 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({ tasks });
     },
   };
+  const digestTool: AgentTool = {
+    name: 'digest',
+    run: () => {
+      const waiting = waitingDigests(verdictStore.loadAll()).map((digest) => {
+        const { accountEmail, category } = digest.proposals[0] ?? {};
+        return {
+          accountEmail,
+          category,
+          count: digest.proposals.length,
+          summaryLines: digestSummaryStore.load(identifyDigest(digest)),
+        };
+      });
+      return Promise.resolve({ digests: waiting });
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
     const reply = await options.agent?.respond({
       turns,
-      tools: [searchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool, tasksTool],
+      tools: [searchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool, tasksTool, digestTool],
     });
     if (reply) {
       logSpend(reply);
