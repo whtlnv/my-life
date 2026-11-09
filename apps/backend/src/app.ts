@@ -1675,7 +1675,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const peopleGroups = () => {
     const markedEmails = contactDetailsStore.markedEmails();
-    const contacts = contactsByEmail(reportedSenders(), proposals);
+    const writesInPerson = (contact: { messageIds: string[] }) =>
+      reportedMessages.some((message) => contact.messageIds.includes(message.id) && message.listId === undefined);
+    const contacts = contactsByEmail(reportedSenders(), proposals).filter(writesInPerson);
     const alwaysMattersLineOfAccount = (accountEmail: string) => {
       const accountProfile = profileOfAccount(accountEmail);
       return accountProfile === undefined ? '' : alwaysMattersLine(accountProfile);

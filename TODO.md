@@ -84,7 +84,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] The People page shows a Slack contact with its channel tag and opens the contact's Slack timeline
 - [x] `GET /people` gives a contact's stored organization name where the import or extraction has one (backlog: apps/backend/src/app.ts The People lists show domains, not organization names)
 - [x] `GET /people` gives the sender's domain as the organization when no organization name is stored (already covered by app-people.test.ts; no new test) (backlog: apps/backend/src/app.ts The People lists show domains, not organization names)
-- [ ] `GET /people` leaves out a sender whose messages are all automated mail (backlog: apps/backend/src/app.ts The People lists … include automated senders)
+- [x] `GET /people` leaves out a sender whose messages are all automated mail (backlog: apps/backend/src/app.ts The People lists … include automated senders)
 - [ ] `GET /people` keeps a sender with at least one message that is not automated mail (backlog: apps/backend/src/app.ts The People lists … include automated senders)
 - [ ] A contact merely mentioned in a message with a deadline inside 48 hours is not Urgent for that deadline (backlog: packages/domain/src/contact-urgency.ts:58 Urgency counts deadlines in messages that only mention a contact)
 - [ ] A contact who sent a message with a deadline inside 48 hours is Urgent for that deadline (backlog: packages/domain/src/contact-urgency.ts:58 Urgency counts deadlines in messages that only mention a contact)

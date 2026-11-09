@@ -105,6 +105,34 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(everyoneElse.map(({ emails }) => emails)).toEqual([['marta@acme.com'], ['luis@example.com']]);
   });
 
+  it('leaves out of GET /people a sender whose only message carries a List-Id, and keeps a sender writing in person', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const luisMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMessage,
+        {
+          ...luisMessage,
+          id: 'message-2',
+          threadId: 'thread-2',
+          from: 'Vendor News <news@vendor.example>',
+          subject: 'Weekly digest',
+          listId: '<digest.vendor.example>',
+        },
+      ],
+    });
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, everyoneElse } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect([...vip, ...everyoneElse].map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+  });
+
   it('gives each contact at GET /people, under VIP and under Everyone else, its organization and the time of its most recent message', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const [luisMessage, martaMessage] = budgetReviewReportWithSecondMessageFromMarta.messages;
