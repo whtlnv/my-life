@@ -212,4 +212,41 @@ describe('backend app: the agent', () => {
       { role: 'assistant', text: 'Ana is waiting on you.' },
     ]);
   });
+
+  it("logs a follow-up message's spend and answers that the daily spend ceiling is reached, without calling the model, once it is", async () => {
+    const costs = [0.4, 0.6];
+    let modelCalls = 0;
+    const agent = {
+      respond: () => {
+        modelCalls += 1;
+        return Promise.resolve({
+          text: 'You have two open tasks today.',
+          costInUsd: costs.shift() ?? 0,
+          model: 'claude-opus-5-5',
+        });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 1,
+      agent,
+    });
+    const created = (await (
+      await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' })
+    ).json()) as { id: string };
+    await postJson(app, `/agent/conversations/${created.id}/messages`, { message: 'Which one is urgent?' });
+
+    await postJson(app, `/agent/conversations/${created.id}/messages`, { message: 'Who is waiting on me?' });
+
+    const conversation = await getJson<{ turns: { role: string; text: string }[] }>(
+      app,
+      `/agent/conversations/${created.id}`,
+    );
+    expect(modelCalls).toBe(2);
+    expect(conversation.turns.slice(-2)).toEqual([
+      { role: 'user', text: 'Who is waiting on me?' },
+      { role: 'assistant', text: agentSpendCeilingReply },
+    ]);
+  });
 });

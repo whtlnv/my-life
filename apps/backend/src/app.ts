@@ -1109,7 +1109,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { message } = await context.req.json<{ message: string }>();
     const earlierTurns = conversationStore.load(id) ?? [];
     const turns: ConversationTurn[] = [...earlierTurns, { role: 'user', text: message }];
+    if (hasReachedDailySpendCeiling()) {
+      conversationStore.save(id, [...turns, { role: 'assistant', text: agentSpendCeilingReply }]);
+      return context.json({});
+    }
     const reply = await options.agent?.respond({ turns });
+    if (reply) {
+      logSpend(reply);
+    }
     conversationStore.save(id, [...turns, assistantTurn(reply)]);
     return context.json({});
   });
