@@ -84,6 +84,28 @@ async function undoAction(actionId: string): Promise<void> {
   await fetch('/agent/actions/undo', { method: 'POST', body: JSON.stringify({ actionId }) });
 }
 
+function ActionUndoControl({
+  action,
+  undone,
+  onUndo,
+}: {
+  action: AgentAction;
+  undone: boolean;
+  onUndo: () => void;
+}) {
+  if (undone) {
+    return <span> {undoneActionText}</span>;
+  }
+  if (!action.undoable) {
+    return null;
+  }
+  return (
+    <button type="button" onClick={onUndo}>
+      Undo
+    </button>
+  );
+}
+
 function AgentActions() {
   const [actions, setActions] = useState<AgentAction[]>([]);
   const [undoneIds, setUndoneIds] = useState<string[]>([]);
@@ -105,20 +127,13 @@ function AgentActions() {
         {actions.map((action) => (
           <li key={action.id}>
             {action.tool} {action.target}
-            {undoneIds.includes(action.id) ? (
-              <span> {undoneActionText}</span>
-            ) : (
-              action.undoable && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    undo(action.id);
-                  }}
-                >
-                  Undo
-                </button>
-              )
-            )}
+            <ActionUndoControl
+              action={action}
+              undone={undoneIds.includes(action.id)}
+              onUndo={() => {
+                undo(action.id);
+              }}
+            />
           </li>
         ))}
       </ul>
