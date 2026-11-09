@@ -63,7 +63,11 @@ describe('backend app: GET /needs-input', () => {
   });
 
   it('still asks the category question of a message whose two triage models disagreed, after a backend restart on the same database file, with no triage call made again', async () => {
-    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() };
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+    };
     const triage = triageAnswering({
       action: 'keep',
       category: 'cc-thread',
@@ -290,5 +294,22 @@ describe('backend app: GET /needs-input', () => {
     const people = await getJson<{ vip: { emails: string[] }[] }>(app, '/people');
     expect(people.vip).toEqual([]);
     expect((await getJson<{ questions: unknown[] }>(app, '/needs-input')).questions).toEqual([]);
+  });
+  it('counts each unanswered Needs input question in the GET /now badge count', async () => {
+    const triage = triageAnswering({
+      action: 'keep',
+      category: 'cc-thread',
+      summary: 'Luis copies the user on the budget thread',
+      extract: {},
+      reason: 'The user is only copied',
+      disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+
+    const now = await getJson<{ badgeCount: number }>(app, '/now');
+
+    expect(now.badgeCount).toBe(1);
   });
 });

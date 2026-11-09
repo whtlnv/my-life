@@ -96,7 +96,7 @@
 - [x] Each task on the _now_ page can be marked done with one click, and it leaves the page
 - [x] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
 - [x] The _now_ waiting-on list leaves out a person whose last message the user has answered
-- [ ] The badge count includes the unanswered Needs input questions
+- [x] The badge count includes the unanswered Needs input questions
 - [ ] The badge count includes the open tasks whose due time has passed
 - [ ] The badge count leaves out the open tasks due later
 - [ ] The shipped backend (`apps/backend/src/main.ts`) serves `GET /people`, the timelines, `GET /needs-input` and the task routes, and runs the prioritization pass on its schedule through the real Claude adapter with its prompt file

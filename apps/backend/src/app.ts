@@ -790,7 +790,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       fetchedAt: clock.now().toISOString(),
     });
   });
-  app.get('/needs-input', (context) => {
+  const needsInputQuestions = () => {
     const verdicts = verdictStore.loadAll();
     const categoryQuestions = proposals.flatMap(({ messageId, accountEmail, category, disagreement }) => {
       const alreadyAnswered = latestVerdictFor(messageId, verdicts) !== undefined;
@@ -811,8 +811,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (senderWroteBefore || senderAlreadyAnswered) return [];
       return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
     });
-    return context.json({ questions: [...categoryQuestions, ...newSenderQuestions] });
-  });
+    return [...categoryQuestions, ...newSenderQuestions];
+  };
+  app.get('/needs-input', (context) => context.json({ questions: needsInputQuestions() }));
   app.post('/needs-input/answers', async (context) => {
     const { kind, senderEmail, messageId, answer } = await context.req.json<{
       kind?: string;
@@ -1320,7 +1321,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
-      badgeCount: badgeCount(events, clock, awaitingTheUser(proposals), verdictStore.loadAll()),
+      badgeCount:
+        badgeCount(events, clock, awaitingTheUser(proposals), verdictStore.loadAll()) + needsInputQuestions().length,
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
     });
   });
