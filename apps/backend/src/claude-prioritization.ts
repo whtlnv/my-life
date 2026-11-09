@@ -1,3 +1,5 @@
+import { taskRanks } from '@my-life/contracts';
+
 import { type ClaudePricing, type ClaudeResponse, readToolUseInput } from './claude-triage';
 
 interface ClaudePrioritizationDependencies {
@@ -20,7 +22,7 @@ interface PrioritizationContext {
 }
 
 interface ClaudePrioritization {
-  prioritize: (context: PrioritizationContext) => Promise<{ ranks: TaskRank[] }>;
+  prioritize: (context: PrioritizationContext) => Promise<{ ranks?: TaskRank[]; failure?: { input: unknown } }>;
 }
 
 export function createClaudePrioritization({
@@ -30,8 +32,9 @@ export function createClaudePrioritization({
   return {
     prioritize: async () => {
       const response = await createMessage({ model });
-      const { ranks } = readToolUseInput(response) as { ranks: TaskRank[] };
-      return { ranks };
+      const input = readToolUseInput(response);
+      const parsed = taskRanks.safeParse(input);
+      return parsed.success ? { ranks: parsed.data.ranks } : { failure: { input } };
     },
   };
 }

@@ -48,4 +48,23 @@ describe('Claude prioritization', () => {
       { taskId: 'task-1', rank: 2, reason: 'No deadline' },
     ]);
   });
+
+  it('rejects an answer that fails the rank contract, returning no ranks and keeping the answer as the failure', async () => {
+    const invalidAnswer = { ranks: [{ taskId: 'task-1', rank: 'first' }] };
+    const prioritization = createClaudePrioritization({
+      model: 'claude-opus-5-5',
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: () => rankTasksAnswer(invalidAnswer),
+    });
+
+    const outcome = await prioritization.prioritize({
+      tasks: [{ id: 'task-1', title: 'Approve the budget', accountEmail: 'ana@example.com' }],
+      profile: '',
+      calendar: [],
+      urgentContacts: [],
+    });
+
+    expect(outcome).not.toHaveProperty('ranks');
+    expect(outcome).toHaveProperty('failure', { input: invalidAnswer });
+  });
 });

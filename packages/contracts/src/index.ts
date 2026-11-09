@@ -6,3 +6,4 @@ export { filterProposal } from './filter-proposal';
 export { contactDetails } from './contact-details';
 export { contactsImport, type ContactsImport } from './contacts-import';
 export { digestSummary } from './digest-summary';
+export { taskRanks } from './task-ranks';
