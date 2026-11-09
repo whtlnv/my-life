@@ -1084,20 +1084,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({});
   });
   let conversationTurns: ConversationTurn[] = [];
+  const assistantTurn = (reply: { text: string } | undefined): ConversationTurn => ({
+    role: 'assistant',
+    text: reply?.text ?? '',
+  });
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
     const reply = await options.agent?.respond();
-    conversationTurns = [
-      { role: 'user', text: message },
-      { role: 'assistant', text: reply?.text ?? '' },
-    ];
+    conversationTurns = [{ role: 'user', text: message }, assistantTurn(reply)];
     return context.json({ id: 'conversation-1', turns: conversationTurns }, 201);
   });
   app.post('/agent/conversations/:id/messages', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
     conversationTurns = [...conversationTurns, { role: 'user', text: message }];
     const reply = await options.agent?.respond({ turns: conversationTurns });
-    conversationTurns = [...conversationTurns, { role: 'assistant', text: reply?.text ?? '' }];
+    conversationTurns = [...conversationTurns, assistantTurn(reply)];
     return context.json({});
   });
   app.get('/agent/conversations/:id', (context) =>
