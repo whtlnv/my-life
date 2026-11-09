@@ -788,9 +788,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const senderWroteBefore = reportedMessages.some(
         (reported) => reported.id !== messageId && contactFromSender(reported.from).email === senderEmail,
       );
-      const senderAlreadyMarked = contactDetailsStore.markedEmails().has(senderEmail);
-      const senderMarkedOrdinary = contactDetailsStore.userRemovedMark(senderEmail, 'vip');
-      if (senderWroteBefore || senderAlreadyMarked || senderMarkedOrdinary) return [];
+      const senderAlreadyAnswered =
+        contactDetailsStore.markedEmails().has(senderEmail) || contactDetailsStore.userRemovedMark(senderEmail, 'vip');
+      if (senderWroteBefore || senderAlreadyAnswered) return [];
       return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
     });
     return context.json({ questions: [...categoryQuestions, ...newSenderQuestions] });
