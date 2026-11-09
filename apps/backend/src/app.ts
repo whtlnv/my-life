@@ -1095,7 +1095,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ];
       return context.json({ id: '', turns }, 201);
     }
-    const reply = await options.agent?.respond();
+    const reply = await options.agent?.respond({ turns: [{ role: 'user', text: message }] });
     if (reply) {
       logSpend(reply);
     }

@@ -22,6 +22,21 @@ describe('backend app: the agent', () => {
     ]);
   });
 
+  it("sends the first message of a new conversation to the model as the conversation's only user turn", async () => {
+    const askedRequests: unknown[] = [];
+    const agent = {
+      respond: (request?: { turns: { role: string; text: string }[] }) => {
+        askedRequests.push(request);
+        return Promise.resolve({ text: 'You have two open tasks today.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+
+    await postJson(app, '/agent/conversations', { message: 'What is on my plate today?' });
+
+    expect(askedRequests).toEqual([{ turns: [{ role: 'user', text: 'What is on my plate today?' }] }]);
+  });
+
   it('sends the earlier user and assistant turns to the model along with the new message', async () => {
     const askedTurns: unknown[] = [];
     const agent = {
