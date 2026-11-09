@@ -788,13 +788,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const senderWroteBefore = reportedMessages.some(
         (reported) => reported.id !== messageId && contactFromSender(reported.from).email === senderEmail,
       );
-      if (senderWroteBefore) return [];
+      if (senderWroteBefore || contactDetailsStore.markedEmails().has(senderEmail)) return [];
       return [{ kind: 'new-sender', senderEmail, messageId, accountEmail, choices: ['vip', 'ordinary'] }];
     });
     return context.json({ questions: [...categoryQuestions, ...newSenderQuestions] });
   });
   app.post('/needs-input/answers', async (context) => {
-    const { messageId, answer } = await context.req.json<{ messageId: string; answer: string }>();
+    const { kind, senderEmail, messageId, answer } = await context.req.json<{
+      kind?: string;
+      senderEmail: string;
+      messageId: string;
+      answer: string;
+    }>();
+    if (kind === 'new-sender') {
+      contactDetailsStore.saveMark(senderEmail, answer);
+      return context.body(null, 200);
+    }
     verdictStore.save({
       messageId,
       decision: 'confirmed',
