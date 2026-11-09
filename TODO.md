@@ -113,7 +113,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] On the triage page, a key other than the ignore, act and reply keys on a Slack item posts nothing
 - [x] A Slack card on the triage page has an Open in Slack link to its permalink
 - [x] A Slack item on the triage page has Ignore, Task and Reply buttons labelled with their keys `i`, `t` and `r`
-- [ ] Clicking a Slack item's Ignore or Task button posts that verdict
+- [x] Clicking a Slack item's Ignore or Task button posts that verdict
 - [ ] Clicking a Slack item's Reply button opens the composer
 - [ ] After a Slack verdict or a successful send, the item leaves the triage page; a send Slack rejects keeps the composer open with the Slack error shown
 - [ ] A Slack contact on the People page shows its workspace name and the time of its last message, as email contacts show their organization and last message

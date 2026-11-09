@@ -1703,4 +1703,50 @@ describe('TriagePage', () => {
       ['Reply', 'r'],
     ]);
   });
+
+  it('posts the `ignore` verdict when a Slack card\'s Ignore button is clicked, and the `act` verdict when another card\'s Task button is clicked', async () => {
+    const slackItem = (timestamp: string, senderName: string, text: string) => ({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: `U-${senderName}`,
+      senderName,
+      text,
+      timestamp,
+      permalink: `https://acme.slack.com/archives/D0001/p${timestamp.replace('.', '')}`,
+      choices: ['ignore', 'act', 'reply'],
+    });
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        slackItem('1762700000.000100', 'Lucía Ramos', 'Lunch is moved to Thursday'),
+        slackItem('1762700100.000200', 'Diego Soto', 'The deploy is blocked on your approval'),
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const [luciaCard, diegoCard] = within(slackSection).getAllByRole('article') as [HTMLElement, HTMLElement];
+    await user.click(within(luciaCard).getByRole('button', { name: /^Ignore/ }));
+    await user.click(within(diegoCard).getByRole('button', { name: /^Task/ }));
+
+    const postedSlackVerdicts = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/slack-verdicts')
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(String(init?.body)) as unknown }));
+    expect(postedSlackVerdicts).toEqual([
+      {
+        method: 'POST',
+        body: { workspaceTeamId: 'T0001', conversationId: 'D0001', timestamp: '1762700000.000100', decision: 'ignore' },
+      },
+      {
+        method: 'POST',
+        body: { workspaceTeamId: 'T0001', conversationId: 'D0001', timestamp: '1762700100.000200', decision: 'act' },
+      },
+    ]);
+  });
 });
