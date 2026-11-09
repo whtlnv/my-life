@@ -1745,7 +1745,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messages: [
           {
             threadId: message.conversationId,
-            receivedAt: new Date(Number(message.timestamp) * 1000).toISOString(),
+            receivedAt: slackTimestampAsIso(message.timestamp),
             sentByUser: message.sentByUser === true,
           },
         ],
@@ -1804,7 +1804,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map((message) => ({
         channel: 'slack',
         displayName: message.senderName,
-        waitingSince: new Date(Number(message.timestamp) * 1000).toISOString(),
+        waitingSince: slackTimestampAsIso(message.timestamp),
       }));
     return context.json({
       people: [...people, ...slackPeople].toSorted((first, second) =>
@@ -1960,6 +1960,10 @@ function organizationsByName(senders: { messageId: string; from: string }[], pro
     messageIdsByName.set(name, [...(messageIdsByName.get(name) ?? []), messageId]);
   }
   return [...messageIdsByName].map(([name, messageIds]) => ({ name, messageIds }));
+}
+
+function slackTimestampAsIso(timestamp: string): string {
+  return new Date(Number(timestamp) * 1000).toISOString();
 }
 
 function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string; userId: string }): string {
