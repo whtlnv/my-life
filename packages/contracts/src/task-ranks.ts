@@ -4,3 +4,5 @@ import { z } from 'zod';
 export const taskRanks = z.object({
   ranks: z.array(z.object({ taskId: z.string(), rank: z.number(), reason: z.string() })),
 });
+
+export type TaskRanks = z.infer<typeof taskRanks>;
