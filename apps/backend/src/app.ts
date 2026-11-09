@@ -614,7 +614,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
     return context.json({});
   });
-  type SlackSendRequest = { workspaceTeamId: string; conversationId: string; text: string };
+  type SlackSendRequest = { workspaceTeamId: string; conversationId: string; threadTimestamp?: string; text: string };
   const slackSends: (SlackSendRequest & { sentAt: string })[] = [];
   app.post('/slack-sends', async (context) => {
     const send = await context.req.json<SlackSendRequest>();
@@ -622,7 +622,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     await fetch(`${options.slackApiUrl ?? ''}/chat.postMessage`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${workspace?.userToken ?? ''}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ channel: send.conversationId, text: send.text }),
+      body: JSON.stringify({ channel: send.conversationId, thread_ts: send.threadTimestamp, text: send.text }),
     });
     slackSends.push({ ...send, sentAt: clock.now().toISOString() });
     return context.json({});

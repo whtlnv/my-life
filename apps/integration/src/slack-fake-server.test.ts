@@ -868,4 +868,33 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('an explicit send at POST /slack-sends that names a thread timestamp posts the reply into that thread', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      await backend.request('/slack-sends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspaceTeamId: 'T0001',
+          conversationId: 'C0001',
+          threadTimestamp: '1762700200.000300',
+          text: 'Agreed, let us ship Friday.',
+        }),
+      });
+
+      expect(slack.postedMessages()).toEqual([
+        { channel: 'C0001', threadTimestamp: '1762700200.000300', text: 'Agreed, let us ship Friday.' },
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
 });
