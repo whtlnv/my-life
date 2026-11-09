@@ -1,3 +1,4 @@
+import { localCalendarDate } from './business-days';
 import type { Clock } from './clock';
 
 interface SpendEntry {
@@ -9,9 +10,6 @@ interface SpendSettings {
   dailyCeilingInUsd: number;
   timeZone: string;
 }
-
-const localCalendarDate = (instant: Date, timeZone: string): string =>
-  new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(instant);
 
 export function isTriagePaused(spendLog: SpendEntry[], settings: SpendSettings, clock: Clock): boolean {
   const today = localCalendarDate(clock.now(), settings.timeZone);

@@ -1,4 +1,4 @@
-import { businessDaysBetween } from './business-days';
+import { businessDaysBetween, localCalendarDate } from './business-days';
 
 interface UrgencyMessage {
   threadId: string;
@@ -46,9 +46,6 @@ function asksSomething(message: UrgencyMessage): boolean {
 
 const isDateOnly = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date);
 
-const businessDateOf = (instant: number, timeZone: string) =>
-  new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(new Date(instant));
-
 // A date-only deadline ("2026-11-09", as the extraction may give it) lasts until the end of that day in the business
 // time zone; one with a time is an instant.
 function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: number, timeZone: string): boolean {
@@ -56,8 +53,8 @@ function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: nu
   const nowMilliseconds = Date.parse(now);
   return (message.dates ?? []).some((date) => {
     if (isDateOnly(date)) {
-      const today = businessDateOf(nowMilliseconds, timeZone);
-      const windowEnd = businessDateOf(nowMilliseconds + deadlineWindowMilliseconds, timeZone);
+      const today = localCalendarDate(nowMilliseconds, timeZone);
+      const windowEnd = localCalendarDate(nowMilliseconds + deadlineWindowMilliseconds, timeZone);
       return date >= today && date <= windowEnd;
     }
     const millisecondsUntilDate = Date.parse(date) - nowMilliseconds;

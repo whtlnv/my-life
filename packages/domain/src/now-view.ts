@@ -1,3 +1,4 @@
+import { localCalendarDate } from './business-days';
 import type { Clock } from './clock';
 import type { MergedCalendarEvent } from './merge-calendar-snapshots';
 
@@ -8,9 +9,6 @@ const isHappeningAt = (event: MergedCalendarEvent, now: string): boolean =>
 
 const isStartingBetween = (event: MergedCalendarEvent, now: string, horizon: string): boolean =>
   now < event.start && event.start <= horizon;
-
-const localCalendarDate = (instant: string, timeZone: string | undefined): string =>
-  new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(new Date(instant));
 
 const isLaterToday = (
   event: MergedCalendarEvent,

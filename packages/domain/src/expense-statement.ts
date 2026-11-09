@@ -1,3 +1,5 @@
+import { localCalendarDate } from './business-days';
+
 export interface ExpenseProposal {
   messageId: string;
   date: string;
@@ -22,9 +24,6 @@ export interface StatementPeriod {
   week: string;
   timeZone: string;
 }
-
-const localCalendarDate = (instant: string, timeZone: string): string =>
-  new Intl.DateTimeFormat('en-CA', { timeZone, dateStyle: 'short' }).format(new Date(instant));
 
 const sundayOf = (monday: string): string =>
   new Date(Date.parse(`${monday}T00:00:00.000Z`) + 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
