@@ -145,6 +145,10 @@ interface WaitingPerson {
   waitingSince: string;
 }
 
+function longestWaitFirst(people: WaitingPerson[]): WaitingPerson[] {
+  return [...people].sort((first, second) => first.waitingSince.localeCompare(second.waitingSince));
+}
+
 function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
   return (
     <section aria-label="Waiting on you" className="section">
@@ -198,7 +202,7 @@ export function DashboardApp() {
     void fetch('/waiting-on')
       .then((response) => response.json() as Promise<{ people: WaitingPerson[] }>)
       .then(({ people }) => {
-        setWaitingPeople([...people].sort((first, second) => first.waitingSince.localeCompare(second.waitingSince)));
+        setWaitingPeople(longestWaitFirst(people));
       })
       .catch(() => undefined);
   }, []);
