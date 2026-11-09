@@ -222,4 +222,41 @@ describe('backend app: task proposals and tasks', () => {
     expect(doneHistoryAfter).toEqual(doneHistoryBefore);
     expect(snoozedHistoryAfter).toEqual(snoozedHistoryBefore);
   });
+
+  it('hands the prioritization port the open tasks at POST /prioritization-run and shows at GET /tasks the rank and reason it returned for each', async () => {
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-05' }] }),
+    );
+    const handedTasks: unknown[] = [];
+    const prioritization = {
+      prioritize: async (context: { tasks: { id: string }[] }) => {
+        handedTasks.push(...context.tasks);
+        return {
+          ranks: context.tasks.map(({ id }) => ({ taskId: id, rank: 1, reason: 'Due before the board meeting' })),
+          costInUsd: 0.01,
+        };
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+
+    await postJson(app, '/prioritization-run', {});
+
+    const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(handedTasks).toEqual([
+      {
+        id: open.tasks[0]?.id,
+        title: 'Approve the budget',
+        accountEmail: 'ana@example.com',
+        due: '2026-11-05',
+      },
+    ]);
+    expect(tasks.tasks).toEqual([
+      expect.objectContaining({ title: 'Approve the budget', rank: 1, reason: 'Due before the board meeting' }),
+    ]);
+  });
 });
