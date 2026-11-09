@@ -1026,15 +1026,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }));
     const undoneAgentActions = agentActionStore.loadAll().filter(({ undone }) => undone === true);
     const undoAgentArchiveCommands = undoneAgentActions
-      .filter(({ tool }) => tool === 'archive_message')
-      .map(({ target }) => target)
-      .filter(isMessageOfAccount)
-      .map((messageId) => ({
-      id: `undo-agent-archive-${messageId}`,
-      type: 'undo-automatic',
-      messageId,
-      label: archivedLabelName,
-    }));
+      .filter(({ tool, target }) => tool === 'archive_message' && isMessageOfAccount(target))
+      .map(({ target: messageId }) => ({
+        id: `undo-agent-archive-${messageId}`,
+        type: 'undo-automatic',
+        messageId,
+        label: archivedLabelName,
+      }));
     const removeLabelCommands = undoneAgentActions
       .filter(({ tool, target }) => tool === 'label_message' && isMessageOfAccount(target))
       .map(({ target: messageId, labelName }) => ({
