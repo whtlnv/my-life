@@ -210,4 +210,29 @@ describe('contactUrgency', () => {
       reasons: [],
     });
   });
+
+  it('lists both reasons, "deadline" and "unanswered ask", when the contact has an unanswered 2-business-day-old ask and a deadline inside the next 48 hours', () => {
+    const wednesdayFivePm = '2026-11-11T23:00:00.000Z';
+    const wednesdayNineAm = '2026-11-11T15:00:00.000Z';
+    const thursdayNoon = '2026-11-12T18:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-budget',
+        receivedAt: mondayFivePm,
+        sentByUser: false,
+        asks: [{ ask: 'Review the Q3 budget spreadsheet and send comments' }],
+      },
+      {
+        threadId: 'thread-contract',
+        receivedAt: wednesdayNineAm,
+        sentByUser: false,
+        dates: [thursdayNoon],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: wednesdayFivePm, settings: urgencySettings })).toEqual({
+      urgent: true,
+      reasons: ['deadline', 'unanswered ask'],
+    });
+  });
 });

@@ -69,8 +69,9 @@ export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; r
   const { messages, now, settings } = input;
   const hasOwnDeadlineSoon = (message: UrgencyMessage) =>
     !message.onlyMentionsContact && hasDeadlineSoon(message, now, settings.deadlineHours, settings.timeZone);
+  const reasons: string[] = [];
   if (messages.some(hasOwnDeadlineSoon)) {
-    return { urgent: true, reasons: ['deadline'] };
+    reasons.push('deadline');
   }
   if (
     input.vip &&
@@ -78,12 +79,16 @@ export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; r
       waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.vipWaitingBusinessDays),
     )
   ) {
-    return { urgent: true, reasons: ['VIP waiting'] };
+    reasons.push('VIP waiting');
   }
-  const urgent = messages.some(
-    (message) =>
-      asksSomething(message) &&
-      waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays),
-  );
-  return urgent ? { urgent: true, reasons: ['unanswered ask'] } : { urgent: false, reasons: [] };
+  if (
+    messages.some(
+      (message) =>
+        asksSomething(message) &&
+        waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays),
+    )
+  ) {
+    reasons.push('unanswered ask');
+  }
+  return { urgent: reasons.length > 0, reasons };
 }
