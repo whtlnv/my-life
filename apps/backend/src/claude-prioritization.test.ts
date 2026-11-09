@@ -67,4 +67,25 @@ describe('Claude prioritization', () => {
     expect(outcome).not.toHaveProperty('ranks');
     expect(outcome).toHaveProperty('failure', { input: invalidAnswer });
   });
+
+  it('reports the cost of the call from its token usage and the model pricing, so the pass can log it against the daily spend', async () => {
+    const prioritization = createClaudePrioritization({
+      model: 'claude-opus-5-5',
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: () =>
+        rankTasksAnswer(
+          { ranks: [{ taskId: 'task-1', rank: 1, reason: 'Only task' }] },
+          { input_tokens: 1_000_000, output_tokens: 200_000 },
+        ),
+    });
+
+    const outcome = await prioritization.prioritize({
+      tasks: [{ id: 'task-1', title: 'Approve the budget', accountEmail: 'ana@example.com' }],
+      profile: '',
+      calendar: [],
+      urgentContacts: [],
+    });
+
+    expect(outcome).toHaveProperty('costInUsd', 10);
+  });
 });

@@ -1,6 +1,6 @@
 import { type TaskRanks, taskRanks } from '@my-life/contracts';
 
-import { type ClaudePricing, type ClaudeResponse, readToolUseInput } from './claude-triage';
+import { type ClaudePricing, type ClaudeResponse, computeCostInUsd, readToolUseInput } from './claude-triage';
 
 interface ClaudePrioritizationDependencies {
   model: string;
@@ -16,11 +16,16 @@ interface PrioritizationContext {
 }
 
 interface ClaudePrioritization {
-  prioritize: (context: PrioritizationContext) => Promise<{ ranks?: TaskRanks['ranks']; failure?: { input: unknown } }>;
+  prioritize: (context: PrioritizationContext) => Promise<{
+    ranks?: TaskRanks['ranks'];
+    costInUsd?: number;
+    failure?: { input: unknown };
+  }>;
 }
 
 export function createClaudePrioritization({
   model,
+  pricing,
   createMessage,
 }: ClaudePrioritizationDependencies): ClaudePrioritization {
   return {
@@ -28,7 +33,7 @@ export function createClaudePrioritization({
       const response = await createMessage({ model });
       const input = readToolUseInput(response);
       const parsed = taskRanks.safeParse(input);
-      return parsed.success ? { ranks: parsed.data.ranks } : { failure: { input } };
+      return parsed.success ? { ranks: parsed.data.ranks, costInUsd: computeCostInUsd(response.usage, pricing) } : { failure: { input } };
     },
   };
 }
