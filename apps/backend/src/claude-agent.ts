@@ -67,6 +67,14 @@ function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgen
   );
 }
 
+function citedSources(content: ClaudeAgentContentBlock[]) {
+  return content.flatMap((block) =>
+    block.type === 'tool_use' && block.name === 'cite_sources'
+      ? (block.input as { ids: string[] }).ids.map((id) => ({ id }))
+      : [],
+  );
+}
+
 function toToolDefinition({ name, description, inputSchema }: ClaudeAgentTool) {
   return { name, description, input_schema: inputSchema };
 }
@@ -107,11 +115,7 @@ export function createClaudeAgent({
       while (response?.stop_reason === 'tool_use') {
         if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply, costInUsd };
         toolRounds += 1;
-        for (const block of response.content) {
-          if (block.type === 'tool_use' && block.name === 'cite_sources') {
-            citations.push(...(block.input as { ids: string[] }).ids.map((id) => ({ id })));
-          }
-        }
+        citations.push(...citedSources(response.content));
         const toolResults = await runRequestedTools(response.content, turnTools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
         response = await sendMessages();
