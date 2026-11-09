@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 09:35 · `apps/integration/src/slack-fake-server.test.ts::in the mention scenario returns one channel message that mentions the user from search.messages`
+- Behavior: In the `mention` scenario, the Slack fake's `search.messages` returns one channel message that mentions the user
+- Predicted: TypeError in the fake's handler (no response table for `mention`) and the client fetch failing with "fetch failed" / socket hang up
+- Actual: the TypeError in the handler as predicted, but the fetch hangs until the 5 s test timeout instead of failing, because `writeHead` has already run and the handler throws before `response.end`, which leaves the socket open
+- Type: right-reason mismatch
+- Resolution: the cause (missing scenario) is right, so I accepted the failure; an unknown scenario or path in the fake hangs instead of erroring fast
+
 ## 2026-11-09 01:53 · `apps/backend/src/app-agent.test.ts::undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label`
 - Behavior: undoing an agent archive sends the account an undo command that returns the message to the inbox and removes the archive label
 - Predicted: AssertionError at toContainEqual — no `undo-automatic` command for message-1 because `POST /agent/actions/undo` does not exist

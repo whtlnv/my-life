@@ -1,9 +1,13 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type SlackScenario = 'direct-message';
+type SlackScenario = 'direct-message' | 'mention';
 
 export const directMessageText = 'Can you review the proposal today?';
+
+export const userId = 'U0000';
+
+export const mentionMessageText = `<@${userId}> can you join the launch call?`;
 
 const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {
@@ -11,6 +15,21 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
     '/conversations.history': {
       ok: true,
       messages: [{ type: 'message', user: 'U0001', text: directMessageText, ts: '1762700000.000100' }],
+    },
+  },
+  mention: {
+    '/search.messages': {
+      ok: true,
+      messages: {
+        matches: [
+          {
+            text: mentionMessageText,
+            user: 'U0002',
+            ts: '1762700100.000200',
+            channel: { id: 'C0001', is_im: false },
+          },
+        ],
+      },
     },
   },
 };
