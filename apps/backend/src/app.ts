@@ -1312,6 +1312,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const emailTarget = (input: unknown) => (input as { email: string }).email;
     const proposalTarget = (input: unknown) => (input as { proposalId: string }).proposalId;
     const createdTaskTarget = (_input: unknown, result: unknown) => (result as { taskId: string }).taskId;
+    const recordAction = (action: Pick<AgentAction, 'tool' | 'target' | 'undoable' | 'outcome'>): void => {
+      agentActions.push({
+        id: `action-${String(agentActions.length + 1)}`,
+        conversationId,
+        at: clock.now().toISOString(),
+        ...action,
+      });
+    };
     const recordingAction = (
       tool: AgentTool,
       undoable: boolean,
@@ -1320,26 +1328,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       name: tool.name,
       run: async (input) => {
         const result = await tool.run(input);
-        agentActions.push({
-          id: `action-${String(agentActions.length + 1)}`,
-          tool: tool.name,
-          target: targetOf(input, result),
-          conversationId,
-          at: clock.now().toISOString(),
-          undoable,
-        });
+        recordAction({ tool: tool.name, target: targetOf(input, result), undoable });
         return result;
       },
     });
     const refusedSendMessageTool: AgentTool = {
       name: 'send_message',
       run: (input) => {
-        agentActions.push({
-          id: `action-${String(agentActions.length + 1)}`,
+        recordAction({
           tool: 'send_message',
           target: messageTarget(input),
-          conversationId,
-          at: clock.now().toISOString(),
           undoable: false,
           outcome: 'refused',
         });
