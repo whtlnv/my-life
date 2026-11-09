@@ -65,11 +65,17 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
   },
 };
 
+const token = 'xoxp-fake';
+
 export async function startSlackFakeServer(scenario: SlackScenario) {
   const responseByPath = responseByPathByScenario[scenario];
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://fake');
     response.writeHead(200, { 'Content-Type': 'application/json' });
+    if (request.headers.authorization !== `Bearer ${token}`) {
+      response.end(JSON.stringify({ ok: false, error: 'invalid_auth' }));
+      return;
+    }
     if (url.pathname === '/users.info') {
       response.end(JSON.stringify(usersInfoResponse(url.searchParams.get('user') ?? '')));
       return;
@@ -80,7 +86,7 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
   const { port } = server.address() as AddressInfo;
   return {
     url: `http://127.0.0.1:${String(port)}`,
-    token: 'xoxp-fake',
+    token,
     close: () =>
       new Promise<void>((resolve) =>
         server.close(() => {

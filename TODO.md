@@ -21,7 +21,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] In the `thread-reply` scenario, the Slack fake's `conversations.replies` returns a new reply in a thread the user wrote in
 - [x] The Slack fake answers `users.info` with the display name of each user in the scenario
 - [x] The Slack fake answers a request carrying the scenario's token
-- [ ] The Slack fake answers `invalid_auth` to a request carrying any other token
+- [x] The Slack fake answers `invalid_auth` to a request carrying any other token
 - [ ] In the `rate-limited` scenario, the Slack fake answers the first request with 429 and a `Retry-After` header, and the next one normally
 - [ ] A message posted to the Slack fake's `chat.postMessage` can be read back by the test, with its channel, thread and text
 

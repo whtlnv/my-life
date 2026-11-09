@@ -112,4 +112,17 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('answers invalid_auth to a request carrying any other token', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const list = (await (
+        await fetch(`${slack.url}/conversations.list?types=im`, { headers: { Authorization: 'Bearer xoxp-wrong' } })
+      ).json()) as { ok: boolean; error?: string };
+
+      expect(list).toEqual({ ok: false, error: 'invalid_auth' });
+    } finally {
+      await slack.close();
+    }
+  });
 });
