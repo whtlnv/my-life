@@ -824,6 +824,29 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('after a POST /slack-poll, a Slack triage item links to the workspace URL its auth.test gives followed by archives/<conversation>/p<timestamp without the dot>', async () => {
+    const slack = await startSlackFakeServer('direct-message', { workspaceUrl: 'https://acme-studio.slack.com/' });
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      await backend.request('/slack-poll', { method: 'POST' });
+      const { slackItems } = (await (await backend.request('/triage-queue')).json()) as {
+        slackItems: { permalink: string }[];
+      };
+
+      expect(slackItems.map((item) => item.permalink)).toEqual([
+        'https://acme-studio.slack.com/archives/D0001/p1762700000000100',
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('confirming reply at POST /slack-verdicts on a polled Slack DM posts nothing to Slack', async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {

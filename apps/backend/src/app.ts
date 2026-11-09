@@ -589,6 +589,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   interface SlackWorkspacePoll {
     teamId: string;
     name?: string;
+    url?: string | undefined;
     lastSuccessfulPollAt?: string;
   }
   let slackWorkspacePolls: SlackWorkspacePoll[] | undefined;
@@ -603,12 +604,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       stale: !isAccountFresh({ email: poll.teamId, lastReportedAt, pollingIntervalInMilliseconds }, clock),
     };
   };
-  const fetchSlackWorkspaceName = async (userToken: string): Promise<string> => {
+  const fetchSlackWorkspaceIdentity = async (userToken: string): Promise<{ name: string; url: string | undefined }> => {
     const slackResponse = await fetch(`${options.slackApiUrl ?? ''}/auth.test`, {
       headers: { Authorization: `Bearer ${userToken}` },
     });
-    const { team } = (await slackResponse.json()) as { team: string };
-    return team;
+    const { team, url } = (await slackResponse.json()) as { team: string; url?: string };
+    return { name: team, url };
   };
   app.post('/slack-poll', async (context) => {
     const succeededTeamIds = await pollSlackWorkspaces({
@@ -620,7 +621,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     slackWorkspacePolls = await Promise.all(
       configuredSlackWorkspaces.map(async ({ teamId, userToken }) =>
         succeededTeamIds.has(teamId)
-          ? { teamId, name: await fetchSlackWorkspaceName(userToken), lastSuccessfulPollAt: clock.now().toISOString() }
+          ? { teamId, ...(await fetchSlackWorkspaceIdentity(userToken)), lastSuccessfulPollAt: clock.now().toISOString() }
           : { teamId },
       ),
     );
@@ -957,6 +958,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.body(null, 200);
   });
+  function slackTriagePermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }) {
+    const workspaceUrl = slackWorkspacePolls?.find(({ teamId }) => teamId === message.workspaceTeamId)?.url;
+    if (workspaceUrl === undefined) {
+      return slackPermalink(message);
+    }
+    return `${workspaceUrl}archives/${message.conversationId}/p${message.timestamp.replace('.', '')}`;
+  }
   function describeSlackItems() {
     const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));
     return slackMessageStore
@@ -965,7 +973,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
       .map((message) => ({
         ...message,
-        permalink: slackPermalink(message),
+        permalink: slackTriagePermalink(message),
         choices: ['ignore', 'act', 'reply'],
       }));
   }
