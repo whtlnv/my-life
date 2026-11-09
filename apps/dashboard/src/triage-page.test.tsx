@@ -1749,4 +1749,36 @@ describe('TriagePage', () => {
       },
     ]);
   });
+
+  it("opens the composer when a Slack card's Reply button is clicked", async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://acme.slack.com/archives/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    await user.click(within(card).getByRole('button', { name: /^Reply/ }));
+
+    expect(within(card).getByRole('textbox')).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: 'Send' })).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalledWith('/slack-verdicts', expect.anything());
+  });
 });

@@ -674,7 +674,13 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
       >
         Task <Key>t</Key>
       </button>
-      <button type="button" className="button">
+      <button
+        type="button"
+        className="button"
+        onClick={() => {
+          setComposing(true);
+        }}
+      >
         Reply <Key>r</Key>
       </button>
       {composing && (
