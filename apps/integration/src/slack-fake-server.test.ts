@@ -587,4 +587,23 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it("a stored Slack message whose sender users.info cannot resolve carries the sender's user id as its name", async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const store = openSlackMessageStore(':memory:');
+
+      await pollSlackWorkspace({
+        fetch,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      const storedMessage = store.listMessages().find((message) => message.text === directMessageText);
+      expect(storedMessage).toMatchObject({ senderUserId: 'U0001', senderName: 'U0001' });
+    } finally {
+      await slack.close();
+    }
+  });
 });

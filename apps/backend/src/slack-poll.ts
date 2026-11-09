@@ -31,9 +31,9 @@ async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query:
   return messages.matches;
 }
 
-async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string | undefined> {
+async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
   const { user } = await callSlack<{ user: { profile: { display_name?: string } } }>(input, `/users.info?user=${userId}`);
-  return user.profile.display_name;
+  return user.profile.display_name ?? userId;
 }
 
 async function saveSlackMessage(

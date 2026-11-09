@@ -46,7 +46,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A thread reply older than a newer message stored in the same channel outside the thread is still stored: the poll asks `conversations.replies` with `oldest` set from the newest stored message of that thread, not of the channel
 - [x] A DM message the user sent is stored as sent by the user
 - [x] A stored Slack message carries its sender's Slack display name
-- [ ] A stored Slack message whose sender `users.info` cannot resolve carries the sender's user id as its name
+- [x] A stored Slack message whose sender `users.info` cannot resolve carries the sender's user id as its name
 - [ ] When Slack answers 429 with `Retry-After`, the poll waits that long and retries, and the message is stored
 - [ ] When one workspace answers `invalid_auth`, the poll does not retry it, and the other workspace's messages are still stored
 - [ ] Slack messages stored before a backend restart are served after it
