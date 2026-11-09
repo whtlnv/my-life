@@ -23,6 +23,7 @@ export interface StartupSettings {
   urgency: UrgencySettings;
   slackWorkspaces: SlackWorkspaceSettings[];
   slackPollingIntervalInMilliseconds: number;
+  slackApiUrl: string;
 }
 
 export interface SlackWorkspaceSettings {
@@ -83,6 +84,7 @@ export function readStartupSettings(
     slackPollingIntervalInMilliseconds: secondsToMilliseconds(
       parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, defaultSlackPollingIntervalInSeconds),
     ),
+    slackApiUrl: 'https://slack.com/api',
   };
 }
 

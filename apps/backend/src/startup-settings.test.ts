@@ -237,4 +237,10 @@ describe('startup settings', () => {
 
     expect(settings.slackPollingIntervalInMilliseconds).toBe(30_000);
   });
+
+  it('calls the Slack API at https://slack.com/api when MY_LIFE_SLACK_API_URL is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.slackApiUrl).toBe('https://slack.com/api');
+  });
 });
