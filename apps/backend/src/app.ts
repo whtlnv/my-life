@@ -1274,8 +1274,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   });
+  const agentActions: { tool: string; target: string; conversationId: string; at: string; undoable: boolean }[] = [];
   const askAgent = async (turns: ConversationTurn[], conversationId: string) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
+    const recordingAction = (tool: AgentTool, undoable: boolean): AgentTool => ({
+      name: tool.name,
+      run: (input) => {
+        const target = (input as { messageId: string }).messageId;
+        agentActions.push({ tool: tool.name, target, conversationId, at: clock.now().toISOString(), undoable });
+        return tool.run(input);
+      },
+    });
     const citingSearchMessagesTool: AgentTool = {
       name: searchMessagesTool.name,
       run: async (input) => {
@@ -1293,9 +1302,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         calendarDayTool,
         tasksTool,
         digestTool,
-        archiveMessageTool,
+        recordingAction(archiveMessageTool, true),
         labelMessageTool,
-        writeDraftTool,
+        recordingAction(writeDraftTool, false),
         createTaskToolFor(conversationId),
         markVipTool,
         updateContactTool,
@@ -1336,6 +1345,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     conversationStore.save(id, [...turns, answer]);
     return context.json({});
   });
+  app.get('/agent/actions', (context) => context.json({ actions: [...agentActions].reverse() }));
   app.get('/agent/conversations', (context) =>
     context.json({
       conversations: conversationStore

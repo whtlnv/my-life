@@ -829,4 +829,43 @@ describe('backend app: the agent', () => {
       commands: expect.not.arrayContaining([expect.objectContaining({ type: 'create-filter' })]) as unknown,
     });
   });
+  it('lists every agent action newest first, with its tool, target, conversation, time and whether it can be undone', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Done.');
+    let currentTime = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    const created = (await (
+      await postJson(app, '/agent/conversations', { message: 'Archive the budget thread and draft a reply' })
+    ).json()) as { id: string };
+    await offeredTools.find((tool) => tool.name === 'archive_message')?.run({ messageId: 'message-1' });
+    currentTime = new Date('2026-11-02T15:11:00.000Z');
+    await offeredTools
+      .find((tool) => tool.name === 'write_draft')
+      ?.run({ messageId: 'message-1', body: 'I will review it by Friday.' });
+
+    const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
+
+    expect(actions).toEqual([
+      {
+        tool: 'write_draft',
+        target: 'message-1',
+        conversationId: created.id,
+        at: '2026-11-02T15:11:00.000Z',
+        undoable: false,
+      },
+      {
+        tool: 'archive_message',
+        target: 'message-1',
+        conversationId: created.id,
+        at: '2026-11-02T15:10:00.000Z',
+        undoable: true,
+      },
+    ]);
+  });
 });
