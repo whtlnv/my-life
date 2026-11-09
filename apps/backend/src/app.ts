@@ -152,7 +152,7 @@ export interface AppOptions {
     respond: (request?: {
       turns: ConversationTurn[];
       tools?: AgentTool[];
-    }) => Promise<{ text: string; costInUsd: number; model?: string }>;
+    }) => Promise<{ text: string; citations?: { id: string }[]; costInUsd: number; model?: string }>;
   };
   summary?: {
     summarize: (request: {
@@ -1096,9 +1096,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({});
   });
   const conversationStore = openConversationStore(databasePath);
-  const assistantTurn = (reply: { text: string } | undefined): ConversationTurn => ({
+  const assistantTurn = (reply: { text: string; citations?: unknown[] | undefined } | undefined): ConversationTurn => ({
     role: 'assistant',
     text: reply?.text ?? agentUnavailableReply,
+    citations: reply?.citations,
   });
   const spendCeilingTurn: ConversationTurn = { role: 'assistant', text: agentSpendCeilingReply };
   const searchMessagesTool: AgentTool = {
@@ -1146,7 +1147,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     name: 'calendar_day',
     run: (input) => {
       const { date } = input as { date: string };
-      const events = mergedCalendarEvents().filter((event) => localCalendarDate(event.start, businessTimeZone) === date);
+      const events = mergedCalendarEvents().filter(
+        (event) => localCalendarDate(event.start, businessTimeZone) === date,
+      );
       return Promise.resolve({ events });
     },
   };
@@ -1177,14 +1180,28 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     },
   };
   const askAgent = async (turns: ConversationTurn[]) => {
+    const messagesReturnedThisTurn: { id: string }[] = [];
+    const citingSearchMessagesTool: AgentTool = {
+      name: searchMessagesTool.name,
+      run: async (input) => {
+        const result = (await searchMessagesTool.run(input)) as { messages: { id: string }[] };
+        messagesReturnedThisTurn.push(...result.messages);
+        return result;
+      },
+    };
     const reply = await options.agent?.respond({
       turns,
-      tools: [searchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool, tasksTool, digestTool],
+      tools: [citingSearchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool, tasksTool, digestTool],
     });
     if (reply) {
       logSpend(reply);
     }
-    return reply;
+    return (
+      reply && {
+        ...reply,
+        citations: reply.citations?.map(({ id }) => messagesReturnedThisTurn.find((message) => message.id === id)),
+      }
+    );
   };
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
@@ -1204,9 +1221,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { message } = await context.req.json<{ message: string }>();
     const earlierTurns = conversationStore.load(id) ?? [];
     const turns: ConversationTurn[] = [...earlierTurns, { role: 'user', text: message }];
-    const answer = hasReachedDailySpendCeiling()
-      ? spendCeilingTurn
-      : assistantTurn(await askAgent(turns));
+    const answer = hasReachedDailySpendCeiling() ? spendCeilingTurn : assistantTurn(await askAgent(turns));
     conversationStore.save(id, [...turns, answer]);
     return context.json({});
   });

@@ -3,6 +3,7 @@ import { openDatabase } from './open-database';
 export interface ConversationTurn {
   role: 'user' | 'assistant';
   text: string;
+  citations?: unknown[] | undefined;
 }
 
 function parseTurns(json: string): ConversationTurn[] {

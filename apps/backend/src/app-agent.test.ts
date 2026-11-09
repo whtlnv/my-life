@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { agentSpendCeilingReply, agentUnavailableReply, createApp } from './app';
 import {
   budgetReviewReport,
+  budgetReviewReportWithQuarterlyNumbersBody,
   clockAtTenPastThree,
   getJson,
   keepProposalExtracting,
@@ -569,5 +570,27 @@ describe('backend app: the agent', () => {
         }),
       ],
     });
+  });
+
+  it('shows a citation of a message a tool returned in that turn with the message and its link', async () => {
+    const agent = {
+      respond: async (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        await request?.tools?.find((tool) => tool.name === 'search_messages')?.run({ query: 'quarterly' });
+        return { text: 'Luis sent the quarterly numbers.', citations: [{ id: 'message-1' }], costInUsd: 0.01 };
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
+
+    const response = await postJson(app, '/agent/conversations', { message: 'Where are the quarterly numbers?' });
+
+    const conversation = (await response.json()) as { turns: { role: string; citations?: unknown[] }[] };
+    expect(conversation.turns.at(-1)?.citations).toEqual([
+      expect.objectContaining({
+        id: 'message-1',
+        subject: 'Budget review',
+        link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
+      }),
+    ]);
   });
 });
