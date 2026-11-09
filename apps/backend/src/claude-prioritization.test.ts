@@ -1,3 +1,8 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { taskRanks } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { createClaudePrioritization } from './claude-prioritization';
@@ -5,6 +10,16 @@ import { readStartupSettings } from './startup-settings';
 
 interface SentRequest {
   model: string;
+  system?: string;
+  tools?: { name: string; strict?: boolean; input_schema: unknown }[];
+  tool_choice?: unknown;
+  messages?: { role: string; content: string }[];
+}
+
+function promptFile(contents: string, fileName: string): string {
+  const promptPath = join(mkdtempSync(join(tmpdir(), 'my-life-prompts-')), fileName);
+  writeFileSync(promptPath, contents);
+  return promptPath;
 }
 
 function rankTasksAnswer(input: unknown, usage = { input_tokens: 0, output_tokens: 0 }) {
@@ -87,5 +102,53 @@ describe('Claude prioritization', () => {
     });
 
     expect(outcome).toHaveProperty('costInUsd', 10);
+  });
+
+  it('sends every task (id, title, account, due time, waiting-on), the profile, the calendar and the urgent contacts under the prompt file, requiring the rank_tasks tool', async () => {
+    const sentRequests: SentRequest[] = [];
+    const prioritization = createClaudePrioritization({
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('Rank the tasks by calling rank_tasks.', 'prioritize-v1.md'),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: (request: SentRequest) => {
+        sentRequests.push(request);
+        return rankTasksAnswer({ ranks: [{ taskId: 'task-7', rank: 1, reason: 'Only task' }] });
+      },
+    });
+
+    await prioritization.prioritize({
+      tasks: [
+        {
+          id: 'task-7',
+          title: 'Sign the lease renewal',
+          accountEmail: 'ana@acme.com',
+          due: '2026-11-09T18:00:00.000Z',
+          waitingOn: 'Bruno Landlord',
+        },
+      ],
+      profile: 'Current priority: close the office move',
+      calendar: [{ title: 'Board meeting', start: '2026-11-08T16:00:00.000Z' }],
+      urgentContacts: [{ name: 'Carla Investor', reasons: ['deadline'] }],
+    });
+
+    const request = sentRequests[0];
+    expect(request?.system).toBe('Rank the tasks by calling rank_tasks.');
+    expect(request?.tools?.map(({ name, input_schema }) => ({ name, input_schema }))).toEqual([
+      { name: 'rank_tasks', input_schema: taskRanks.toJSONSchema() },
+    ]);
+    expect(request?.tool_choice).toEqual({ type: 'tool', name: 'rank_tasks' });
+    const content = request?.messages?.find((message) => message.role === 'user')?.content ?? '';
+    for (const expected of [
+      'task-7',
+      'Sign the lease renewal',
+      'ana@acme.com',
+      '2026-11-09T18:00:00.000Z',
+      'Bruno Landlord',
+      'Current priority: close the office move',
+      'Board meeting',
+      'Carla Investor',
+    ]) {
+      expect(content).toContain(expected);
+    }
   });
 });
