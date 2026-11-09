@@ -23,13 +23,20 @@ function CitationView({ citation }: { citation: Citation }) {
   return <a href={citation.link}>{citation.subject}</a>;
 }
 
-async function askAgent(message: string): Promise<Turn[]> {
-  const response = await fetch('/agent/conversations', {
+function sendMessage(path: string, message: string): Promise<Response> {
+  return fetch(path, {
     method: 'POST',
     body: JSON.stringify({ message }),
   });
+}
+
+async function readTurns(response: Response): Promise<Turn[]> {
   const { turns } = (await response.json()) as { turns: Turn[] };
   return turns;
+}
+
+async function askAgent(message: string): Promise<Turn[]> {
+  return readTurns(await sendMessage('/agent/conversations', message));
 }
 
 interface ConversationSummary {
@@ -47,16 +54,11 @@ async function listConversations(): Promise<ConversationSummary[]> {
 }
 
 async function loadTurns(conversationId: string): Promise<Turn[]> {
-  const response = await fetch(`/agent/conversations/${conversationId}`);
-  const { turns } = (await response.json()) as { turns: Turn[] };
-  return turns;
+  return readTurns(await fetch(`/agent/conversations/${conversationId}`));
 }
 
 async function continueConversation(conversationId: string, message: string): Promise<Turn[]> {
-  await fetch(`/agent/conversations/${conversationId}/messages`, {
-    method: 'POST',
-    body: JSON.stringify({ message }),
-  });
+  await sendMessage(`/agent/conversations/${conversationId}/messages`, message);
   return loadTurns(conversationId);
 }
 
