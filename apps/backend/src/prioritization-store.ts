@@ -30,8 +30,13 @@ export function openPrioritizationStore(databasePath: string) {
     savePin(pin: StoredPin): void {
       savePin.run(pin.taskId, pin.pinned ? 1 : 0);
     },
-    loadPins(): StoredPin[] {
-      return loadPins.all().map((row) => ({ taskId: row.task_id, pinned: row.pinned === 1 }));
+    loadPinnedTaskIds(): Set<string> {
+      const pinnedTaskIds = new Set<string>();
+      for (const row of loadPins.all()) {
+        if (row.pinned === 1) pinnedTaskIds.add(row.task_id);
+        else pinnedTaskIds.delete(row.task_id);
+      }
+      return pinnedTaskIds;
     },
   };
 }

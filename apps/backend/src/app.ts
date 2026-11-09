@@ -1034,11 +1034,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/tasks', (context) => {
     const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
-    const pinnedTaskIds = new Set<string>();
-    for (const { taskId, pinned } of prioritizationStore.loadPins()) {
-      if (pinned) pinnedTaskIds.add(taskId);
-      else pinnedTaskIds.delete(taskId);
-    }
+    const pinnedTaskIds = prioritizationStore.loadPinnedTaskIds();
     const rankedOpenTasks = currentOpenTasks().map((task) => {
       const ranked = taskRanksFromLastRun.find(({ taskId }) => taskId === task.id);
       return ranked === undefined ? task : { ...task, rank: ranked.rank, reason: ranked.reason };
