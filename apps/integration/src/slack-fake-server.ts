@@ -94,6 +94,7 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
   const responseByPath = responseByPathByScenario[scenario];
   let rateLimitPending = scenario === 'rate-limited';
   const postedMessages: PostedMessage[] = [];
+  const searchQueries: string[] = [];
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://fake');
     if (rateLimitPending) {
@@ -109,6 +110,9 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
     if (url.pathname === '/chat.postMessage') {
       recordPostedMessage(request, response, postedMessages);
       return;
+    }
+    if (url.pathname === '/search.messages') {
+      searchQueries.push(url.searchParams.get('query') ?? '');
     }
     if (url.pathname === '/users.info') {
       response.end(JSON.stringify(usersInfoResponse(url.searchParams.get('user') ?? '')));
@@ -126,6 +130,7 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
     url: `http://127.0.0.1:${String(port)}`,
     token,
     postedMessages: () => postedMessages,
+    searchQueries: () => searchQueries,
     close: () =>
       new Promise<void>((resolve) =>
         server.close(() => {

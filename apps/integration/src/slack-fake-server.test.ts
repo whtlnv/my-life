@@ -196,6 +196,20 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('records each search.messages query so the test can read them back', async () => {
+    const slack = await startSlackFakeServer('mention');
+    try {
+      const headers = { Authorization: `Bearer ${slack.token}` };
+      for (const query of [`<@${ownSlackUserId}>`, `from:<@${ownSlackUserId}>`]) {
+        await fetch(`${slack.url}/search.messages?query=${encodeURIComponent(query)}`, { headers });
+      }
+
+      expect(slack.searchQueries()).toEqual([`<@${ownSlackUserId}>`, `from:<@${ownSlackUserId}>`]);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('polling the direct-message scenario stores its DM message with its workspace, conversation, sender, text and timestamp', async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {
