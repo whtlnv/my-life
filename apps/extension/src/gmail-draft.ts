@@ -26,12 +26,27 @@ async function fetchPendingDraftCommands(options: CommandOptions) {
 }
 
 async function createGmailDraft(options: CommandOptions, command: CreateDraftCommand) {
-  const rawMessage = [`To: ${command.to.join(', ')}`, `Subject: ${command.subject}`, '', command.body].join('\r\n');
   return options.fetch(`${gmailApi}/drafts`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${options.accessToken}` },
-    body: JSON.stringify({
-      message: { threadId: command.threadId, raw: Buffer.from(rawMessage, 'utf8').toString('base64url') },
-    }),
+    body: JSON.stringify({ message: { threadId: command.threadId, raw: rawDraftMessage(command) } }),
   });
+}
+
+// Browser APIs only: the extension's service worker has no Node `Buffer`.
+function utf8Base64(text: string) {
+  return btoa(Array.from(new TextEncoder().encode(text), (byte) => String.fromCharCode(byte)).join(''));
+}
+
+export function rawDraftMessage(draft: Pick<CreateDraftCommand, 'to' | 'subject' | 'body'>) {
+  const message = [
+    `To: ${draft.to.join(', ')}`,
+    `Subject: =?UTF-8?B?${utf8Base64(draft.subject)}?=`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset="UTF-8"',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    draft.body,
+  ].join('\r\n');
+  return utf8Base64(message).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
 }

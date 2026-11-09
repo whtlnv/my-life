@@ -471,7 +471,7 @@ describe('startExtension', () => {
     expect(createdDrafts.map(({ threadId }) => threadId)).toEqual(['thread-1']);
     const draftMessage = Buffer.from(createdDrafts[0]?.raw ?? '', 'base64url').toString('utf8');
     expect(draftMessage).toContain('To: luis@example.com');
-    expect(draftMessage).toContain('Subject: Re: Budget review');
+    expect(draftMessage).toContain(`Subject: =?UTF-8?B?${Buffer.from('Re: Budget review').toString('base64')}?=`);
     expect(draftMessage).toContain('I will review it by Friday.');
   });
 
