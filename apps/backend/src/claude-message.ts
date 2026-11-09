@@ -6,7 +6,7 @@ interface ClaudeMessageRequest {
   model: string;
   system: string;
   messages: { role: string; content: unknown }[];
-  tools: { name: string; strict: boolean; input_schema: unknown }[];
+  tools: { name: string; description?: string; strict: boolean; input_schema: unknown }[];
 }
 
 function toAnswerBlock(block: Anthropic.Beta.BetaContentBlock) {
@@ -26,6 +26,7 @@ export function createMessageWith(client: Anthropic) {
       messages: request.messages as Anthropic.Beta.BetaMessageParam[],
       tools: request.tools.map((tool) => ({
         name: tool.name,
+        ...(tool.description === undefined ? {} : { description: tool.description }),
         strict: tool.strict,
         input_schema: tool.input_schema as Anthropic.Beta.BetaTool['input_schema'],
       })),

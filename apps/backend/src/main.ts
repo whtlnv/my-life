@@ -128,7 +128,12 @@ const agent =
             model: request.model,
             system: request.system ?? '',
             messages: request.messages,
-            tools: (request.tools ?? []).map(({ name, input_schema }) => ({ name, strict: false, input_schema })),
+            tools: (request.tools ?? []).map(({ name, description, input_schema }) => ({
+              name,
+              description,
+              strict: false,
+              input_schema,
+            })),
           }),
       });
 

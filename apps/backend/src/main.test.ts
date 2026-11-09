@@ -19,7 +19,7 @@ import {
 interface RecordedAnthropicRequest {
   model: string;
   system?: unknown;
-  tools: { name: string }[];
+  tools: { name: string; description?: string }[];
   messages?: { role: string; content: unknown }[];
 }
 
@@ -277,5 +277,27 @@ describe('the shipped backend (main.ts)', () => {
     expect(JSON.stringify(agentRequests[1]?.messages)).toContain('message-1');
     const agentPrompt = readFileSync(new URL('../prompts/agent-v1.md', import.meta.url), 'utf8');
     expect(agentRequests[0]?.system).toEqual(expect.stringContaining(agentPrompt.trim()));
+  }, 30_000);
+
+  it('offers Claude every agent tool with its description, the refused send_message and delete_message included', async () => {
+    const recorded: RecordedAnthropicRequest[] = [];
+    const isAgentRequest = (request: RecordedAnthropicRequest) =>
+      request.tools.some(({ name }) => name === 'search_messages');
+    fakeAnthropic = await startFakeAnthropic(recorded, (request) =>
+      isAgentRequest(request)
+        ? { ...toolUseAnswer(request), content: [{ type: 'text', text: 'Nothing found.' }], stop_reason: 'end_turn' }
+        : toolUseAnswer(request),
+    );
+    const baseUrl = await startShippedBackend(fakeAnthropic, {});
+
+    await fetch(`${baseUrl}/agent/conversations`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message: 'Anything new from Luis?' }),
+    });
+
+    const offeredTools = recorded.find(isAgentRequest)?.tools ?? [];
+    expect(offeredTools.map(({ name }) => name)).toEqual(expect.arrayContaining(['send_message', 'delete_message']));
+    expect(offeredTools.filter(({ description }) => !description?.trim()).map(({ name }) => name)).toEqual([]);
   }, 30_000);
 });
