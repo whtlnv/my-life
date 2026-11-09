@@ -8,7 +8,7 @@ import {
   clockAtTenPastThree,
   filterAnswering,
   firstPendingFilterProposalId,
-  getCommands,
+  pendingCommandsOf,
   getJson,
   keepProposalExtracting,
   messageWithQuarterlyNumbersBody,
@@ -617,9 +617,7 @@ describe('backend app: the agent', () => {
     expect(openVerdictStore(databasePath).loadAll()).toContainEqual(
       expect.objectContaining({ messageId: 'message-1', decision: 'confirmed', decidedBy: 'agent' }),
     );
-    expect(await (await getCommands(app, 'ana@example.com')).json()).toMatchObject({
-      commands: [{ messageId: 'message-1' }],
-    });
+    expect(await pendingCommandsOf(app, 'ana@example.com')).toMatchObject([{ messageId: 'message-1' }]);
   });
 
   it('archive_message on a message id the store does not know returns an error to the model and records nothing', async () => {
@@ -639,7 +637,7 @@ describe('backend app: the agent', () => {
 
     expect(result).toEqual({ error: expect.any(String) as unknown });
     expect(openVerdictStore(databasePath).loadAll()).toEqual([]);
-    expect(await (await getCommands(app, 'ana@example.com')).json()).toMatchObject({ commands: [] });
+    expect(await pendingCommandsOf(app, 'ana@example.com')).toMatchObject([]);
   });
 
   it("label_message sends the message's account a label command with the given label name that leaves the message in the inbox", async () => {
@@ -656,7 +654,7 @@ describe('backend app: the agent', () => {
 
     await runTool('label_message', { messageId: 'message-1', labelName: 'Finance' });
 
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect(commands).toEqual([expect.objectContaining({ type: 'label', messageId: 'message-1', label: 'Finance' })]);
   });
   it("write_draft sends the replied-to message's account a create-draft command carrying the thread, recipients, subject and body", async () => {
@@ -673,7 +671,7 @@ describe('backend app: the agent', () => {
 
     await runTool('write_draft', { messageId: 'message-1', body: 'I will review it by Friday.' });
 
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect(commands).toEqual([
       expect.objectContaining({
         type: 'create-draft',
@@ -786,7 +784,7 @@ describe('backend app: the agent', () => {
     await runTool('approve_filter_proposal', { proposalId });
 
     const { proposals } = await getJson<{ proposals: unknown[] }>(app, '/filter-proposals');
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect({ proposals, commands }).toMatchObject({
       proposals: [],
       commands: expect.arrayContaining([
@@ -816,7 +814,7 @@ describe('backend app: the agent', () => {
     await runTool('reject_filter_proposal', { proposalId });
 
     const { proposals } = await getJson<{ proposals: unknown[] }>(app, '/filter-proposals');
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect({ proposals, commands }).toMatchObject({
       proposals: [],
       commands: expect.not.arrayContaining([expect.objectContaining({ type: 'create-filter' })]) as unknown,
@@ -913,14 +911,12 @@ describe('backend app: the agent', () => {
     await proposeBudgetReview(app);
     await postJson(app, '/agent/conversations', { message: 'Archive the budget thread' });
     await runTool('archive_message', { messageId: 'message-1' });
-    const { commands: commandsBeforeUndo } = (await (await getCommands(app, 'ana@example.com')).json()) as {
-      commands: { messageId: string; label: string }[];
-    };
+    const commandsBeforeUndo = await pendingCommandsOf<{ messageId: string; label: string }>(app, 'ana@example.com');
     const archiveLabel = commandsBeforeUndo.find((command) => command.messageId === 'message-1')?.label;
 
     await undoAgentAction(app, 'archive_message');
 
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect(archiveLabel).toEqual(expect.any(String));
     expect(commands).toContainEqual(
       expect.objectContaining({ type: 'undo-automatic', messageId: 'message-1', label: archiveLabel }),
@@ -941,7 +937,7 @@ describe('backend app: the agent', () => {
 
     await undoAgentAction(app, 'label_message');
 
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect(commands).toContainEqual(
       expect.objectContaining({ type: 'remove-label', messageId: 'message-1', label: 'Finance' }),
     );
@@ -1022,13 +1018,11 @@ describe('backend app: the agent', () => {
     });
     await proposeBudgetReview(app);
     await postJson(app, '/agent/conversations', { message: 'What is in my inbox?' });
-    const { commands: commandsBefore } = (await (await getCommands(app, 'ana@example.com')).json()) as {
-      commands: unknown[];
-    };
+    const commandsBefore = await pendingCommandsOf(app, 'ana@example.com');
 
     const response = await postJson(app, '/agent/actions/undo', { tool: 'archive_message', target: 'message-1' });
 
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect(response.status).toBe(404);
     expect(commands).toEqual(commandsBefore);
   });
@@ -1047,7 +1041,7 @@ describe('backend app: the agent', () => {
 
     const response = await undoAgentAction(app, 'write_draft');
 
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type: string }[] };
+    const commands = await pendingCommandsOf<{ type: string }>(app, 'ana@example.com');
     expect(response.status).toBe(409);
     expect(commands.map(({ type }) => type)).toEqual(['create-draft']);
   });
@@ -1067,13 +1061,11 @@ describe('backend app: the agent', () => {
     await runTool('approve_filter_proposal', { proposalId });
     const { actions } = await getJson<{ actions: { id: string; tool: string }[] }>(app, '/agent/actions');
     const approvalActionId = actions.find(({ tool }) => tool === 'approve_filter_proposal')?.id;
-    const { commands: commandsBeforeUndo } = (await (await getCommands(app, 'ana@example.com')).json()) as {
-      commands: unknown[];
-    };
+    const commandsBeforeUndo = await pendingCommandsOf(app, 'ana@example.com');
 
     const response = await postJson(app, '/agent/actions/undo', { actionId: approvalActionId });
 
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect(response.status).toBe(409);
     expect(commands).toEqual(commandsBeforeUndo);
   });
@@ -1092,14 +1084,12 @@ describe('backend app: the agent', () => {
     const { actions: actionsBeforeUndo } = await getJson<{ actions: { id: string }[] }>(app, '/agent/actions');
     const archiveActionId = actionsBeforeUndo[0]?.id;
     await postJson(app, '/agent/actions/undo', { actionId: archiveActionId });
-    const { commands: commandsAfterFirstUndo } = (await (await getCommands(app, 'ana@example.com')).json()) as {
-      commands: unknown[];
-    };
+    const commandsAfterFirstUndo = await pendingCommandsOf(app, 'ana@example.com');
 
     const secondUndo = await postJson(app, '/agent/actions/undo', { actionId: archiveActionId });
 
     const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect({ actions, secondUndoStatus: secondUndo.status, commands }).toMatchObject({
       actions: [{ id: archiveActionId, tool: 'archive_message', undoable: true, undone: true }],
       secondUndoStatus: 409,
@@ -1119,14 +1109,12 @@ describe('backend app: the agent', () => {
     const created = (await (
       await postJson(app, '/agent/conversations', { message: 'Delete the budget thread' })
     ).json()) as { id: string };
-    const { commands: commandsBeforeRequest } = (await (await getCommands(app, 'ana@example.com')).json()) as {
-      commands: unknown[];
-    };
+    const commandsBeforeRequest = await pendingCommandsOf(app, 'ana@example.com');
 
     const result = await runTool('delete_message', { messageId: 'message-1' });
 
     const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect({ result, actions, commands }).toMatchObject({
       result: { error: expect.any(String) as unknown },
       actions: [
@@ -1154,14 +1142,12 @@ describe('backend app: the agent', () => {
     const created = (await (
       await postJson(app, '/agent/conversations', { message: 'Send Luis a reply about the budget' })
     ).json()) as { id: string };
-    const { commands: commandsBeforeRequest } = (await (await getCommands(app, 'ana@example.com')).json()) as {
-      commands: unknown[];
-    };
+    const commandsBeforeRequest = await pendingCommandsOf(app, 'ana@example.com');
 
     await runTool('send_message', { messageId: 'message-1', body: 'I will review it by Friday.' });
 
     const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
-    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(app, 'ana@example.com');
     expect({ actions, commands }).toMatchObject({
       actions: [
         { tool: 'send_message', target: 'message-1', conversationId: created.id, outcome: 'refused', undoable: false },
@@ -1196,9 +1182,7 @@ describe('backend app: the agent', () => {
     const { actions } = await getJson<{ actions: unknown[] }>(afterRestart, '/agent/actions');
     const undoAfterRestart = await postJson(afterRestart, '/agent/actions/undo', { actionId: archiveActionId });
 
-    const { commands } = (await (await getCommands(afterRestart, 'ana@example.com')).json()) as {
-      commands: { type: string }[];
-    };
+    const commands = await pendingCommandsOf<{ type: string }>(afterRestart, 'ana@example.com');
     expect({
       actions,
       undoStatus: undoAfterRestart.status,
@@ -1233,7 +1217,7 @@ describe('backend app: the agent', () => {
 
     const afterRestart = createApp(options);
 
-    const { commands } = (await (await getCommands(afterRestart, 'ana@example.com')).json()) as { commands: unknown[] };
+    const commands = await pendingCommandsOf(afterRestart, 'ana@example.com');
     expect(commands).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ type: 'undo-automatic', messageId: 'message-1' }),

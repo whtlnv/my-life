@@ -71,6 +71,11 @@ export const setContactDetails = (app: App, email: string, details: Record<strin
 export const getCommands = (app: App, accountEmail: string) =>
   app.request(`/commands?accountEmail=${encodeURIComponent(accountEmail)}`);
 
+export const pendingCommandsOf = async <Command = unknown>(app: App, accountEmail: string) => {
+  const { commands } = (await (await getCommands(app, accountEmail)).json()) as { commands: Command[] };
+  return commands;
+};
+
 export const firstPendingFilterProposalId = async (app: App) => {
   const { proposals } = (await (await app.request('/filter-proposals')).json()) as { proposals: { id?: string }[] };
   return proposals[0]?.id ?? '';
