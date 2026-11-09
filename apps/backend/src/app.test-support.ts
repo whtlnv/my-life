@@ -89,11 +89,7 @@ export const acknowledgeFilterCreation = (app: App, proposalId: string, gmailFil
   });
 
 export const switchCategory = (app: App, category: string, mode: string) =>
-  app.request(`/categories/${category}/mode`, {
-    method: 'PUT',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ mode }),
-  });
+  putJson(app, `/categories/${category}/mode`, { mode });
 
 export const temporaryDatabasePath = () => join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
 
