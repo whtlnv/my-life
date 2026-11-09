@@ -231,4 +231,10 @@ describe('startup settings', () => {
 
     expect(settings.slackPollingIntervalInMilliseconds).toBe(60_000);
   });
+
+  it('polls Slack every 30 seconds when MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS is 30', () => {
+    const settings = readStartupSettings({ MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS: '30' }, '/Users/ana');
+
+    expect(settings.slackPollingIntervalInMilliseconds).toBe(30_000);
+  });
 });

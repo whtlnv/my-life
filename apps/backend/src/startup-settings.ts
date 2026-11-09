@@ -79,7 +79,9 @@ export function readStartupSettings(
       vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     },
     slackWorkspaces: readSlackWorkspaces(environment),
-    slackPollingIntervalInMilliseconds: 60_000,
+    slackPollingIntervalInMilliseconds: secondsToMilliseconds(
+      parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, 60),
+    ),
   };
 }
 
