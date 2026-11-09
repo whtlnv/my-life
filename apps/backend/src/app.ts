@@ -1749,7 +1749,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         displayName: contact.displayName,
         waitingSince: new Date(Math.min(...waitingTimes)).toISOString(),
       }));
-    return context.json({ people });
+    const slackPeople = slackMessageStore
+      .listMessages()
+      .filter((message) => message.sentByUser !== true)
+      .map((message) => ({
+        channel: 'slack',
+        displayName: message.senderName,
+        waitingSince: new Date(Number(message.timestamp) * 1000).toISOString(),
+      }));
+    return context.json({ people: [...people, ...slackPeople] });
   });
   app.get('/organizations', (context) => {
     return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });
