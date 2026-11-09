@@ -10,7 +10,7 @@ Phases (locked decision 17):
 - **Phase 2:** Gmail triage on every account, categories with `automatic`, Gmail filters, the weekly expense statement — code delivered 2026-11-07 (`DONE.md`); the real-inbox walk-through is `docs/phase-2-walkthrough.md`.
 - **Phase 2b:** capture: bodies kept locally, extraction v2, contacts and organizations, the Google Contacts import, body backfill and retriage, `GET /search` — code delivered 2026-11-08 (`DONE.md`); the real-account walk-through is `docs/phase-2b-walkthrough.md`.
 - **Phase 2c:** rolling digests (system updates, sales, calendar and Drive) with Haiku-written summary lines and one confirm per digest; a _Handled for you_ strip with undo — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-2c-*.jpg`); the real-account walk-through is `docs/phase-2c-walkthrough.md`.
-- **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contacts and organizations with a merged timeline), the Needs input queue, tasks and the prioritizer, waiting-on.
+- **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contact and organization timelines), Needs input (category and new-sender questions, task proposals), tasks with states and the prioritization pass, waiting-on — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-3-*.jpg`); the real-account walk-through is `docs/phase-3-walkthrough.md`. Not built: the "significant alert not yet opened" urgent rule, identity-merge questions and the todo-list import (decisions and `PENDING_TASKS.md` § 4 below).
 - **Phase 4:** the in-app agent: chat over mail, contacts, calendar and tasks on Opus, with tools; acts within safeguards (archive, label, draft, task; never delete, never send).
 - **Phase 5:** Slack, as a channel in the People view.
 - **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view.
@@ -21,30 +21,26 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
-## Start here (handoff 2026-11-08, after Phase 2c)
+## Start here (handoff 2026-11-08, after Phase 3)
 
-Read `CLAUDE.md` first. **Phases 2b and 2c are delivered** (`DONE.md`). 2c: `packages/domain/src/digests.ts` groups waiting system-update, sales and calendar-drive proposals per account, category and key (the system, or the sender address); `GET /triage-queue` returns `digests` (id, count, severity counts, significant items, summary lines) and `handledForYou`; `POST /digests/:id/confirmation` confirms only the items the page was shown (stored per listing); summary lines come from `apps/backend/src/claude-summary.ts` (`prompts/digest-summary-v1.md`, `MY_LIFE_SUMMARY_MODEL`, default Haiku 5.5, validated by `digestSummary` in contracts, spend logged) and are rewritten when a digest gains or loses an item; `POST /handled-for-you/:messageId/undo` queues an `undo-automatic` command the extension applies. The `createApp` route tests are split by route group (`apps/backend/src/app*.test.ts`, staging in `app.test-support.ts`). **Not yet seen over the real accounts**: everything since 2b waits on `PENDING_TASKS.md` § 9 and one re-consent per profile (`docs/phase-2b-walkthrough.md`, then `docs/phase-2c-walkthrough.md`); the launchd backend runs the pre-2b build until restarted.
+Read `CLAUDE.md` first. **Phases 2b, 2c and 3 are delivered** (`DONE.md`). Phase 3 added: the extension reports the user's sent mail (`sentByUser`), which is never triaged; business days and urgency in `packages/domain/src/contact-urgency.ts` (deadline inside 48 h, a date-only deadline lasting its business day; VIP waiting 1 business day; unanswered ask 2 business days, `MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS`); `GET /people` with VIP (marks and profiles' "Always matters" line), Urgent and Everyone else; contact and organization timelines; `GET /needs-input` (category questions when the two triage models disagree or say `unknown`, new-sender questions) answered with number keys; task proposals from extracted asks, task states, snooze, waiting-on and history; the prioritization pass (`prompts/prioritization-v1.md`, `MY_LIFE_PRIORITIZATION_MODEL`, default Opus 5.5) on a schedule and at `POST /prioritization-run`; the _now_ page's top 3 tasks and waiting-on list; the badge counts questions and overdue tasks. `scripts/demo.sh` seeds all of it.
 
-**Next:** `/tdd-supervise` on Phase 3. Its first planning question: what "not yet opened" means for the urgent alert rule (moved from 2c; see the Phase 3 bullet). Export `ANTHROPIC_MODEL` as well as passing `--model` to every `claude -p`: `/tdd-cycle` starts nested `claude -p` leaves that only inherit the environment.
+**Waiting on the user**, not built:
 
-What the supervision showed in Phase 2c — check these every cycle:
+- What "not yet opened" means for the significant-alert urgent rule (Gmail's `UNREAD` label, or seen in the app).
+- When to propose "same person?" merges, and from what (locked decision 22 says the model proposes them).
+- The todo-list import: `PENDING_TASKS.md` § 4 (the path).
 
-- **Minimal greens still fake keys and stores:** the digest key left out the category; one `summaryLines` variable served every digest and was asked about every waiting item; the dashboard's "listed" snapshot started in memory. A triangulating item fixed each.
-- **A port's real adapter can stay a stub behind a green wiring item:** `createClaudeSummary` ignored its items, had no prompt file, reported no cost and validated nothing until the keystone was split. Read the adapter, not just `main.ts`.
-- **Dashboard items pass on mocked responses the backend never sends:** the digest card's significant items had no backend field. Check each field a page reads against the route.
-- **Plan defaults drift:** the summary model defaulted to Opus while the plan said Haiku; a settings test pins it now.
-- **`/reconcile` refuses to delete a test that also covers unchanged behavior:** migrate it by hand (four triage-queue tests moved to digests).
+**Next:** `/tdd-supervise` on Phase 4. Before planning it, check BACKLOG's Phase 3 entries (urgency counts mentions and stops at one reason; the People lists show domains and automated senders).
 
-## Phase 3 — People, Needs input, tasks
+What the supervision showed in Phase 3 — check these every cycle:
 
-Outcome: the second tab shows the user's world by person and organization across channels; the app asks for help in one place; tasks and waiting-on live in the domain; the _now_ page shows the top 3 tasks.
-
-- People view: three lists, VIP (manual mark, seeded from starred contacts and the profile's "always matters"), Urgent (computed, not a list), Everyone else; each sorted by the most recent message. A contact or organization opens to a merged timeline of everything they sent across channels (email now; Slack, WhatsApp, Telegram as later phases land), with thread states, open asks and the user's replies. A message appears under every contact and organization it links to.
-- Urgent, computed from config defaults: an ask to the user unanswered for 2 business days; any extracted deadline inside 48 hours; a VIP waiting more than 1 business day; a significant system alert not yet opened (moved from Phase 2c, 2026-11-08: needs the extension to report Gmail's `UNREAD` label, or the app to record when an item was seen; decide which when Phase 3 is planned).
-- Needs input: a tab with a count in the shell. Each item is one question answered with one key: a category Haiku and Opus disagreed on or `unknown`; a new sender who asked the user for something (VIP or ordinary?); an identity merge candidate (same person?). No daily cap (user decision): every unsettled case waits until answered. Every answer is written to the contact record or the sender's examples and never asked again. Inline recategorize stays on items.
-- Tasks: the one-time import of the markdown list (`PENDING_TASKS.md` § 4); task state `open` / `done` / `snoozed until`, priority, optional due, waiting-on person, every transition append-only; the extraction's asks become task proposals.
-- Prioritization pass (Opus 5.5 from config, structured output) ranks open tasks given the profile, the calendar, due dates and urgency; on a schedule and on demand; rank and reason shown; the user can pin a task to the top. _Now_ keeps the current event, the top 3 tasks and a short waiting-on list that links into People (locked decision 9 amended).
-- Badge becomes: events within 15 min + items needing the user (Needs you, Needs input) + tasks due now.
+- **Mocked dashboard tests hide missing backend fields:** the People page crashed on `lastMessageAt` and `organization` the route never sent; waiting-on returned bare emails. Run the demo and open every new page before the phase closes.
+- **The shipped dashboard routes pages in `apps/dashboard/src/main.tsx`, which no test covers:** People and Needs input fell through to Now.
+- **Domain rules can be bypassed by the route:** `GET /people` first computed urgency inline, ignoring the domain and the thresholds; task transitions existed only in the domain until route items were added; the prioritization adapter ignored its input. Read the route and the adapter, not just the domain tests.
+- **Restart items get greened on the narrowest case:** the task restart passed with one confirmed proposal while done, snooze and waiting-on were not stored.
+- **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
+- **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
 
 ## Phase 4 — The agent
 
