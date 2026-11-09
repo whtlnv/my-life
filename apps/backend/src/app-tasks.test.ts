@@ -566,4 +566,30 @@ describe('backend app: task proposals and tasks', () => {
 
     expect(prioritizationCalls).toBe(1);
   });
+  it('makes a prioritization call at POST /prioritization-run again once the configured prioritization interval has elapsed since the last call, and none before', async () => {
+    let prioritizationCalls = 0;
+    const prioritization = {
+      prioritize: async () => {
+        prioritizationCalls += 1;
+        return { ranks: [] };
+      },
+    };
+    let now = new Date('2026-11-02T15:10:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => now },
+      prioritizationIntervalInMilliseconds: 60 * 60 * 1000,
+      prioritization,
+    });
+    await postJson(app, '/prioritization-run', {});
+    now = new Date('2026-11-02T16:09:59.000Z');
+    await postJson(app, '/prioritization-run', {});
+    const callsBeforeTheInterval = prioritizationCalls;
+    now = new Date('2026-11-02T16:10:00.000Z');
+
+    await postJson(app, '/prioritization-run', {});
+
+    expect(callsBeforeTheInterval).toBe(1);
+    expect(prioritizationCalls).toBe(2);
+  });
 });

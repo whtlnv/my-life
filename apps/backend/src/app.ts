@@ -119,6 +119,7 @@ export interface AppOptions {
   clock?: Clock;
   dailySpendCeilingInUsd?: number;
   databasePath?: string;
+  prioritizationIntervalInMilliseconds?: number;
   dashboardDirectory?: string;
   profileDirectory?: string;
   gmailPollingIntervalInMilliseconds?: number;
@@ -1009,8 +1010,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
     return existsSync(profilePath) ? readFileSync(profilePath, 'utf8') : undefined;
   };
+  let lastPrioritizationCallAt: number | undefined;
+  const isInsidePrioritizationInterval = (): boolean =>
+    options.prioritizationIntervalInMilliseconds !== undefined &&
+    lastPrioritizationCallAt !== undefined &&
+    clock.now().getTime() - lastPrioritizationCallAt < options.prioritizationIntervalInMilliseconds;
   app.post('/prioritization-run', async (context) => {
-    if (hasReachedDailySpendCeiling()) return context.json({});
+    if (hasReachedDailySpendCeiling() || isInsidePrioritizationInterval()) return context.json({});
+    lastPrioritizationCallAt = clock.now().getTime();
     const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
     const profile = tasks
       .map(({ accountEmail }) => profileOfAccount(accountEmail))

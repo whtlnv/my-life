@@ -91,7 +91,7 @@
 - [x] Each prioritization call's cost is logged against the daily spend with the prioritization model, and `POST /prioritization-run` makes no call once the daily ceiling is reached
 - [x] A pinned task is first in `GET /tasks` whatever its rank; unpinning returns it to rank order
 - [x] After a backend restart on the same database file, `GET /tasks` keeps each task's rank, reason and pin without a new prioritization call
-- [ ] The prioritization pass runs again once its configured interval has elapsed, and not before
+- [x] The prioritization pass runs again once its configured interval has elapsed, and not before
 - [ ] The _now_ page shows the 3 highest-ranked open tasks with their reasons, and not the fourth
 - [ ] Each task on the _now_ page can be marked done with one click, and it leaves the page
 - [ ] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
