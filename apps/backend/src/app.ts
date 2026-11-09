@@ -991,7 +991,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         accountEmail: proposal.accountEmail,
         link: gmailMessageLink(proposal),
         asks: proposal.asks ?? [],
-      }).map((taskProposal, index) => ({ id: `${proposal.messageId}-${index}`, ...taskProposal })),
+      }).map((taskProposal, index) => ({ id: `${proposal.messageId}-${String(index)}`, ...taskProposal })),
     );
   const findTaskProposal = (taskId: string) => listedTaskProposals().find(({ id }) => id === taskId)!;
   app.get('/task-proposals', (context) => {
