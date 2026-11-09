@@ -15,7 +15,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
-- **[apps/backend/src/app.ts:990] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08)
+- **[apps/backend/src/app.ts:1761] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09)
   Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
   scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
   agent (Phase 4) needs ranking.
@@ -65,7 +65,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `recordingAction` in `apps/backend/src/app.ts` reads only `record.outcome` and runs the tool itself, so `effects` looks
   like the list of actions to perform while nothing performs it. Deferred because `agent-action.test.ts` asserts the field
   in two tests, so dropping it changes the function's tested output; it is a `/test-quality` matter first.
-- **[apps/backend/src/app.ts:1214] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08)
+- **[apps/backend/src/app.ts:1628] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09)
   `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
   reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
   for them would look live and do nothing. Deferred because honoring them changes what `createApp` does with its options.
@@ -92,9 +92,9 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   reordered or added column compiles and shows amounts under the wrong heading. Deferred for the same reason as the
   `/triage-queue` and `/now` entries below: there is no statement contract to share the column list from, and adding one is
   new `packages/contracts` surface delivered test-first.
-- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08)
-  `new URL(input instanceof Request ? input.url : input.toString())` opens 31 fake `fetch` functions across eight
-  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 31 times.
+- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09)
+  `new URL(input instanceof Request ? input.url : input.toString())` opens 32 fake `fetch` functions across eight
+  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 32 times.
   Deferred because two of those files (`calendar-poll.test.ts`, `gmail-poll.test.ts`) sit outside 2aaf298..HEAD and the
   extension has no shared test-helper module to hoist it into.
 - **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
@@ -106,8 +106,8 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:377] `createApp` is one 1013-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08)
-  The file is 1464 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:426] `createApp` is one 1366-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09)
+  The file is 1877 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
