@@ -92,7 +92,7 @@ export function createClaudeAgent({
       let response = await sendMessages();
       let toolRounds = 0;
       while (response?.stop_reason === 'tool_use') {
-        if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply };
+        if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply, costInUsd };
         toolRounds += 1;
         const toolResults = await runRequestedTools(response.content, tools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
