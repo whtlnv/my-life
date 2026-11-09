@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 13:45 · `apps/backend/src/app-people.test.ts::gives a contact at GET /people its sender domain as the organization when POST /contacts-import brought it without an organization`
+- Behavior: `GET /people` gives the sender's domain as the organization when no organization name is stored
+- Predicted: pass (the `?? senderDomain(email)` fallback at apps/backend/src/app.ts:1734 already exists from the previous item's green, and app-people.test.ts "gives each contact at GET /people ... its organization" already pins `acme.com` / `example.com` with nothing stored)
+- Actual: passed
+- Type: passed unexpectedly
+- Resolution: the previous item's green built the domain fallback with the stored-name lookup, so nothing is left to drive; the test was removed and the TODO item can be checked off against the existing test.
+
 ## 2026-11-09 13:32 · `apps/backend/src/app-slack.test.ts::leaves out of Urgent at GET /people a Slack contact marked vip whose DM has waited less than 1 business day for a reply`
 - Behavior: a VIP-marked Slack contact waiting less than 1 business day is not listed as Urgent
 - Predicted: passes on first run (stated before running): the previous cycle (f77b87d) already sends each Slack message through `contactUrgency`, which applies the 1-business-day VIP threshold
