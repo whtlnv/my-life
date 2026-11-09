@@ -9,7 +9,7 @@ interface SourceStatus {
   stale: boolean;
 }
 
-interface AccountReport {
+export interface AccountReport {
   email: string;
   lastReportedAt: string;
   stale: boolean;

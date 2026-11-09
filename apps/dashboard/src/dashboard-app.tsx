@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { businessTimeZone, routes, timeInBusinessZone } from './app-shell';
+import { type AccountReport, businessTimeZone, routes, timeInBusinessZone } from './app-shell';
 
 interface NowEvent {
   id: string;
@@ -26,12 +26,6 @@ interface LaterTodayEvent {
   title: string;
   start: string;
   allDay?: boolean;
-}
-
-interface AccountReport {
-  email: string;
-  lastReportedAt: string;
-  stale: boolean;
 }
 
 interface NowResponse {
