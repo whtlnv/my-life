@@ -52,6 +52,7 @@
 - [ ] Undoing an agent VIP mark removes the mark
 - [ ] Undoing an agent-created task removes it from the open tasks
 - [ ] Undoing an agent action that cannot be reversed (a draft, a filter approval already carried out) is refused and changes nothing
+- [ ] After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
 - [ ] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
 - [ ] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
 - [ ] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such
