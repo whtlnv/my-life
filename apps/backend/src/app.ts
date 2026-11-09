@@ -1237,10 +1237,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const awaitsReply = (message: ReportedMessage): boolean =>
       message.sentByUser !== true && !userRepliedLaterInThread(message);
     const people = contactsByEmail(reportedSenders(), proposals)
-      .filter((contact) =>
-        reportedMessages.some((message) => contact.messageIds.includes(message.id) && awaitsReply(message)),
-      )
-      .map((contact) => ({ email: contact.emails[0] ?? '' }));
+      .map((contact) => ({
+        contact,
+        waitingTimes: reportedMessages
+          .filter((message) => contact.messageIds.includes(message.id) && awaitsReply(message))
+          .map((message) => new Date(message.date).getTime()),
+      }))
+      .filter(({ waitingTimes }) => waitingTimes.length > 0)
+      .map(({ contact, waitingTimes }) => ({
+        email: contact.emails[0] ?? '',
+        displayName: contact.displayName,
+        waitingSince: new Date(Math.min(...waitingTimes)).toISOString(),
+      }));
     return context.json({ people });
   });
   app.get('/organizations', (context) => {

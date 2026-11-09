@@ -149,6 +149,13 @@ function longestWaitFirst(people: WaitingPerson[]): WaitingPerson[] {
   return [...people].sort((first, second) => first.waitingSince.localeCompare(second.waitingSince));
 }
 
+const millisecondsPerDay = 86_400_000;
+
+export function waitingDurationText(waitingSince: string, now: Date): string {
+  const days = Math.floor((now.getTime() - new Date(waitingSince).getTime()) / millisecondsPerDay);
+  return `${days} days`;
+}
+
 function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
   return (
     <section aria-label="Waiting on you" className="section">
@@ -157,6 +164,7 @@ function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
         {people.map((person) => (
           <li key={person.email}>
             <a href={`${routes.people}?contact=${encodeURIComponent(person.email)}`}>{person.displayName}</a>
+            <span>{waitingDurationText(person.waitingSince, new Date())}</span>
           </li>
         ))}
       </ul>

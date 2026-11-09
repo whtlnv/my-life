@@ -1074,4 +1074,24 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     const { people } = (await response.json()) as { people: { email: string }[] };
     expect(people.map(({ email }) => email)).toEqual(['marta@acme.com']);
   });
+
+  it('gives each person at GET /waiting-on their display name and the time of their oldest message still waiting for a reply', async () => {
+    const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
+    const luisMondayMessage = { ...budgetReviewReport.messages[0], from: 'Luis Pérez <luis@example.com>' };
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...luisMondayMessage, id: 'message-2', threadId: 'thread-2', date: 'Tue, 3 Nov 2026 08:00:00 -0600' },
+        luisMondayMessage,
+      ],
+    });
+
+    const response = await app.request('/waiting-on');
+
+    const { people } = (await response.json()) as { people: unknown[] };
+    expect(people).toEqual([
+      { email: 'luis@example.com', displayName: 'Luis Pérez', waitingSince: '2026-11-02T15:00:00.000Z' },
+    ]);
+  });
 });

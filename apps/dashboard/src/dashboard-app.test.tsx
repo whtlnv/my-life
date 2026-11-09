@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { routes } from './app-shell';
-import { DashboardApp } from './dashboard-app';
+import { DashboardApp, waitingDurationText } from './dashboard-app';
 
 const answerGetNowWith = (body: unknown) => {
   const fetchStub = vi.fn((input: RequestInfo | URL) =>
@@ -502,5 +502,40 @@ describe('DashboardApp', () => {
         (email) => `${routes.people}?contact=${encodeURIComponent(email)}`,
       ),
     );
+  });
+  it("shows, next to each waiting person's name, how long they have been waiting", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    vi.setSystemTime(new Date('2026-11-08T09:00:00.000Z'));
+    const anaWaitingSince = '2026-11-03T09:00:00.000Z';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const bodies: Record<string, unknown> = {
+          '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
+          '/tasks': { tasks: [] },
+          '/waiting-on': {
+            people: [{ email: 'ana@example.com', displayName: 'Ana Ruiz', waitingSince: anaWaitingSince }],
+          },
+        };
+        const body = bodies[String(input)];
+        return Promise.resolve(
+          body === undefined
+            ? new Response(null, { status: 404 })
+            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+
+    render(<DashboardApp />);
+
+    const waitingBlock = await screen.findByRole('region', { name: 'Waiting on you' });
+    const anaRow = (await within(waitingBlock).findByRole('link', { name: /Ana Ruiz/ })).closest('li');
+    if (anaRow === null) throw new Error('the waiting person is not shown as a list item');
+    const expectedDuration = waitingDurationText(anaWaitingSince, new Date());
+    expect(expectedDuration).toMatch(/\b5\b/);
+    expect(anaRow).toHaveTextContent(expectedDuration);
   });
 });
