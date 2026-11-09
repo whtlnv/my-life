@@ -17,12 +17,13 @@ export interface Task extends TaskProposal {
   status: 'open';
 }
 
+const hidesTask = (event: TaskEvent, now?: string): boolean =>
+  event.type === 'done' || (event.type === 'snoozed' && now !== undefined && event.until > now);
+
 export const openTasks = (events: TaskEvent[], now?: string): Task[] => {
-  const doneIds = events
-    .filter((event) => event.type === 'done' || (event.type === 'snoozed' && now !== undefined && event.until > now))
-    .map((event) => event.taskId);
+  const hiddenTaskIds = events.filter((event) => hidesTask(event, now)).map((event) => event.taskId);
   return events
     .filter((event): event is ProposalEvent => event.type === 'proposal-confirmed')
     .map((event): Task => ({ id: event.taskId, ...event.proposal, status: 'open' }))
-    .filter((task) => !doneIds.includes(task.id));
+    .filter((task) => !hiddenTaskIds.includes(task.id));
 };
