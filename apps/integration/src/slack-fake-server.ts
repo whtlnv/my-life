@@ -5,10 +5,10 @@ type SlackScenario = 'direct-message';
 
 export const directMessageText = 'Can you review the proposal today?';
 
-const scenarios: Record<SlackScenario, { conversationsList: unknown; conversationsHistory: unknown }> = {
+const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {
-    conversationsList: { ok: true, channels: [{ id: 'D0001', is_im: true, user: 'U0001' }] },
-    conversationsHistory: {
+    '/conversations.list': { ok: true, channels: [{ id: 'D0001', is_im: true, user: 'U0001' }] },
+    '/conversations.history': {
       ok: true,
       messages: [{ type: 'message', user: 'U0001', text: directMessageText, ts: '1762700000.000100' }],
     },
@@ -16,11 +16,7 @@ const scenarios: Record<SlackScenario, { conversationsList: unknown; conversatio
 };
 
 export async function startSlackFakeServer(scenario: SlackScenario) {
-  const { conversationsList, conversationsHistory } = scenarios[scenario];
-  const responseByPath: Record<string, unknown> = {
-    '/conversations.list': conversationsList,
-    '/conversations.history': conversationsHistory,
-  };
+  const responseByPath = responseByPathByScenario[scenario];
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://fake').pathname;
     response.writeHead(200, { 'Content-Type': 'application/json' });
