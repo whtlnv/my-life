@@ -1,8 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { AgentPage, unverifiedCitationText } from './agent-page';
+import { AgentPage, agentActionsHeading, undoneActionText, unverifiedCitationText } from './agent-page';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -98,9 +98,7 @@ describe('AgentPage', () => {
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         if (input === '/agent/conversations' && init?.method !== 'POST') {
-          return Promise.resolve(
-            Response.json({ conversations: [{ id: 'conversation-7', title: pastQuestion }] }),
-          );
+          return Promise.resolve(Response.json({ conversations: [{ id: 'conversation-7', title: pastQuestion }] }));
         }
         if (input === '/agent/conversations/conversation-7' && init?.method !== 'POST') {
           return Promise.resolve(Response.json({ id: 'conversation-7', turns }));
@@ -128,5 +126,58 @@ describe('AgentPage', () => {
     expect(
       screen.getByText(pastReply).compareDocumentPosition(shownNextReply) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+  it('lists what the agent did with an Undo button only on reversible actions, and pressing Undo posts it and marks the action undone', async () => {
+    const sentUndos: unknown[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (input === '/agent/actions' && init?.method !== 'POST') {
+          return Promise.resolve(
+            Response.json({
+              actions: [
+                {
+                  id: 'action-1',
+                  tool: 'create_task',
+                  target: 'task-1',
+                  conversationId: 'conversation-1',
+                  at: '2026-11-09T10:00:00.000Z',
+                  undoable: true,
+                },
+                {
+                  id: 'action-2',
+                  tool: 'write_draft',
+                  target: 'message-2',
+                  conversationId: 'conversation-1',
+                  at: '2026-11-09T10:01:00.000Z',
+                  undoable: false,
+                },
+              ],
+            }),
+          );
+        }
+        if (input === '/agent/actions/undo' && init?.method === 'POST') {
+          sentUndos.push(JSON.parse(init.body as string));
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+    const user = userEvent.setup();
+
+    render(<AgentPage />);
+
+    const actionsSection = await screen.findByRole('region', { name: agentActionsHeading });
+    const reversibleRow = await within(actionsSection).findByText(/task-1/);
+    const irreversibleRow = within(actionsSection).getByText(/message-2/);
+    const reversibleItem = reversibleRow.closest('li') as HTMLElement;
+    const irreversibleItem = irreversibleRow.closest('li') as HTMLElement;
+    expect(within(irreversibleItem).queryByRole('button', { name: /Undo/ })).toBeNull();
+
+    await user.click(within(reversibleItem).getByRole('button', { name: /Undo/ }));
+
+    expect(await within(reversibleItem).findByText(new RegExp(undoneActionText))).toBeTruthy();
+    expect(sentUndos).toEqual([{ actionId: 'action-1' }]);
+    expect(within(reversibleItem).queryByRole('button', { name: /Undo/ })).toBeNull();
   });
 });

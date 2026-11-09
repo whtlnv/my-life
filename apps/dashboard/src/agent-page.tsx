@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 export const unverifiedCitationText = 'Unverified citation';
+export const agentActionsHeading = 'What the agent did';
+export const undoneActionText = 'Undone';
 
 interface Citation {
   id: string;
@@ -60,6 +62,68 @@ async function loadTurns(conversationId: string): Promise<Turn[]> {
 async function continueConversation(conversationId: string, message: string): Promise<Turn[]> {
   await sendMessage(`/agent/conversations/${conversationId}/messages`, message);
   return loadTurns(conversationId);
+}
+
+interface AgentAction {
+  id: string;
+  tool: string;
+  target: string;
+  undoable: boolean;
+}
+
+async function listActions(): Promise<AgentAction[]> {
+  const response = await fetch('/agent/actions');
+  if (!response.ok) {
+    return [];
+  }
+  const { actions } = (await response.json()) as { actions?: AgentAction[] };
+  return actions ?? [];
+}
+
+async function undoAction(actionId: string): Promise<void> {
+  await fetch('/agent/actions/undo', { method: 'POST', body: JSON.stringify({ actionId }) });
+}
+
+function AgentActions() {
+  const [actions, setActions] = useState<AgentAction[]>([]);
+  const [undoneIds, setUndoneIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    void listActions().then(setActions);
+  }, []);
+
+  const undo = (actionId: string) => {
+    void undoAction(actionId).then(() => {
+      setUndoneIds((ids) => [...ids, actionId]);
+    });
+  };
+
+  return (
+    <section aria-labelledby="agent-actions-heading">
+      <h2 id="agent-actions-heading">{agentActionsHeading}</h2>
+      <ul>
+        {actions.map((action) => (
+          <li key={action.id}>
+            {action.tool} {action.target}
+            {undoneIds.includes(action.id) ? (
+              <span> {undoneActionText}</span>
+            ) : (
+              action.undoable && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    undo(action.id);
+                  }}
+                >
+                  Undo
+                </button>
+              )
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 export function AgentPage() {
@@ -121,6 +185,7 @@ export function AgentPage() {
           }}
         />
       </form>
+      <AgentActions />
     </main>
   );
 }
