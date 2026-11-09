@@ -984,6 +984,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const labelRequests: LabelRequest[] = [];
   const undoneAgentArchiveMessageIds: string[] = [];
+  const undoneLabelRequests: LabelRequest[] = [];
   const draftRequests: DraftRequest[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
@@ -1037,6 +1038,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       messageId,
       label: archivedLabelName,
     }));
+    const removeLabelCommands = undoneLabelRequests
+      .filter(({ messageId }) => isMessageOfAccount(messageId))
+      .map(({ messageId, labelName }) => ({
+        id: `remove-label-${messageId}`,
+        type: 'remove-label',
+        messageId,
+        label: labelName,
+      }));
     const labelCommands = labelRequests
       .filter(({ messageId }) => isMessageOfAccount(messageId))
       .map(({ messageId, labelName }) => ({ id: `label-${messageId}`, type: 'label', messageId, label: labelName }));
@@ -1050,6 +1059,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...undoAutomaticCommands,
       ...undoAgentArchiveCommands,
       ...labelCommands,
+      ...removeLabelCommands,
       ...draftCommands,
     ].filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: pendingCommands });
@@ -1363,8 +1373,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({});
   });
   app.post('/agent/actions/undo', async (context) => {
-    const { target } = await context.req.json<{ target: string }>();
-    undoneAgentArchiveMessageIds.push(target);
+    const { tool, target } = await context.req.json<{ tool: string; target: string }>();
+    const labelRequest = labelRequests.find(({ messageId }) => messageId === target);
+    if (tool === 'label_message' && labelRequest !== undefined) undoneLabelRequests.push(labelRequest);
+    else undoneAgentArchiveMessageIds.push(target);
     return context.body(null, 200);
   });
   app.get('/agent/actions', (context) => context.json({ actions: [...agentActions].reverse() }));

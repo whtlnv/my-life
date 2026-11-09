@@ -49,7 +49,7 @@
   - note (handoff 2026-11-09): a first attempt was discarded. It treated every command from `GET /commands` as a draft (an archive or label command would have been turned into a draft and acknowledged), acknowledged even when the Gmail request failed, and was not called from `extension-start.ts`. The test must include an archive command beside the draft command, a failed Gmail answer, and the wiring.
 - [x] The list of agent actions shows every action newest first, with its tool, target, conversation, time and whether it can be undone
 - [x] Undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label
-- [ ] Undoing an agent label sends the message's account a command that removes that label
+- [x] Undoing an agent label sends the message's account a command that removes that label
 - [ ] Undoing an agent VIP mark removes the mark
 - [ ] Undoing an agent-created task removes it from the open tasks
   - note (supervisor 2026-11-09): agent tasks without a source message used to share the id `agent-undefined`; they now get `agent-<conversation>-<n>`. The test should undo one of two sourceless tasks and see the other stay open.

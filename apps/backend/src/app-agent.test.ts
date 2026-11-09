@@ -893,4 +893,24 @@ describe('backend app: the agent', () => {
       expect.objectContaining({ type: 'undo-automatic', messageId: 'message-1', label: archiveLabel }),
     );
   });
+  it("undoing an agent label sends the message's account a command that removes that label", async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Labeled.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Label the budget thread as Finance' });
+    await offeredTools.find((tool) => tool.name === 'label_message')?.run({ messageId: 'message-1', labelName: 'Finance' });
+
+    await postJson(app, '/agent/actions/undo', { tool: 'label_message', target: 'message-1' });
+
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect(commands).toContainEqual(
+      expect.objectContaining({ type: 'remove-label', messageId: 'message-1', label: 'Finance' }),
+    );
+  });
 });
