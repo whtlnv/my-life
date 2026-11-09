@@ -79,4 +79,36 @@ describe('openTasks', () => {
 
     expect(openTasks(events, '2026-11-09T18:00:00.000Z')).toEqual([]);
   });
+
+  it('brings a task snoozed until a time written with a UTC offset back among the open tasks once that time has passed', () => {
+    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
+    const events = [
+      {
+        type: 'proposal-confirmed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T15:00:00.000Z',
+        proposal: {
+          title: 'Review the Q3 budget spreadsheet and send comments',
+          link,
+          accountEmail: 'ana@example.com',
+        },
+      },
+      {
+        type: 'snoozed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T16:00:00.000Z',
+        until: '2026-11-10T16:00:00.000+01:00',
+      },
+    ];
+
+    expect(openTasks(events, '2026-11-10T15:30:00.000Z')).toEqual([
+      {
+        id: 'task-budget',
+        title: 'Review the Q3 budget spreadsheet and send comments',
+        link,
+        accountEmail: 'ana@example.com',
+        status: 'open',
+      },
+    ]);
+  });
 });

@@ -18,7 +18,7 @@ export interface Task extends TaskProposal {
 }
 
 const hidesTask = (event: TaskEvent, now?: string): boolean =>
-  event.type === 'done' || (event.type === 'snoozed' && now !== undefined && event.until > now);
+  event.type === 'done' || (event.type === 'snoozed' && now !== undefined && Date.parse(event.until) > Date.parse(now));
 
 export const openTasks = (events: TaskEvent[], now?: string): Task[] => {
   const hiddenTaskIds = events.filter((event) => hidesTask(event, now)).map((event) => event.taskId);

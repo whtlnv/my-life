@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-08 18:47 · `packages/domain/src/task-state.test.ts::brings a task snoozed until a time written with a UTC offset back among the open tasks once that time has passed`
+- Behavior: A task snoozed until a time is back among the open tasks once that time has passed
+- Predicted: the plain version (Z-formatted `until` earlier than `now`) would fail because the task stays hidden
+- Actual: reading `openTasks` showed it would pass; the previous green's `event.until > now` already brings an expired snooze back. A `-06:00` (business time zone) `until` would also pass by accident, because a negative offset always sorts lexically before its UTC equivalent
+- Type: passed unexpectedly
+- Resolution: rewritten before running to use a `+01:00` `until` that has passed in real time but sorts lexically after `now`. It now fails with an AssertionError (`[]` instead of the task) because `openTasks` compares instants as strings and not as times.
+
 ## 2026-11-08 17:28 · `apps/backend/src/app-needs-input.test.ts::still asks the category question of a message whose two triage models disagreed, after a backend restart on the same database file, with no triage call made again`
 - Behavior: `GET /needs-input` keeps the disagreement category question across a backend restart on the same database file, with no new triage call
 - Predicted: AssertionError — `questions` is `[]` after the restart because the disagreement is not persisted with the proposal
