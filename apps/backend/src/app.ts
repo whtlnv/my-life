@@ -1236,13 +1236,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     const awaitsReply = (message: ReportedMessage): boolean =>
       message.sentByUser !== true && !userRepliedLaterInThread(message);
+    const waitingTimesOf = (contact: { messageIds: string[] }): number[] =>
+      reportedMessages
+        .filter((message) => contact.messageIds.includes(message.id) && awaitsReply(message))
+        .map((message) => new Date(message.date).getTime());
     const people = contactsByEmail(reportedSenders(), proposals)
-      .map((contact) => ({
-        contact,
-        waitingTimes: reportedMessages
-          .filter((message) => contact.messageIds.includes(message.id) && awaitsReply(message))
-          .map((message) => new Date(message.date).getTime()),
-      }))
+      .map((contact) => ({ contact, waitingTimes: waitingTimesOf(contact) }))
       .filter(({ waitingTimes }) => waitingTimes.length > 0)
       .map(({ contact, waitingTimes }) => ({
         email: contact.emails[0] ?? '',
