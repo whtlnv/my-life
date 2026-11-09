@@ -49,7 +49,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A stored Slack message whose sender `users.info` cannot resolve carries the sender's user id as its name
 - [x] When Slack answers 429 with `Retry-After`, the poll waits that long and retries, and the message is stored
 - [x] When one workspace answers `invalid_auth`, the poll does not retry it, and the other workspace's messages are still stored
-- [ ] Slack messages stored before a backend restart are served after it
+- [x] Slack messages stored before a backend restart are served after it
 - [ ] The dashboard shows a Slack workspace as stale when its last successful poll is older than twice its polling interval
 - [ ] The dashboard shows a Slack workspace as fresh, with its last poll time, when its last successful poll is within twice its polling interval
 

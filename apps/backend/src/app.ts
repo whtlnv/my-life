@@ -61,6 +61,7 @@ import { openListedDigestStore } from './listed-digest-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
+import { openSlackMessageStore } from './slack-message-store';
 import { openSpendStore } from './spend-store';
 import { openTaskEventStore } from './task-event-store';
 import {
@@ -440,6 +441,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const undoAutomaticStore = openUndoAutomaticStore(databasePath);
   const prioritizationStore = openPrioritizationStore(databasePath);
   const taskEventStore = openTaskEventStore(databasePath);
+  const slackMessageStore = openSlackMessageStore(databasePath);
   // Messages reported before this process started are reloaded, so a restart never strands a message untriaged.
   const storedMessages = reportedMessageStore.loadReportedMessages();
   const reportedMessages: ReportedMessage[] = storedMessages;
@@ -569,6 +571,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   );
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
+  app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
   app.post('/register', async (context) => {
     const { email } = await context.req.json<{ email: string }>();
     if (!isAllowed(email)) {
