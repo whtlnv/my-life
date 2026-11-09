@@ -88,7 +88,7 @@
 - [x] `POST /prioritization-run` hands the prioritization port the urgent contacts with their reasons, the same ones `GET /people` lists as urgent
 - [x] `GET /tasks` returns the open tasks ordered by their stored rank, each with its reason
 - [x] A prioritization answer that fails validation at `POST /prioritization-run` leaves the previous ranks and reasons in `GET /tasks`
-- [ ] Each prioritization call's cost is logged against the daily spend with the prioritization model, and `POST /prioritization-run` makes no call once the daily ceiling is reached
+- [x] Each prioritization call's cost is logged against the daily spend with the prioritization model, and `POST /prioritization-run` makes no call once the daily ceiling is reached
 - [ ] A pinned task is first in `GET /tasks` whatever its rank; unpinning returns it to rank order
 - [ ] After a backend restart on the same database file, `GET /tasks` keeps each task's rank, reason and pin without a new prioritization call
 - [ ] The prioritization pass runs again once its configured interval has elapsed, and not before

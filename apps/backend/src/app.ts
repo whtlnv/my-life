@@ -136,7 +136,7 @@ export interface AppOptions {
       profile: string;
       calendar: ReturnType<typeof mergeCalendarSnapshots>;
       urgentContacts: unknown[];
-    }) => Promise<{ ranks: TaskRanks['ranks'] }>;
+    }) => Promise<{ ranks: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
   };
   summary?: {
     summarize: (request: {
@@ -1009,6 +1009,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   let taskRanksFromLastRun: TaskRanks['ranks'] = [];
   app.post('/prioritization-run', async (context) => {
+    if (hasReachedDailySpendCeiling()) return context.json({});
     const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
     const profile = tasks
       .map(({ accountEmail }) => profileOfAccount(accountEmail))
@@ -1016,9 +1017,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .join('\n');
     const calendar = mergedCalendarEvents();
     const urgentContacts = peopleGroups().urgent;
-    const answer = taskRanks.safeParse(
-      await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts }),
-    );
+    const result = await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts });
+    spendStore.save({ spentAt: clock.now().toISOString(), model: result.model ?? '', costInUsd: result.costInUsd ?? 0 });
+    const answer = taskRanks.safeParse(result);
     if (answer.success) {
       taskRanksFromLastRun = answer.data.ranks;
     }

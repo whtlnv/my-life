@@ -18,6 +18,7 @@ import {
   postCalendarSnapshot,
   weeklySync,
 } from './app.test-support';
+import { openSpendStore } from './spend-store';
 
 describe('backend app: task proposals and tasks', () => {
   it('lists at GET /task-proposals each ask extracted from a triaged message with its title, due time, message link and account', async () => {
@@ -425,5 +426,59 @@ describe('backend app: task proposals and tasks', () => {
     expect(tasks.tasks).toEqual([
       expect.objectContaining({ title: 'Approve the budget', rank: 1, reason: 'Due before the board meeting' }),
     ]);
+  });
+
+  it('logs the cost of each prioritization call at POST /prioritization-run against the daily spend, with the prioritization model', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const prioritization = {
+      prioritize: async () => ({ ranks: [], costInUsd: 0.4, model: 'claude-opus-5-5' }),
+    };
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+      prioritization,
+    });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+
+    await postJson(app, '/prioritization-run', {});
+
+    expect(openSpendStore(databasePath).loadAll()).toContainEqual({
+      spentAt: '2026-11-02T15:10:00.000Z',
+      model: 'claude-opus-5-5',
+      costInUsd: 0.4,
+    });
+  });
+
+  it("makes no prioritization call at POST /prioritization-run once today's spend reaches the daily ceiling", async () => {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    let prioritizationCalls = 0;
+    const prioritization = {
+      prioritize: async () => {
+        prioritizationCalls += 1;
+        return { ranks: [], costInUsd: 19, model: 'claude-opus-5-5' };
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      triage,
+      prioritization,
+    });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, '/prioritization-run', {});
+
+    await postJson(app, '/prioritization-run', {});
+
+    expect(prioritizationCalls).toBe(1);
   });
 });
