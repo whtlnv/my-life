@@ -130,12 +130,15 @@ export async function pollSlackWorkspace(input: PollSlackWorkspaceInput): Promis
 
 type PollSlackWorkspacesInput = Omit<PollSlackWorkspaceInput, 'workspace'> & { workspaces: SlackWorkspace[] };
 
-export async function pollSlackWorkspaces({ workspaces, ...input }: PollSlackWorkspacesInput): Promise<void> {
+export async function pollSlackWorkspaces({ workspaces, ...input }: PollSlackWorkspacesInput): Promise<Set<string>> {
+  const succeededTeamIds = new Set<string>();
   for (const workspace of workspaces) {
     try {
       await pollSlackWorkspace({ ...input, workspace });
+      succeededTeamIds.add(workspace.teamId);
     } catch {
       // A workspace that fails (e.g. invalid_auth) is skipped so the others are still polled.
     }
   }
+  return succeededTeamIds;
 }

@@ -576,18 +576,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
-  let slackWorkspacePolls: { teamId: string; lastSuccessfulPollAt: string }[] | undefined;
+  let slackWorkspacePolls: { teamId: string; lastSuccessfulPollAt?: string }[] | undefined;
   app.post('/slack-poll', async (context) => {
-    await pollSlackWorkspaces({
+    const succeededTeamIds = await pollSlackWorkspaces({
       fetch,
       apiUrl: options.slackApiUrl ?? '',
       workspaces: configuredSlackWorkspaces,
       store: slackMessageStore,
     });
-    slackWorkspacePolls = configuredSlackWorkspaces.map(({ teamId }) => ({
-      teamId,
-      lastSuccessfulPollAt: clock.now().toISOString(),
-    }));
+    slackWorkspacePolls = configuredSlackWorkspaces.map(({ teamId }) =>
+      succeededTeamIds.has(teamId) ? { teamId, lastSuccessfulPollAt: clock.now().toISOString() } : { teamId },
+    );
     return context.json({});
   });
   app.post('/register', async (context) => {
