@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { AppShell } from './app-shell';
+import { AppShell, timeInBusinessZone } from './app-shell';
 import { answerGetsWith } from './fetch-stub.test-support';
 
 const answerGetNowWith = (body: unknown) => {
@@ -130,5 +130,22 @@ describe('AppShell', () => {
       expect(fetch).toHaveBeenCalledWith('/now');
     });
     expect(within(screen.getByRole('list', { name: 'Sources' })).queryAllByRole('listitem')).toHaveLength(0);
+  });
+  it('shows a fresh Slack workspace as a source chip with its last poll time and no stale marker', async () => {
+    const lastSuccessfulPollAt = '2026-11-09T16:00:00.000Z';
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      slackWorkspaces: [{ teamId: 'T0001', lastSuccessfulPollAt, stale: false }],
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const chip = await within(status).findByText(/T0001/);
+    const item = chip.closest('li');
+    expect(item).not.toBeNull();
+    expect(item).toHaveAttribute('title', expect.stringContaining(timeInBusinessZone(lastSuccessfulPollAt)));
+    expect(item).toHaveClass('is-fresh');
+    expect(item).not.toHaveTextContent(/stale/i);
   });
 });

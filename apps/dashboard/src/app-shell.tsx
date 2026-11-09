@@ -19,6 +19,12 @@ interface ShellStatus {
   badgeCount: number;
   accounts: AccountReport[];
   sources: SourceStatus[];
+  slackWorkspaces?: SlackWorkspaceStatus[];
+}
+
+interface SlackWorkspaceStatus {
+  teamId: string;
+  lastSuccessfulPollAt: string;
 }
 
 interface AccountStatus {
@@ -82,6 +88,18 @@ function AccountChip({ account }: { account: AccountStatus }) {
       <span className="chip-account">{accountName(account.email)}</span>
       {stale && <span className="chip-detail is-stale">{staleSources.join(' + ')} stale</span>}
       <span className="visually-hidden">{account.email}</span>
+    </li>
+  );
+}
+
+function SlackWorkspaceChip({ workspace }: { workspace: SlackWorkspaceStatus }) {
+  return (
+    <li
+      className="chip chip-source is-fresh"
+      title={`Slack ${workspace.teamId} · polled ${timeInBusinessZone(workspace.lastSuccessfulPollAt)}`}
+    >
+      <span className="dot" aria-hidden="true" />
+      <span className="chip-account">{workspace.teamId}</span>
     </li>
   );
 }
@@ -160,6 +178,9 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
           <ul className="sources" aria-label="Sources">
             {accountStatuses(status).map((account) => (
               <AccountChip key={account.email} account={account} />
+            ))}
+            {(status.slackWorkspaces ?? []).map((workspace) => (
+              <SlackWorkspaceChip key={workspace.teamId} workspace={workspace} />
             ))}
           </ul>
         </div>

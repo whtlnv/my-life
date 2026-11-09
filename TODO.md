@@ -54,7 +54,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] After a successful `POST /slack-poll`, `GET /now` lists each configured Slack workspace with the time of its last successful poll
 - [x] After a `POST /slack-poll` in which a workspace answers `invalid_auth`, `GET /now` gives that workspace no new last successful poll time, while the other workspace's time is recorded
 - [x] The dashboard shows a Slack workspace as stale when its last successful poll is older than twice its polling interval
-- [ ] The dashboard shows a Slack workspace as fresh, with its last poll time, when its last successful poll is within twice its polling interval
+- [x] The dashboard shows a Slack workspace as fresh, with its last poll time, when its last successful poll is within twice its polling interval
 
 ### Triage
 
