@@ -25,6 +25,15 @@ const ccThreadProposalWithDisagreement = (disagreement: { firstCategory: string;
   disagreement,
 });
 
+const actionProposalAsking = (asks: { ask: string; due?: string }[]) => ({
+  action: 'act',
+  category: 'action',
+  summary: 'Luis asks the user to review the budget',
+  extract: {},
+  reason: 'Luis asks the user directly',
+  asks,
+});
+
 async function needsInputAfterTriagingBudgetReview(
   triage: NonNullable<AppOptions['triage']>,
 ): Promise<{ questions: unknown[] }> {
@@ -160,14 +169,7 @@ describe('backend app: GET /needs-input', () => {
   });
 
   it('asks whether a sender with no earlier message is VIP or ordinary when their message asks the user for something, naming the sender and the ask', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks the user to review the budget',
-      extract: {},
-      reason: 'Luis asks the user directly',
-      asks: [{ ask: 'Review the budget', due: '2026-11-06' }],
-    });
+    const triage = triageAnswering(actionProposalAsking([{ ask: 'Review the budget', due: '2026-11-06' }]));
     const needsInput = await needsInputAfterTriagingBudgetReview(triage);
 
     expect(needsInput.questions).toEqual([
@@ -237,14 +239,7 @@ describe('backend app: GET /needs-input', () => {
   });
 
   it('marks the sender VIP when a new-sender question is answered "vip", and asks the question no more', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks the user to review the budget',
-      extract: {},
-      reason: 'Luis asks the user directly',
-      asks: [{ ask: 'Review the budget', due: '2026-11-06' }],
-    });
+    const triage = triageAnswering(actionProposalAsking([{ ask: 'Review the budget', due: '2026-11-06' }]));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await proposeBudgetReview(app);
 
@@ -261,14 +256,7 @@ describe('backend app: GET /needs-input', () => {
   });
 
   it('leaves the sender unmarked when a new-sender question is answered "ordinary", and asks the question no more', async () => {
-    const triage = triageAnswering({
-      action: 'act',
-      category: 'action',
-      summary: 'Luis asks the user to review the budget',
-      extract: {},
-      reason: 'Luis asks the user directly',
-      asks: [{ ask: 'Review the budget', due: '2026-11-06' }],
-    });
+    const triage = triageAnswering(actionProposalAsking([{ ask: 'Review the budget', due: '2026-11-06' }]));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await proposeBudgetReview(app);
 
