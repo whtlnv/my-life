@@ -235,4 +235,24 @@ describe('contactUrgency', () => {
       reasons: ['deadline', 'unanswered ask'],
     });
   });
+
+  it('lists only the reason "deadline" when a VIP contact\'s message carries a deadline inside the next 48 hours but has not yet waited a business day', () => {
+    const mondayNineAm = '2026-11-09T15:00:00.000Z';
+    const mondayTenAm = '2026-11-09T16:00:00.000Z';
+    const tuesdayNoon = '2026-11-10T18:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-contract',
+        receivedAt: mondayNineAm,
+        sentByUser: false,
+        asks: [{ ask: 'Sign the renewal contract' }],
+        dates: [tuesdayNoon],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: true, now: mondayTenAm, settings: urgencySettings })).toEqual({
+      urgent: true,
+      reasons: ['deadline'],
+    });
+  });
 });

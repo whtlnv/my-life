@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 14:03 · `packages/domain/src/contact-urgency.test.ts::lists only the reason "deadline" when a VIP contact's message carries a deadline inside the next 48 hours but has not yet waited a business day`
+- Behavior: An Urgent contact with only a deadline lists only the deadline reason
+- Predicted: passes; bab3a1c already makes contactUrgency push each reason on its own, so a deadline-only contact gets ['deadline']
+- Actual: passes (1 passed, 11 skipped)
+- Type: passed unexpectedly
+- Resolution: The behavior was delivered with the "lists both reasons" item, and the existing "deadline" test already covers a deadline-only contact, so no test can fail for this item without changing behavior. Kept the test as a pin for the VIP case that has not waited a business day yet. Nothing for /green to do.
+
 ## 2026-11-09 13:57 · `packages/domain/src/contact-urgency.test.ts::is urgent, with the reason "deadline", when the contact sent a message with a deadline inside the next 48 hours, even though another message only mentions them`
 - Behavior: A contact who sent a message with a deadline inside 48 hours is Urgent for that deadline
 - Predicted: passes (the previous cycle's per-message `onlyMentionsContact` filter already delivers it; the sender case is also driven by the existing "message from the contact carries an extracted deadline" test)

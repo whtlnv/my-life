@@ -89,7 +89,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] A contact merely mentioned in a message with a deadline inside 48 hours is not Urgent for that deadline (backlog: packages/domain/src/contact-urgency.ts:58 Urgency counts deadlines in messages that only mention a contact)
 - [x] A contact who sent a message with a deadline inside 48 hours is Urgent for that deadline (backlog: packages/domain/src/contact-urgency.ts:58 Urgency counts deadlines in messages that only mention a contact)
 - [x] An Urgent contact with both an unanswered ask and a deadline lists both reasons (backlog: packages/domain/src/contact-urgency.ts:58 … stops at the first reason)
-- [ ] An Urgent contact with only a deadline lists only the deadline reason (backlog: packages/domain/src/contact-urgency.ts:58 … stops at the first reason)
+- [x] An Urgent contact with only a deadline lists only the deadline reason (backlog: packages/domain/src/contact-urgency.ts:58 … stops at the first reason)
 
 ### Reply
 
