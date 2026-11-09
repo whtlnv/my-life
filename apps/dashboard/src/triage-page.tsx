@@ -62,6 +62,7 @@ interface Digest {
 
 interface SlackTriageItem {
   workspaceTeamId: string;
+  conversationId: string;
   senderName: string;
   text: string;
   timestamp: string;
@@ -617,12 +618,26 @@ function HandledForYouSection({
   );
 }
 
+const slackDecisionKeys: Record<string, string> = { i: 'ignore', t: 'act' };
+
+function postSlackVerdict(item: SlackTriageItem, key: string) {
+  const { workspaceTeamId, conversationId, timestamp } = item;
+  void postJson('/slack-verdicts', { workspaceTeamId, conversationId, timestamp, decision: slackDecisionKeys[key] });
+}
+
 function SlackSection({ items }: { items: SlackTriageItem[] }) {
   return (
     <section aria-label={sectionTitles.slack} className="section">
       <h2 className="section-title">{sectionTitles.slack}</h2>
       {items.map((item) => (
-        <article key={`${item.workspaceTeamId}:${item.timestamp}`} className="card">
+        <article
+          key={`${item.workspaceTeamId}:${item.timestamp}`}
+          className="card"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            postSlackVerdict(item, event.key);
+          }}
+        >
           <p>
             {item.senderName} · {item.workspaceTeamId}
           </p>

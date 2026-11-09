@@ -1444,4 +1444,52 @@ describe('TriagePage', () => {
     expect(within(diegoCard).getByText(/T0002/)).toBeInTheDocument();
     expect(within(diegoCard).getByText(/The deploy is blocked on your approval/)).toBeInTheDocument();
   });
+
+  it('posts the `ignore` verdict when the ignore key `i` is pressed on a Slack card, and the `act` verdict when the act key `t` is pressed on another', async () => {
+    const slackItem = (timestamp: string, senderName: string, text: string) => ({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: `U-${senderName}`,
+      senderName,
+      text,
+      timestamp,
+      permalink: `https://app.slack.com/client/T0001/D0001/p${timestamp.replace('.', '')}`,
+      choices: ['ignore', 'act', 'reply'],
+    });
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        slackItem('1762700000.000100', 'Lucía Ramos', 'Lunch is moved to Thursday'),
+        slackItem('1762700100.000200', 'Diego Soto', 'The deploy is blocked on your approval'),
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const [luciaCard, diegoCard] = within(slackSection).getAllByRole('article') as [HTMLElement, HTMLElement];
+    await user.click(luciaCard);
+    await user.keyboard('i');
+    await user.click(diegoCard);
+    await user.keyboard('t');
+
+    const postedSlackVerdicts = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/slack-verdicts')
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(String(init?.body)) as unknown }));
+    expect(postedSlackVerdicts).toEqual([
+      {
+        method: 'POST',
+        body: { workspaceTeamId: 'T0001', conversationId: 'D0001', timestamp: '1762700000.000100', decision: 'ignore' },
+      },
+      {
+        method: 'POST',
+        body: { workspaceTeamId: 'T0001', conversationId: 'D0001', timestamp: '1762700100.000200', decision: 'act' },
+      },
+    ]);
+  });
 });
