@@ -105,6 +105,14 @@ function CurrentEvent({ event }: { event: NowEvent }) {
   );
 }
 
+interface RankedTask {
+  id: string;
+  title: string;
+  reason: string;
+}
+
+const topTaskCount = 3;
+
 const nowRefreshIntervalMilliseconds = 60_000;
 
 const emptyNowResponse: NowResponse = { current: [], next: [], laterToday: [], accounts: [] };
@@ -112,6 +120,7 @@ const emptyNowResponse: NowResponse = { current: [], next: [], laterToday: [], a
 export function DashboardApp() {
   const [nowResponse, setNowResponse] = useState<NowResponse | null>(null);
   const [backendUnreachable, setBackendUnreachable] = useState(false);
+  const [topTasks, setTopTasks] = useState<RankedTask[]>([]);
 
   useEffect(() => {
     const loadNow = () =>
@@ -126,6 +135,15 @@ export function DashboardApp() {
     return () => {
       clearInterval(interval);
     };
+  }, []);
+
+  useEffect(() => {
+    void fetch('/tasks')
+      .then((response) => response.json() as Promise<{ tasks: RankedTask[] }>)
+      .then(({ tasks }) => {
+        setTopTasks(tasks.slice(0, topTaskCount));
+      })
+      .catch(() => undefined);
   }, []);
 
   const loaded = nowResponse !== null;
@@ -162,6 +180,17 @@ export function DashboardApp() {
             {next.map((event) => (
               <NextEventSummary key={event.id} event={event} />
             ))}
+          </section>
+          <section aria-label="Top tasks" className="section">
+            <h2 className="section-title">Top tasks</h2>
+            <ul className="timeline">
+              {topTasks.map((task) => (
+                <li key={task.id}>
+                  <span>{task.title}</span>
+                  <span>{task.reason}</span>
+                </li>
+              ))}
+            </ul>
           </section>
           <section aria-label="Later today" className="section">
             <h2 className="section-title">Later today</h2>

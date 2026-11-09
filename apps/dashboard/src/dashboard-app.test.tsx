@@ -390,4 +390,43 @@ describe('DashboardApp', () => {
     expect(item).toHaveTextContent('personal@example.com');
     expect(item).not.toHaveTextContent(/stale/i);
   });
+
+  it('shows the 3 highest-ranked open tasks with their reasons, and not the fourth', async () => {
+    const rankedTasks = [
+      {
+        id: 'task-1',
+        title: 'Send the slides',
+        account: 'work@example.com',
+        rank: 1,
+        reason: 'The board meets at four',
+      },
+      { id: 'task-2', title: 'Approve the budget', account: 'work@example.com', rank: 2, reason: 'Due today' },
+      { id: 'task-3', title: 'Call the bank', account: 'personal@example.com', rank: 3, reason: 'Ana is waiting' },
+      { id: 'task-4', title: 'Renew the domain', account: 'personal@example.com', rank: 4, reason: 'Due next week' },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const bodies: Record<string, unknown> = {
+          '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
+          '/tasks': { tasks: rankedTasks },
+        };
+        const body = bodies[String(input)];
+        return Promise.resolve(
+          body === undefined
+            ? new Response(null, { status: 404 })
+            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+
+    render(<DashboardApp />);
+
+    for (const { title, reason } of rankedTasks.slice(0, 3)) {
+      expect(await screen.findByText(title)).toBeInTheDocument();
+      expect(screen.getByText(reason)).toBeInTheDocument();
+    }
+    expect(screen.queryByText('Renew the domain')).not.toBeInTheDocument();
+    expect(screen.queryByText('Due next week')).not.toBeInTheDocument();
+  });
 });

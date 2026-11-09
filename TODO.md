@@ -92,7 +92,7 @@
 - [x] A pinned task is first in `GET /tasks` whatever its rank; unpinning returns it to rank order
 - [x] After a backend restart on the same database file, `GET /tasks` keeps each task's rank, reason and pin without a new prioritization call
 - [x] The prioritization pass runs again once its configured interval has elapsed, and not before
-- [ ] The _now_ page shows the 3 highest-ranked open tasks with their reasons, and not the fourth
+- [x] The _now_ page shows the 3 highest-ranked open tasks with their reasons, and not the fourth
 - [ ] Each task on the _now_ page can be marked done with one click, and it leaves the page
 - [ ] The _now_ page lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page
 - [ ] The _now_ waiting-on list leaves out a person whose last message the user has answered
