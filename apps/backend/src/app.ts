@@ -999,6 +999,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks/:id/history', (context) =>
     context.json({ history: taskHistory(taskEventStore.loadAll(), context.req.param('id')) }),
   );
+  const mergedCalendarEvents = () => mergeCalendarSnapshots(snapshotStore.loadAll().map((entry) => entry.snapshot));
   const currentOpenTasks = () => openTasks(taskEventStore.loadAll(), clock.now().toISOString());
   const profileOfAccount = (accountEmail: string): string | undefined => {
     const profilePath = join(options.profileDirectory ?? '', profileFileName(accountEmail));
@@ -1011,7 +1012,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map(({ accountEmail }) => profileOfAccount(accountEmail))
       .filter((accountProfile) => accountProfile !== undefined)
       .join('\n');
-    const calendar = mergeCalendarSnapshots(snapshotStore.loadAll().map((entry) => entry.snapshot));
+    const calendar = mergedCalendarEvents();
     taskRanksFromLastRun = (await options.prioritization!.prioritize({ tasks, profile, calendar })).ranks;
     return context.json({});
   });
@@ -1265,8 +1266,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.get('/now', (context) => {
     const stored = snapshotStore.loadAll();
-    const latestSnapshots = stored.map((entry) => entry.snapshot);
-    const events = mergeCalendarSnapshots(latestSnapshots);
+    const events = mergedCalendarEvents();
     return context.json({
       ...buildNowView(events, clock, businessTimeZone),
       accounts: describeAccountFreshness(stored, clock),
