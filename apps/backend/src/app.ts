@@ -148,13 +148,18 @@ export interface AppOptions {
     }) => Promise<{ ranks?: TaskRanks['ranks']; costInUsd?: number; model?: string }>;
   };
   agent?: {
-    respond: () => Promise<{ text: string; costInUsd: number }>;
+    respond: (request?: { turns: ConversationTurn[] }) => Promise<{ text: string; costInUsd: number }>;
   };
   summary?: {
     summarize: (request: {
       items: { summary: string }[];
     }) => Promise<{ lines: string[]; costInUsd: number; model?: string }>;
   };
+}
+
+interface ConversationTurn {
+  role: 'user' | 'assistant';
+  text: string;
 }
 
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
@@ -1078,19 +1083,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.json({});
   });
+  let conversationTurns: ConversationTurn[] = [];
   app.post('/agent/conversations', async (context) => {
     const { message } = await context.req.json<{ message: string }>();
     const reply = await options.agent?.respond();
-    return context.json(
-      {
-        id: 'conversation-1',
-        turns: [
-          { role: 'user', text: message },
-          { role: 'assistant', text: reply?.text },
-        ],
-      },
-      201,
-    );
+    conversationTurns = [
+      { role: 'user', text: message },
+      { role: 'assistant', text: reply?.text ?? '' },
+    ];
+    return context.json({ id: 'conversation-1', turns: conversationTurns }, 201);
+  });
+  app.post('/agent/conversations/:id/messages', async (context) => {
+    const { message } = await context.req.json<{ message: string }>();
+    conversationTurns = [...conversationTurns, { role: 'user', text: message }];
+    await options.agent?.respond({ turns: conversationTurns });
+    return context.json({});
   });
   app.put('/tasks/:id/pin', async (context) => {
     const taskId = context.req.param('id');

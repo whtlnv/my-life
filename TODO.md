@@ -4,7 +4,7 @@
 ## Phase 4 — The agent
 
 - [x] When the user sends a first message to the agent, a new conversation is created and the model's text reply is returned as the conversation's assistant turn
-- [ ] A second message in the same conversation sends the earlier user and assistant turns to the model along with the new one
+- [x] A second message in the same conversation sends the earlier user and assistant turns to the model along with the new one
 - [ ] Opening a conversation returns every turn in the order it was said
 - [ ] The list of conversations shows each with its first user message as its title, most recently active first
 - [ ] A conversation and its turns are still there after the backend restarts
