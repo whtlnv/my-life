@@ -71,7 +71,7 @@
 - [x] A task snoozed until a time is left out of the open tasks before that time
 - [x] A task snoozed until a time is back among the open tasks once that time has passed
 - [x] A task can be given a waiting-on person, and the open tasks show it
-- [ ] A task's history lists every transition (created, done, snoozed, reopened, waiting-on set) with its timestamp, oldest first
+- [x] A task's history lists every transition (created, done, snoozed, reopened, waiting-on set) with its timestamp, oldest first
 - [ ] After a backend restart on the same database file, every task keeps its state, snooze time, waiting-on person and history, and a decided task proposal is not listed again
 - [ ] The prioritization pass sends the open tasks with the profile, today's calendar, due dates and urgency to the model configured for prioritization (default Opus 5.5) and stores the rank and reason it returns for each task
 - [ ] A prioritization answer that fails the contract's validation is rejected, and the previous ranks stand

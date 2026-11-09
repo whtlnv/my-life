@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { openTasks } from './task-state';
+import { openTasks, taskHistory } from './task-state';
 
 describe('openTasks', () => {
   it('creates an open task from a confirmed task proposal and none from a rejected one', () => {
@@ -142,6 +142,46 @@ describe('openTasks', () => {
         status: 'open',
         waitingOn: 'luis@example.com',
       },
+    ]);
+  });
+});
+
+describe('taskHistory', () => {
+  it('lists every transition of a task with its timestamp, oldest first', () => {
+    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
+    const events = [
+      { type: 'reopened' as const, taskId: 'task-budget', at: '2026-11-10T09:00:00.000Z' },
+      {
+        type: 'waiting-on' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T16:00:00.000Z',
+        person: 'luis@example.com',
+      },
+      {
+        type: 'proposal-confirmed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T15:00:00.000Z',
+        proposal: {
+          title: 'Review the Q3 budget spreadsheet and send comments',
+          link,
+          accountEmail: 'ana@example.com',
+        },
+      },
+      { type: 'done' as const, taskId: 'task-budget', at: '2026-11-09T18:00:00.000Z' },
+      {
+        type: 'snoozed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T17:00:00.000Z',
+        until: '2026-11-09T17:30:00.000Z',
+      },
+    ];
+
+    expect(taskHistory(events, 'task-budget')).toEqual([
+      { transition: 'created', at: '2026-11-09T15:00:00.000Z' },
+      { transition: 'waiting-on set', at: '2026-11-09T16:00:00.000Z' },
+      { transition: 'snoozed', at: '2026-11-09T17:00:00.000Z' },
+      { transition: 'done', at: '2026-11-09T18:00:00.000Z' },
+      { transition: 'reopened', at: '2026-11-10T09:00:00.000Z' },
     ]);
   });
 });

@@ -10,6 +10,7 @@ interface ProposalEvent {
 export type TaskEvent =
   | ProposalEvent
   | { type: 'done'; taskId: string; at: string }
+  | { type: 'reopened'; taskId: string; at: string }
   | { type: 'snoozed'; taskId: string; at: string; until: string }
   | { type: 'waiting-on'; taskId: string; at: string; person: string };
 
@@ -41,3 +42,14 @@ export const openTasks = (events: TaskEvent[], now?: string): Task[] => {
     })
     .filter((task) => !hiddenTaskIds.includes(task.id));
 };
+
+const transitionNames: Partial<Record<TaskEvent['type'], string>> = {
+  'proposal-confirmed': 'created',
+  'waiting-on': 'waiting-on set',
+};
+
+export const taskHistory = (events: TaskEvent[], taskId: string): { transition: string; at: string }[] =>
+  events
+    .filter((event) => event.taskId === taskId)
+    .sort((first, second) => Date.parse(first.at) - Date.parse(second.at))
+    .map((event) => ({ transition: transitionNames[event.type] ?? event.type, at: event.at }));
