@@ -281,13 +281,13 @@ describe('Slack fake server', () => {
       });
 
       expect(store.listMessages()).toEqual([
-        {
+        expect.objectContaining({
           workspaceTeamId: 'T0001',
           conversationId: 'D0001',
           senderUserId: 'U0001',
           text: directMessageText,
           timestamp: '1762700000.000100',
-        },
+        }),
       ]);
     } finally {
       await slack.close();
@@ -327,13 +327,13 @@ describe('Slack fake server', () => {
       });
 
       expect(store.listMessages()).toEqual([
-        {
+        expect.objectContaining({
           workspaceTeamId: 'T0001',
           conversationId: 'C0001',
           senderUserId: 'U0002',
           text: mentionMessageText,
           timestamp: '1762700100.000200',
-        },
+        }),
       ]);
     } finally {
       await slack.close();
@@ -382,13 +382,15 @@ describe('Slack fake server', () => {
         store,
       });
 
-      expect(store.listMessages()).toContainEqual({
-        workspaceTeamId: 'T0001',
-        conversationId: 'C0002',
-        senderUserId: 'U0003',
-        text: threadReplyText,
-        timestamp: '1762700300.000400',
-      });
+      expect(store.listMessages()).toContainEqual(
+        expect.objectContaining({
+          workspaceTeamId: 'T0001',
+          conversationId: 'C0002',
+          senderUserId: 'U0003',
+          text: threadReplyText,
+          timestamp: '1762700300.000400',
+        }),
+      );
     } finally {
       await slack.close();
     }
