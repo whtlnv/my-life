@@ -1,4 +1,5 @@
 import { act, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { DashboardApp } from './dashboard-app';
@@ -428,5 +429,37 @@ describe('DashboardApp', () => {
     }
     expect(screen.queryByText('Renew the domain')).not.toBeInTheDocument();
     expect(screen.queryByText('Due next week')).not.toBeInTheDocument();
+  });
+
+  it('marks a task on the now page done with one click, and it leaves the page', async () => {
+    let openTasks = [
+      { id: 'task-1', title: 'Send the slides', account: 'work@example.com', rank: 1, reason: 'The board meets at four' },
+      { id: 'task-2', title: 'Approve the budget', account: 'work@example.com', rank: 2, reason: 'Due today' },
+    ];
+    const fetchStub = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const json = (body: unknown) =>
+        Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
+      const url = String(input);
+      if (url === '/tasks/task-1/done' && init?.method === 'POST') {
+        openTasks = openTasks.filter((task) => task.id !== 'task-1');
+        return json({});
+      }
+      if (url === '/tasks') return json({ tasks: openTasks });
+      if (url === '/now') return json({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
+      return Promise.resolve(new Response(null, { status: 404 }));
+    });
+    vi.stubGlobal('fetch', fetchStub);
+
+    render(<DashboardApp />);
+
+    const taskRow = (await screen.findByText('Send the slides')).closest('li');
+    if (taskRow === null) throw new Error('the task is not shown as a list item');
+    await userEvent.click(within(taskRow).getByRole('button'));
+
+    expect(fetchStub).toHaveBeenCalledWith('/tasks/task-1/done', expect.objectContaining({ method: 'POST' }));
+    await vi.waitFor(() => {
+      expect(screen.queryByText('Send the slides')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Approve the budget')).toBeInTheDocument();
   });
 });

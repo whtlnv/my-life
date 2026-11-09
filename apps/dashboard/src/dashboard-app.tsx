@@ -113,7 +113,7 @@ interface RankedTask {
 
 const topTaskCount = 3;
 
-function TopTasks({ tasks }: { tasks: RankedTask[] }) {
+function TopTasks({ tasks, onDone }: { tasks: RankedTask[]; onDone: (taskId: string) => void }) {
   return (
     <section aria-label="Top tasks" className="section">
       <h2 className="section-title">Top tasks</h2>
@@ -122,6 +122,14 @@ function TopTasks({ tasks }: { tasks: RankedTask[] }) {
           <li key={task.id}>
             <span>{task.title}</span>
             <span>{task.reason}</span>
+            <button
+              type="button"
+              onClick={() => {
+                onDone(task.id);
+              }}
+            >
+              Done
+            </button>
           </li>
         ))}
       </ul>
@@ -162,6 +170,12 @@ export function DashboardApp() {
       .catch(() => undefined);
   }, []);
 
+  const markTaskDone = (taskId: string) => {
+    void fetch(`/tasks/${taskId}/done`, { method: 'POST' }).then(() => {
+      setTopTasks((tasks) => tasks.filter((task) => task.id !== taskId));
+    });
+  };
+
   const loaded = nowResponse !== null;
   const { current, next, laterToday, accounts } = nowResponse ?? emptyNowResponse;
   const loading = !loaded && !backendUnreachable;
@@ -197,7 +211,7 @@ export function DashboardApp() {
               <NextEventSummary key={event.id} event={event} />
             ))}
           </section>
-          <TopTasks tasks={topTasks} />
+          <TopTasks tasks={topTasks} onDone={markTaskDone} />
           <section aria-label="Later today" className="section">
             <h2 className="section-title">Later today</h2>
             {loaded && laterToday.length === 0 && <p className="empty">Nothing else today</p>}
