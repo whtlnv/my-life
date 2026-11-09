@@ -6,9 +6,10 @@ import { serve } from '@hono/node-server';
 
 import { createApp, currentTriagePromptVersion } from './app';
 import { createClaudeFilter } from './claude-filter';
+import { createMessageWith } from './claude-message';
 import { createClaudePrioritization } from './claude-prioritization';
 import { createClaudeSummary } from './claude-summary';
-import { createClaudeTriage, type ClaudePricing, type ClaudeRequest } from './claude-triage';
+import { createClaudeTriage, type ClaudePricing } from './claude-triage';
 import { createEscalatingTriage } from './escalating-triage';
 import { readStartupSettings } from './startup-settings';
 
@@ -23,7 +24,6 @@ const prioritizationPromptPath = fileURLToPath(new URL('../prompts/prioritizatio
 const profileDirectory =
   process.env.MY_LIFE_PROFILE_DIRECTORY ?? fileURLToPath(new URL('../../../profile', import.meta.url));
 const triageRunIntervalInMilliseconds = 30_000;
-const maximumAnswerTokens = 2048;
 
 // Anthropic list prices per million tokens (2026-11-07). The model id is config; a model missing here disables triage
 // loudly instead of logging a wrong spend.
@@ -32,32 +32,6 @@ const pricingByModel: Record<string, ClaudePricing> = {
   'claude-sonnet-5-5': { inputPerMillionTokensInUsd: 2, outputPerMillionTokensInUsd: 10 },
   'claude-haiku-5-5': { inputPerMillionTokensInUsd: 0.1, outputPerMillionTokensInUsd: 0.5 },
 };
-
-// One Anthropic call shape for every adapter: a system prompt, user messages, strict tools, low effort, fallbacks.
-function createMessageWith(client: Anthropic) {
-  return async (request: ClaudeRequest) => {
-    const response = await client.beta.messages.create({
-      model: request.model,
-      max_tokens: maximumAnswerTokens,
-      system: request.system,
-      messages: request.messages.map((message) => ({ role: 'user' as const, content: message.content })),
-      tools: request.tools.map((tool) => ({
-        name: tool.name,
-        strict: tool.strict,
-        input_schema: tool.input_schema as Anthropic.Beta.BetaTool['input_schema'],
-      })),
-      output_config: { effort: 'low' },
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-    });
-    return {
-      content: response.content.map((block) =>
-        block.type === 'tool_use' ? { type: block.type, input: block.input } : { type: block.type },
-      ),
-      usage: { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens },
-    };
-  };
-}
 
 function claudeSettings() {
   if (!settings.triage.enabled) {
