@@ -63,7 +63,7 @@
 - [x] When the agent asks for a tool it may not use (sending or deleting mail), the backend refuses it, changes nothing, and the list of agent actions shows the refusal
   - note (supervisor 2026-11-09, keystone): `decideAgentAction` in `packages/domain/src/agent-action.ts` has no caller outside its tests; the backend never records a refusal. Wire it into the backend's action path rather than adding a second check.
 - [x] After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
-- [ ] After a backend restart, an agent undo of an archive or a label that the extension has not yet picked up is still waiting in that account's commands
+- [x] After a backend restart, an agent undo of an archive or a label that the extension has not yet picked up is still waiting in that account's commands
   - note (supervisor 2026-11-09): `undoneAgentArchiveMessageIds` and `undoneLabelRequests` in `apps/backend/src/app.ts` live only in memory; derive the pending undo commands from the stored, undone actions instead.
 - [ ] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
 - [ ] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation

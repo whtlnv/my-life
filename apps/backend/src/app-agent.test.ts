@@ -1240,4 +1240,33 @@ describe('backend app: the agent', () => {
       commandTypes: expect.arrayContaining(['undo-automatic']),
     });
   });
+
+  it("after a backend restart, an undone agent archive and an undone agent label the extension has not picked up are still in the account's commands", async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Done.');
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    await proposeBudgetReview(beforeRestart);
+    await postJson(beforeRestart, '/agent/conversations', { message: 'Tidy up the budget thread' });
+    const runTool = (name: string, input: unknown) => offeredTools.find((tool) => tool.name === name)?.run(input);
+    await runTool('archive_message', { messageId: 'message-1' });
+    await runTool('label_message', { messageId: 'message-1', labelName: 'Finance' });
+    await undoAgentAction(beforeRestart, 'archive_message');
+    await undoAgentAction(beforeRestart, 'label_message');
+
+    const afterRestart = createApp(options);
+
+    const { commands } = (await (await getCommands(afterRestart, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect(commands).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'undo-automatic', messageId: 'message-1' }),
+        expect.objectContaining({ type: 'remove-label', messageId: 'message-1', label: 'Finance' }),
+      ]),
+    );
+  });
 });

@@ -977,8 +977,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   const labelRequests: LabelRequest[] = [];
-  const undoneAgentArchiveMessageIds: string[] = [];
-  const undoneLabelRequests: LabelRequest[] = [];
   const draftRequests: DraftRequest[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
@@ -1026,15 +1024,20 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageId,
         label: automaticLabelName,
       }));
-    const undoAgentArchiveCommands = undoneAgentArchiveMessageIds.filter(isMessageOfAccount).map((messageId) => ({
+    const undoneAgentActions = agentActionStore.loadAll().filter(({ undone }) => undone === true);
+    const undoAgentArchiveCommands = undoneAgentActions
+      .filter(({ tool }) => tool === 'archive_message')
+      .map(({ target }) => target)
+      .filter(isMessageOfAccount)
+      .map((messageId) => ({
       id: `undo-agent-archive-${messageId}`,
       type: 'undo-automatic',
       messageId,
       label: archivedLabelName,
     }));
-    const removeLabelCommands = undoneLabelRequests
-      .filter(({ messageId }) => isMessageOfAccount(messageId))
-      .map(({ messageId, labelName }) => ({
+    const removeLabelCommands = undoneAgentActions
+      .filter(({ tool, target }) => tool === 'label_message' && isMessageOfAccount(target))
+      .map(({ target: messageId, labelName }) => ({
         id: `remove-label-${messageId}`,
         type: 'remove-label',
         messageId,
@@ -1303,7 +1306,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const emailTarget = (input: unknown) => (input as { email: string }).email;
     const proposalTarget = (input: unknown) => (input as { proposalId: string }).proposalId;
     const createdTaskTarget = (_input: unknown, result: unknown) => (result as { taskId: string }).taskId;
-    const recordAction = (action: Pick<StoredAgentAction, 'tool' | 'target' | 'undoable' | 'outcome'>): void => {
+    const recordAction = (
+      action: Pick<StoredAgentAction, 'tool' | 'target' | 'undoable' | 'outcome' | 'labelName'>,
+    ): void => {
       agentActionStore.save({
         id: `action-${String(agentActionStore.loadAll().length + 1)}`,
         conversationId,
@@ -1330,7 +1335,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           return { error: `The agent may not use ${tool.name}` };
         }
         const result = await tool.run(input);
-        recordAction({ tool: tool.name, target: targetOf(input, result), undoable });
+        const { labelName } = input as Pick<StoredAgentAction, 'labelName'>;
+        recordAction({ tool: tool.name, target: targetOf(input, result), undoable, ...(labelName && { labelName }) });
         return result;
       },
     });
@@ -1405,11 +1411,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { tool, target } = action;
     if (!action.undoable || action.undone) return context.body(null, 409);
     agentActionStore.markUndone(action.id);
-    const labelRequest = labelRequests.find(({ messageId }) => messageId === target);
     if (tool === 'create_task') taskEventStore.save({ type: 'undone', taskId: target, at: clock.now().toISOString() });
     else if (tool === 'mark_vip') contactDetailsStore.removeMark(target, 'vip');
-    else if (tool === 'label_message' && labelRequest !== undefined) undoneLabelRequests.push(labelRequest);
-    else undoneAgentArchiveMessageIds.push(target);
     return context.body(null, 200);
   });
   app.get('/agent/actions', (context) => context.json({ actions: agentActionStore.loadAll().reverse() }));
