@@ -577,14 +577,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
-  let slackWorkspacePolls: { teamId: string; lastSuccessfulPollAt?: string }[] | undefined;
-  const describeSlackWorkspaceFreshness = (poll: { teamId: string; lastSuccessfulPollAt?: string }) => {
+  interface SlackWorkspacePoll {
+    teamId: string;
+    lastSuccessfulPollAt?: string;
+  }
+  let slackWorkspacePolls: SlackWorkspacePoll[] | undefined;
+  const describeSlackWorkspaceFreshness = (poll: SlackWorkspacePoll) => {
     const pollingIntervalInMilliseconds = options.slackPollingIntervalInMilliseconds;
     if (pollingIntervalInMilliseconds === undefined || poll.lastSuccessfulPollAt === undefined) {
       return poll;
     }
     const lastReportedAt = poll.lastSuccessfulPollAt;
-    return { ...poll, stale: !isAccountFresh({ email: poll.teamId, lastReportedAt, pollingIntervalInMilliseconds }, clock) };
+    return {
+      ...poll,
+      stale: !isAccountFresh({ email: poll.teamId, lastReportedAt, pollingIntervalInMilliseconds }, clock),
+    };
   };
   app.post('/slack-poll', async (context) => {
     const succeededTeamIds = await pollSlackWorkspaces({
