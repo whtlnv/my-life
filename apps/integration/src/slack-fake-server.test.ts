@@ -500,4 +500,36 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('a thread reply older than a newer message stored in the same channel outside the thread is still stored', async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      store.saveMessage({
+        workspaceTeamId: 'T0001',
+        conversationId: 'C0002',
+        senderUserId: 'U0002',
+        text: 'Lunch anyone?',
+        timestamp: '1762700900.000900',
+      });
+      const fetchHonoringRepliesOldest: typeof fetch = async (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        const response = await fetch(request, init);
+        const oldest = url.searchParams.get('oldest');
+        if (url.pathname !== '/conversations.replies' || oldest === null) return response;
+        const body = (await response.json()) as { messages: { ts: string }[] };
+        return Response.json({ ...body, messages: body.messages.filter((message) => message.ts > oldest) });
+      };
+
+      await pollSlackWorkspace({
+        fetch: fetchHonoringRepliesOldest,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      expect(store.listMessages().map((message) => message.text)).toContain(threadReplyText);
+    } finally {
+      await slack.close();
+    }
+  });
 });

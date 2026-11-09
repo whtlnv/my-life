@@ -31,13 +31,19 @@ async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query:
   return messages.matches;
 }
 
-function saveSlackMessage(input: PollSlackWorkspaceInput, conversationId: string, message: SlackMessage): void {
+function saveSlackMessage(
+  input: PollSlackWorkspaceInput,
+  conversationId: string,
+  message: SlackMessage,
+  threadTimestamp?: string,
+): void {
   input.store.saveMessage({
     workspaceTeamId: input.workspace.teamId,
     conversationId,
     senderUserId: message.user,
     text: message.text,
     timestamp: message.ts,
+    threadTimestamp,
   });
 }
 
@@ -86,13 +92,14 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
     if (match.thread_ts === undefined) {
       continue;
     }
-    const oldestParameter = oldestParameterFor(input.store, match.channel.id);
+    const newestStoredReplyTimestamp = input.store.newestTimestampInThread(match.channel.id, match.thread_ts);
+    const oldestParameter = newestStoredReplyTimestamp === undefined ? '' : `&oldest=${newestStoredReplyTimestamp}`;
     const { messages: replies } = await callSlack<{ messages: SlackMessage[] }>(
       input,
       `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}${oldestParameter}`,
     );
     for (const reply of replies) {
-      saveSlackMessage(input, match.channel.id, reply);
+      saveSlackMessage(input, match.channel.id, reply, match.thread_ts);
     }
   }
 }
