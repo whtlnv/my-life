@@ -22,4 +22,24 @@ describe('decideAgentAction', () => {
       effects: [],
     });
   });
+
+  it('carries out an allowed action, recording it with its conversation and time', () => {
+    const request = {
+      tool: 'archive_message',
+      input: { messageId: 'message-1' },
+      conversationId: 'conversation-1',
+      requestedAt: '2026-11-09T15:12:00.000Z',
+    };
+
+    expect(decideAgentAction(request)).toEqual({
+      record: {
+        tool: 'archive_message',
+        input: { messageId: 'message-1' },
+        conversationId: 'conversation-1',
+        requestedAt: '2026-11-09T15:12:00.000Z',
+        outcome: 'carried-out',
+      },
+      effects: [{ tool: 'archive_message', input: { messageId: 'message-1' } }],
+    });
+  });
 });
