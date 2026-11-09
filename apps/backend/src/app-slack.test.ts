@@ -94,6 +94,30 @@ describe('createApp Slack messages', () => {
     expect(slackItems).toEqual([]);
   });
 
+  it('keeps out of GET /triage-queue, after a backend restart on the same database file, a Slack item the user confirmed ignore on before it', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const beforeRestart = createApp({ allowedEmails: [], databasePath });
+    await postJson(beforeRestart, '/slack-verdicts', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      timestamp: '1762700000.000100',
+      decision: 'ignore',
+    });
+
+    const afterRestart = createApp({ allowedEmails: [], databasePath });
+    const { slackItems } = await getJson<{ slackItems: unknown[] }>(afterRestart, '/triage-queue');
+
+    expect(slackItems).toEqual([]);
+  });
+
   it('lists at GET /tasks an open task linked to the Slack message, on its workspace, once the user confirms act on it at POST /slack-verdicts', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({

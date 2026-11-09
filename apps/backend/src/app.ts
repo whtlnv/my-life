@@ -61,7 +61,7 @@ import { openListedDigestStore } from './listed-digest-store';
 import { openMailSourceStore } from './mail-source-store';
 import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
-import { openSlackMessageStore } from './slack-message-store';
+import { openSlackMessageStore, type SlackVerdict } from './slack-message-store';
 import { pollSlackWorkspaces } from './slack-poll';
 import { openSpendStore } from './spend-store';
 import { openTaskEventStore } from './task-event-store';
@@ -869,18 +869,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
-  const ignoredSlackMessageKeys = new Set<string>();
   const slackMessageKey = (message: { workspaceTeamId: string; conversationId: string; timestamp: string }) =>
     `${message.workspaceTeamId}/${message.conversationId}/${message.timestamp}`;
   app.post('/slack-verdicts', async (context) => {
-    const verdict = await context.req.json<{
-      workspaceTeamId: string;
-      conversationId: string;
-      timestamp: string;
-      decision: string;
-    }>();
+    const verdict = await context.req.json<SlackVerdict>();
     const verdictKey = slackMessageKey(verdict);
-    ignoredSlackMessageKeys.add(verdictKey);
+    slackMessageStore.saveVerdict({
+      workspaceTeamId: verdict.workspaceTeamId,
+      conversationId: verdict.conversationId,
+      timestamp: verdict.timestamp,
+      decision: verdict.decision,
+    });
     if (verdict.decision === 'act') {
       const message = slackMessageStore.listMessages().find((stored) => slackMessageKey(stored) === verdictKey);
       taskEventStore.save({
@@ -893,10 +892,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   function describeSlackItems() {
+    const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));
     return slackMessageStore
       .listMessages()
       .filter((message) => message.sentByUser !== true)
-      .filter((message) => !ignoredSlackMessageKeys.has(slackMessageKey(message)))
+      .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
       .map((message) => ({
         ...message,
         permalink: slackPermalink(message),
