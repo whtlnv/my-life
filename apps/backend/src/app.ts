@@ -875,6 +875,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: recordAndDescribeListedDigests(verdicts),
+      slackItems: slackMessageStore.listMessages().map((message) => ({
+        ...message,
+        permalink: `https://app.slack.com/client/${message.workspaceTeamId}/${message.conversationId}/p${message.timestamp.replace('.', '')}`,
+        choices: ['ignore', 'act', 'reply'],
+      })),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),

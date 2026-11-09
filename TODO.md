@@ -58,7 +58,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 
 ### Triage
 
-- [ ] A Slack message from someone else appears in `GET /triage-queue` as a Slack item offering `ignore`, `act` and `reply`, with its sender, text, workspace and Slack permalink
+- [x] A Slack message from someone else appears in `GET /triage-queue` as a Slack item offering `ignore`, `act` and `reply`, with its sender, text, workspace and Slack permalink
 - [ ] A Slack message the user sent does not appear in the triage queue
 - [ ] Confirming `ignore` on a Slack item removes it from the triage queue and stores the verdict
 - [ ] Confirming `act` on a Slack item creates an open task whose source link is the Slack message and whose account is the workspace
