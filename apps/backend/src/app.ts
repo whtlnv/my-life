@@ -575,6 +575,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
+  let slackWorkspacePolls: { teamId: string; lastSuccessfulPollAt: string }[] | undefined;
   app.post('/slack-poll', async (context) => {
     await pollSlackWorkspaces({
       fetch,
@@ -582,6 +583,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       workspaces: options.slackWorkspaces ?? [],
       store: slackMessageStore,
     });
+    slackWorkspacePolls = (options.slackWorkspaces ?? []).map(({ teamId }) => ({
+      teamId,
+      lastSuccessfulPollAt: clock.now().toISOString(),
+    }));
     return context.json({});
   });
   app.post('/register', async (context) => {
@@ -1785,6 +1790,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         needsInputQuestions().length +
         overdueOpenTasks().length,
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
+      slackWorkspaces: slackWorkspacePolls,
     });
   });
   const dashboardDirectory = options.dashboardDirectory;

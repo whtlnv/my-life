@@ -691,4 +691,23 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('after a successful POST /slack-poll, GET /now lists each configured Slack workspace with the time of its last successful poll', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const pollTime = new Date('2026-11-09T16:00:00.000Z');
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => pollTime },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+
+      await backend.request('/slack-poll', { method: 'POST' });
+      const now = (await (await backend.request('/now')).json()) as { slackWorkspaces?: unknown };
+
+      expect(now.slackWorkspaces).toEqual([{ teamId: 'T0001', lastSuccessfulPollAt: '2026-11-09T16:00:00.000Z' }]);
+    } finally {
+      await slack.close();
+    }
+  });
 });
