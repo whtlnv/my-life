@@ -7,14 +7,7 @@ import { DashboardApp, waitingDurationText } from './dashboard-app';
 import { answerGetsWith } from './fetch-stub.test-support';
 
 const answerGetNowWith = (body: unknown) => {
-  const fetchStub = vi.fn((input: RequestInfo | URL) =>
-    Promise.resolve(
-      input === '/now'
-        ? new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
-        : new Response(null, { status: 404 }),
-    ),
-  );
-  vi.stubGlobal('fetch', fetchStub);
+  answerGetsWith({ '/now': body });
 };
 
 afterEach(() => {

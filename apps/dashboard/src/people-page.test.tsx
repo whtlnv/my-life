@@ -7,16 +7,7 @@ import { answerGetsWith } from './fetch-stub.test-support';
 import { PeoplePage } from './people-page';
 
 const answerGetPeopleWith = (body: unknown) => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((input: RequestInfo | URL) =>
-      Promise.resolve(
-        input === '/people'
-          ? new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
-          : new Response(null, { status: 404 }),
-      ),
-    ),
-  );
+  answerGetsWith({ '/people': body });
 };
 
 afterEach(() => {

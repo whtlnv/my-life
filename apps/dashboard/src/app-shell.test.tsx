@@ -2,18 +2,10 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AppShell } from './app-shell';
+import { answerGetsWith } from './fetch-stub.test-support';
 
 const answerGetNowWith = (body: unknown) => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((input: RequestInfo | URL) =>
-      Promise.resolve(
-        input === '/now'
-          ? new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
-          : new Response(null, { status: 404 }),
-      ),
-    ),
-  );
+  answerGetsWith({ '/now': body });
 };
 
 const nowWithNoAccountsAndNothingToTriage = {
