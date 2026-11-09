@@ -36,6 +36,7 @@ const millisecondsPerSecond = 1000;
 const defaultGmailPollingIntervalInSeconds = 60;
 export const defaultGmailPollingIntervalInMilliseconds = secondsToMilliseconds(defaultGmailPollingIntervalInSeconds);
 const defaultSlackPollingIntervalInSeconds = 60;
+const defaultSlackApiUrl = 'https://slack.com/api';
 const defaultTriageModel = 'claude-haiku-5-5';
 const defaultTriageEscalationModel = 'claude-opus-5-5';
 const defaultSummaryModel = 'claude-haiku-5-5';
@@ -84,7 +85,7 @@ export function readStartupSettings(
     slackPollingIntervalInMilliseconds: secondsToMilliseconds(
       parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, defaultSlackPollingIntervalInSeconds),
     ),
-    slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? 'https://slack.com/api',
+    slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? defaultSlackApiUrl,
   };
 }
 
