@@ -81,6 +81,12 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
   </ul>
 );
 
+const personRequestedByLocation = (lists: PeopleLists): PersonRow | undefined => {
+  const contact = new URLSearchParams(window.location.hash.split('?')[1]).get('contact');
+  if (contact === null) return undefined;
+  return [...lists.vip, ...lists.urgent, ...lists.everyoneElse].find((candidate) => candidate.emails.includes(contact));
+};
+
 export const PeoplePage = () => {
   const [lists, setLists] = useState<PeopleLists>(emptyLists);
   const [selected, setSelected] = useState<SelectedTimeline | undefined>(undefined);
@@ -115,10 +121,7 @@ export const PeoplePage = () => {
 
   useEffect(() => {
     void fetchPeople().then((loaded) => {
-      const contact = new URLSearchParams(window.location.hash.split('?')[1]).get('contact');
-      const person = [...loaded.vip, ...loaded.urgent, ...loaded.everyoneElse].find(
-        (candidate) => contact !== null && candidate.emails.includes(contact),
-      );
+      const person = personRequestedByLocation(loaded);
       if (person) showTimeline(person);
     });
   }, []);
