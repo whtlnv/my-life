@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { openTasks, taskHistory } from './task-state';
 
+const budgetMessageLink = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
+
 describe('openTasks', () => {
   it('creates an open task from a confirmed task proposal and none from a rejected one', () => {
     const link = 'https://mail.google.com/mail/?authuser=franciscoc%40psmutuus.com#all/message-budget';
@@ -38,7 +40,6 @@ describe('openTasks', () => {
   });
 
   it('removes a task from the open tasks once it is marked done', () => {
-    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
     const events = [
       {
         type: 'proposal-confirmed' as const,
@@ -46,7 +47,7 @@ describe('openTasks', () => {
         at: '2026-11-09T15:00:00.000Z',
         proposal: {
           title: 'Review the Q3 budget spreadsheet and send comments',
-          link,
+          link: budgetMessageLink,
           accountEmail: 'ana@example.com',
         },
       },
@@ -57,7 +58,6 @@ describe('openTasks', () => {
   });
 
   it('leaves a task snoozed until a time out of the open tasks before that time', () => {
-    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
     const events = [
       {
         type: 'proposal-confirmed' as const,
@@ -65,7 +65,7 @@ describe('openTasks', () => {
         at: '2026-11-09T15:00:00.000Z',
         proposal: {
           title: 'Review the Q3 budget spreadsheet and send comments',
-          link,
+          link: budgetMessageLink,
           accountEmail: 'ana@example.com',
         },
       },
@@ -81,7 +81,6 @@ describe('openTasks', () => {
   });
 
   it('brings a task snoozed until a time written with a UTC offset back among the open tasks once that time has passed', () => {
-    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
     const events = [
       {
         type: 'proposal-confirmed' as const,
@@ -89,7 +88,7 @@ describe('openTasks', () => {
         at: '2026-11-09T15:00:00.000Z',
         proposal: {
           title: 'Review the Q3 budget spreadsheet and send comments',
-          link,
+          link: budgetMessageLink,
           accountEmail: 'ana@example.com',
         },
       },
@@ -105,7 +104,7 @@ describe('openTasks', () => {
       {
         id: 'task-budget',
         title: 'Review the Q3 budget spreadsheet and send comments',
-        link,
+        link: budgetMessageLink,
         accountEmail: 'ana@example.com',
         status: 'open',
       },
@@ -113,7 +112,6 @@ describe('openTasks', () => {
   });
 
   it('shows the waiting-on person a task was given among the open tasks', () => {
-    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
     const events = [
       {
         type: 'proposal-confirmed' as const,
@@ -121,7 +119,7 @@ describe('openTasks', () => {
         at: '2026-11-09T15:00:00.000Z',
         proposal: {
           title: 'Review the Q3 budget spreadsheet and send comments',
-          link,
+          link: budgetMessageLink,
           accountEmail: 'ana@example.com',
         },
       },
@@ -137,7 +135,7 @@ describe('openTasks', () => {
       {
         id: 'task-budget',
         title: 'Review the Q3 budget spreadsheet and send comments',
-        link,
+        link: budgetMessageLink,
         accountEmail: 'ana@example.com',
         status: 'open',
         waitingOn: 'luis@example.com',
@@ -148,7 +146,6 @@ describe('openTasks', () => {
 
 describe('taskHistory', () => {
   it('lists every transition of a task with its timestamp, oldest first', () => {
-    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
     const events = [
       { type: 'reopened' as const, taskId: 'task-budget', at: '2026-11-10T09:00:00.000Z' },
       {
@@ -163,7 +160,7 @@ describe('taskHistory', () => {
         at: '2026-11-09T15:00:00.000Z',
         proposal: {
           title: 'Review the Q3 budget spreadsheet and send comments',
-          link,
+          link: budgetMessageLink,
           accountEmail: 'ana@example.com',
         },
       },
