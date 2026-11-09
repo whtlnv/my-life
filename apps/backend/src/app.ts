@@ -59,7 +59,12 @@ import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
 import { openSpendStore } from './spend-store';
 import { openTaskEventStore } from './task-event-store';
-import { defaultGmailPollingIntervalInMilliseconds } from './startup-settings';
+import {
+  defaultDeadlineHours,
+  defaultGmailPollingIntervalInMilliseconds,
+  defaultUnansweredAskBusinessDays,
+  defaultVipWaitingBusinessDays,
+} from './startup-settings';
 import { openVerdictStore, type StoredVerdict } from './verdict-store';
 
 interface BodiesReport {
@@ -1207,9 +1212,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         });
     const urgencySettings = {
       timeZone: businessTimeZone,
-      unansweredAskBusinessDays: options.urgency?.unansweredAskBusinessDays ?? 2,
-      deadlineHours: 48,
-      vipWaitingBusinessDays: 1,
+      unansweredAskBusinessDays: options.urgency?.unansweredAskBusinessDays ?? defaultUnansweredAskBusinessDays,
+      deadlineHours: defaultDeadlineHours,
+      vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     };
     const urgencyOf = (contact: { emails: string[]; messageIds: string[] }) =>
       contactUrgency({
