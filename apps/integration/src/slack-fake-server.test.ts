@@ -98,4 +98,18 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it("answers a request carrying the scenario's token", async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      expect(slack.token).toMatch(/^xoxp-/);
+      const list = (await (
+        await fetch(`${slack.url}/conversations.list?types=im`, { headers: { Authorization: `Bearer ${slack.token}` } })
+      ).json()) as { ok: boolean };
+
+      expect(list.ok).toBe(true);
+    } finally {
+      await slack.close();
+    }
+  });
 });

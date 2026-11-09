@@ -80,6 +80,7 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
   const { port } = server.address() as AddressInfo;
   return {
     url: `http://127.0.0.1:${String(port)}`,
+    token: 'xoxp-fake',
     close: () =>
       new Promise<void>((resolve) =>
         server.close(() => {
