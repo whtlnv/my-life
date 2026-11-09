@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 13:57 · `packages/domain/src/contact-urgency.test.ts::is urgent, with the reason "deadline", when the contact sent a message with a deadline inside the next 48 hours, even though another message only mentions them`
+- Behavior: A contact who sent a message with a deadline inside 48 hours is Urgent for that deadline
+- Predicted: passes (the previous cycle's per-message `onlyMentionsContact` filter already delivers it; the sender case is also driven by the existing "message from the contact carries an extracted deadline" test)
+- Actual: passes
+- Type: passed unexpectedly
+- Resolution: No missing behavior to drive. Kept the test as a pin that the mention filter works per message, not per contact. No production change is needed; `/green` has nothing to do.
+
 ## 2026-11-09 13:50 · `apps/backend/src/app-people.test.ts::keeps at GET /people a sender who wrote one message in person besides one carrying a List-Id`
 - Behavior: `GET /people` keeps a sender with at least one message that is not automated mail
 - Predicted: passes on first run (named before running): the previous item's filter already keeps a contact when `some` of its messages lacks a List-Id

@@ -149,6 +149,34 @@ describe('contactUrgency', () => {
     });
   });
 
+  it('is urgent, with the reason "deadline", when the contact sent a message with a deadline inside the next 48 hours, even though another message only mentions them', () => {
+    const mondayNineAm = '2026-11-09T15:00:00.000Z';
+    const mondayTenAm = '2026-11-09T16:00:00.000Z';
+    const tuesdayNoon = '2026-11-10T18:00:00.000Z';
+    const messages = [
+      {
+        threadId: 'thread-introduction',
+        receivedAt: mondayNineAm,
+        sentByUser: false,
+        onlyMentionsContact: true,
+        dates: [],
+      },
+      {
+        threadId: 'thread-contract',
+        receivedAt: mondayNineAm,
+        sentByUser: false,
+        onlyMentionsContact: false,
+        asks: [{ ask: 'Sign the renewal contract' }],
+        dates: [tuesdayNoon],
+      },
+    ];
+
+    expect(contactUrgency({ messages, vip: false, now: mondayTenAm, settings: urgencySettings })).toEqual({
+      urgent: true,
+      reasons: ['deadline'],
+    });
+  });
+
   it('is urgent, with the reason "VIP waiting", when a VIP contact\'s message has waited a business day for a reply', () => {
     const tuesdayFivePm = '2026-11-10T23:00:00.000Z';
     const messages = [
