@@ -1,6 +1,9 @@
+import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
+import { type AddressInfo, createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
@@ -1036,4 +1039,62 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it("the shipped backend (main.ts), started with a workspace token and MY_LIFE_SLACK_API_URL pointed at the fake, polls at the configured interval, serves the scenario's DM in GET /triage-queue and posts a send to the fake's chat.postMessage", async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    const databaseDirectory = mkdtempSync(join(tmpdir(), 'my-life-'));
+    const probe = createNetServer();
+    await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
+    const { port } = probe.address() as AddressInfo;
+    await new Promise<void>((resolve) =>
+      probe.close(() => {
+        resolve();
+      }),
+    );
+    const baseUrl = `http://127.0.0.1:${String(port)}`;
+    const environment = { ...process.env };
+    delete environment.ANTHROPIC_API_KEY;
+    const backend = spawn('node_modules/.bin/tsx', ['src/main.ts'], {
+      cwd: fileURLToPath(new URL('../../backend', import.meta.url)),
+      env: {
+        ...environment,
+        MY_LIFE_PORT: String(port),
+        MY_LIFE_DATABASE_PATH: join(databaseDirectory, 'my-life.sqlite'),
+        MY_LIFE_ALLOWED_EMAILS: 'ana@example.com',
+        MY_LIFE_SLACK_API_URL: slack.url,
+        MY_LIFE_SLACK_WORKSPACE_1_TEAM_ID: 'T0001',
+        MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN: slack.token,
+        MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS: '1',
+      },
+      stdio: 'ignore',
+    });
+    const triageQueue = async () =>
+      fetch(`${baseUrl}/triage-queue`).then(
+        async (response) => ((await response.json()) as { slackItems: { text: string }[] }).slackItems,
+        () => [],
+      );
+    try {
+      for (let attempt = 0; attempt < 100 && slack.searchQueries().length < 4; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      const slackItems = await triageQueue();
+
+      const response = await fetch(`${baseUrl}/slack-sends`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceTeamId: 'T0001', conversationId: 'D0001', text: 'On it, sending it tonight.' }),
+      }).catch(() => undefined);
+
+      expect(slack.searchQueries().length).toBeGreaterThanOrEqual(4);
+      expect(slackItems).toEqual([expect.objectContaining({ text: directMessageText })]);
+      expect(response?.status).toBe(200);
+      expect(slack.postedMessages()).toEqual([
+        { channel: 'D0001', threadTimestamp: undefined, text: 'On it, sending it tonight.' },
+      ]);
+    } finally {
+      backend.kill();
+      await slack.close();
+      rmSync(databaseDirectory, { recursive: true, force: true });
+    }
+  }, 30_000);
 });

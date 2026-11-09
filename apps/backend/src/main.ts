@@ -145,6 +145,12 @@ const app = createApp({
   dailySpendCeilingInUsd: settings.dailySpendCeilingInUsd,
   urgency: settings.urgency,
   profileDirectory,
+  slackApiUrl: settings.slackApiUrl,
+  slackWorkspaces: settings.slackWorkspaces.map(({ teamId, userToken }) => ({
+    teamId: teamId ?? '',
+    userToken: userToken ?? '',
+  })),
+  slackPollingIntervalInMilliseconds: settings.slackPollingIntervalInMilliseconds,
   ...(triage === undefined ? {} : { triage }),
   ...(filter === undefined ? {} : { filter }),
   ...(summary === undefined ? {} : { summary }),
@@ -164,6 +170,12 @@ function runPrioritization(): void {
   });
 }
 
+function runSlackPoll(): void {
+  Promise.resolve(app.request('/slack-poll', { method: 'POST' })).catch((error: unknown) => {
+    console.error('slack poll failed', error);
+  });
+}
+
 serve({ fetch: app.fetch, port: settings.port, hostname: '127.0.0.1' }, (info) => {
   console.log(
     `my-life backend listening on http://127.0.0.1:${String(info.port)} · ${String(settings.allowedEmails.length)} allowed account(s) · store ${settings.databasePath}` +
@@ -171,6 +183,7 @@ serve({ fetch: app.fetch, port: settings.port, hostname: '127.0.0.1' }, (info) =
         ? ''
         : ` · triage with ${settings.triageModel}${settings.triageEscalationModel === undefined ? '' : `, second opinion from ${settings.triageEscalationModel}`}, filter proposals with ${strongestModel}, ceiling USD ${String(settings.dailySpendCeilingInUsd)}/day`),
   );
+  setInterval(runSlackPoll, settings.slackPollingIntervalInMilliseconds);
   if (triage !== undefined) {
     runTriage();
     runPrioritization();
