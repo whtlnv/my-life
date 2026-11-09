@@ -735,4 +735,27 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('GET /now marks a Slack workspace stale when its last successful poll is older than twice its polling interval', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      let currentTime = new Date('2026-11-09T16:00:00.000Z');
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => currentTime },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+        slackPollingIntervalInMilliseconds: 60_000,
+      });
+
+      await backend.request('/slack-poll', { method: 'POST' });
+      currentTime = new Date('2026-11-09T16:02:01.000Z');
+      const now = (await (await backend.request('/now')).json()) as { slackWorkspaces?: unknown };
+
+      expect(now.slackWorkspaces).toEqual([
+        { teamId: 'T0001', lastSuccessfulPollAt: '2026-11-09T16:00:00.000Z', stale: true },
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
 });
