@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 13:32 · `apps/backend/src/app-slack.test.ts::leaves out of Urgent at GET /people a Slack contact marked vip whose DM has waited less than 1 business day for a reply`
+- Behavior: a VIP-marked Slack contact waiting less than 1 business day is not listed as Urgent
+- Predicted: passes on first run (stated before running): the previous cycle (f77b87d) already sends each Slack message through `contactUrgency`, which applies the 1-business-day VIP threshold
+- Actual: passed (1 passed, 13 skipped)
+- Type: passed unexpectedly
+- Resolution: not vacuous. It pins the lower edge of the threshold, and the sibling test (DM 2 days old, same clock) proves the same setup does come out Urgent. No missing behavior is left to drive, so the test stays as a characterization pin and was not rewritten. The TODO item was delivered as a side effect of the previous item.
+
 ## 2026-11-09 13:23 · `apps/backend/src/app-slack.test.ts::lists at GET /slack-contacts/:workspaceTeamId/:userId/timeline the Slack messages of that contact, newest first, each with its workspace and Slack permalink`
 - Behavior: A Slack contact's timeline lists their Slack messages newest first, each with its workspace and Slack permalink
 - Predicted: AssertionError — the route is missing, so `messages` is undefined instead of the two messages
