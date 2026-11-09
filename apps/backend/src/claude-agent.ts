@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { ClaudePricing } from './claude-triage';
+import { computeCostInUsd, type ClaudePricing } from './claude-triage';
 
 interface ClaudeAgentRequest {
   model: string;
@@ -72,6 +72,7 @@ export function createClaudeAgent({
   model,
   promptPath,
   profileDirectory,
+  pricing,
   tools = [],
   maxToolRounds = Infinity,
   createMessage,
@@ -84,14 +85,17 @@ export function createClaudeAgent({
       const messages: ClaudeAgentRequest['messages'] = turns.map(({ role, text }) => ({ role, content: text }));
       let response = await createMessage({ model, system, messages });
       let toolRounds = 0;
+      let costInUsd = 0;
       while (response?.stop_reason === 'tool_use') {
+        costInUsd += computeCostInUsd(response.usage, pricing);
         if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply };
         toolRounds += 1;
         const toolResults = await runRequestedTools(response.content, tools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
         response = await createMessage({ model, system, messages });
       }
-      return { text: response?.content.find((block) => block.type === 'text')?.text };
+      if (response) costInUsd += computeCostInUsd(response.usage, pricing);
+      return { text: response?.content.find((block) => block.type === 'text')?.text, costInUsd };
     },
   };
 }
