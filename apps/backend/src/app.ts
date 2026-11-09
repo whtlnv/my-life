@@ -1179,6 +1179,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({ digests: waiting });
     },
   };
+  const archiveMessageTool: AgentTool = {
+    name: 'archive_message',
+    run: (input) => {
+      const { messageId } = input as { messageId: string };
+      verdictStore.save({ messageId, decision: 'confirmed', decidedAt: clock.now().toISOString(), decidedBy: 'agent' });
+      return Promise.resolve({});
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
     const citingSearchMessagesTool: AgentTool = {
@@ -1191,7 +1199,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     };
     const reply = await options.agent?.respond({
       turns,
-      tools: [citingSearchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool, tasksTool, digestTool],
+      tools: [
+        citingSearchMessagesTool,
+        readThreadTool,
+        contactTimelineTool,
+        calendarDayTool,
+        tasksTool,
+        digestTool,
+        archiveMessageTool,
+      ],
     });
     if (!reply) {
       return undefined;

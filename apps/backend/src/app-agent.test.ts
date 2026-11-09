@@ -4,7 +4,9 @@ import { agentSpendCeilingReply, agentUnavailableReply, createApp } from './app'
 import {
   budgetReviewReport,
   budgetReviewReportWithQuarterlyNumbersBody,
+  ccThreadTriage,
   clockAtTenPastThree,
+  getCommands,
   getJson,
   keepProposalExtracting,
   messageWithQuarterlyNumbersBody,
@@ -18,6 +20,7 @@ import {
   weeklySync,
 } from './app.test-support';
 import { openSpendStore } from './spend-store';
+import { openVerdictStore } from './verdict-store';
 
 describe('backend app: the agent', () => {
   it("creates a conversation on the user's first message and returns the model's text reply as its assistant turn", async () => {
@@ -606,5 +609,35 @@ describe('backend app: the agent', () => {
 
     const conversation = (await response.json()) as { turns: { role: string; citations?: unknown[] }[] };
     expect(conversation.turns.at(-1)?.citations).toEqual([{ id: 'message-1', verified: false }]);
+  });
+
+  it("archive_message stores an archive verdict for the message attributed to the agent, and the message's account receives an archive command", async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'I can archive that.', costInUsd: 0.01 });
+      },
+    };
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+      agent,
+      databasePath,
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Archive the budget thread' });
+    const archiveTool = offeredTools.find((tool) => tool.name === 'archive_message');
+
+    await archiveTool?.run({ messageId: 'message-1' });
+
+    expect(openVerdictStore(databasePath).loadAll()).toContainEqual(
+      expect.objectContaining({ messageId: 'message-1', decision: 'confirmed', decidedBy: 'agent' }),
+    );
+    expect(await (await getCommands(app, 'ana@example.com')).json()).toMatchObject({
+      commands: [{ messageId: 'message-1' }],
+    });
   });
 });
