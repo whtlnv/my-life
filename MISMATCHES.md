@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 13:50 · `apps/backend/src/app-people.test.ts::keeps at GET /people a sender who wrote one message in person besides one carrying a List-Id`
+- Behavior: `GET /people` keeps a sender with at least one message that is not automated mail
+- Predicted: passes on first run (named before running): the previous item's filter already keeps a contact when `some` of its messages lacks a List-Id
+- Actual: passed on first run, as predicted
+- Type: passed unexpectedly
+- Resolution: the previous green step built this behavior along with its own. Nothing can make a "keeps" test fail against the current code, so I kept the test as the only check on a sender who has both kinds of message. It fails if `.some` becomes `.every`; the existing test can't catch that because each of its senders has just one message.
+
 ## 2026-11-09 13:45 · `apps/backend/src/app-people.test.ts::gives a contact at GET /people its sender domain as the organization when POST /contacts-import brought it without an organization`
 - Behavior: `GET /people` gives the sender's domain as the organization when no organization name is stored
 - Predicted: pass (the `?? senderDomain(email)` fallback at apps/backend/src/app.ts:1734 already exists from the previous item's green, and app-people.test.ts "gives each contact at GET /people ... its organization" already pins `acme.com` / `example.com` with nothing stored)

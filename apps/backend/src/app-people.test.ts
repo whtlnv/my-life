@@ -133,6 +133,33 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect([...vip, ...everyoneElse].map(({ emails }) => emails)).toEqual([['luis@example.com']]);
   });
 
+  it('keeps at GET /people a sender who wrote one message in person besides one carrying a List-Id', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+    const luisMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        luisMessage,
+        {
+          ...luisMessage,
+          id: 'message-2',
+          threadId: 'thread-2',
+          subject: 'Budget bulletin',
+          listId: '<bulletin.example.com>',
+        },
+      ],
+    });
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, everyoneElse } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      everyoneElse: { emails: string[] }[];
+    };
+    expect([...vip, ...everyoneElse].map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+  });
+
   it('gives each contact at GET /people, under VIP and under Everyone else, its organization and the time of its most recent message', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const [luisMessage, martaMessage] = budgetReviewReportWithSecondMessageFromMarta.messages;
