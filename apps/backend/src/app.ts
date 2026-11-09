@@ -166,10 +166,10 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
-function containsEveryWord(text: string | undefined, query: string): boolean {
-  if (text === undefined) return false;
+function countMatchingWords(text: string | undefined, query: string): number {
+  if (text === undefined) return 0;
   const textWords = text.split(/\W+/);
-  return query.split(/\W+/).every((word) => textWords.includes(word));
+  return query.split(/\W+/).filter((word) => textWords.includes(word)).length;
 }
 
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
@@ -1106,8 +1106,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     run: (input) => {
       const { query } = input as { query: string };
       const messages = reportedMessages
-        .filter((message) => containsEveryWord(message.body, query))
-        .map((message) => {
+        .map((message) => ({ message, matchingWords: countMatchingWords(message.body, query) }))
+        .filter(({ matchingWords }) => matchingWords > 0)
+        .sort((first, second) => second.matchingWords - first.matchingWords)
+        .map(({ message }) => {
           const accountEmail = accountEmailOfReported(message.id);
           return {
             id: message.id,

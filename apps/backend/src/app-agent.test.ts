@@ -299,4 +299,34 @@ describe('backend app: the agent', () => {
       ],
     });
   });
+
+  it('search_messages ranks a message containing every query word above one containing only some of them', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'Found it.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        {
+          ...budgetReviewReport.messages[0],
+          id: 'message-2',
+          threadId: 'thread-2',
+          subject: 'Lunch on Thursday',
+          body: 'Hi Ana, the lunch numbers are in. Luis',
+        },
+        { ...messageWithQuarterlyNumbersBody, threadId: 'thread-1' },
+      ],
+    });
+    await postJson(app, '/agent/conversations', { message: 'Find the quarterly numbers' });
+    const searchMessages = offeredTools.find((tool) => tool.name === 'search_messages');
+
+    const result = (await searchMessages?.run({ query: 'quarterly numbers' })) as { messages: { id: string }[] };
+
+    expect(result.messages.map((message) => message.id)).toEqual(['message-1', 'message-2']);
+  });
 });
