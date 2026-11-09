@@ -11,16 +11,18 @@ interface CreateDraftCommand {
 }
 
 export async function carryOutDraftCommands(options: CommandOptions) {
+  for (const command of await fetchPendingDraftCommands(options)) {
+    const response = await createGmailDraft(options, command);
+    if (response.ok) await acknowledgeCommand(options, command.id);
+  }
+}
+
+async function fetchPendingDraftCommands(options: CommandOptions) {
   const commandsUrl = `${options.backendUrl}/commands?accountEmail=${encodeURIComponent(options.accountEmail)}`;
   const { commands } = (await (await options.fetch(commandsUrl)).json()) as {
     commands: (CreateDraftCommand | { id: string; type?: string })[];
   };
-  for (const command of commands) {
-    if (command.type !== 'create-draft') continue;
-    const response = await createGmailDraft(options, command as CreateDraftCommand);
-    if (!response.ok) continue;
-    await acknowledgeCommand(options, command.id);
-  }
+  return commands.filter((command): command is CreateDraftCommand => command.type === 'create-draft');
 }
 
 async function createGmailDraft(options: CommandOptions, command: CreateDraftCommand) {
