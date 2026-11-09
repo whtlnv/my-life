@@ -975,8 +975,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     taskEventStore.save({ type: 'done', taskId, at: clock.now().toISOString() });
     return context.json({ done: taskId });
   });
+  app.post('/tasks/:id/snooze', async (context) => {
+    const taskId = context.req.param('id');
+    const { until } = await context.req.json<{ until: string }>();
+    taskEventStore.save({ type: 'snoozed', taskId, at: clock.now().toISOString(), until });
+    return context.json({ snoozed: taskId });
+  });
   app.get('/tasks', (context) => {
-    return context.json({ tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...openTasks(taskEventStore.loadAll())] });
+    return context.json({
+      tasks: [
+        ...confirmedTasks(proposals, verdictStore.loadAll()),
+        ...openTasks(taskEventStore.loadAll(), clock.now().toISOString()),
+      ],
+    });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));
   const rejectUnknownMark: MiddlewareHandler = async (context, next) => {

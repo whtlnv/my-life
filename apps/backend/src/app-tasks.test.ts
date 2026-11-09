@@ -86,6 +86,26 @@ describe('backend app: task proposals and tasks', () => {
     expect(tasks.tasks).toEqual([]);
   });
 
+  it('keeps a task snoozed at POST /tasks/:id/snooze out of GET /tasks until its until time and lists it again after', async () => {
+    let now = new Date('2026-11-02T15:10:00.000Z');
+    const clock = { now: () => now };
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+
+    await postJson(app, `/tasks/${open.tasks[0]?.id}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
+
+    const whileSnoozed = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    now = new Date('2026-11-02T17:01:00.000Z');
+    const afterSnooze = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(whileSnoozed.tasks).toEqual([]);
+    expect(afterSnooze.tasks).toEqual([expect.objectContaining({ title: 'Approve the budget', status: 'open' })]);
+  });
+
   it('answers 404 at POST /tasks/:id/done for a task id it does not know', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 
