@@ -33,7 +33,7 @@ const pricingByModel: Record<string, ClaudePricing> = {
   'claude-haiku-5-5': { inputPerMillionTokensInUsd: 0.1, outputPerMillionTokensInUsd: 0.5 },
 };
 
-// One Anthropic call shape for every adapter (triage, filter, summary): a system prompt, user messages, strict tools, low effort, fallbacks.
+// One Anthropic call shape for every adapter: a system prompt, user messages, strict tools, low effort, fallbacks.
 function createMessageWith(client: Anthropic) {
   return async (request: ClaudeRequest) => {
     const response = await client.beta.messages.create({
