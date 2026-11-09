@@ -128,7 +128,13 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       ...budgetReviewReport,
       messages: [
         { ...budgetReview, id: 'message-received', sentByUser: false },
-        { ...budgetReview, id: 'message-sent', from: 'Ana <ana@example.com>', to: 'luis@example.com', sentByUser: true },
+        {
+          ...budgetReview,
+          id: 'message-sent',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          sentByUser: true,
+        },
       ],
     });
 
@@ -213,7 +219,13 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       ...budgetReviewReport,
       messages: [
         { ...budgetReview, id: 'message-received', sentByUser: false },
-        { ...budgetReview, id: 'message-sent', from: 'Ana <ana@example.com>', to: 'luis@example.com', sentByUser: true },
+        {
+          ...budgetReview,
+          id: 'message-sent',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          sentByUser: true,
+        },
       ],
     });
 
@@ -230,7 +242,13 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
       ...budgetReviewReport,
       messages: [
         { ...budgetReview, id: 'message-received', sentByUser: false },
-        { ...budgetReview, id: 'message-sent', from: 'Ana <ana@example.com>', to: 'luis@example.com', sentByUser: true },
+        {
+          ...budgetReview,
+          id: 'message-sent',
+          from: 'Ana <ana@example.com>',
+          to: 'luis@example.com',
+          sentByUser: true,
+        },
       ],
     });
     await postTriageRun(app);

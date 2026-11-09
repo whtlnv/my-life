@@ -749,9 +749,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
       vip: { emails: string[] }[];
       urgent: { emails: string[] }[];
     };
-    expect(vip.map(({ emails }) => emails)).toEqual(
-      expect.arrayContaining([['luis@example.com'], ['marta@acme.com']]),
-    );
+    expect(vip.map(({ emails }) => emails)).toEqual(expect.arrayContaining([['luis@example.com'], ['marta@acme.com']]));
     expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
     expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['marta@acme.com']);
   });
@@ -965,7 +963,9 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
 
     await postJson(app, '/contacts-import', {
       accountEmail: 'ana@example.com',
-      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Globex', starred: false, lists: [] }],
+      contacts: [
+        { name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Globex', starred: false, lists: [] },
+      ],
     });
     const { contacts } = await getContacts(app);
 
@@ -982,7 +982,9 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
 
     await postJson(app, '/contacts-import', {
       accountEmail: 'ana@example.com',
-      contacts: [{ name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Globex', starred: false, lists: [] }],
+      contacts: [
+        { name: 'Luis Pérez', emails: ['luis@example.com'], organization: 'Globex', starred: false, lists: [] },
+      ],
     });
     const { contacts } = await getContacts(app);
 

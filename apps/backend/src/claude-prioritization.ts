@@ -45,7 +45,13 @@ export function createClaudePrioritization({
       const system = promptPath === undefined ? '' : readFileSync(promptPath, 'utf8');
       const messages = [{ role: 'user', content: JSON.stringify(context) }];
       const toolChoice = { type: 'tool', name: rankTasksTool.name };
-      const response = await createMessage({ model, system, messages, tools: [rankTasksTool], tool_choice: toolChoice });
+      const response = await createMessage({
+        model,
+        system,
+        messages,
+        tools: [rankTasksTool],
+        tool_choice: toolChoice,
+      });
       const input = readToolUseInput(response);
       const parsed = taskRanks.safeParse(input);
       if (!parsed.success) return { failure: { input } };
