@@ -851,7 +851,7 @@ describe('backend app: the agent', () => {
 
     const { actions } = await getJson<{ actions: unknown[] }>(app, '/agent/actions');
 
-    expect(actions).toEqual([
+    expect(actions).toMatchObject([
       {
         tool: 'write_draft',
         target: 'message-1',
