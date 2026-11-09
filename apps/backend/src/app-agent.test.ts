@@ -6,8 +6,10 @@ import {
   clockAtTenPastThree,
   getJson,
   messageWithQuarterlyNumbersBody,
+  postCalendarSnapshot,
   postJson,
   temporaryDatabasePath,
+  weeklySync,
 } from './app.test-support';
 import { openSpendStore } from './spend-store';
 
@@ -409,5 +411,60 @@ describe('backend app: the agent', () => {
     const result = (await contactTimeline?.run({ email: 'luis@example.com' })) as { messages: { id: string }[] };
 
     expect(result.messages.map((message) => message.id)).toEqual(['message-3', 'message-1']);
+  });
+
+  it("calendar_day returns the events of the given date across every account's calendars, in the business time zone, with their Meet links, and no event of another day", async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'Here is your Tuesday.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com', 'ana@acme.com'], clock: clockAtTenPastThree, agent });
+    await postCalendarSnapshot(app, 'ana@example.com', [
+      {
+        ...weeklySync,
+        id: 'event-late-monday',
+        iCalUID: 'event-late-monday@google.com',
+        title: 'Late Monday call',
+        start: '2026-11-03T05:00:00.000Z',
+        end: '2026-11-03T05:30:00.000Z',
+      },
+      {
+        ...weeklySync,
+        id: 'event-tuesday-morning',
+        iCalUID: 'event-tuesday-morning@google.com',
+        title: 'Tuesday standup',
+        start: '2026-11-03T15:00:00.000Z',
+        end: '2026-11-03T15:15:00.000Z',
+        meetLink: 'https://meet.google.com/tue-stan-dup',
+      },
+    ]);
+    await postCalendarSnapshot(app, 'ana@acme.com', [
+      {
+        ...weeklySync,
+        id: 'event-tuesday-evening',
+        iCalUID: 'event-tuesday-evening@google.com',
+        title: 'Tuesday evening review',
+        start: '2026-11-04T01:00:00.000Z',
+        end: '2026-11-04T01:30:00.000Z',
+        meetLink: 'https://meet.google.com/tue-even-ing',
+      },
+    ]);
+    await postJson(app, '/agent/conversations', { message: 'What is on Tuesday?' });
+    const calendarDay = offeredTools.find((tool) => tool.name === 'calendar_day');
+
+    const result = await calendarDay?.run({ date: '2026-11-03' });
+
+    expect(result).toEqual({
+      events: [
+        expect.objectContaining({ title: 'Tuesday standup', meetLink: 'https://meet.google.com/tue-stan-dup' }),
+        expect.objectContaining({
+          title: 'Tuesday evening review',
+          meetLink: 'https://meet.google.com/tue-even-ing',
+        }),
+      ],
+    });
   });
 });

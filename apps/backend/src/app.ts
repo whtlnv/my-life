@@ -1142,10 +1142,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({ messages: contactTimeline(email) });
     },
   };
+  const calendarDayTool: AgentTool = {
+    name: 'calendar_day',
+    run: (input) => {
+      const { date } = input as { date: string };
+      const events = mergedCalendarEvents().filter((event) => localCalendarDate(event.start, businessTimeZone) === date);
+      return Promise.resolve({ events });
+    },
+  };
   const askAgent = async (turns: ConversationTurn[]) => {
     const reply = await options.agent?.respond({
       turns,
-      tools: [searchMessagesTool, readThreadTool, contactTimelineTool],
+      tools: [searchMessagesTool, readThreadTool, contactTimelineTool, calendarDayTool],
     });
     if (reply) {
       logSpend(reply);
