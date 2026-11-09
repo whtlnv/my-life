@@ -1267,7 +1267,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           : gmailMessageLink({ accountEmail, messageId: sourceMessageId });
       taskEventStore.save({
         type: 'proposal-confirmed',
-        taskId: `agent-${sourceMessageId}`,
+        taskId: `agent-${sourceMessageId ?? `${conversationId}-${String(taskEventStore.loadAll().length + 1)}`}`,
         at: clock.now().toISOString(),
         proposal: { title, accountEmail, link },
       });
@@ -1321,7 +1321,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const turns: ConversationTurn[] = [userTurn, spendCeilingTurn];
       return context.json({ id: '', turns }, 201);
     }
-    const id = `conversation-${conversationStore.count() + 1}`;
+    const id = `conversation-${String(conversationStore.count() + 1)}`;
     const reply = await askAgent([userTurn], id);
     const turns: ConversationTurn[] = [userTurn, assistantTurn(reply)];
     conversationStore.save(id, turns);

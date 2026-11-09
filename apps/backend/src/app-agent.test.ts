@@ -636,7 +636,7 @@ describe('backend app: the agent', () => {
 
     const result = await archiveTool?.run({ messageId: 'message-unknown' });
 
-    expect(result).toEqual({ error: expect.any(String) });
+    expect(result).toEqual({ error: expect.any(String) as unknown });
     expect(openVerdictStore(databasePath).loadAll()).toEqual([]);
     expect(await (await getCommands(app, 'ana@example.com')).json()).toMatchObject({ commands: [] });
   });

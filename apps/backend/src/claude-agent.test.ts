@@ -161,7 +161,12 @@ describe('Claude agent', () => {
     expect(sentRequests[1]?.messages.at(-1)).toMatchObject({
       role: 'user',
       content: [
-        { type: 'tool_result', tool_use_id: 'tool-use-1', is_error: true, content: expect.stringContaining('query') },
+        {
+          type: 'tool_result',
+          tool_use_id: 'tool-use-1',
+          is_error: true,
+          content: expect.stringContaining('query') as unknown,
+        },
       ],
     });
   });

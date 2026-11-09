@@ -3,7 +3,11 @@ import { rawDraftMessage } from './gmail-draft';
 
 describe('rawDraftMessage', () => {
   it('encodes a non-English subject as a UTF-8 header word and the body as UTF-8 text, in base64url', () => {
-    const raw = rawDraftMessage({ to: ['luis@example.com'], subject: 'Re: Reunión mañana', body: 'Sí, nos vemos — gracias.' });
+    const raw = rawDraftMessage({
+      to: ['luis@example.com'],
+      subject: 'Re: Reunión mañana',
+      body: 'Sí, nos vemos — gracias.',
+    });
 
     const message = Buffer.from(raw, 'base64url').toString('utf8');
     expect(raw).not.toMatch(/[+/=]/);
