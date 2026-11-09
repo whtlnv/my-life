@@ -640,4 +640,31 @@ describe('backend app: the agent', () => {
       commands: [{ messageId: 'message-1' }],
     });
   });
+
+  it('archive_message on a message id the store does not know returns an error to the model and records nothing', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'I can archive that.', costInUsd: 0.01 });
+      },
+    };
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+      agent,
+      databasePath,
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Archive the unknown thread' });
+    const archiveTool = offeredTools.find((tool) => tool.name === 'archive_message');
+
+    const result = await archiveTool?.run({ messageId: 'message-unknown' });
+
+    expect(result).toEqual({ error: expect.any(String) });
+    expect(openVerdictStore(databasePath).loadAll()).toEqual([]);
+    expect(await (await getCommands(app, 'ana@example.com')).json()).toMatchObject({ commands: [] });
+  });
 });

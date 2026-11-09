@@ -1183,6 +1183,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     name: 'archive_message',
     run: (input) => {
       const { messageId } = input as { messageId: string };
+      const isKnownMessage = reportedMessageStore.loadAll().some((message) => message.messageId === messageId);
+      if (!isKnownMessage) return Promise.resolve({ error: `No message with id ${messageId}` });
       verdictStore.save({ messageId, decision: 'confirmed', decidedAt: clock.now().toISOString(), decidedBy: 'agent' });
       return Promise.resolve({});
     },
