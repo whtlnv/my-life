@@ -1199,7 +1199,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     logSpend(reply);
     return {
       ...reply,
-      citations: reply.citations?.map(({ id }) => messagesReturnedThisTurn.find((message) => message.id === id)),
+      citations: reply.citations?.map(
+        ({ id }) => messagesReturnedThisTurn.find((message) => message.id === id) ?? { id, verified: false },
+      ),
     };
   };
   app.post('/agent/conversations', async (context) => {

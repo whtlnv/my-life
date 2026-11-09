@@ -593,4 +593,18 @@ describe('backend app: the agent', () => {
       }),
     ]);
   });
+
+  it('shows a citation of a message no tool returned in that turn as unverified, without a link', async () => {
+    const agent = {
+      respond: async () =>
+        Promise.resolve({ text: 'Luis sent the quarterly numbers.', citations: [{ id: 'message-1' }], costInUsd: 0.01 }),
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    await postJson(app, '/mail-report', budgetReviewReportWithQuarterlyNumbersBody);
+
+    const response = await postJson(app, '/agent/conversations', { message: 'Where are the quarterly numbers?' });
+
+    const conversation = (await response.json()) as { turns: { role: string; citations?: unknown[] }[] };
+    expect(conversation.turns.at(-1)?.citations).toEqual([{ id: 'message-1', verified: false }]);
+  });
 });
