@@ -15,7 +15,7 @@
 - [x] Each agent call's cost is logged against the daily spend ceiling
 - [x] Once the daily spend ceiling is reached, a message to the agent answers that the ceiling is reached and the model is not called
 - [x] Below the daily spend ceiling, a message to the agent calls the model
-- [ ] When the model asks for a tool, the tool's result is sent back to the model and the model's following text becomes the reply
+- [x] When the model asks for a tool, the tool's result is sent back to the model and the model's following text becomes the reply
 - [ ] When the model asks for a tool that does not exist, an error result goes back to the model and the turn still completes
 - [ ] When a tool's input fails its schema, a validation error goes back to the model and the tool does not run
 - [ ] When the model keeps asking for tools past the configured round limit, the turn stops and the reply says it stopped
