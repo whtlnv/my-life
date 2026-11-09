@@ -4,6 +4,7 @@ interface UrgencyMessage {
   threadId: string;
   receivedAt: string;
   sentByUser: boolean;
+  onlyMentionsContact?: boolean;
   dates?: string[];
   asks?: { ask: string }[];
 }
@@ -66,7 +67,12 @@ function hasDeadlineSoon(message: UrgencyMessage, now: string, deadlineHours: nu
 
 export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; reasons: string[] } {
   const { messages, now, settings } = input;
-  if (messages.some((message) => hasDeadlineSoon(message, now, settings.deadlineHours, settings.timeZone))) {
+  if (
+    messages.some(
+      (message) =>
+        !message.onlyMentionsContact && hasDeadlineSoon(message, now, settings.deadlineHours, settings.timeZone),
+    )
+  ) {
     return { urgent: true, reasons: ['deadline'] };
   }
   if (
