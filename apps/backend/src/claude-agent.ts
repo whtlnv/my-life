@@ -7,6 +7,7 @@ interface ClaudeAgentRequest {
   model: string;
   system?: string;
   messages: { role: string; content: unknown }[];
+  tools?: { name: string; description: string; input_schema: unknown }[];
 }
 
 interface ClaudeAgentContentBlock {
@@ -78,14 +79,25 @@ export function createClaudeAgent({
   createMessage,
 }: ClaudeAgentDependencies) {
   return {
-    respond: async ({ turns }: { turns: { role: string; text: string }[] }) => {
+    respond: async ({
+      turns,
+      tools: turnTools = tools,
+    }: {
+      turns: { role: string; text: string }[];
+      tools?: ClaudeAgentTool[];
+    }) => {
       const prompt = readFileSync(promptPath, 'utf8');
       const profile = readFileSync(join(profileDirectory, 'accounts.md'), 'utf8');
       const system = `${prompt}\n\n${profile}`;
       const messages: ClaudeAgentRequest['messages'] = turns.map(({ role, text }) => ({ role, content: text }));
+      const toolDefinitions = turnTools.map(({ name, description, inputSchema }) => ({
+        name,
+        description,
+        input_schema: inputSchema,
+      }));
       let costInUsd = 0;
       const sendMessages = async () => {
-        const sent = await createMessage({ model, system, messages });
+        const sent = await createMessage({ model, system, messages, tools: toolDefinitions });
         if (sent) costInUsd += computeCostInUsd(sent.usage, pricing);
         return sent;
       };
@@ -94,7 +106,7 @@ export function createClaudeAgent({
       while (response?.stop_reason === 'tool_use') {
         if (toolRounds === maxToolRounds) return { text: agentToolRoundLimitReply, costInUsd };
         toolRounds += 1;
-        const toolResults = await runRequestedTools(response.content, tools);
+        const toolResults = await runRequestedTools(response.content, turnTools);
         messages.push({ role: 'assistant', content: response.content }, { role: 'user', content: toolResults });
         response = await sendMessages();
       }

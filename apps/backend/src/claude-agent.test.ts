@@ -273,4 +273,55 @@ describe('Claude agent', () => {
     expect(reply.text).toBe(agentToolRoundLimitReply);
     expect(reply.costInUsd).toBe(10);
   });
+  it("sends Claude the name, description and input schema of each tool passed in the turn, and answers Claude's tool_use with that turn's tool", async () => {
+    const sentRequests: (SentRequest & { tools?: unknown })[] = [];
+    const responses = [
+      {
+        content: [{ type: 'tool_use', id: 'tool-use-1', name: 'tasks', input: {} }],
+        stop_reason: 'tool_use',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+      {
+        content: [{ type: 'text', text: 'You have one open task: send the budget.' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 0, output_tokens: 0 },
+      },
+    ];
+    const agent = createClaudeAgent({
+      model: 'claude-opus-5-5',
+      promptPath: promptFile('You are the operator of Ana’s working life.', 'agent-v1.md'),
+      profileDirectory: profileDirectoryWith({ 'accounts.md': 'Ana has one account.' }),
+      pricing: { inputPerMillionTokensInUsd: 5, outputPerMillionTokensInUsd: 25 },
+      createMessage: (request: SentRequest & { tools?: unknown }) => {
+        sentRequests.push(request);
+        return Promise.resolve(responses.shift() ?? responses[0]);
+      },
+    });
+
+    await agent.respond({
+      turns: [{ role: 'user', text: 'What is on my plate today?' }],
+      tools: [
+        {
+          name: 'tasks',
+          description: 'The open tasks.',
+          inputSchema: { type: 'object', properties: {} },
+          run: () => Promise.resolve({ tasks: [{ title: 'Send the budget' }] }),
+        },
+      ],
+    });
+
+    expect(sentRequests[0]?.tools).toEqual([
+      { name: 'tasks', description: 'The open tasks.', input_schema: { type: 'object', properties: {} } },
+    ]);
+    expect(sentRequests[1]?.messages.at(-1)).toEqual({
+      role: 'user',
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: 'tool-use-1',
+          content: JSON.stringify({ tasks: [{ title: 'Send the budget' }] }),
+        },
+      ],
+    });
+  });
 });
