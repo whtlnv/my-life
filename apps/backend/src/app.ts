@@ -1730,10 +1730,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((message) => contact.messageIds.includes(message.id))
           .map((message) => new Date(message.date).getTime()),
       );
+    const storedContactDetails = contactDetailsStore.loadAll();
+    const organizationOf = (email: string) => storedContactDetails[email]?.organization ?? senderDomain(email);
     const withOrganizationAndLastMessage = (contact: { emails: string[]; messageIds: string[] }) => ({
       ...contact,
-      organization:
-        contactDetailsStore.loadAll()[primaryEmailOf(contact)]?.organization ?? senderDomain(primaryEmailOf(contact)),
+      organization: organizationOf(primaryEmailOf(contact)),
       lastMessageAt: new Date(mostRecentMessageTime(contact)).toISOString(),
     });
     const slackSenderAsContact = (message: SlackMessage) => ({
