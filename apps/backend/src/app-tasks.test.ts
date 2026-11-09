@@ -48,7 +48,7 @@ describe('backend app: task proposals and tasks', () => {
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
 
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 
     const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     const stillWaiting = await getJson<{ proposals: unknown[] }>(app, '/task-proposals');
@@ -70,7 +70,7 @@ describe('backend app: task proposals and tasks', () => {
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
 
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/rejection`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/rejection`, {});
 
     const stillWaiting = await getJson<{ proposals: unknown[] }>(app, '/task-proposals');
     const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
@@ -84,10 +84,10 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
 
-    const response = await postJson(app, `/tasks/${open.tasks[0]?.id}/done`, {});
+    const response = await postJson(app, `/tasks/${String(open.tasks[0]?.id)}/done`, {});
 
     const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     expect(response.status).toBe(200);
@@ -102,10 +102,10 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
 
-    await postJson(app, `/tasks/${open.tasks[0]?.id}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
+    await postJson(app, `/tasks/${String(open.tasks[0]?.id)}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
 
     const whileSnoozed = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     now = new Date('2026-11-02T17:01:00.000Z');
@@ -120,10 +120,10 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
 
-    const response = await app.request(`/tasks/${open.tasks[0]?.id}/waiting-on`, {
+    const response = await app.request(`/tasks/${String(open.tasks[0]?.id)}/waiting-on`, {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ person: 'luis@example.com' }),
@@ -144,15 +144,15 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
     const taskId = open.tasks[0]?.id;
     now = new Date('2026-11-02T15:20:00.000Z');
-    await postJson(app, `/tasks/${taskId}/snooze`, { until: '2026-11-02T15:25:00.000Z' });
+    await postJson(app, `/tasks/${String(taskId)}/snooze`, { until: '2026-11-02T15:25:00.000Z' });
     now = new Date('2026-11-02T15:30:00.000Z');
-    await postJson(app, `/tasks/${taskId}/done`, {});
+    await postJson(app, `/tasks/${String(taskId)}/done`, {});
 
-    const response = await app.request(`/tasks/${taskId}/history`);
+    const response = await app.request(`/tasks/${String(taskId)}/history`);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -183,7 +183,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(beforeRestart, '/mail-report', budgetReviewReport);
     await postTriageRun(beforeRestart);
     const waiting = await getJson<{ proposals: { id: string }[] }>(beforeRestart, '/task-proposals');
-    await postJson(beforeRestart, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(beforeRestart, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 
     const afterRestart = createApp(options);
     const stillWaiting = await getJson<{ proposals: unknown[] }>(afterRestart, '/task-proposals');
@@ -214,20 +214,20 @@ describe('backend app: task proposals and tasks', () => {
     const doneTaskId = open.tasks.find(({ title }) => title === 'Approve the budget')?.id;
     const snoozedTaskId = open.tasks.find(({ title }) => title === 'Send the slides')?.id;
     now = new Date('2026-11-02T15:20:00.000Z');
-    await postJson(beforeRestart, `/tasks/${doneTaskId}/done`, {});
-    await beforeRestart.request(`/tasks/${snoozedTaskId}/waiting-on`, {
+    await postJson(beforeRestart, `/tasks/${String(doneTaskId)}/done`, {});
+    await beforeRestart.request(`/tasks/${String(snoozedTaskId)}/waiting-on`, {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ person: 'luis@example.com' }),
     });
-    await postJson(beforeRestart, `/tasks/${snoozedTaskId}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
-    const doneHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${doneTaskId}/history`);
-    const snoozedHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${snoozedTaskId}/history`);
+    await postJson(beforeRestart, `/tasks/${String(snoozedTaskId)}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
+    const doneHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${String(doneTaskId)}/history`);
+    const snoozedHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${String(snoozedTaskId)}/history`);
 
     const afterRestart = createApp(options);
     const whileSnoozed = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
-    const doneHistoryAfter = await getJson<unknown>(afterRestart, `/tasks/${doneTaskId}/history`);
-    const snoozedHistoryAfter = await getJson<unknown>(afterRestart, `/tasks/${snoozedTaskId}/history`);
+    const doneHistoryAfter = await getJson<unknown>(afterRestart, `/tasks/${String(doneTaskId)}/history`);
+    const snoozedHistoryAfter = await getJson<unknown>(afterRestart, `/tasks/${String(snoozedTaskId)}/history`);
     now = new Date('2026-11-02T17:01:00.000Z');
     const afterSnooze = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
 
@@ -257,7 +257,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
 
     await postJson(app, '/prioritization-run', {});
@@ -300,7 +300,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 
     await postJson(app, '/prioritization-run', {});
 
@@ -335,7 +335,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 
     await postJson(app, '/prioritization-run', {});
 
@@ -363,7 +363,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     const people = await getJson<{ urgent: { emails: string[]; reasons: string[] }[] }>(app, '/people');
 
     await postJson(app, '/prioritization-run', {});
@@ -428,7 +428,7 @@ describe('backend app: task proposals and tasks', () => {
     const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
     const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
     const putPin = (pinned: boolean) =>
-      app.request(`/tasks/${budgetTask?.id}/pin`, {
+      app.request(`/tasks/${String(budgetTask?.id)}/pin`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ pinned }),
@@ -473,7 +473,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(beforeRestart, '/prioritization-run', {});
     const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(beforeRestart, '/tasks');
     const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
-    await beforeRestart.request(`/tasks/${budgetTask?.id}/pin`, {
+    await beforeRestart.request(`/tasks/${String(budgetTask?.id)}/pin`, {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ pinned: true }),
@@ -502,7 +502,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     await postJson(app, '/prioritization-run', {});
 
     await postJson(app, '/prioritization-run', {});
@@ -529,7 +529,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 
     await postJson(app, '/prioritization-run', {});
 
@@ -559,7 +559,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
     await postJson(app, '/prioritization-run', {});
 
     await postJson(app, '/prioritization-run', {});
@@ -601,7 +601,7 @@ describe('backend app: task proposals and tasks', () => {
     const before = await getJson<{ badgeCount: number }>(app, '/now');
     const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
 
-    await postJson(app, `/task-proposals/${waiting.proposals[0]?.id}/confirmation`, {});
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 
     const after = await getJson<{ badgeCount: number }>(app, '/now');
     return { before: before.badgeCount, after: after.badgeCount };
