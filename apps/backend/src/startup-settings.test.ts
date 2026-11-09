@@ -212,4 +212,17 @@ describe('startup settings', () => {
       { teamId: 'T0002', userToken: 'xoxp-second' },
     ]);
   });
+
+  it('leaves a Slack workspace out when it has a team id but no user token', () => {
+    const settings = readStartupSettings(
+      {
+        MY_LIFE_SLACK_WORKSPACE_1_TEAM_ID: 'T0001',
+        MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN: 'xoxp-first',
+        MY_LIFE_SLACK_WORKSPACE_2_TEAM_ID: 'T0002',
+      },
+      '/Users/ana',
+    );
+
+    expect(settings.slackWorkspaces).toEqual([{ teamId: 'T0001', userToken: 'xoxp-first' }]);
+  });
 });

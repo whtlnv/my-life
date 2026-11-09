@@ -77,7 +77,9 @@ export function readStartupSettings(
       deadlineHours: defaultDeadlineHours,
       vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     },
-    slackWorkspaces: [readSlackWorkspace(environment, 1), readSlackWorkspace(environment, 2)],
+    slackWorkspaces: [readSlackWorkspace(environment, 1), readSlackWorkspace(environment, 2)].filter(
+      (workspace) => workspace.userToken !== undefined,
+    ),
   };
 }
 

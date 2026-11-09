@@ -8,7 +8,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 ### Settings
 
 - [x] When the backend starts with `MY_LIFE_SLACK_WORKSPACE_1_TEAM_ID` and `MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN` set (and the same for `_2_`), its settings list each workspace with its team id and user token
-- [ ] When a workspace has a team id but no user token, it is left out of the Slack workspaces in the settings
+- [x] When a workspace has a team id but no user token, it is left out of the Slack workspaces in the settings
 - [ ] With `MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS` unset, the Slack polling interval is 60 s
 - [ ] With `MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS=30`, the Slack polling interval is 30 s
 - [ ] With `MY_LIFE_SLACK_API_URL` unset, the Slack API base URL is `https://slack.com/api`
