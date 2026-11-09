@@ -63,9 +63,12 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
   const { user_id: ownSlackUserId } = await callSlack<{ user_id: string }>(input, '/auth.test');
   const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
   const { messages } = await callSlack<{
-    messages: { matches: { thread_ts: string; channel: { id: string } }[] };
+    messages: { matches: { thread_ts?: string; channel: { id: string } }[] };
   }>(input, `/search.messages?query=${encodeURIComponent(ownMessagesQuery)}`);
   for (const match of messages.matches) {
+    if (match.thread_ts === undefined) {
+      continue;
+    }
     const newestStoredTimestamp = newestStoredTimestampIn(input.store, match.channel.id);
     const oldestParameter = newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
     const { messages: replies } = await callSlack<{ messages: SlackMessage[] }>(

@@ -39,7 +39,7 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] When the Slack fake is started with another own Slack user id, the poll searches for the messages written by that id
 - [x] A poll stores a reply by someone else in a thread the user wrote in, with the thread's channel and the reply's sender, text and timestamp
 - [x] A second poll of the same workspace stores only the thread replies newer than the first poll
-- [ ] A poll does not store a reply in a thread the user never wrote in
+- [x] A poll does not store a reply in a thread the user never wrote in
 - [ ] A DM message the user sent is stored as sent by the user
 - [ ] A stored Slack message carries its sender's Slack display name
 - [ ] A stored Slack message whose sender `users.info` cannot resolve carries the sender's user id as its name

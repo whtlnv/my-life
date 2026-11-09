@@ -406,4 +406,41 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('a poll does not store a reply in a thread the user never wrote in', async () => {
+    const slack = await startSlackFakeServer('thread-reply');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      const ownTopLevelMessageOutsideAnyThread = {
+        ok: true,
+        messages: {
+          matches: [
+            {
+              text: 'Morning all.',
+              user: ownSlackUserId,
+              ts: '1762700500.000600',
+              channel: { id: 'C0002', is_im: false },
+            },
+          ],
+        },
+      };
+      const fetchWhereTheUserWroteOnlyOutsideTheThread: typeof fetch = (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        if (url.pathname === '/search.messages' && (url.searchParams.get('query') ?? '').startsWith('from:')) {
+          return Promise.resolve(Response.json(ownTopLevelMessageOutsideAnyThread));
+        }
+        return fetch(request, init);
+      };
+
+      await pollSlackWorkspace({
+        fetch: fetchWhereTheUserWroteOnlyOutsideTheThread,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+      });
+
+      expect(store.listMessages().map((message) => message.text)).not.toContain(threadReplyText);
+    } finally {
+      await slack.close();
+    }
+  });
 });
