@@ -39,6 +39,21 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/app.ts:996] `findTaskProposal` asserts the task proposal exists (lint: Forbidden non-null assertion)** (added: 2026-11-08)
+  An unknown id at `POST /task-proposals/:id/confirmation` or `/rejection` destructures `undefined` and answers 500, and
+  the lint wall fails on the `!`. Deferred because removing it means choosing an answer for an unknown id (404, as
+  `POST /tasks/:id/done` gives), a behavior change delivered test-first.
+- **[apps/backend/src/app.ts:1056] `POST /prioritization-run` asserts a prioritization port is configured (lint: Forbidden non-null assertion)** (added: 2026-11-08)
+  An app built without `prioritization` throws on every run and answers 500, and the lint wall fails on the `!`.
+  Deferred because removing it means choosing what an unconfigured run does (skip, as `POST /triage-run` does without
+  triage), a behavior change delivered test-first.
+- **[apps/backend/src/app.ts:1214] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08)
+  `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
+  reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
+  for them would look live and do nothing. Deferred because honoring them changes what `createApp` does with its options.
+- **[apps/dashboard/src/dashboard-app.tsx:160] `millisecondsPerDay` is defined again in the statement page** (added: 2026-11-08)
+  `dashboard-app.tsx` (`86_400_000`) and `statement-page.tsx` (`24 * 60 * 60 * 1000`) each define it. Deferred because the
+  dashboard has no shared time module to hoist it into, and the statement page's copy goes with its `mondayOf` entry below.
 - **[apps/dashboard/src/triage-page.tsx:567] The Handled for you copy spells the backend's automatic label** (added: 2026-11-08)
   The toggle text says items are "labeled my-life/auto", the label `automaticLabelName` in `apps/backend/src/app.ts` puts on
   every automatic archive and its undo removes; renaming the backend constant leaves the dashboard naming a label Gmail no
