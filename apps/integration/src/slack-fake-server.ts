@@ -31,7 +31,6 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
       messages: [{ type: 'message', user: 'U0001', text: directMessageText, ts: '1762700000.000100' }],
     },
     '/search.messages': noSearchMatches,
-    '/auth.test': { ok: true, user_id: ownSlackUserId },
   },
   mention: {
     '/conversations.list': { ok: true, channels: [] },
@@ -141,8 +140,8 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
       response.end(JSON.stringify(usersInfoResponse(url.searchParams.get('user') ?? '')));
       return;
     }
-    if (url.pathname === '/auth.test' && options.ownSlackUserId !== undefined) {
-      response.end(JSON.stringify({ ok: true, user_id: options.ownSlackUserId }));
+    if (url.pathname === '/auth.test') {
+      response.end(JSON.stringify({ ok: true, user_id: options.ownSlackUserId ?? ownSlackUserId }));
       return;
     }
     response.end(JSON.stringify(responseByPath[url.pathname]));
