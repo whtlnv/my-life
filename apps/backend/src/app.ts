@@ -425,6 +425,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       madeAt,
     };
   });
+  const logSpend = (
+    { model, costInUsd }: { model?: string | undefined; costInUsd: number },
+    spentAt = clock.now().toISOString(),
+  ): void => {
+    spendStore.save({ spentAt, model: model ?? '', costInUsd });
+  };
   const loggedSpends = (): { loggedAt: string; costInUsd: number }[] =>
     spendStore.loadAll().map(({ spentAt, costInUsd }) => ({ loggedAt: spentAt, costInUsd }));
   const hasReachedDailySpendCeiling = (): boolean =>
@@ -472,7 +478,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ...candidate,
         messages: describeMessages(candidate.messageIds, decidedMessages),
       });
-      spendStore.save({ spentAt: clock.now().toISOString(), model: '', costInUsd: result.costInUsd });
+      logSpend({ costInUsd: result.costInUsd });
       filterProposalStore.save(
         {
           accountEmail: candidate.accountEmail,
@@ -651,9 +657,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         const accountEmail = accountEmailOfReported(message.id);
         const examples = verdictExamplesFor(message);
         const result = await triage.propose(triageRequestFor(message, accountEmail), examples);
-        const costInUsd = result.costInUsd;
         const answeredAt = clock.now().toISOString();
-        spendStore.save({ spentAt: answeredAt, model: result.model ?? '', costInUsd });
+        logSpend(result, answeredAt);
         const proposal: Proposal = {
           action: '',
           category: '',
@@ -719,8 +724,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   async function summarizeWithinTheSpendCeiling(items: { summary: string }[]) {
     if (hasReachedDailySpendCeiling()) return undefined;
     const summary = await options.summary?.summarize({ items }).catch(() => undefined);
-    if (summary)
-      spendStore.save({ spentAt: clock.now().toISOString(), model: summary.model ?? '', costInUsd: summary.costInUsd });
+    if (summary) logSpend(summary);
     return summary;
   }
   // The waiting proposals outside the action block, with the sender each digest groups by.
@@ -1057,11 +1061,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const calendar = mergedCalendarEvents();
     const urgentContacts = peopleGroups().urgent;
     const result = await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts });
-    spendStore.save({
-      spentAt: clock.now().toISOString(),
-      model: result.model ?? '',
-      costInUsd: result.costInUsd ?? 0,
-    });
+    logSpend({ model: result.model, costInUsd: result.costInUsd ?? 0 });
     const answer = taskRanks.safeParse(result);
     if (answer.success) {
       prioritizationStore.saveRanks(answer.data.ranks);
