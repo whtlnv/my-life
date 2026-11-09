@@ -1764,7 +1764,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         displayName: message.senderName,
         waitingSince: new Date(Number(message.timestamp) * 1000).toISOString(),
       }));
-    return context.json({ people: [...people, ...slackPeople] });
+    return context.json({
+      people: [...people, ...slackPeople].toSorted((first, second) =>
+        first.waitingSince.localeCompare(second.waitingSince),
+      ),
+    });
   });
   app.get('/organizations', (context) => {
     return context.json({ organizations: organizationsByName(reportedSenders(), proposals) });

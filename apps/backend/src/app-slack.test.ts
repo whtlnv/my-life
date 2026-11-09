@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
-import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
+import { budgetReviewReport, getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openSlackMessageStore } from './slack-message-store';
 
 describe('createApp Slack messages', () => {
@@ -229,5 +229,25 @@ describe('createApp Slack messages', () => {
     const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
 
     expect(people).toEqual([]);
+  });
+  it('orders email and Slack people together at GET /waiting-on, the one who has waited longest first', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1793556000.000100',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const { people } = await getJson<{ people: { displayName: string; waitingSince: string }[] }>(app, '/waiting-on');
+
+    expect(people.map(({ displayName, waitingSince }) => ({ displayName, waitingSince }))).toEqual([
+      { displayName: 'Ana', waitingSince: '2026-11-01T18:00:00.000Z' },
+      { displayName: 'Luis', waitingSince: '2026-11-02T15:00:00.000Z' },
+    ]);
   });
 });
