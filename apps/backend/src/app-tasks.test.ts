@@ -9,6 +9,7 @@ import { createApp } from './app';
 import {
   type App,
   postJson,
+  putJson,
   postTriageRun,
   getJson,
   clockAtTenPastThree,
@@ -133,10 +134,8 @@ describe('backend app: task proposals and tasks', () => {
     await confirmFirstTaskProposal(app);
     const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
 
-    const response = await app.request(`/tasks/${String(open.tasks[0]?.id)}/waiting-on`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ person: 'luis@example.com' }),
+    const response = await putJson(app, `/tasks/${String(open.tasks[0]?.id)}/waiting-on`, {
+      person: 'luis@example.com',
     });
 
     const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
@@ -220,11 +219,7 @@ describe('backend app: task proposals and tasks', () => {
     const snoozedTaskId = open.tasks.find(({ title }) => title === 'Send the slides')?.id;
     now = new Date('2026-11-02T15:20:00.000Z');
     await postJson(beforeRestart, `/tasks/${String(doneTaskId)}/done`, {});
-    await beforeRestart.request(`/tasks/${String(snoozedTaskId)}/waiting-on`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ person: 'luis@example.com' }),
-    });
+    await putJson(beforeRestart, `/tasks/${String(snoozedTaskId)}/waiting-on`, { person: 'luis@example.com' });
     await postJson(beforeRestart, `/tasks/${String(snoozedTaskId)}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
     const doneHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${String(doneTaskId)}/history`);
     const snoozedHistoryBefore = await getJson<unknown>(beforeRestart, `/tasks/${String(snoozedTaskId)}/history`);
@@ -424,12 +419,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(app, '/prioritization-run', {});
     const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(app, '/tasks');
     const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
-    const putPin = (pinned: boolean) =>
-      app.request(`/tasks/${String(budgetTask?.id)}/pin`, {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pinned }),
-      });
+    const putPin = (pinned: boolean) => putJson(app, `/tasks/${String(budgetTask?.id)}/pin`, { pinned });
 
     const pinResponse = await putPin(true);
     const whilePinned = await getJson<{ tasks: { title: string }[] }>(app, '/tasks');
@@ -468,11 +458,7 @@ describe('backend app: task proposals and tasks', () => {
     await postJson(beforeRestart, '/prioritization-run', {});
     const ranked = await getJson<{ tasks: { id: string; title: string }[] }>(beforeRestart, '/tasks');
     const budgetTask = ranked.tasks.find(({ title }) => title === 'Approve the budget');
-    await beforeRestart.request(`/tasks/${String(budgetTask?.id)}/pin`, {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ pinned: true }),
-    });
+    await putJson(beforeRestart, `/tasks/${String(budgetTask?.id)}/pin`, { pinned: true });
 
     const afterRestart = createApp(options);
     const tasks = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');

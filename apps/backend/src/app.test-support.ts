@@ -18,6 +18,13 @@ export const postJson = (app: App, path: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
+export const putJson = (app: App, path: string, body: unknown) =>
+  app.request(path, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
 export const postCalendarSnapshot = (app: App, accountEmail: string, events: unknown[]) =>
   postJson(app, '/calendar-snapshot', { accountEmail, events });
 
