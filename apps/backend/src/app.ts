@@ -165,6 +165,8 @@ export interface AppOptions {
 
 interface AgentTool {
   name: string;
+  description: string;
+  inputSchema: { type: 'object'; properties: Record<string, { type: 'string' }>; required: string[] };
   run: (input: unknown) => Promise<unknown>;
 }
 
@@ -176,6 +178,14 @@ interface LabelRequest {
 interface DraftRequest {
   messageId: string;
   body: string;
+}
+
+function stringInputs(...required: string[]): AgentTool['inputSchema'] {
+  return {
+    type: 'object',
+    properties: Object.fromEntries(required.map((name) => [name, { type: 'string' as const }])),
+    required,
+  };
 }
 
 function countMatchingWords(text: string | undefined, query: string): number {
@@ -1150,6 +1160,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const spendCeilingTurn: ConversationTurn = { role: 'assistant', text: agentSpendCeilingReply };
   const searchMessagesTool: AgentTool = {
     name: 'search_messages',
+    description: "Search the user's stored messages by words in their body.",
+    inputSchema: stringInputs('query'),
     run: (input) => {
       const { query } = input as { query: string };
       const messages = reportedMessages
@@ -1172,6 +1184,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const readThreadTool: AgentTool = {
     name: 'read_thread',
+    description: 'Read every message in the thread of a message, oldest first.',
+    inputSchema: stringInputs('messageId'),
     run: (input) => {
       const { messageId } = input as { messageId: string };
       const threadId = reportedMessages.find((message) => message.id === messageId)?.threadId;
@@ -1184,6 +1198,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const contactTimelineTool: AgentTool = {
     name: 'contact_timeline',
+    description: 'List the messages exchanged with a contact, by their email.',
+    inputSchema: stringInputs('email'),
     run: (input) => {
       const { email } = input as { email: string };
       return Promise.resolve({ messages: contactTimeline(email) });
@@ -1191,6 +1207,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const calendarDayTool: AgentTool = {
     name: 'calendar_day',
+    description: 'List the calendar events on a date (YYYY-MM-DD, business time zone).',
+    inputSchema: stringInputs('date'),
     run: (input) => {
       const { date } = input as { date: string };
       const events = mergedCalendarEvents().filter(
@@ -1201,6 +1219,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const tasksTool: AgentTool = {
     name: 'tasks',
+    description: "List the user's open tasks with their latest priority rank.",
+    inputSchema: stringInputs(),
     run: () => {
       const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
       const tasks = currentOpenTasks().map((task) => ({
@@ -1212,6 +1232,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const digestTool: AgentTool = {
     name: 'digest',
+    description: "List the digests waiting for the user's confirmation.",
+    inputSchema: stringInputs(),
     run: () => {
       const waiting = waitingDigests(verdictStore.loadAll()).map((digest) => {
         const { accountEmail, category } = digest.proposals[0] ?? {};
@@ -1227,6 +1249,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const archiveMessageTool: AgentTool = {
     name: 'archive_message',
+    description: 'Archive a message.',
+    inputSchema: stringInputs('messageId'),
     run: (input) => {
       const { messageId } = input as { messageId: string };
       const isKnownMessage = reportedMessageStore.loadAll().some((message) => message.messageId === messageId);
@@ -1237,6 +1261,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const labelMessageTool: AgentTool = {
     name: 'label_message',
+    description: 'Add a Gmail label to a message.',
+    inputSchema: stringInputs('messageId', 'labelName'),
     run: (input) => {
       labelRequests.push(input as LabelRequest);
       return Promise.resolve({});
@@ -1244,6 +1270,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const writeDraftTool: AgentTool = {
     name: 'write_draft',
+    description: 'Write a Gmail draft reply to a message. Never sends it.',
+    inputSchema: stringInputs('messageId', 'body'),
     run: (input) => {
       draftRequests.push(input as DraftRequest);
       return Promise.resolve({});
@@ -1251,6 +1279,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const markVipTool: AgentTool = {
     name: 'mark_vip',
+    description: 'Mark a contact as VIP, by their email.',
+    inputSchema: stringInputs('email'),
     run: (input) => {
       contactDetailsStore.saveMark((input as { email: string }).email, 'vip');
       return Promise.resolve({});
@@ -1258,6 +1288,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const updateContactTool: AgentTool = {
     name: 'update_contact',
+    description: "Update a contact's details, by their email.",
+    inputSchema: stringInputs('email'),
     run: (input) => {
       const { email, ...details } = input as { email: string } & ContactDetails;
       contactDetailsStore.save(email, details);
@@ -1266,6 +1298,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const approveFilterProposalTool: AgentTool = {
     name: 'approve_filter_proposal',
+    description: 'Approve a Gmail filter proposal.',
+    inputSchema: stringInputs('proposalId'),
     run: (input) => {
       approveFilterProposal((input as { proposalId: string }).proposalId);
       return Promise.resolve({});
@@ -1273,6 +1307,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const rejectFilterProposalTool: AgentTool = {
     name: 'reject_filter_proposal',
+    description: 'Reject a Gmail filter proposal.',
+    inputSchema: stringInputs('proposalId'),
     run: (input) => {
       filterProposalRejectionStore.save((input as { proposalId: string }).proposalId);
       return Promise.resolve({});
@@ -1280,6 +1316,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const createTaskToolFor = (conversationId: string): AgentTool => ({
     name: 'create_task',
+    description: 'Create a task, optionally linked to the message it came from.',
+    inputSchema: stringInputs('title'),
     run: (input) => {
       const { title, sourceMessageId } = input as { title: string; sourceMessageId?: string };
       const source = reportedMessageStore.loadAll().find((message) => message.messageId === sourceMessageId);
@@ -1320,7 +1358,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       undoable: boolean,
       targetOf: (input: unknown, result: unknown) => string,
     ): AgentTool => ({
-      name: tool.name,
+      ...tool,
       run: async (input) => {
         const { record } = decideAgentAction({
           tool: tool.name,
@@ -1338,10 +1376,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         return result;
       },
     });
-    const forbiddenTool = (name: string): AgentTool =>
-      recordingAction({ name, run: () => Promise.resolve({}) }, false, messageTarget);
+    const forbiddenTool = (name: string, description: string): AgentTool =>
+      recordingAction(
+        { name, description, inputSchema: stringInputs('messageId'), run: () => Promise.resolve({}) },
+        false,
+        messageTarget,
+      );
     const citingSearchMessagesTool: AgentTool = {
-      name: searchMessagesTool.name,
+      ...searchMessagesTool,
       run: async (input) => {
         const result = (await searchMessagesTool.run(input)) as { messages: { id: string }[] };
         messagesReturnedThisTurn.push(...result.messages);
@@ -1365,8 +1407,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         recordingAction(updateContactTool, false, emailTarget),
         recordingAction(approveFilterProposalTool, false, proposalTarget),
         recordingAction(rejectFilterProposalTool, false, proposalTarget),
-        forbiddenTool('send_message'),
-        forbiddenTool('delete_message'),
+        forbiddenTool('send_message', 'Send a reply to a message.'),
+        forbiddenTool('delete_message', 'Delete a message.'),
       ],
     });
     if (!reply) {

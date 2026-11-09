@@ -72,7 +72,7 @@
 - [x] On the agent page, a "What the agent did" list shows each action, with an Undo button only on reversible ones, and pressing Undo marks the action undone
 - [x] The Claude agent adapter sends Claude the name, description and input schema of each tool passed in that turn, and answers Claude's tool_use with the matching tool from that same turn
   - note (supervisor 2026-11-09, split from the shipped-wiring keystone after a sizing bail): today `createClaudeAgent` in `apps/backend/src/claude-agent.ts` sends no tool definitions and runs only the tools given when it was created, ignoring the `tools` passed to `respond`.
-- [ ] Every tool the backend offers the agent (the read tools, the eight actions, and the refused send_message and delete_message) carries a description and an input schema that names its required inputs
+- [x] Every tool the backend offers the agent (the read tools, the eight actions, and the refused send_message and delete_message) carries a description and an input schema that names its required inputs
 - [ ] The production Claude request keeps each agent message's role and its tool_use and tool_result blocks (id, name, input), and returns Claude's stop reason, so a tool round trip reaches Claude intact
   - note (supervisor 2026-11-09): `createMessageWith` in `apps/backend/src/main.ts` maps every message to `role: 'user'`, keeps only `type` and `input` of each block and drops `stop_reason`; triage, filter, summary and prioritization rely on it and must keep passing.
 - [ ] The shipped backend answers agent messages through Claude on the agent model under `apps/backend/prompts/agent-v1.md`, and a search the agent asks for is answered from the stored messages, as composed by its production entry point

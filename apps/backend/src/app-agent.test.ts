@@ -1269,4 +1269,38 @@ describe('backend app: the agent', () => {
       ]),
     );
   });
+
+  it('offers every agent tool with a description and an input schema that names its required inputs', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Noted.');
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, agent });
+    await postJson(app, '/agent/conversations', { message: 'What is waiting for me?' });
+    const definitions = (offeredTools as (OfferedTool & { description?: unknown; inputSchema?: unknown })[]).map(
+      ({ name, description, inputSchema }) => ({ name, description, inputSchema }),
+    );
+    const requiredInputs: Record<string, string[]> = {
+      search_messages: ['query'],
+      read_thread: ['messageId'],
+      contact_timeline: ['email'],
+      calendar_day: ['date'],
+      tasks: [],
+      digest: [],
+      archive_message: ['messageId'],
+      label_message: ['messageId', 'labelName'],
+      write_draft: ['messageId', 'body'],
+      create_task: ['title'],
+      mark_vip: ['email'],
+      update_contact: ['email'],
+      approve_filter_proposal: ['proposalId'],
+      reject_filter_proposal: ['proposalId'],
+      send_message: ['messageId'],
+      delete_message: ['messageId'],
+    };
+    expect(definitions).toEqual(
+      Object.entries(requiredInputs).map(([name, required]) => ({
+        name,
+        description: expect.stringMatching(/\w/) as unknown,
+        inputSchema: expect.objectContaining({ type: 'object', required }) as unknown,
+      })),
+    );
+  });
 });
