@@ -42,7 +42,7 @@
 - [x] `create_task` without a source message creates an open task linked to the agent conversation it came from
 - [x] `mark_vip` puts the contact under VIP in the People view, as a Needs input answer would
 - [x] `update_contact` saves a note, organization or lists on the contact, as an edit from the People page would ("Luis is my boss" is kept as his note)
-- [ ] `approve_filter_proposal` stores an approval for the proposal, and its account receives the create-filter command
+- [x] `approve_filter_proposal` stores an approval for the proposal, and its account receives the create-filter command
 - [ ] `reject_filter_proposal` stores a rejection, and the proposal leaves the filter proposals list
 - [ ] `write_draft` sends the replied-to message's account a create-draft command carrying the thread, recipients, subject and body
 - [ ] The extension carries out a create-draft command by creating a Gmail draft in that thread, never sending it, then acknowledges the command

@@ -6,6 +6,8 @@ import {
   budgetReviewReportWithQuarterlyNumbersBody,
   ccThreadTriage,
   clockAtTenPastThree,
+  filterAnswering,
+  firstPendingFilterProposalId,
   getCommands,
   getJson,
   keepProposalExtracting,
@@ -15,6 +17,9 @@ import {
   postTriageRun,
   proposeBudgetReview,
   putJson,
+  reportTriageAndConfirmShopNewsletters,
+  shopNewsletterArchiveTriage,
+  shopNewslettersFilterProposal,
   temporaryDatabasePath,
   triageAnswering,
   weeklySync,
@@ -742,5 +747,36 @@ describe('backend app: the agent', () => {
     expect(contacts).toMatchObject([
       { emails: ['luis@example.com'], note: 'Luis is my boss', organization: 'Psmutuus', lists: ['leadership'] },
     ]);
+  });
+  it('approve_filter_proposal stores an approval for the proposal, and its account receives the create-filter command', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('I can approve that filter.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: shopNewsletterArchiveTriage(),
+      filter: filterAnswering(shopNewslettersFilterProposal),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await reportTriageAndConfirmShopNewsletters(app);
+    const proposalId = await firstPendingFilterProposalId(app);
+    await postJson(app, '/agent/conversations', { message: 'Approve the shop newsletters filter' });
+    const approveTool = offeredTools.find((tool) => tool.name === 'approve_filter_proposal');
+
+    await approveTool?.run({ proposalId });
+
+    const { proposals } = await getJson<{ proposals: unknown[] }>(app, '/filter-proposals');
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect({ proposals, commands }).toMatchObject({
+      proposals: [],
+      commands: expect.arrayContaining([
+        expect.objectContaining({
+          type: 'create-filter',
+          id: `create-filter-${proposalId}`,
+          criteria: { from: 'news@shop.example.com' },
+          labelName: 'Shop newsletters',
+        }),
+      ]) as unknown,
+    });
   });
 });
