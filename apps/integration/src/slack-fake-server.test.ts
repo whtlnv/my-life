@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { openSlackMessageStore } from '@my-life/backend/slack-message-store';
-import { pollSlackWorkspace } from '@my-life/backend/slack-poll';
+import { pollSlackWorkspace, pollSlackWorkspaces } from '@my-life/backend/slack-poll';
 
 import {
   directMessageText,
@@ -634,6 +634,39 @@ describe('Slack fake server', () => {
 
       expect(waitedMilliseconds).toEqual([2000]);
       expect(store.listMessages().map((message) => message.text)).toContain(directMessageText);
+    } finally {
+      await slack.close();
+    }
+  });
+
+  it("when one workspace answers invalid_auth, the poll does not retry it, and the other workspace's messages are still stored", async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      const revokedToken = 'xoxp-revoked';
+      let requestsWithTheRevokedToken = 0;
+      const fetchCountingRevokedTokenRequests: typeof fetch = async (request, init) => {
+        if (new Headers(init?.headers).get('Authorization') === `Bearer ${revokedToken}`) {
+          requestsWithTheRevokedToken += 1;
+        }
+        return fetch(request, init);
+      };
+
+      await pollSlackWorkspaces({
+        fetch: fetchCountingRevokedTokenRequests,
+        apiUrl: slack.url,
+        workspaces: [
+          { teamId: 'T0002', userToken: revokedToken },
+          { teamId: 'T0001', userToken: slack.token },
+        ],
+        store,
+        wait: async () => {},
+      });
+
+      expect(requestsWithTheRevokedToken).toBe(1);
+      expect(store.listMessages()).toEqual([
+        expect.objectContaining({ workspaceTeamId: 'T0001', text: directMessageText }),
+      ]);
     } finally {
       await slack.close();
     }

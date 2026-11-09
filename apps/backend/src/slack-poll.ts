@@ -19,7 +19,11 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
     await input.wait?.(retryAfterMilliseconds);
     return callSlack<Response>(input, path);
   }
-  return (await response.json()) as Response;
+  const body = (await response.json()) as Response & { error?: string };
+  if (body.error === 'invalid_auth') {
+    throw new Error(`Slack workspace ${input.workspace.teamId} answered invalid_auth`);
+  }
+  return body;
 }
 
 async function fetchOwnSlackUserId(input: PollSlackWorkspaceInput): Promise<string> {
@@ -122,4 +126,16 @@ export async function pollSlackWorkspace(input: PollSlackWorkspaceInput): Promis
   await pollDirectMessages(input);
   await pollMentions(input);
   await pollThreadsTheUserWroteIn(input);
+}
+
+type PollSlackWorkspacesInput = Omit<PollSlackWorkspaceInput, 'workspace'> & { workspaces: SlackWorkspace[] };
+
+export async function pollSlackWorkspaces({ workspaces, ...input }: PollSlackWorkspacesInput): Promise<void> {
+  for (const workspace of workspaces) {
+    try {
+      await pollSlackWorkspace({ ...input, workspace });
+    } catch {
+      continue;
+    }
+  }
 }
