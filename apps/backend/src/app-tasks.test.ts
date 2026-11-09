@@ -23,6 +23,11 @@ const confirmFirstTaskProposal = async (app: App) => {
   await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
 };
 
+const firstOpenTaskId = async (app: App) => {
+  const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+  return String(open.tasks[0]?.id);
+};
+
 const confirmEveryTaskProposal = async (app: App) => {
   const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
   for (const proposal of waiting.proposals) {
@@ -90,9 +95,9 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await proposeBudgetReview(app);
     await confirmFirstTaskProposal(app);
-    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+    const taskId = await firstOpenTaskId(app);
 
-    const response = await postJson(app, `/tasks/${String(open.tasks[0]?.id)}/done`, {});
+    const response = await postJson(app, `/tasks/${taskId}/done`, {});
 
     const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     expect(response.status).toBe(200);
@@ -106,9 +111,9 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock, triage });
     await proposeBudgetReview(app);
     await confirmFirstTaskProposal(app);
-    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+    const taskId = await firstOpenTaskId(app);
 
-    await postJson(app, `/tasks/${String(open.tasks[0]?.id)}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
+    await postJson(app, `/tasks/${taskId}/snooze`, { until: '2026-11-02T17:00:00.000Z' });
 
     const whileSnoozed = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     now = new Date('2026-11-02T17:01:00.000Z');
@@ -122,9 +127,9 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await proposeBudgetReview(app);
     await confirmFirstTaskProposal(app);
-    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+    const taskId = await firstOpenTaskId(app);
 
-    const response = await putJson(app, `/tasks/${String(open.tasks[0]?.id)}/waiting-on`, {
+    const response = await putJson(app, `/tasks/${taskId}/waiting-on`, {
       person: 'luis@example.com',
     });
 
@@ -142,14 +147,13 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock, triage });
     await proposeBudgetReview(app);
     await confirmFirstTaskProposal(app);
-    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
-    const taskId = open.tasks[0]?.id;
+    const taskId = await firstOpenTaskId(app);
     now = new Date('2026-11-02T15:20:00.000Z');
-    await postJson(app, `/tasks/${String(taskId)}/snooze`, { until: '2026-11-02T15:25:00.000Z' });
+    await postJson(app, `/tasks/${taskId}/snooze`, { until: '2026-11-02T15:25:00.000Z' });
     now = new Date('2026-11-02T15:30:00.000Z');
-    await postJson(app, `/tasks/${String(taskId)}/done`, {});
+    await postJson(app, `/tasks/${taskId}/done`, {});
 
-    const response = await app.request(`/tasks/${String(taskId)}/history`);
+    const response = await app.request(`/tasks/${taskId}/history`);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -243,14 +247,14 @@ describe('backend app: task proposals and tasks', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await proposeBudgetReview(app);
     await confirmFirstTaskProposal(app);
-    const open = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+    const taskId = await firstOpenTaskId(app);
 
     await postJson(app, '/prioritization-run', {});
 
     const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     expect(handedTasks).toEqual([
       {
-        id: open.tasks[0]?.id,
+        id: taskId,
         title: 'Approve the budget',
         accountEmail: 'ana@example.com',
         due: '2026-11-05',
