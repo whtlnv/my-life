@@ -1002,18 +1002,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         asks: proposal.asks ?? [],
       }).map((taskProposal, index) => ({ id: `${proposal.messageId}-${String(index)}`, ...taskProposal })),
     );
-  const findTaskProposal = (taskId: string) => listedTaskProposals().find(({ id }) => id === taskId)!;
+  const findTaskProposal = (taskId: string) => listedTaskProposals().find(({ id }) => id === taskId);
   app.get('/task-proposals', (context) => {
     const decidedIds = taskEventStore.loadAll().map((event) => event.taskId);
     return context.json({ proposals: listedTaskProposals().filter(({ id }) => !decidedIds.includes(id)) });
   });
   app.post('/task-proposals/:id/confirmation', (context) => {
-    const { id, ...proposal } = findTaskProposal(context.req.param('id'));
+    const found = findTaskProposal(context.req.param('id'));
+    if (found === undefined) return context.body(null, 404);
+    const { id, ...proposal } = found;
     taskEventStore.save({ type: 'proposal-confirmed', taskId: id, at: clock.now().toISOString(), proposal });
     return context.json({ confirmed: id });
   });
   app.post('/task-proposals/:id/rejection', (context) => {
-    const { id, ...proposal } = findTaskProposal(context.req.param('id'));
+    const found = findTaskProposal(context.req.param('id'));
+    if (found === undefined) return context.body(null, 404);
+    const { id, ...proposal } = found;
     taskEventStore.save({ type: 'proposal-rejected', taskId: id, at: clock.now().toISOString(), proposal });
     return context.json({ rejected: id });
   });
@@ -1051,7 +1055,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     lastPrioritizationCallAt !== undefined &&
     clock.now().getTime() - lastPrioritizationCallAt < options.prioritizationIntervalInMilliseconds;
   app.post('/prioritization-run', async (context) => {
-    if (hasReachedDailySpendCeiling() || isInsidePrioritizationInterval()) return context.json({});
+    const { prioritization } = options;
+    if (prioritization === undefined || hasReachedDailySpendCeiling() || isInsidePrioritizationInterval()) {
+      return context.json({});
+    }
     lastPrioritizationCallAt = clock.now().getTime();
     const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
     const profile = tasks
@@ -1060,7 +1067,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .join('\n');
     const calendar = mergedCalendarEvents();
     const urgentContacts = peopleGroups().urgent;
-    const result = await options.prioritization!.prioritize({ tasks, profile, calendar, urgentContacts });
+    const result = await prioritization.prioritize({ tasks, profile, calendar, urgentContacts });
     logSpend({ model: result.model, costInUsd: result.costInUsd ?? 0 });
     const answer = taskRanks.safeParse(result);
     if (answer.success) {

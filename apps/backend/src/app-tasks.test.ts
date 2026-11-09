@@ -101,6 +101,33 @@ describe('backend app: task proposals and tasks', () => {
     expect(tasks.tasks).toEqual([]);
   });
 
+  it.each(['confirmation', 'rejection'])(
+    'answers 404 to a task proposal %s for an unknown id, and creates no task',
+    async (decision) => {
+      const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
+
+      const response = await postJson(app, `/task-proposals/no-such-proposal/${decision}`, {});
+
+      const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+      expect(response.status).toBe(404);
+      expect(tasks.tasks).toEqual([]);
+    },
+  );
+
+  it('answers POST /prioritization-run without ranking anything when no prioritization port is configured', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await proposeBudgetReview(app);
+    const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
+    await postJson(app, `/task-proposals/${String(waiting.proposals[0]?.id)}/confirmation`, {});
+
+    const response = await app.request('/prioritization-run', { method: 'POST' });
+
+    const tasks = await getJson<{ tasks: { rank?: number }[] }>(app, '/tasks');
+    expect(response.status).toBe(200);
+    expect(tasks.tasks).toEqual([expect.not.objectContaining({ rank: expect.anything() as unknown })]);
+  });
+
   it('drops a task marked done at POST /tasks/:id/done from GET /tasks', async () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
