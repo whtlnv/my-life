@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 01:53 · `apps/backend/src/app-agent.test.ts::undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label`
+- Behavior: undoing an agent archive sends the account an undo command that returns the message to the inbox and removes the archive label
+- Predicted: AssertionError at toContainEqual — no `undo-automatic` command for message-1 because `POST /agent/actions/undo` does not exist
+- Actual: AssertionError earlier — the archive label read from `GET /commands` before the undo was undefined: no archive command was listed at all
+- Type: wrong-reason
+- Resolution: `GET /commands` lists an archive command only when the triage proposal's action is `archive`, so `archive_message` on a `keep` proposal yields no command (a possible gap of its own); the test now proposes with `ccThreadTriage('archive')` like the existing archive_message test and fails as predicted
+
 ## 2026-11-08 23:31 · `apps/backend/src/app-agent.test.ts::calls the model and returns its reply while today's spend is below the daily spend ceiling`
 - Behavior: Below the daily spend ceiling, a message to the agent calls the model
 - Predicted: pass on first run (stated before running): the ceiling guard from 079aa75 only short-circuits at or above the ceiling (`isTriagePaused` uses `>=`), and otherwise falls through to `agent.respond()`

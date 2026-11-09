@@ -868,4 +868,29 @@ describe('backend app: the agent', () => {
       },
     ]);
   });
+  it("undoing an agent archive sends the message's account a command that returns the message to the inbox and removes the archive label", async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Archived.');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Archive the budget thread' });
+    await offeredTools.find((tool) => tool.name === 'archive_message')?.run({ messageId: 'message-1' });
+    const { commands: commandsBeforeUndo } = (await (await getCommands(app, 'ana@example.com')).json()) as {
+      commands: { messageId: string; label: string }[];
+    };
+    const archiveLabel = commandsBeforeUndo.find((command) => command.messageId === 'message-1')?.label;
+
+    await postJson(app, '/agent/actions/undo', { tool: 'archive_message', target: 'message-1' });
+
+    const { commands } = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: unknown[] };
+    expect(archiveLabel).toEqual(expect.any(String));
+    expect(commands).toContainEqual(
+      expect.objectContaining({ type: 'undo-automatic', messageId: 'message-1', label: archiveLabel }),
+    );
+  });
 });

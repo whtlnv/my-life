@@ -982,6 +982,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   const labelRequests: LabelRequest[] = [];
+  const undoneAgentArchiveMessageIds: string[] = [];
   const draftRequests: DraftRequest[] = [];
   app.get('/commands', (context) => {
     const accountEmail = context.req.query('accountEmail');
@@ -1029,6 +1030,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         messageId,
         label: automaticLabelName,
       }));
+    const undoAgentArchiveCommands = undoneAgentArchiveMessageIds.filter(isMessageOfAccount).map((messageId) => ({
+      id: `undo-agent-archive-${messageId}`,
+      type: 'undo-automatic',
+      messageId,
+      label: 'my-life/archived',
+    }));
     const labelCommands = labelRequests
       .filter(({ messageId }) => isMessageOfAccount(messageId))
       .map(({ messageId, labelName }) => ({ id: `label-${messageId}`, type: 'label', messageId, label: labelName }));
@@ -1040,6 +1047,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...filterCommands,
       ...deleteFilterCommands,
       ...undoAutomaticCommands,
+      ...undoAgentArchiveCommands,
       ...labelCommands,
       ...draftCommands,
     ].filter((command) => !acknowledgedCommandIds.includes(command.id));
@@ -1352,6 +1360,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const answer = hasReachedDailySpendCeiling() ? spendCeilingTurn : assistantTurn(await askAgent(turns, id));
     conversationStore.save(id, [...turns, answer]);
     return context.json({});
+  });
+  app.post('/agent/actions/undo', async (context) => {
+    const { target } = await context.req.json<{ target: string }>();
+    undoneAgentArchiveMessageIds.push(target);
+    return context.body(null, 200);
   });
   app.get('/agent/actions', (context) => context.json({ actions: [...agentActions].reverse() }));
   app.get('/agent/conversations', (context) =>
