@@ -62,7 +62,7 @@
 - [x] An undone agent task leaves the open tasks without counting as finished: its history shows it as undone, not done
 - [x] When the agent asks for a tool it may not use (sending or deleting mail), the backend refuses it, changes nothing, and the list of agent actions shows the refusal
   - note (supervisor 2026-11-09, keystone): `decideAgentAction` in `packages/domain/src/agent-action.ts` has no caller outside its tests; the backend never records a refusal. Wire it into the backend's action path rather than adding a second check.
-- [ ] After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
+- [x] After a backend restart on the same database file, the list of agent actions still shows every action and refusal with its undone state, and undo still works on a reversible one
 - [ ] The dashboard shows an Agent tab, and opening it shows the agent page rather than the Now page
 - [ ] On the agent page, typing a question and pressing Enter shows the question and then the agent's reply in the conversation
 - [ ] On the agent page, a cited message or event in a reply is a link to its source, and an unverified citation is marked as such

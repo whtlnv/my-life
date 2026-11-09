@@ -53,6 +53,7 @@ import { openFilterProposalRejectionStore } from './filter-proposal-rejection-st
 import { openPrioritizationStore } from './prioritization-store';
 import { openUndoAutomaticStore } from './undo-automatic-store';
 import { openFilterProposalStore } from './filter-proposal-store';
+import { openAgentActionStore, type StoredAgentAction } from './agent-action-store';
 import { type ConversationTurn, openConversationStore } from './conversation-store';
 import { openDigestSummaryStore } from './digest-summary-store';
 import { openListedDigestStore } from './listed-digest-store';
@@ -166,16 +167,7 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
-interface AgentAction {
-  id: string;
-  tool: string;
-  target: string;
-  conversationId: string;
-  at: string;
-  undoable: boolean;
-  undone?: boolean;
-  outcome?: 'refused';
-}
+type AgentAction = StoredAgentAction;
 
 interface LabelRequest {
   messageId: string;
@@ -1149,6 +1141,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({});
   });
   const conversationStore = openConversationStore(databasePath);
+  const agentActionStore = openAgentActionStore(databasePath);
   const assistantTurn = (reply: { text: string; citations?: unknown[] | undefined } | undefined): ConversationTurn => ({
     role: 'assistant',
     text: reply?.text ?? agentUnavailableReply,
@@ -1305,7 +1298,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({ taskId });
     },
   });
-  const agentActions: AgentAction[] = [];
   const askAgent = async (turns: ConversationTurn[], conversationId: string) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
     const messageTarget = (input: unknown) => (input as { messageId: string }).messageId;
@@ -1313,8 +1305,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const proposalTarget = (input: unknown) => (input as { proposalId: string }).proposalId;
     const createdTaskTarget = (_input: unknown, result: unknown) => (result as { taskId: string }).taskId;
     const recordAction = (action: Pick<AgentAction, 'tool' | 'target' | 'undoable' | 'outcome'>): void => {
-      agentActions.push({
-        id: `action-${String(agentActions.length + 1)}`,
+      agentActionStore.save({
+        id: `action-${String(agentActionStore.loadAll().length + 1)}`,
         conversationId,
         at: clock.now().toISOString(),
         ...action,
@@ -1407,11 +1399,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/agent/actions/undo', async (context) => {
     const request = await context.req.json<{ tool: string; target: string; actionId?: string }>();
-    const action = agentActions.find(({ id }) => id === request.actionId);
+    const action = agentActionStore.loadAll().find(({ id }) => id === request.actionId);
     const { tool, target } = action ?? request;
     const cannotBeUndone = tool === 'write_draft' || action?.undoable === false || action?.undone === true;
     if (cannotBeUndone) return context.body(null, 409);
-    if (action !== undefined) action.undone = true;
+    if (action !== undefined) agentActionStore.markUndone(action.id);
     const labelRequest = labelRequests.find(({ messageId }) => messageId === target);
     if (tool === 'create_task') taskEventStore.save({ type: 'undone', taskId: target, at: clock.now().toISOString() });
     else if (tool === 'mark_vip') contactDetailsStore.removeMark(target, 'vip');
@@ -1419,7 +1411,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     else undoneAgentArchiveMessageIds.push(target);
     return context.body(null, 200);
   });
-  app.get('/agent/actions', (context) => context.json({ actions: [...agentActions].reverse() }));
+  app.get('/agent/actions', (context) => context.json({ actions: agentActionStore.loadAll().reverse() }));
   app.get('/agent/conversations', (context) =>
     context.json({
       conversations: conversationStore

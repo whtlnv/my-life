@@ -947,7 +947,9 @@ describe('backend app: the agent', () => {
     });
     await proposeBudgetReview(app);
     await postJson(app, '/agent/conversations', { message: 'Label the budget thread as Finance' });
-    await offeredTools.find((tool) => tool.name === 'label_message')?.run({ messageId: 'message-1', labelName: 'Finance' });
+    await offeredTools
+      .find((tool) => tool.name === 'label_message')
+      ?.run({ messageId: 'message-1', labelName: 'Finance' });
 
     await postJson(app, '/agent/actions/undo', { tool: 'label_message', target: 'message-1' });
 
@@ -1126,6 +1128,51 @@ describe('backend app: the agent', () => {
         { tool: 'send_message', target: 'message-1', conversationId: created.id, outcome: 'refused', undoable: false },
       ],
       commands: commandsBeforeRequest,
+    });
+  });
+  it('after a backend restart on the same database file, still lists every agent action and refusal with its undone state, and still undoes a reversible one', async () => {
+    const { agent, offeredTools } = agentRecordingOfferedTools('Done.');
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('archive'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    };
+    const beforeRestart = createApp(options);
+    await proposeBudgetReview(beforeRestart);
+    await postJson(beforeRestart, '/agent/conversations', { message: 'Tidy up the budget thread' });
+    const runTool = (name: string, input: unknown) => offeredTools.find((tool) => tool.name === name)?.run(input);
+    await runTool('create_task', { title: 'Call the accountant' });
+    await runTool('archive_message', { messageId: 'message-1' });
+    await runTool('send_message', { messageId: 'message-1', body: 'I will review it by Friday.' });
+    const { actions: actionsBeforeRestart } = await getJson<{ actions: { id: string; tool: string }[] }>(
+      beforeRestart,
+      '/agent/actions',
+    );
+    const createTaskActionId = actionsBeforeRestart.find(({ tool }) => tool === 'create_task')?.id;
+    const archiveActionId = actionsBeforeRestart.find(({ tool }) => tool === 'archive_message')?.id;
+    await postJson(beforeRestart, '/agent/actions/undo', { actionId: createTaskActionId });
+
+    const afterRestart = createApp(options);
+    const { actions } = await getJson<{ actions: unknown[] }>(afterRestart, '/agent/actions');
+    const undoAfterRestart = await postJson(afterRestart, '/agent/actions/undo', { actionId: archiveActionId });
+
+    const { commands } = (await (await getCommands(afterRestart, 'ana@example.com')).json()) as {
+      commands: { type: string }[];
+    };
+    expect({
+      actions,
+      undoStatus: undoAfterRestart.status,
+      commandTypes: commands.map(({ type }) => type),
+    }).toMatchObject({
+      actions: [
+        { tool: 'send_message', target: 'message-1', outcome: 'refused', undoable: false },
+        { id: archiveActionId, tool: 'archive_message', target: 'message-1', undoable: true },
+        { id: createTaskActionId, tool: 'create_task', undoable: true, undone: true },
+      ],
+      undoStatus: 200,
+      commandTypes: expect.arrayContaining(['undo-automatic']),
     });
   });
 });
