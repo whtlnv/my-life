@@ -166,6 +166,12 @@ interface AgentTool {
   run: (input: unknown) => Promise<unknown>;
 }
 
+function containsEveryWord(text: string | undefined, query: string): boolean {
+  if (text === undefined) return false;
+  const textWords = text.split(/\W+/);
+  return query.split(/\W+/).every((word) => textWords.includes(word));
+}
+
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
 type DecidedProposal = Parameters<typeof filterCandidates>[0][number];
 
@@ -1099,9 +1105,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     name: 'search_messages',
     run: (input) => {
       const { query } = input as { query: string };
-      const words = query.split(/\W+/);
       const messages = reportedMessages
-        .filter((message) => words.every((word) => message.body?.split(/\W+/).includes(word)))
+        .filter((message) => containsEveryWord(message.body, query))
         .map((message) => {
           const accountEmail = accountEmailOfReported(message.id);
           return {
