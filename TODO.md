@@ -39,7 +39,7 @@
 - [x] `label_message` sends the message's account a label command with the given label name that leaves the message in the inbox
 - [x] The extension applies a label command by adding the named label, creating it if missing, without removing the message from the inbox, then acknowledges the command
 - [x] `create_task` with a source message creates an open task with the given title, linked to that message and its account
-- [ ] `create_task` without a source message creates an open task linked to the agent conversation it came from
+- [x] `create_task` without a source message creates an open task linked to the agent conversation it came from
 - [ ] `mark_vip` puts the contact under VIP in the People view, as a Needs input answer would
 - [ ] `update_contact` saves a note, organization or lists on the contact, as an edit from the People page would ("Luis is my boss" is kept as his note)
 - [ ] `approve_filter_proposal` stores an approval for the proposal, and its account receives the create-filter command

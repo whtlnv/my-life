@@ -1206,7 +1206,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   };
-  const createTaskTool: AgentTool = {
+  const createTaskToolFor = (conversationId: string): AgentTool => ({
     name: 'create_task',
     run: (input) => {
       const { title, sourceMessageId } = input as { title: string; sourceMessageId: string };
@@ -1216,12 +1216,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         type: 'proposal-confirmed',
         taskId: `agent-${sourceMessageId}`,
         at: clock.now().toISOString(),
-        proposal: { title, accountEmail, link: gmailMessageLink({ accountEmail, messageId: sourceMessageId }) },
+        proposal: {
+          title,
+          accountEmail,
+          link:
+            sourceMessageId === undefined
+              ? `#/agent/${conversationId}`
+              : gmailMessageLink({ accountEmail, messageId: sourceMessageId }),
+        },
       });
       return Promise.resolve({});
     },
-  };
-  const askAgent = async (turns: ConversationTurn[]) => {
+  });
+  const askAgent = async (turns: ConversationTurn[], conversationId: string) => {
     const messagesReturnedThisTurn: { id: string }[] = [];
     const citingSearchMessagesTool: AgentTool = {
       name: searchMessagesTool.name,
@@ -1242,7 +1249,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         digestTool,
         archiveMessageTool,
         labelMessageTool,
-        createTaskTool,
+        createTaskToolFor(conversationId),
       ],
     });
     if (!reply) {
@@ -1263,8 +1270,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const turns: ConversationTurn[] = [userTurn, spendCeilingTurn];
       return context.json({ id: '', turns }, 201);
     }
-    const reply = await askAgent([userTurn]);
     const id = `conversation-${conversationStore.count() + 1}`;
+    const reply = await askAgent([userTurn], id);
     const turns: ConversationTurn[] = [userTurn, assistantTurn(reply)];
     conversationStore.save(id, turns);
     return context.json({ id, turns }, 201);
@@ -1274,7 +1281,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { message } = await context.req.json<{ message: string }>();
     const earlierTurns = conversationStore.load(id) ?? [];
     const turns: ConversationTurn[] = [...earlierTurns, { role: 'user', text: message }];
-    const answer = hasReachedDailySpendCeiling() ? spendCeilingTurn : assistantTurn(await askAgent(turns));
+    const answer = hasReachedDailySpendCeiling() ? spendCeilingTurn : assistantTurn(await askAgent(turns, id));
     conversationStore.save(id, [...turns, answer]);
     return context.json({});
   });

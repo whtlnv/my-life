@@ -723,4 +723,31 @@ describe('backend app: the agent', () => {
       }),
     ]);
   });
+  it('create_task without a source message creates an open task linked to the agent conversation it came from', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'I can make a task of that.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    const created = (await (
+      await postJson(app, '/agent/conversations', { message: 'Remind me to call the accountant' })
+    ).json()) as { id: string };
+    const createTaskTool = offeredTools.find((tool) => tool.name === 'create_task');
+
+    await createTaskTool?.run({ title: 'Call the accountant' });
+
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(tasks).toEqual([
+      expect.objectContaining({ title: 'Call the accountant', status: 'open', link: `#/agent/${created.id}` }),
+    ]);
+  });
 });
