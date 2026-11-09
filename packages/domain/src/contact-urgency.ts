@@ -69,25 +69,19 @@ export function contactUrgency(input: ContactUrgencyInput): { urgent: boolean; r
   const { messages, now, settings } = input;
   const hasOwnDeadlineSoon = (message: UrgencyMessage) =>
     !message.onlyMentionsContact && hasDeadlineSoon(message, now, settings.deadlineHours, settings.timeZone);
+  const isUnansweredAsk = (message: UrgencyMessage) =>
+    asksSomething(message) &&
+    waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays);
+  const isWaitingAsVip = (message: UrgencyMessage) =>
+    waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.vipWaitingBusinessDays);
   const reasons: string[] = [];
   if (messages.some(hasOwnDeadlineSoon)) {
     reasons.push('deadline');
   }
-  if (
-    input.vip &&
-    messages.some((message) =>
-      waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.vipWaitingBusinessDays),
-    )
-  ) {
+  if (input.vip && messages.some(isWaitingAsVip)) {
     reasons.push('VIP waiting');
   }
-  if (
-    messages.some(
-      (message) =>
-        asksSomething(message) &&
-        waitingForReplyAtLeast(message, messages, now, settings.timeZone, settings.unansweredAskBusinessDays),
-    )
-  ) {
+  if (messages.some(isUnansweredAsk)) {
     reasons.push('unanswered ask');
   }
   return { urgent: reasons.length > 0, reasons };
