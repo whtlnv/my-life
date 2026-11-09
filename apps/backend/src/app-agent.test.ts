@@ -750,4 +750,28 @@ describe('backend app: the agent', () => {
       expect.objectContaining({ title: 'Call the accountant', status: 'open', link: `#/agent/${created.id}` }),
     ]);
   });
+  it('mark_vip puts the contact under VIP in the People view, as a Needs input answer would', async () => {
+    const offeredTools: { name: string; run: (input: unknown) => Promise<unknown> }[] = [];
+    const agent = {
+      respond: (request?: { tools?: { name: string; run: (input: unknown) => Promise<unknown> }[] }) => {
+        offeredTools.push(...(request?.tools ?? []));
+        return Promise.resolve({ text: 'I can mark Luis as VIP.', costInUsd: 0.01 });
+      },
+    };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+      agent,
+      databasePath: temporaryDatabasePath(),
+    });
+    await proposeBudgetReview(app);
+    await postJson(app, '/agent/conversations', { message: 'Luis is my boss, mark him VIP' });
+    const markVipTool = offeredTools.find((tool) => tool.name === 'mark_vip');
+
+    await markVipTool?.run({ email: 'luis@example.com' });
+
+    const people = await getJson<{ vip: { emails: string[] }[] }>(app, '/people');
+    expect(people.vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+  });
 });

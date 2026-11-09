@@ -1206,6 +1206,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return Promise.resolve({});
     },
   };
+  const markVipTool: AgentTool = {
+    name: 'mark_vip',
+    run: (input) => {
+      contactDetailsStore.saveMark((input as { email: string }).email, 'vip');
+      return Promise.resolve({});
+    },
+  };
   const createTaskToolFor = (conversationId: string): AgentTool => ({
     name: 'create_task',
     run: (input) => {
@@ -1247,6 +1254,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         archiveMessageTool,
         labelMessageTool,
         createTaskToolFor(conversationId),
+        markVipTool,
       ],
     });
     if (!reply) {
