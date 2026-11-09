@@ -48,7 +48,12 @@ const transitionNames: Partial<Record<TaskEvent['type'], string>> = {
   'waiting-on': 'waiting-on set',
 };
 
-export const taskHistory = (events: TaskEvent[], taskId: string): { transition: string; at: string }[] =>
+export interface TaskTransition {
+  transition: string;
+  at: string;
+}
+
+export const taskHistory = (events: TaskEvent[], taskId: string): TaskTransition[] =>
   events
     .filter((event) => event.taskId === taskId)
     .sort((first, second) => Date.parse(first.at) - Date.parse(second.at))
