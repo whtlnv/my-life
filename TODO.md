@@ -8,7 +8,7 @@
 - [x] Opening a conversation returns every turn in the order it was said
 - [x] The list of conversations shows each with its first user message as its title, most recently active first
 - [x] A conversation and its turns are still there after the backend restarts
-- [ ] The agent's requests use the configured agent model, Claude Opus 5.5 when no setting is given
+- [x] The agent's requests use the configured agent model, Claude Opus 5.5 when no setting is given
 - [ ] The agent's requests use the model named by the agent model setting when one is given
 - [ ] The agent's system prompt carries the versioned agent prompt file and the user's profile text
 - [ ] Sending a message to the agent when no Anthropic key is configured answers that the agent is unavailable instead of crashing

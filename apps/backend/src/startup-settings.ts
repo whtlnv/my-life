@@ -17,6 +17,7 @@ export interface StartupSettings {
   triageEscalationModel?: string;
   summaryModel: string;
   prioritizationModel: string;
+  agentModel: string;
   dailySpendCeilingInUsd: number;
   triage: TriageAvailability;
   urgency: UrgencySettings;
@@ -30,6 +31,7 @@ const defaultTriageModel = 'claude-haiku-5-5';
 const defaultTriageEscalationModel = 'claude-opus-5-5';
 const defaultSummaryModel = 'claude-haiku-5-5';
 const defaultPrioritizationModel = 'claude-opus-5-5';
+const defaultAgentModel = 'claude-opus-5-5';
 const noEscalation = 'none';
 const defaultDailySpendCeilingInUsd = 20;
 export const defaultUnansweredAskBusinessDays = 2;
@@ -54,6 +56,7 @@ export function readStartupSettings(
     ...readTriageEscalationModel(environment.MY_LIFE_TRIAGE_ESCALATION_MODEL),
     summaryModel: environment.MY_LIFE_SUMMARY_MODEL ?? defaultSummaryModel,
     prioritizationModel: environment.MY_LIFE_PRIORITIZATION_MODEL ?? defaultPrioritizationModel,
+    agentModel: defaultAgentModel,
     dailySpendCeilingInUsd: parseNumberOrDefault(
       environment.MY_LIFE_DAILY_SPEND_CEILING_USD,
       defaultDailySpendCeilingInUsd,
