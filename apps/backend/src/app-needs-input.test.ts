@@ -6,6 +6,7 @@ import { createEscalatingTriage } from './escalating-triage';
 import {
   postJson,
   postTriageRun,
+  proposeBudgetReview,
   getJson,
   clockAtTenPastThree,
   budgetReviewReport,
@@ -18,8 +19,7 @@ async function needsInputAfterTriagingBudgetReview(
   triage: NonNullable<AppOptions['triage']>,
 ): Promise<{ questions: unknown[] }> {
   const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-  await postJson(app, '/mail-report', budgetReviewReport);
-  await postTriageRun(app);
+  await proposeBudgetReview(app);
   return getJson<{ questions: unknown[] }>(app, '/needs-input');
 }
 
@@ -77,8 +77,7 @@ describe('backend app: GET /needs-input', () => {
       disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
     });
     const beforeRestart = createApp({ ...options, triage });
-    await postJson(beforeRestart, '/mail-report', budgetReviewReport);
-    await postTriageRun(beforeRestart);
+    await proposeBudgetReview(beforeRestart);
 
     const afterRestart = createApp(options);
     const needsInput = await getJson<{ questions: unknown[] }>(afterRestart, '/needs-input');
@@ -127,8 +126,7 @@ describe('backend app: GET /needs-input', () => {
       disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     await postJson(app, '/needs-input/answers', { kind: 'category', messageId: 'message-1', answer: 'action' });
 
@@ -159,8 +157,7 @@ describe('backend app: GET /needs-input', () => {
     };
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
     await postJson(app, '/needs-input/answers', { kind: 'category', messageId: 'message-1', answer: 'action' });
     await postJson(app, '/mail-report', {
       ...budgetReviewReport,
@@ -261,8 +258,7 @@ describe('backend app: GET /needs-input', () => {
       asks: [{ ask: 'Review the budget', due: '2026-11-06' }],
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     await postJson(app, '/needs-input/answers', {
       kind: 'new-sender',
@@ -286,8 +282,7 @@ describe('backend app: GET /needs-input', () => {
       asks: [{ ask: 'Review the budget', due: '2026-11-06' }],
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     await postJson(app, '/needs-input/answers', {
       kind: 'new-sender',
@@ -310,8 +305,7 @@ describe('backend app: GET /needs-input', () => {
       disagreement: { firstCategory: 'action', secondCategory: 'cc-thread' },
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const now = await getJson<{ badgeCount: number }>(app, '/now');
 

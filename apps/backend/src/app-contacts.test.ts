@@ -6,6 +6,7 @@ import { openProposalStore } from './proposal-store';
 import {
   postJson,
   postTriageRun,
+  proposeBudgetReview,
   getContacts,
   byPrimaryEmail,
   getOrganizations,
@@ -185,8 +186,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
       }),
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/contacts/luis@example.com/timeline');
 
@@ -303,8 +303,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
       keepProposalExtracting({ people: [{ name: 'Marta Díaz', email: 'marta@acme.com', role: 'copied' }] }),
     );
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/contacts');
 
@@ -322,8 +321,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   it('lists at GET /contacts no contact for a person in a triaged extraction who has no email', async () => {
     const triage = triageAnswering(keepProposalExtracting({ people: [{ name: 'Marta Díaz', role: 'mentioned' }] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/contacts');
 
@@ -619,8 +617,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     const tomorrowNoon = '2026-11-03T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/people');
 
@@ -637,8 +634,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     const tomorrowNoon = '2026-11-03T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/people');
 
@@ -660,8 +656,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     const nextWeek = '2026-11-10T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [nextWeek] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/people');
 
@@ -678,8 +673,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     const lastSaturdayNoon = '2026-10-31T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [lastSaturdayNoon] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/people');
 
@@ -750,8 +744,7 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
   it('lists at GET /people under Urgent, with the reason "unanswered ask", a non-VIP contact whose ask has waited 2 business days with no reply from the user', async () => {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Review the budget' }] }));
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
-    await postJson(app, '/mail-report', budgetReviewReport);
-    await postTriageRun(app);
+    await proposeBudgetReview(app);
 
     const response = await app.request('/people');
 
