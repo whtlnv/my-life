@@ -1,4 +1,4 @@
-import { createServer } from 'node:http';
+import { createServer, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 type SlackScenario = 'direct-message' | 'mention' | 'thread-reply' | 'rate-limited';
@@ -68,6 +68,11 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
 
 const token = 'xoxp-fake';
 
+function respondRateLimited(response: ServerResponse) {
+  response.writeHead(429, { 'Retry-After': '1' });
+  response.end();
+}
+
 export async function startSlackFakeServer(scenario: SlackScenario) {
   const responseByPath = responseByPathByScenario[scenario];
   let rateLimitPending = scenario === 'rate-limited';
@@ -75,8 +80,7 @@ export async function startSlackFakeServer(scenario: SlackScenario) {
     const url = new URL(request.url ?? '/', 'http://fake');
     if (rateLimitPending) {
       rateLimitPending = false;
-      response.writeHead(429, { 'Retry-After': '1' });
-      response.end();
+      respondRateLimited(response);
       return;
     }
     response.writeHead(200, { 'Content-Type': 'application/json' });
