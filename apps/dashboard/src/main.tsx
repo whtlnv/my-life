@@ -5,13 +5,18 @@ import { AppShell, routes } from './app-shell';
 import { CategoriesPage } from './categories-page';
 import { DashboardApp } from './dashboard-app';
 import { FiltersPage } from './filters-page';
+import { NeedsInputPage } from './needs-input-page';
+import { PeoplePage } from './people-page';
 import { StatementPage } from './statement-page';
 import './styles.css';
 import { TriagePage } from './triage-page';
 
 // One local page (CLAUDE.md locked decision 10): the now view at `/`, the triage queue at `#/triage`, and the
-// Phase 2 pages: categories, filters and the weekly expense statement.
+// Phase 2 pages: categories, filters and the weekly expense statement; Phase 3's People and Needs input. A route may
+// carry a query (`#/people?contact=…`); the page is chosen by the part before it.
 const pages: Record<string, ComponentType> = {
+  [routes.people]: PeoplePage,
+  [routes.needsInput]: NeedsInputPage,
   [routes.triage]: TriagePage,
   [routes.categories]: CategoriesPage,
   [routes.filters]: FiltersPage,
@@ -19,10 +24,11 @@ const pages: Record<string, ComponentType> = {
 };
 
 function App() {
-  const [route, setRoute] = useState(window.location.hash);
+  const [hash, setHash] = useState(window.location.hash);
+  const [route = ''] = hash.split('?');
   useEffect(() => {
     const readRoute = () => {
-      setRoute(window.location.hash);
+      setHash(window.location.hash);
     };
     window.addEventListener('hashchange', readRoute);
     return () => {
