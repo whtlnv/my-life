@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { routes } from './app-shell';
+
 interface NowEvent {
   id: string;
   title: string;
@@ -137,6 +139,27 @@ function TopTasks({ tasks, onDone }: { tasks: RankedTask[]; onDone: (taskId: str
   );
 }
 
+interface WaitingPerson {
+  email: string;
+  displayName: string;
+  waitingSince: string;
+}
+
+function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
+  return (
+    <section aria-label="Waiting on you" className="section">
+      <h2 className="section-title">Waiting on you</h2>
+      <ul className="timeline">
+        {people.map((person) => (
+          <li key={person.email}>
+            <a href={`${routes.people}?contact=${encodeURIComponent(person.email)}`}>{person.displayName}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 const nowRefreshIntervalMilliseconds = 60_000;
 
 const emptyNowResponse: NowResponse = { current: [], next: [], laterToday: [], accounts: [] };
@@ -145,6 +168,7 @@ export function DashboardApp() {
   const [nowResponse, setNowResponse] = useState<NowResponse | null>(null);
   const [backendUnreachable, setBackendUnreachable] = useState(false);
   const [topTasks, setTopTasks] = useState<RankedTask[]>([]);
+  const [waitingPeople, setWaitingPeople] = useState<WaitingPerson[]>([]);
 
   useEffect(() => {
     const loadNow = () =>
@@ -166,6 +190,15 @@ export function DashboardApp() {
       .then((response) => response.json() as Promise<{ tasks: RankedTask[] }>)
       .then(({ tasks }) => {
         setTopTasks(tasks.slice(0, topTaskCount));
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    void fetch('/waiting-on')
+      .then((response) => response.json() as Promise<{ people: WaitingPerson[] }>)
+      .then(({ people }) => {
+        setWaitingPeople([...people].sort((first, second) => first.waitingSince.localeCompare(second.waitingSince)));
       })
       .catch(() => undefined);
   }, []);
@@ -212,6 +245,7 @@ export function DashboardApp() {
             ))}
           </section>
           <TopTasks tasks={topTasks} onDone={markTaskDone} />
+          <WaitingOnYou people={waitingPeople} />
           <section aria-label="Later today" className="section">
             <h2 className="section-title">Later today</h2>
             {loaded && laterToday.length === 0 && <p className="empty">Nothing else today</p>}

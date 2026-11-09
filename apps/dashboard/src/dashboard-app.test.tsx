@@ -2,6 +2,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import { routes } from './app-shell';
 import { DashboardApp } from './dashboard-app';
 
 const answerGetNowWith = (body: unknown) => {
@@ -461,5 +462,45 @@ describe('DashboardApp', () => {
       expect(screen.queryByText('Send the slides')).not.toBeInTheDocument();
     });
     expect(screen.getByText('Approve the budget')).toBeInTheDocument();
+  });
+  it('lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const bodies: Record<string, unknown> = {
+          '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
+          '/tasks': { tasks: [] },
+          '/waiting-on': {
+            people: [
+              { email: 'luis@example.com', displayName: 'Luis Pérez', waitingSince: '2026-11-06T16:00:00.000Z' },
+              { email: 'ana@example.com', displayName: 'Ana Ruiz', waitingSince: '2026-11-03T09:00:00.000Z' },
+              { email: 'marta@example.com', displayName: 'Marta Gil', waitingSince: '2026-11-07T10:00:00.000Z' },
+            ],
+          },
+        };
+        const body = bodies[String(input)];
+        return Promise.resolve(
+          body === undefined
+            ? new Response(null, { status: 404 })
+            : new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }),
+        );
+      }),
+    );
+
+    render(<DashboardApp />);
+
+    const waitingBlock = await screen.findByRole('region', { name: 'Waiting on you' });
+    await within(waitingBlock).findByRole('link', { name: /Ana Ruiz/ });
+    const links = within(waitingBlock).getAllByRole('link');
+    expect(links.map((link) => link.textContent)).toEqual([
+      expect.stringContaining('Ana Ruiz'),
+      expect.stringContaining('Luis Pérez'),
+      expect.stringContaining('Marta Gil'),
+    ]);
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(
+      ['ana@example.com', 'luis@example.com', 'marta@example.com'].map(
+        (email) => `${routes.people}?contact=${encodeURIComponent(email)}`,
+      ),
+    );
   });
 });
