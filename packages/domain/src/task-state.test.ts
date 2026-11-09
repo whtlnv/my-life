@@ -111,4 +111,37 @@ describe('openTasks', () => {
       },
     ]);
   });
+
+  it('shows the waiting-on person a task was given among the open tasks', () => {
+    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-budget';
+    const events = [
+      {
+        type: 'proposal-confirmed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T15:00:00.000Z',
+        proposal: {
+          title: 'Review the Q3 budget spreadsheet and send comments',
+          link,
+          accountEmail: 'ana@example.com',
+        },
+      },
+      {
+        type: 'waiting-on' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T16:00:00.000Z',
+        person: 'luis@example.com',
+      },
+    ];
+
+    expect(openTasks(events)).toEqual([
+      {
+        id: 'task-budget',
+        title: 'Review the Q3 budget spreadsheet and send comments',
+        link,
+        accountEmail: 'ana@example.com',
+        status: 'open',
+        waitingOn: 'luis@example.com',
+      },
+    ]);
+  });
 });

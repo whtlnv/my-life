@@ -10,11 +10,13 @@ interface ProposalEvent {
 export type TaskEvent =
   | ProposalEvent
   | { type: 'done'; taskId: string; at: string }
-  | { type: 'snoozed'; taskId: string; at: string; until: string };
+  | { type: 'snoozed'; taskId: string; at: string; until: string }
+  | { type: 'waiting-on'; taskId: string; at: string; person: string };
 
 export interface Task extends TaskProposal {
   id: string;
   status: 'open';
+  waitingOn?: string;
 }
 
 const hidesTask = (event: TaskEvent, now?: string): boolean => {
@@ -27,6 +29,12 @@ export const openTasks = (events: TaskEvent[], now?: string): Task[] => {
   const hiddenTaskIds = events.filter((event) => hidesTask(event, now)).map((event) => event.taskId);
   return events
     .filter((event): event is ProposalEvent => event.type === 'proposal-confirmed')
-    .map((event): Task => ({ id: event.taskId, ...event.proposal, status: 'open' }))
+    .map((event): Task => {
+      const waitingOn = events.find(
+        (other): other is Extract<TaskEvent, { type: 'waiting-on' }> =>
+          other.type === 'waiting-on' && other.taskId === event.taskId,
+      )?.person;
+      return { id: event.taskId, ...event.proposal, status: 'open', ...(waitingOn && { waitingOn }) };
+    })
     .filter((task) => !hiddenTaskIds.includes(task.id));
 };
