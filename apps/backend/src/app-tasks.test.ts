@@ -28,6 +28,17 @@ const firstOpenTaskId = async (app: App) => {
   return String(open.tasks[0]?.id);
 };
 
+const prioritizationRankingByTitle = (ranksByTitle: Record<string, { rank: number; reason: string }>) => ({
+  prioritize: (context: { tasks: { id: string; title: string }[] }) =>
+    Promise.resolve({
+      ranks: context.tasks.flatMap(({ id, title }) => {
+        const ranked = ranksByTitle[title];
+        return ranked === undefined ? [] : [{ taskId: id, ...ranked }];
+      }),
+      costInUsd: 0.01,
+    }),
+});
+
 const confirmEveryTaskProposal = async (app: App) => {
   const waiting = await getJson<{ proposals: { id: string }[] }>(app, '/task-proposals');
   for (const proposal of waiting.proposals) {
@@ -358,17 +369,10 @@ describe('backend app: task proposals and tasks', () => {
     const triage = triageAnswering(
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
     );
-    const prioritization = {
-      prioritize: (context: { tasks: { id: string; title: string }[] }) =>
-        Promise.resolve({
-          ranks: context.tasks.map(({ id, title }) =>
-            title === 'Send the slides'
-              ? { taskId: id, rank: 1, reason: 'The board meets at four' }
-              : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
-          ),
-          costInUsd: 0.01,
-        }),
-    };
+    const prioritization = prioritizationRankingByTitle({
+      'Send the slides': { rank: 1, reason: 'The board meets at four' },
+      'Approve the budget': { rank: 2, reason: 'Due at the end of the week' },
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await proposeBudgetReview(app);
     await confirmEveryTaskProposal(app);
@@ -386,17 +390,10 @@ describe('backend app: task proposals and tasks', () => {
     const triage = triageAnswering(
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
     );
-    const prioritization = {
-      prioritize: (context: { tasks: { id: string; title: string }[] }) =>
-        Promise.resolve({
-          ranks: context.tasks.map(({ id, title }) =>
-            title === 'Send the slides'
-              ? { taskId: id, rank: 1, reason: 'The board meets at four' }
-              : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
-          ),
-          costInUsd: 0.01,
-        }),
-    };
+    const prioritization = prioritizationRankingByTitle({
+      'Send the slides': { rank: 1, reason: 'The board meets at four' },
+      'Approve the budget': { rank: 2, reason: 'Due at the end of the week' },
+    });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
     await proposeBudgetReview(app);
     await confirmEveryTaskProposal(app);
@@ -424,17 +421,10 @@ describe('backend app: task proposals and tasks', () => {
     const triage = triageAnswering(
       keepProposalExtracting({ asks: [{ ask: 'Approve the budget' }, { ask: 'Send the slides' }] }),
     );
-    const prioritization = {
-      prioritize: (context: { tasks: { id: string; title: string }[] }) =>
-        Promise.resolve({
-          ranks: context.tasks.map(({ id, title }) =>
-            title === 'Send the slides'
-              ? { taskId: id, rank: 1, reason: 'The board meets at four' }
-              : { taskId: id, rank: 2, reason: 'Due at the end of the week' },
-          ),
-          costInUsd: 0.01,
-        }),
-    };
+    const prioritization = prioritizationRankingByTitle({
+      'Send the slides': { rank: 1, reason: 'The board meets at four' },
+      'Approve the budget': { rank: 2, reason: 'Due at the end of the week' },
+    });
     const beforeRestart = createApp({ ...options, triage, prioritization });
     await proposeBudgetReview(beforeRestart);
     await confirmEveryTaskProposal(beforeRestart);
