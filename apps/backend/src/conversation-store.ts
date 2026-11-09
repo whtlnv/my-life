@@ -5,6 +5,10 @@ export interface ConversationTurn {
   text: string;
 }
 
+function parseTurns(json: string): ConversationTurn[] {
+  return JSON.parse(json) as ConversationTurn[];
+}
+
 export function openConversationStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec('CREATE TABLE IF NOT EXISTS agent_conversations (id TEXT PRIMARY KEY, turns TEXT NOT NULL)');
@@ -25,10 +29,10 @@ export function openConversationStore(databasePath: string) {
     },
     load(id: string): ConversationTurn[] | undefined {
       const row = loadConversation.get(id);
-      return row ? (JSON.parse(row.turns) as ConversationTurn[]) : undefined;
+      return row ? parseTurns(row.turns) : undefined;
     },
     listMostRecentlyActiveFirst(): [string, ConversationTurn[]][] {
-      return listConversations.all().map((row) => [row.id, JSON.parse(row.turns) as ConversationTurn[]]);
+      return listConversations.all().map((row) => [row.id, parseTurns(row.turns)]);
     },
     count(): number {
       return countConversations.get()?.count ?? 0;
