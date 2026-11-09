@@ -626,21 +626,25 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
     return (await slackResponse.json()) as SlackPostMessageResult;
   };
+  const recordSlackSend = (send: SlackSendRequest): void => {
+    const sentAt = clock.now();
+    slackSends.push({ ...send, sentAt: sentAt.toISOString() });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: send.workspaceTeamId,
+      conversationId: send.conversationId,
+      senderUserId: '',
+      text: send.text,
+      timestamp: String(sentAt.getTime() / 1000),
+      sentByUser: true,
+    });
+  };
   app.post('/slack-sends', async (context) => {
     const send = await context.req.json<SlackSendRequest>();
     const slackResult = await postSlackMessage(send);
     if (!slackResult.ok) {
       return context.json({ error: slackResult.error }, 502);
     }
-    slackSends.push({ ...send, sentAt: clock.now().toISOString() });
-    slackMessageStore.saveMessage({
-      workspaceTeamId: send.workspaceTeamId,
-      conversationId: send.conversationId,
-      senderUserId: '',
-      text: send.text,
-      timestamp: String(clock.now().getTime() / 1000),
-      sentByUser: true,
-    });
+    recordSlackSend(send);
     return context.json({});
   });
   app.get('/slack-sends', (context) => context.json({ sends: slackSends }));
