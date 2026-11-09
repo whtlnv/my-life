@@ -67,6 +67,10 @@ function runRequestedTools(content: ClaudeAgentContentBlock[], tools: ClaudeAgen
   );
 }
 
+function toToolDefinition({ name, description, inputSchema }: ClaudeAgentTool) {
+  return { name, description, input_schema: inputSchema };
+}
+
 export const agentToolRoundLimitReply = 'I stopped because I used too many tool calls for this turn.';
 
 export function createClaudeAgent({
@@ -90,11 +94,7 @@ export function createClaudeAgent({
       const profile = readFileSync(join(profileDirectory, 'accounts.md'), 'utf8');
       const system = `${prompt}\n\n${profile}`;
       const messages: ClaudeAgentRequest['messages'] = turns.map(({ role, text }) => ({ role, content: text }));
-      const toolDefinitions = turnTools.map(({ name, description, inputSchema }) => ({
-        name,
-        description,
-        input_schema: inputSchema,
-      }));
+      const toolDefinitions = turnTools.map(toToolDefinition);
       let costInUsd = 0;
       const sendMessages = async () => {
         const sent = await createMessage({ model, system, messages, tools: toolDefinitions });
