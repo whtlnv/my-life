@@ -55,6 +55,33 @@ describe('NeedsInputPage', () => {
     ]);
     expect(screen.queryByText(question.senderEmail)).not.toBeInTheDocument();
   });
+  it('gives every answer of a question its own key, even when two answers start with the same letter', async () => {
+    const question = {
+      kind: 'category',
+      messageId: 'message-3',
+      accountEmail: 'franciscoc@psmutuus.com',
+      choices: ['action', 'cc-thread', 'expense', 'system-update', 'sales', 'calendar-drive', 'unknown'],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        if (input === '/needs-input') {
+          return Promise.resolve(Response.json({ questions: [question] }));
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<NeedsInputPage />);
+
+    const list = await screen.findByRole('list', { name: 'Questions' });
+    const keys = within(list)
+      .getAllByRole('button')
+      .map((answer) => answer.getAttribute('aria-keyshortcuts'));
+
+    expect(keys).toHaveLength(question.choices.length);
+    expect(new Set(keys).size).toBe(question.choices.length);
+  });
   it('lists each waiting task proposal with its title and account; pressing the confirm key sends POST /task-proposals/:id/confirmation and removes the proposal', async () => {
     const proposal = {
       id: 'message-7-0',

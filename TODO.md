@@ -105,6 +105,6 @@
 - [x] Opening `#/people?contact=<email>` (the waiting-on link) shows that contact's timeline on the People page
 - [x] `GET /people` gives each contact in every list its organization and the time of its most recent message (`lastMessageAt`), the fields the People page renders
 - [x] `GET /people` gives each contact in the Urgent list its organization and `lastMessageAt` too, alongside its reasons
-- [ ] Each answer on a Needs input question has its own key: no two choices of one question share a key (cc-thread and calendar-drive, system-update and sales today both take one letter)
+- [x] Each answer on a Needs input question has its own key: no two choices of one question share a key (cc-thread and calendar-drive, system-update and sales today both take one letter)
 - [ ] `GET /needs-input` gives each question the context to answer it: the message's subject, summary and sender for a category question, the sender's name and what they asked for a new-sender question; the Needs input page shows it
 - [ ] `scripts/demo.sh` seeds VIP, urgent and ordinary contacts, Needs input questions and ranked tasks; the People, Needs input and _now_ pages are screenshot-verified against it

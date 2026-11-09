@@ -21,9 +21,9 @@ const decisionByKey: Record<string, string> = {
   [rejectKey]: 'rejection',
 };
 
-// One key per answer: the answer's first letter.
-function keyOf(choice: string): string {
-  return choice.charAt(0);
+// One key per answer: its position, counted from 1.
+function keyOf(position: number): string {
+  return String(position + 1);
 }
 
 function postAnswer(question: Question, choice: string): void {
@@ -62,7 +62,7 @@ export function NeedsInputPage() {
       setQuestions((current) => current.filter((candidate) => candidate !== question));
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      const choice = question.choices.find((candidate) => keyOf(candidate) === event.key);
+      const choice = question.choices.find((_candidate, position) => keyOf(position) === event.key);
       if (choice !== undefined) answer(choice);
     };
     document.addEventListener('keydown', onKeyDown);
@@ -100,9 +100,9 @@ export function NeedsInputPage() {
         {questions.map((question) => (
           <li key={question.messageId}>
             <span>{question.senderEmail}</span>
-            {question.choices.map((choice) => (
-              <button key={choice} type="button" aria-keyshortcuts={keyOf(choice)}>
-                <kbd>{keyOf(choice)}</kbd> {choice}
+            {question.choices.map((choice, position) => (
+              <button key={choice} type="button" aria-keyshortcuts={keyOf(position)}>
+                <kbd>{keyOf(position)}</kbd> {choice}
               </button>
             ))}
           </li>
