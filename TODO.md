@@ -32,7 +32,7 @@
 - [x] A reply that cites a message or event a tool returned in that turn shows the cited item with its link
 - [x] A turn stopped at the tool-round limit still reports the cost of every model call it made, so it is logged against the daily spend
 - [x] A reply that cites a message or event no tool returned in that turn shows the citation as unverified, without a link
-- [ ] An agent action outside the allowed set (anything that sends or deletes) is refused, recorded as refused, and changes nothing
+- [x] An agent action outside the allowed set (anything that sends or deletes) is refused, recorded as refused, and changes nothing
 - [ ] An allowed agent action is carried out and recorded with the conversation it came from and the time
 - [ ] `archive_message` stores an archive verdict for the message attributed to the agent, and the message's account receives an archive command
 - [ ] `archive_message` on a message id the store does not know returns an error to the model and records nothing
