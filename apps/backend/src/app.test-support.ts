@@ -220,6 +220,21 @@ export const budgetReviewReportWithSecondMessageFromMarta = {
   ],
 };
 
+// Luis's budget review as `message-received`, and a message Ana sent him as `message-sent`.
+export const budgetReviewReportWithReceivedAndSentMessage = {
+  ...budgetReviewReport,
+  messages: [
+    { ...budgetReviewReport.messages[0], id: 'message-received', sentByUser: false },
+    {
+      ...budgetReviewReport.messages[0],
+      id: 'message-sent',
+      from: 'Ana <ana@example.com>',
+      to: 'luis@example.com',
+      sentByUser: true,
+    },
+  ],
+};
+
 export const keepProposalExtracting = (extraction: Record<string, unknown> = {}) => ({
   action: 'keep',
   category: 'unknown',

@@ -19,6 +19,7 @@ import {
   temporaryDatabasePath,
   clockAtTenPastThree,
   budgetReviewReport,
+  budgetReviewReportWithReceivedAndSentMessage,
   triageAnswering,
   triageAnsweringInOrder,
   triageRecordingAskedMessageIds,
@@ -123,20 +124,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   it('keeps for each message reported at POST /mail-report whether the user sent it, read back from the same database file after a backend restart', async () => {
     const databasePath = temporaryDatabasePath();
     const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(beforeRestart, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-received', sentByUser: false },
-        {
-          ...budgetReview,
-          id: 'message-sent',
-          from: 'Ana <ana@example.com>',
-          to: 'luis@example.com',
-          sentByUser: true,
-        },
-      ],
-    });
+    await postJson(beforeRestart, '/mail-report', budgetReviewReportWithReceivedAndSentMessage);
 
     const afterRestart = openReportedMessageStore(databasePath);
 
@@ -214,20 +202,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const askedMessageIds: string[] = [];
     const triage = triageRecordingAskedMessageIds(askedMessageIds);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-received', sentByUser: false },
-        {
-          ...budgetReview,
-          id: 'message-sent',
-          from: 'Ana <ana@example.com>',
-          to: 'luis@example.com',
-          sentByUser: true,
-        },
-      ],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithReceivedAndSentMessage);
 
     await postTriageRun(app);
 
@@ -237,20 +212,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
   it('does not count in GET /triage-queue remaining a message the user sent, which is never triaged', async () => {
     const triage = triageRecordingAskedMessageIds([]);
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
-    const [budgetReview] = budgetReviewReport.messages;
-    await postJson(app, '/mail-report', {
-      ...budgetReviewReport,
-      messages: [
-        { ...budgetReview, id: 'message-received', sentByUser: false },
-        {
-          ...budgetReview,
-          id: 'message-sent',
-          from: 'Ana <ana@example.com>',
-          to: 'luis@example.com',
-          sentByUser: true,
-        },
-      ],
-    });
+    await postJson(app, '/mail-report', budgetReviewReportWithReceivedAndSentMessage);
     await postTriageRun(app);
 
     const queue = await app.request('/triage-queue');
