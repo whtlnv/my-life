@@ -7,12 +7,17 @@ type PollSlackWorkspaceInput = {
   apiUrl: string;
   workspace: SlackWorkspace;
   store: SlackMessageStore;
+  wait?: (milliseconds: number) => Promise<void>;
 };
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
   const response = await input.fetch(`${input.apiUrl}${path}`, {
     headers: { Authorization: `Bearer ${input.workspace.userToken}` },
   });
+  if (response.status === 429) {
+    await input.wait?.(Number(response.headers.get('Retry-After')) * 1000);
+    return callSlack<Response>(input, path);
+  }
   return (await response.json()) as Response;
 }
 

@@ -606,4 +606,36 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('when Slack answers 429 with Retry-After, the poll waits that long and retries, and the message is stored', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const store = openSlackMessageStore(':memory:');
+      let historyRateLimitPending = true;
+      const fetchRateLimitingTheFirstHistoryRequest: typeof fetch = async (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        if (url.pathname === '/conversations.history' && historyRateLimitPending) {
+          historyRateLimitPending = false;
+          return new Response(null, { status: 429, headers: { 'Retry-After': '2' } });
+        }
+        return fetch(request, init);
+      };
+      const waitedMilliseconds: number[] = [];
+
+      await pollSlackWorkspace({
+        fetch: fetchRateLimitingTheFirstHistoryRequest,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store,
+        wait: async (milliseconds: number) => {
+          waitedMilliseconds.push(milliseconds);
+        },
+      });
+
+      expect(waitedMilliseconds).toEqual([2000]);
+      expect(store.listMessages().map((message) => message.text)).toContain(directMessageText);
+    } finally {
+      await slack.close();
+    }
+  });
 });
