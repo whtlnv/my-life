@@ -50,7 +50,7 @@ async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
   }
 }
 
-async function searchOwnMessages(input: PollSlackWorkspaceInput): Promise<void> {
+async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promise<void> {
   const { user_id: ownSlackUserId } = await callSlack<{ user_id: string }>(input, '/auth.test');
   const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
   const { messages } = await callSlack<{
@@ -70,5 +70,5 @@ async function searchOwnMessages(input: PollSlackWorkspaceInput): Promise<void> 
 export async function pollSlackWorkspace(input: PollSlackWorkspaceInput): Promise<void> {
   await pollDirectMessages(input);
   await pollMentions(input);
-  await searchOwnMessages(input);
+  await pollThreadsTheUserWroteIn(input);
 }
