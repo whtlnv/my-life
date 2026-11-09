@@ -1209,21 +1209,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const createTaskToolFor = (conversationId: string): AgentTool => ({
     name: 'create_task',
     run: (input) => {
-      const { title, sourceMessageId } = input as { title: string; sourceMessageId: string };
+      const { title, sourceMessageId } = input as { title: string; sourceMessageId?: string };
       const source = reportedMessageStore.loadAll().find((message) => message.messageId === sourceMessageId);
       const accountEmail = String(source?.accountEmail);
+      const link =
+        sourceMessageId === undefined
+          ? `#/agent/${conversationId}`
+          : gmailMessageLink({ accountEmail, messageId: sourceMessageId });
       taskEventStore.save({
         type: 'proposal-confirmed',
         taskId: `agent-${sourceMessageId}`,
         at: clock.now().toISOString(),
-        proposal: {
-          title,
-          accountEmail,
-          link:
-            sourceMessageId === undefined
-              ? `#/agent/${conversationId}`
-              : gmailMessageLink({ accountEmail, messageId: sourceMessageId }),
-        },
+        proposal: { title, accountEmail, link },
       });
       return Promise.resolve({});
     },
