@@ -16,6 +16,13 @@ interface Turn {
   citations?: Citation[];
 }
 
+function CitationView({ citation }: { citation: Citation }) {
+  if (citation.verified === false) {
+    return <span>{unverifiedCitationText}</span>;
+  }
+  return <a href={citation.link}>{citation.subject}</a>;
+}
+
 async function askAgent(message: string): Promise<Turn[]> {
   const response = await fetch('/agent/conversations', {
     method: 'POST',
@@ -43,15 +50,9 @@ export function AgentPage() {
         {turns.map((turn, index) => (
           <li key={index}>
             {turn.text}
-            {turn.citations?.map((citation) =>
-              citation.verified === false ? (
-                <span key={citation.id}>{unverifiedCitationText}</span>
-              ) : (
-                <a key={citation.id} href={citation.link}>
-                  {citation.subject}
-                </a>
-              ),
-            )}
+            {turn.citations?.map((citation) => (
+              <CitationView key={citation.id} citation={citation} />
+            ))}
           </li>
         ))}
       </ol>
