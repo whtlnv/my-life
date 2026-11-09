@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 12:47 · `apps/integration/src/slack-fake-server.test.ts::confirming reply at POST /slack-verdicts on a polled Slack DM posts nothing to Slack`
+- Behavior: Confirming `reply` on a Slack item posts nothing to Slack
+- Predicted: passes on first run, because no backend code calls `chat.postMessage` and `POST /slack-verdicts` only stores the verdict
+- Actual: passes (1 passed)
+- Type: passed unexpectedly (predicted vacuous pass: the item is a guardrail the code already satisfies)
+- Resolution: kept as a regression pin against the Slack fake's `postedMessages()`, since forcing a failure would invent behavior the item doesn't state; there is nothing for /green to implement, and it goes red only if a future reply path posts without an explicit send.
+
 ## 2026-11-09 10:40 · `apps/integration/src/slack-fake-server.test.ts::a poll searches Slack for the messages written by the user id that the workspace's auth.test names`
 - Behavior: a poll searches Slack for `from:<@id>`, using the id that `auth.test` returns
 - Predicted: AssertionError, recorded search queries `['']` do not contain `from:<@U0000>`

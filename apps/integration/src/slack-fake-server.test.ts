@@ -758,4 +758,37 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+
+  it('confirming reply at POST /slack-verdicts on a polled Slack DM posts nothing to Slack', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+      await backend.request('/slack-poll', { method: 'POST' });
+      const { slackItems } = (await (await backend.request('/triage-queue')).json()) as {
+        slackItems: { workspaceTeamId: string; conversationId: string; timestamp: string }[];
+      };
+      const [item] = slackItems;
+
+      const response = await backend.request('/slack-verdicts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspaceTeamId: item?.workspaceTeamId,
+          conversationId: item?.conversationId,
+          timestamp: item?.timestamp,
+          decision: 'reply',
+        }),
+      });
+
+      expect(slackItems).toHaveLength(1);
+      expect(response.status).toBe(200);
+      expect(slack.postedMessages()).toEqual([]);
+    } finally {
+      await slack.close();
+    }
+  });
 });
