@@ -157,6 +157,21 @@ describe('createApp chat messages', () => {
     expect(messages).toEqual([]);
   });
 
+  it('refuses at POST /chat-sends, with 400, a Telegram send while Telegram is off, and stores nothing', async () => {
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const response = await postJson(app, '/chat-sends', {
+      channel: 'telegram',
+      chatId: '7001',
+      text: 'Thursday works, same time',
+    });
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(response.status).toBe(400);
+    expect(messages).toEqual([]);
+  });
+
   it('lists at GET /triage-queue a Telegram chat whose newest message is from someone else and has no verdict as a chat item with its chat title, sender and time', async () => {
     const databasePath = temporaryDatabasePath();
     const store = openChatMessageStore(databasePath);
