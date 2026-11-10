@@ -781,6 +781,11 @@ function postChatVerdict(item: ChatTriageItem, key: string) {
   return postJson('/chat-verdicts', { channel, chatId, messageId, decision });
 }
 
+function postChatSend(item: ChatTriageItem, text: string) {
+  const { channel, chatId } = item;
+  return postJson('/chat-sends', { channel, chatId, text });
+}
+
 function ChatCard({ item }: { item: ChatTriageItem }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
@@ -817,7 +822,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
             type="button"
             className="button button-primary"
             onClick={() => {
-              void postJson('/chat-sends', { channel: item.channel, chatId: item.chatId, text: reply });
+              void postChatSend(item, reply);
             }}
           >
             Send
