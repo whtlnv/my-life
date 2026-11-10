@@ -48,7 +48,7 @@ export function openChatMessageStore(databasePath: string) {
   const selectMessages = database.prepare<[], ChatMessageRow>(
     `SELECT channel, chat_id AS chatId, chat_title AS chatTitle, message_id AS messageId,
       sender_id AS senderId, sender_name AS senderName, text, time, sent_by_user AS sentByUser
-      FROM chat_messages ORDER BY rowid`,
+      FROM chat_messages ORDER BY time, rowid`,
   );
   return {
     saveMessage(message: ChatMessage): void {

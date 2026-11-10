@@ -41,6 +41,16 @@ describe('chat message store', () => {
     });
   });
 
+  it('lists messages oldest first even when they were saved newest first, as gramjs hands them over', () => {
+    const store = openChatMessageStore(':memory:');
+    const newer = { ...telegramMessageFromLuis, messageId: '1018', time: '2026-11-09T17:00:00.000Z' };
+
+    store.saveMessage(newer);
+    store.saveMessage(telegramMessageFromLuis);
+
+    expect(store.listMessages().map(({ messageId }) => messageId)).toEqual(['1017', '1018']);
+  });
+
   it('lists a message saved twice with the same channel, chat id and message id once', () => {
     withTemporaryDatabase((databasePath) => {
       const store = openChatMessageStore(databasePath);
