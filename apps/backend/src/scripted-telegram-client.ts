@@ -24,8 +24,12 @@ export function createScriptedTelegramClient(script: TelegramScript): ScriptedTe
   const handlers: MessageHandler[] = [];
   let sendCount = 0;
   return {
-    onMessage: (handler) => handlers.push(handler),
-    receive: (message) => handlers.forEach((handler) => handler(message)),
+    onMessage: (handler) => {
+      handlers.push(handler);
+    },
+    receive: (message) => {
+      for (const handler of handlers) handler(message);
+    },
     listDialogs: () => Promise.resolve(script.dialogs),
     sendText: (chatId, text) => {
       if (!script.dialogs.some((dialog) => dialog.chatId === chatId)) {
