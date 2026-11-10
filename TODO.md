@@ -66,7 +66,7 @@
 - [x] The header's Telegram chip shows connected with the time of the last message received
 - [x] The header's Telegram chip shows connected with the time of the last successful start when no message has arrived since
 - [x] The header's Telegram chip shows stale when the client has not been connected for more than twice its expected interval
-- [ ] The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent (tested over a stub of the gramjs client's methods, never the network)
+- [x] The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent (tested over a stub of the gramjs client's methods, never the network)
 - [ ] The gramjs-backed adapter's own account is the id and full name gramjs's `getMe` reports
 - [ ] The gramjs-backed adapter lists each dialog with its unread count and its recent messages mapped by the Telegram mapping, dropping what the mapping drops
 - [ ] The gramjs-backed adapter hands each new message gramjs delivers to the `onMessage` handler, mapped, and drops what the mapping drops
