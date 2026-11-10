@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 17:34 · `apps/backend/src/app-slack.test.ts::lists at GET /triage-queue one Slack item for each of two conversations with messages from someone else, each carrying its own newest message`
+- Behavior: Two Slack conversations with messages from someone else show one triage card each
+- Predicted: passes on first run — `newestMessagePerSlackConversation` (apps/backend/src/app.ts:1140) already keys by workspace and conversation id
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: The previous cycle's per-conversation grouping already delivers this behavior. The test is not vacuous: keying by workspace alone would fail it. It was kept as a pin, not rewritten, because the only way to make it fail would be to assert something the item does not ask for.
+
 ## 2026-11-10 17:16 · `apps/backend/src/slack-poll.test.ts::asks users.info once for each of two senders who wrote in one poll`
 - Behavior: Messages from two different users in one poll cause one `users.info` call each
 - Predicted: passes on first run (`displayNamesByUserId` is a Map keyed by user id, so distinct senders already get one lookup each)

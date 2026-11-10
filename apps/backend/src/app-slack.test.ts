@@ -131,6 +131,41 @@ describe('createApp Slack messages', () => {
     ]);
   });
 
+  it('lists at GET /triage-queue one Slack item for each of two conversations with messages from someone else, each carrying its own newest message', async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openSlackMessageStore(databasePath);
+    for (const [conversationId, timestamp, text] of [
+      ['D0001', '1762700000.000100', 'Hi there.'],
+      ['D0002', '1762700000.000200', 'Is the invoice ready?'],
+      ['D0001', '1762700000.000300', 'Can you look at the contract today?'],
+      ['D0002', '1762700000.000150', 'Morning.'],
+    ]) {
+      store.saveMessage({
+        workspaceTeamId: 'T0001',
+        conversationId: conversationId!,
+        senderUserId: conversationId === 'D0001' ? 'U0001' : 'U0002',
+        senderName: conversationId === 'D0001' ? 'Ana' : 'Bruno',
+        text: text!,
+        timestamp: timestamp!,
+      });
+    }
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { slackItems } = await getJson<{
+      slackItems: { conversationId: string; timestamp: string; text: string }[];
+    }>(app, '/triage-queue');
+
+    expect(
+      slackItems.map(({ conversationId, timestamp, text }) => ({ conversationId, timestamp, text })),
+    ).toEqual(
+      expect.arrayContaining([
+        { conversationId: 'D0001', timestamp: '1762700000.000300', text: 'Can you look at the contract today?' },
+        { conversationId: 'D0002', timestamp: '1762700000.000200', text: 'Is the invoice ready?' },
+      ]),
+    );
+    expect(slackItems).toHaveLength(2);
+  });
+
   it('leaves out of GET /triage-queue a Slack message the user sent', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({
