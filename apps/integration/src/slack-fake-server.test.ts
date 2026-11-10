@@ -25,7 +25,7 @@ describe('Slack fake server', () => {
     const slack = await startSlackFakeServer('direct-message');
     try {
       const list = (await (
-        await fetch(`${slack.url}/conversations.list?types=im`, { headers: { Authorization: 'Bearer xoxp-fake' } })
+        await fetch(`${slack.url}/conversations.list?types=im`, { headers: { Authorization: `Bearer ${slack.token}` } })
       ).json()) as { ok: boolean; channels: { id: string; is_im: boolean }[] };
 
       expect(list.ok).toBe(true);
@@ -35,7 +35,7 @@ describe('Slack fake server', () => {
 
       const history = (await (
         await fetch(`${slack.url}/conversations.history?channel=${conversation?.id ?? ''}`, {
-          headers: { Authorization: 'Bearer xoxp-fake' },
+          headers: { Authorization: `Bearer ${slack.token}` },
         })
       ).json()) as { ok: boolean; messages: { text: string; user: string; ts: string }[] };
 
@@ -66,7 +66,7 @@ describe('Slack fake server', () => {
     try {
       const search = (await (
         await fetch(`${slack.url}/search.messages?query=${encodeURIComponent(`<@${ownSlackUserId}>`)}`, {
-          headers: { Authorization: 'Bearer xoxp-fake' },
+          headers: { Authorization: `Bearer ${slack.token}` },
         })
       ).json()) as {
         ok: boolean;
@@ -89,7 +89,7 @@ describe('Slack fake server', () => {
     try {
       const replies = (await (
         await fetch(`${slack.url}/conversations.replies?channel=C0002&ts=1762700200.000300`, {
-          headers: { Authorization: 'Bearer xoxp-fake' },
+          headers: { Authorization: `Bearer ${slack.token}` },
         })
       ).json()) as { ok: boolean; messages: { text: string; user: string; ts: string; thread_ts: string }[] };
 
@@ -155,7 +155,7 @@ describe('Slack fake server', () => {
       const displayNames: string[] = [];
       for (const userId of [ownSlackUserId, 'U0003']) {
         const info = (await (
-          await fetch(`${slack.url}/users.info?user=${userId}`, { headers: { Authorization: 'Bearer xoxp-fake' } })
+          await fetch(`${slack.url}/users.info?user=${userId}`, { headers: { Authorization: `Bearer ${slack.token}` } })
         ).json()) as { ok: boolean; user: { id: string; profile: { display_name: string } } };
 
         expect(info.ok).toBe(true);
@@ -890,7 +890,9 @@ describe('Slack fake server', () => {
       });
       const { tasks } = (await (await backend.request('/tasks')).json()) as { tasks: { link: string }[] };
 
-      expect(tasks.map((task) => task.link)).toEqual(['https://acme-studio.slack.com/archives/D0001/p1762700000000100']);
+      expect(tasks.map((task) => task.link)).toEqual([
+        'https://acme-studio.slack.com/archives/D0001/p1762700000000100',
+      ]);
     } finally {
       await slack.close();
     }
