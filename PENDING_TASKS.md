@@ -28,10 +28,10 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 - [x] In each app: **Reinstall to Workspace** (the scopes changed), then copy OAuth & Permissions → **User OAuth Token** (`xoxp-…`) into `.env` as `MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN` / `_2_`.
 - [x] `profile/accounts.md` names the workspaces: `T027T2P54BW` is PS Mutuus, `T099H5TTQE8` is Erlia.
 
-## 6. Telegram (Phase 5)
+## 6. Telegram (Phase 6)
 
-- [ ] `api_id` and `api_hash` from https://my.telegram.org under your account → `.env`.
-- [ ] One interactive phone login when Phase 5 starts (Claude runs the script, you type the code).
+- [x] `api_id` and `api_hash` from https://my.telegram.org under your account → `.env`.
+- [ ] One interactive phone login when Phase 6 starts (Claude runs the script, you type the code).
 
 ## 7. Decisions and confirmations (each has a default so nothing waits)
 

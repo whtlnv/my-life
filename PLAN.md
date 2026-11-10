@@ -25,7 +25,7 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 Read `CLAUDE.md` first. **Phases 2b through 5 are delivered** (`DONE.md`). Phase 5 added Slack: `apps/backend/src/slack-poll.ts` (DMs and group DMs by `conversations.history` with `oldest`, mentions by `search.messages` for `<@own id>`, replies in threads the user wrote in by `conversations.replies`; the own id, workspace name and URL from `auth.test`), `slack-message-store.ts`, `POST /slack-poll` on `main.ts`'s timer, `POST /slack-sends` (refuses empty text and unknown workspaces; stores the sent reply under Slack's `ts`), and the Slack fake in `apps/integration/src/slack-fake-server.ts`.
 
-**Next:** Phase 6 (WhatsApp and Telegram) waits on `PENDING_TASKS.md` § 6 (Telegram `api_id` and `api_hash`). Until then: the Phase 5 walk-through against the real workspaces (the tokens are in `.env`; the user approves reading them first), and the 2026-11-09 entries in `BACKLOG.md`.
+**Next:** Phase 6 (WhatsApp and Telegram); the Telegram `api_id` and `api_hash` are in `.env` (2026-11-09), the phone login is done with the user during the phase. Also open: the Phase 5 walk-through against the real workspaces (the tokens are in `.env`; the user approves reading them first), and the 2026-11-09 entries in `BACKLOG.md`.
 
 **Waiting on the user**, not built:
 
