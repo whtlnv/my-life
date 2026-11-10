@@ -21,7 +21,9 @@ interface ShellStatus {
   sources: SourceStatus[];
   slackWorkspaces?: SlackWorkspaceStatus[];
   telegram?:
-    { loggedIn: false } | { loggedIn: true; lastMessageAt: string } | { loggedIn: true; lastStartedAt: string };
+    | { loggedIn: false }
+    | { loggedIn: true; lastMessageAt: string; stale?: boolean }
+    | { loggedIn: true; lastStartedAt: string; stale?: boolean };
 }
 
 interface SlackWorkspaceStatus {
@@ -122,11 +124,15 @@ function TelegramNotLoggedInChip() {
   );
 }
 
-function TelegramConnectedChip({ lastActivityAt }: { lastActivityAt: string }) {
+function TelegramConnectedChip({ lastActivityAt, stale }: { lastActivityAt: string; stale?: boolean }) {
   return (
-    <li className="chip chip-source is-fresh" title={`Telegram · last message ${timeInBusinessZone(lastActivityAt)}`}>
+    <li
+      className={stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
+      title={`Telegram · last message ${timeInBusinessZone(lastActivityAt)}`}
+    >
       <span className="dot" aria-hidden="true" />
       <span className="chip-account">telegram</span>
+      {stale && <span className="chip-detail is-stale">stale</span>}
     </li>
   );
 }
@@ -135,6 +141,7 @@ function TelegramChip({ telegram }: { telegram: NonNullable<ShellStatus['telegra
   return telegram.loggedIn ? (
     <TelegramConnectedChip
       lastActivityAt={'lastMessageAt' in telegram ? telegram.lastMessageAt : telegram.lastStartedAt}
+      stale={telegram.stale === true}
     />
   ) : (
     <TelegramNotLoggedInChip />

@@ -203,4 +203,20 @@ describe('AppShell', () => {
     expect(item).toHaveAttribute('title', expect.stringContaining(timeInBusinessZone(lastStartedAt)));
     expect(item).not.toHaveTextContent(/not logged in|stale/i);
   });
+
+  it('shows a stale Telegram source chip when the client has not been connected for more than twice its expected interval', async () => {
+    const lastMessageAt = '2026-11-10T03:00:00.000Z';
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      telegram: { loggedIn: true, lastMessageAt, stale: true },
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText(/^telegram$/i)).closest('li');
+    expect(item).not.toBeNull();
+    expect(item).toHaveClass('is-stale');
+    expect(item).toHaveTextContent(/stale/i);
+  });
 });
