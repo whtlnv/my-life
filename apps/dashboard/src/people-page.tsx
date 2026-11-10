@@ -217,6 +217,10 @@ const vipMarkPath = (person: PersonRow) => {
   if (telegramHandle) {
     return `/telegram-contacts/${telegramHandle.userId}/marks/vip`;
   }
+  const [slackHandle] = person.slackHandles ?? [];
+  if (slackHandle) {
+    return `/slack-contacts/${slackHandle.workspaceTeamId}/${slackHandle.userId}/marks/vip`;
+  }
   return `/contacts/${encodeURIComponent(person.emails[0] ?? '')}/marks/vip`;
 };
 

@@ -277,6 +277,50 @@ describe('PeoplePage', () => {
     expect(within(vipList).queryByText('Valeria Núñez')).not.toBeInTheDocument();
   });
 
+  it('moves a Slack contact into the VIP list when the user marks it VIP through PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip, and out again when the user removes the mark through DELETE', async () => {
+    const leo = {
+      channel: 'slack',
+      displayName: 'Leo Ramírez',
+      slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0042' }],
+      lastMessageAt: '2026-11-09T16:00:00.000Z',
+    };
+    const markPath = '/slack-contacts/T0001/U0042/marks/vip';
+    let leoIsVip = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string, init?: RequestInit) => {
+        const path = input;
+        const method = init?.method ?? 'GET';
+        if (path === markPath && (method === 'PUT' || method === 'DELETE')) {
+          leoIsVip = method === 'PUT';
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        if (path === '/people' && method === 'GET') {
+          const lists = leoIsVip
+            ? { vip: [leo], urgent: [], everyoneElse: [] }
+            : { vip: [], urgent: [], everyoneElse: [leo] };
+          return Promise.resolve(
+            new Response(JSON.stringify(lists), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<PeoplePage />);
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    await userEvent.click(await within(everyoneElseList).findByRole('button', { name: /mark.*vip/i }));
+
+    const vipList = screen.getByRole('list', { name: 'VIP' });
+    expect(await within(vipList).findByText('Leo Ramírez')).toBeInTheDocument();
+    expect(within(everyoneElseList).queryByText('Leo Ramírez')).not.toBeInTheDocument();
+
+    await userEvent.click(within(vipList).getByRole('button', { name: /remove.*vip/i }));
+
+    expect(await within(everyoneElseList).findByText('Leo Ramírez')).toBeInTheDocument();
+    expect(within(vipList).queryByText('Leo Ramírez')).not.toBeInTheDocument();
+  });
+
   it("shows the timeline of the contact named in the route's query when the page opens at #/people?contact=<email>", async () => {
     const people = {
       vip: [],
