@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { createApp } from './app';
 import { budgetReviewReport, getJson, postJson, temporaryDatabasePath } from './app.test-support';
@@ -411,5 +414,101 @@ describe('createApp Slack messages', () => {
     const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
 
     expect(urgent).toEqual([]);
+  });
+});
+
+// A local Slack that answers auth.test with the user's own id and chat.postMessage with the given answer.
+async function localSlackAnsweringPostMessage(answer: unknown): Promise<string> {
+  const server: Server = createServer((request, response) => {
+    request.resume();
+    request.on('end', () => {
+      const body = request.url === '/auth.test' ? { ok: true, user_id: 'UOWN' } : answer;
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(JSON.stringify(body));
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  onTestFinished(
+    () =>
+      new Promise<void>((resolve) =>
+        server.close(() => {
+          resolve();
+        }),
+      ),
+  );
+  return `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`;
+}
+
+describe('createApp Slack sends', () => {
+  it('refuses at POST /slack-sends, with 400, a send with empty text', async () => {
+    const app = createApp({ allowedEmails: [], slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }] });
+
+    const response = await postJson(app, '/slack-sends', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      text: '',
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('refuses at POST /slack-sends, with 400, a send to a workspace that is not configured', async () => {
+    const app = createApp({ allowedEmails: [], slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }] });
+
+    const response = await postJson(app, '/slack-sends', {
+      workspaceTeamId: 'T0009',
+      conversationId: 'D0001',
+      text: 'Hi',
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('answers POST /slack-sends with 502 and the Slack error when Slack rejects the send, and records no sent message', async () => {
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      slackApiUrl: await localSlackAnsweringPostMessage({ ok: false, error: 'channel_not_found' }),
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+    });
+
+    const response = await postJson(app, '/slack-sends', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      text: 'Hi',
+    });
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'channel_not_found' });
+    expect(openSlackMessageStore(databasePath).listMessages()).toEqual([]);
+  });
+
+  it('stores a send Slack accepts at POST /slack-sends as sent by the user, under the channel and ts chat.postMessage returns', async () => {
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      slackApiUrl: await localSlackAnsweringPostMessage({ ok: true, channel: 'D0001', ts: '1762700900.000900' }),
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+    });
+
+    const response = await postJson(app, '/slack-sends', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      text: 'On it.',
+    });
+
+    expect(response.status).toBe(200);
+    expect(openSlackMessageStore(databasePath).listMessages()).toEqual([
+      expect.objectContaining({
+        workspaceTeamId: 'T0001',
+        conversationId: 'D0001',
+        senderUserId: 'UOWN',
+        text: 'On it.',
+        timestamp: '1762700900.000900',
+        sentByUser: true,
+      }),
+    ]);
   });
 });
