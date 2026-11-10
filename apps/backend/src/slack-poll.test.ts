@@ -143,6 +143,18 @@ describe('pollSlackWorkspace', () => {
     ]);
   });
 
+  it('asks every search for the newest messages first, not the most relevant', async () => {
+    const slack = scriptedSlack();
+
+    await pollWith(slack);
+
+    const searchRequests = slack.requests.filter((url) => url.pathname === '/search.messages');
+    expect(searchRequests).toHaveLength(2);
+    for (const url of searchRequests) {
+      expect([url.searchParams.get('sort'), url.searchParams.get('sort_dir')]).toEqual(['timestamp', 'desc']);
+    }
+  });
+
   it('stores a mention match the user sent themselves as sent by the user', async () => {
     const slack = scriptedSlack({
       '/search.messages': (url) =>

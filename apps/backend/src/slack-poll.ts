@@ -43,7 +43,7 @@ interface SlackMessage {
 async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string): Promise<Match[]> {
   const { messages } = await callSlack<{ messages: { matches: Match[] } }>(
     input,
-    `/search.messages?query=${encodeURIComponent(query)}`,
+    `/search.messages?query=${encodeURIComponent(query)}&sort=timestamp&sort_dir=desc`,
   );
   return messages.matches;
 }
