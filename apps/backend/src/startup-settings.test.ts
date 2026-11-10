@@ -295,4 +295,42 @@ describe('startup settings', () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
+
+  it('turns Telegram off when the API hash is missing, even with the API id and a session file', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'my-life-'));
+    const sessionPath = join(folder, 'telegram-session');
+    writeFileSync(sessionPath, 'saved-session');
+    try {
+      const settings = readStartupSettings(
+        {
+          MY_LIFE_TELEGRAM_API_ID: '12345',
+          MY_LIFE_TELEGRAM_SESSION_PATH: sessionPath,
+        },
+        '/Users/ana',
+      );
+
+      expect(settings.telegram.enabled).toBe(false);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  it('turns Telegram off when the API id is missing, even with the API hash and a session file', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'my-life-'));
+    const sessionPath = join(folder, 'telegram-session');
+    writeFileSync(sessionPath, 'saved-session');
+    try {
+      const settings = readStartupSettings(
+        {
+          MY_LIFE_TELEGRAM_API_HASH: 'api-hash',
+          MY_LIFE_TELEGRAM_SESSION_PATH: sessionPath,
+        },
+        '/Users/ana',
+      );
+
+      expect(settings.telegram.enabled).toBe(false);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
 });

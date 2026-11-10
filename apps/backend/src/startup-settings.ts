@@ -101,10 +101,12 @@ export function readStartupSettings(
 
 function readTelegramSettings(environment: Record<string, string | undefined>): TelegramSettings {
   const sessionPath = environment.MY_LIFE_TELEGRAM_SESSION_PATH;
+  const apiHash = environment.MY_LIFE_TELEGRAM_API_HASH;
+  const apiId = environment.MY_LIFE_TELEGRAM_API_ID;
   return {
-    enabled: sessionPath !== undefined && existsSync(sessionPath),
-    apiId: Number(environment.MY_LIFE_TELEGRAM_API_ID),
-    apiHash: environment.MY_LIFE_TELEGRAM_API_HASH,
+    enabled: apiId !== undefined && apiHash !== undefined && sessionPath !== undefined && existsSync(sessionPath),
+    apiId: Number(apiId),
+    apiHash,
     sessionPath,
   };
 }
