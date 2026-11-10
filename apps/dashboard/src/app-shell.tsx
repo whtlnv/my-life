@@ -20,7 +20,7 @@ interface ShellStatus {
   accounts: AccountReport[];
   sources: SourceStatus[];
   slackWorkspaces?: SlackWorkspaceStatus[];
-  telegram?: { loggedIn: boolean };
+  telegram?: { loggedIn: false } | { loggedIn: true; lastMessageAt: string };
 }
 
 interface SlackWorkspaceStatus {
@@ -121,6 +121,15 @@ function TelegramNotLoggedInChip() {
   );
 }
 
+function TelegramConnectedChip({ lastMessageAt }: { lastMessageAt: string }) {
+  return (
+    <li className="chip chip-source is-fresh" title={`Telegram · last message ${timeInBusinessZone(lastMessageAt)}`}>
+      <span className="dot" aria-hidden="true" />
+      <span className="chip-account">telegram</span>
+    </li>
+  );
+}
+
 function Tab({ href, current, children }: { href: string; current: boolean; children: ReactNode }) {
   return (
     <a className="tab" href={href} aria-current={current ? 'page' : undefined}>
@@ -200,6 +209,9 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
               <SlackWorkspaceChip key={workspace.teamId} workspace={workspace} />
             ))}
             {status.telegram?.loggedIn === false && <TelegramNotLoggedInChip />}
+            {status.telegram?.loggedIn === true && (
+              <TelegramConnectedChip lastMessageAt={status.telegram.lastMessageAt} />
+            )}
           </ul>
         </div>
       </header>
