@@ -6,8 +6,13 @@ packages:
 allowBuilds:
   # Downloads its prebuilt SQLite binding for this Node ABI; no compiler involved.
   better-sqlite3: true
+  # websocket's optional native speedups (gramjs); the pure-JS fallback is enough.
+  bufferutil: false
+  # Its postinstall only prints a message.
+  es5-ext: false
   esbuild: false
   unrs-resolver: false
+  utf-8-validate: false
 
 minimumReleaseAgeExclude:
   - '@hono/node-server@2.1.6'

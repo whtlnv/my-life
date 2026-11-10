@@ -20,7 +20,8 @@
     "@my-life/contracts": "workspace:*",
     "@my-life/domain": "workspace:*",
     "better-sqlite3": "13.0.3",
-    "hono": "4.13.16"
+    "hono": "4.13.16",
+    "telegram": "2.26.22"
   },
   "devDependencies": {
     "@types/better-sqlite3": "9.6.0",
