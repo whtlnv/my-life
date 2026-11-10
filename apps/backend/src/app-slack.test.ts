@@ -193,6 +193,39 @@ describe('createApp Slack messages', () => {
     expect(slackItems).toEqual([]);
   });
 
+  it('lists at GET /triage-queue two Slack items for a thread reply and a top-level message in the same channel, the thread being its own conversation', async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openSlackMessageStore(databasePath);
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you review the launch checklist?',
+      timestamp: '1762700000.000300',
+      threadTimestamp: '1762700000.000050',
+    });
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0002',
+      senderName: 'Bruno',
+      text: 'Is the invoice ready?',
+      timestamp: '1762700000.000200',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { slackItems } = await getJson<{ slackItems: { timestamp: string; text: string }[] }>(app, '/triage-queue');
+
+    expect(slackItems.map(({ timestamp, text }) => ({ timestamp, text }))).toEqual(
+      expect.arrayContaining([
+        { timestamp: '1762700000.000300', text: 'Can you review the launch checklist?' },
+        { timestamp: '1762700000.000200', text: 'Is the invoice ready?' },
+      ]),
+    );
+    expect(slackItems).toHaveLength(2);
+  });
+
   it('leaves out of GET /triage-queue a Slack message the user sent', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({
