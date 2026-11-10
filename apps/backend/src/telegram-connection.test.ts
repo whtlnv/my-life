@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { TelegramClient } from 'telegram';
+import type { StringSession } from 'telegram/sessions';
 import { describe, expect, it } from 'vitest';
 
 import { createGramjsClient } from './telegram-connection';
@@ -32,7 +33,8 @@ describe('createGramjsClient', () => {
 
       const client = createGramjsClient({ apiId: 12345678, apiHash: '0123456789abcdef0123456789abcdef', sessionPath });
 
-      expect(client.session.save()).toBe('');
+      const session = client.session as StringSession;
+      expect(session.save()).toBe('');
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
