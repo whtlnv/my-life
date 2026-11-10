@@ -5,16 +5,25 @@ import { describe, expect, it } from 'vitest';
 import { createGramjsTelegramClient } from './gramjs-telegram-client';
 import { mapTelegramMessage } from './telegram-message-mapping';
 
+function stubGramjsClient(overrides: Partial<Parameters<typeof createGramjsTelegramClient>[0]> = {}) {
+  return {
+    sendMessage: () => Promise.resolve({ id: 1 }),
+    getMe: () => Promise.resolve({ id: { toString: () => '1' }, firstName: '', lastName: '' }),
+    getDialogs: () => Promise.resolve([]),
+    getMessages: () => Promise.resolve([]),
+    ...overrides,
+  };
+}
+
 describe('createGramjsTelegramClient', () => {
   it('sends text to a chat and returns the id of the message gramjs reports sent', async () => {
     const sentMessages: { entity: unknown; message: unknown }[] = [];
-    const gramjsClient = {
-      sendMessage: (entity: unknown, { message }: { message: string }) => {
+    const gramjsClient = stubGramjsClient({
+      sendMessage: (entity, { message }) => {
         sentMessages.push({ entity, message });
         return Promise.resolve({ id: 314 });
       },
-      getMe: () => Promise.resolve({ id: { toString: () => '1' }, firstName: '', lastName: '' }),
-    };
+    });
     const client = createGramjsTelegramClient(gramjsClient);
 
     const sent = await client.sendText('42', 'Sending it now');
@@ -24,10 +33,9 @@ describe('createGramjsTelegramClient', () => {
   });
 
   it('reports its own account as the id and full name gramjs getMe reports', async () => {
-    const gramjsClient = {
-      sendMessage: () => Promise.resolve({ id: 1 }),
+    const gramjsClient = stubGramjsClient({
       getMe: () => Promise.resolve({ id: { toString: () => '777001' }, firstName: 'Ana', lastName: 'Torres' }),
-    };
+    });
     const client = createGramjsTelegramClient(gramjsClient);
 
     const ownAccount = await client.getOwnAccount();
@@ -54,15 +62,13 @@ describe('createGramjsTelegramClient', () => {
     });
     photoOnlyMessage._sender = luis;
     const requestedEntities: unknown[] = [];
-    const gramjsClient = {
-      sendMessage: () => Promise.resolve({ id: 1 }),
-      getMe: () => Promise.resolve({ id: { toString: () => '1' }, firstName: '', lastName: '' }),
+    const gramjsClient = stubGramjsClient({
       getDialogs: () => Promise.resolve([{ entity: luis, unreadCount: 2 }]),
-      getMessages: (entity: unknown) => {
+      getMessages: (entity) => {
         requestedEntities.push(entity);
         return Promise.resolve([textMessage, photoOnlyMessage]);
       },
-    };
+    });
     const client = createGramjsTelegramClient(gramjsClient);
 
     const dialogs = await client.listDialogs();

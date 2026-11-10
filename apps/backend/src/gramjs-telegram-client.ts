@@ -8,8 +8,8 @@ type TelegramChat = Api.User | Api.Chat | Api.Channel;
 interface GramjsClient {
   sendMessage: (entity: string, parameters: { message: string }) => Promise<{ id: number }>;
   getMe: () => Promise<{ id: { toString: () => string }; firstName: string; lastName: string }>;
-  getDialogs?: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
-  getMessages?: (entity: TelegramChat) => Promise<Api.Message[]>;
+  getDialogs: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
+  getMessages: (entity: TelegramChat) => Promise<Api.Message[]>;
 }
 
 interface GramjsTelegramClient {
@@ -29,12 +29,10 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
       return { id: me.id.toString(), name: `${me.firstName} ${me.lastName}` };
     },
     listDialogs: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const dialogs = await gramjsClient.getDialogs!();
+      const dialogs = await gramjsClient.getDialogs();
       return Promise.all(
         dialogs.map(async ({ entity, unreadCount }) => {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const messages = await gramjsClient.getMessages!(entity);
+          const messages = await gramjsClient.getMessages(entity);
           return {
             unreadCount,
             messages: messages.flatMap(
