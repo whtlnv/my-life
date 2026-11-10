@@ -113,6 +113,14 @@ function SlackWorkspaceChip({ workspace }: { workspace: SlackWorkspaceStatus }) 
   );
 }
 
+function TelegramNotLoggedInChip() {
+  return (
+    <li className="chip chip-source">
+      <span className="chip-account">telegram not logged in</span>
+    </li>
+  );
+}
+
 function Tab({ href, current, children }: { href: string; current: boolean; children: ReactNode }) {
   return (
     <a className="tab" href={href} aria-current={current ? 'page' : undefined}>
@@ -191,11 +199,7 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             {(status.slackWorkspaces ?? []).map((workspace) => (
               <SlackWorkspaceChip key={workspace.teamId} workspace={workspace} />
             ))}
-            {status.telegram?.loggedIn === false && (
-              <li className="chip chip-source">
-                <span className="chip-account">telegram not logged in</span>
-              </li>
-            )}
+            {status.telegram?.loggedIn === false && <TelegramNotLoggedInChip />}
           </ul>
         </div>
       </header>
