@@ -1137,12 +1137,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   function displaySlackMentions(text: string, slackUserNames: Map<string, string | null | undefined>) {
     return text.replace(/<@(\w+)>/g, (_mention, userId: string) => `@${slackUserNames.get(userId) ?? userId}`);
   }
+  function slackConversationKey(message: {
+    workspaceTeamId: string;
+    conversationId: string;
+    threadTimestamp?: string;
+  }) {
+    return `${message.workspaceTeamId}/${message.conversationId}/${message.threadTimestamp ?? ''}`;
+  }
   function newestMessagePerSlackConversation<
-    Message extends { workspaceTeamId: string; conversationId: string; timestamp: string; threadTimestamp?: string | null },
+    Message extends { workspaceTeamId: string; conversationId: string; timestamp: string; threadTimestamp?: string },
   >(messages: Message[]): Message[] {
     const newestByConversation = new Map<string, Message>();
     for (const message of messages) {
-      const conversationKey = `${message.workspaceTeamId}/${message.conversationId}/${message.threadTimestamp ?? ''}`;
+      const conversationKey = slackConversationKey(message);
       const newest = newestByConversation.get(conversationKey);
       if (newest === undefined || message.timestamp > newest.timestamp)
         newestByConversation.set(conversationKey, message);
