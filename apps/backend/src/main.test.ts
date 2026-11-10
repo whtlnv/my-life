@@ -5,6 +5,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { type AddressInfo, createServer as createNetServer } from 'node:net';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -136,6 +137,8 @@ describe('the shipped backend (main.ts)', () => {
         MY_LIFE_DATABASE_PATH: temporaryDatabasePath(),
         MY_LIFE_ALLOWED_EMAILS: 'ana@example.com',
         MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none',
+        // Never the user's real Telegram session, even when their shell exports the Telegram API id and hash.
+        MY_LIFE_TELEGRAM_SESSION_PATH: join(dirname(temporaryDatabasePath()), 'no-telegram-session'),
         ...environment,
       },
       stdio: 'ignore',
@@ -303,5 +306,17 @@ describe('the shipped backend (main.ts)', () => {
     const offeredTools = recorded.find(isAgentRequest)?.tools ?? [];
     expect(offeredTools.map(({ name }) => name)).toEqual(expect.arrayContaining(['send_message', 'delete_message']));
     expect(offeredTools.filter(({ description }) => !description?.trim()).map(({ name }) => name)).toEqual([]);
+  }, 30_000);
+
+  it('starts without Telegram and reports it not logged in at GET /now when the API id and hash are set but no session file exists', async () => {
+    fakeAnthropic = await startFakeAnthropic([]);
+    const baseUrl = await startShippedBackend(fakeAnthropic, {
+      MY_LIFE_TELEGRAM_API_ID: '12345678',
+      MY_LIFE_TELEGRAM_API_HASH: '0123456789abcdef0123456789abcdef',
+    });
+
+    const { telegram } = await getJson<{ telegram: unknown }>(`${baseUrl}/now`);
+
+    expect(telegram).toEqual({ loggedIn: false });
   }, 30_000);
 });

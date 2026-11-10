@@ -13,6 +13,7 @@ import { createClaudeSummary } from './claude-summary';
 import { createClaudeTriage, type ClaudePricing } from './claude-triage';
 import { createEscalatingTriage } from './escalating-triage';
 import { readStartupSettings } from './startup-settings';
+import { connectTelegram } from './telegram-connection';
 
 // The shipped composition: settings from the environment (MY_LIFE_*), the SQLite store under Application Support,
 // the built dashboard at /, and Claude behind the Triage port. Localhost only (CLAUDE.md locked decision 19): the
@@ -137,6 +138,23 @@ const agent =
           }),
       });
 
+// Telegram over the user's own session (PENDING_TASKS.md § 6). Without the API id, the hash or the session file it
+// stays off and the header says "telegram not logged in"; a failed connect leaves it off too, logged.
+async function connectTelegramWhenLoggedIn() {
+  const { enabled, apiId, apiHash, sessionPath } = settings.telegram;
+  if (!enabled || apiHash === undefined) {
+    console.log('telegram not logged in: run scripts/telegram-login.sh');
+    return undefined;
+  }
+  try {
+    return await connectTelegram({ apiId, apiHash, sessionPath });
+  } catch (error: unknown) {
+    console.error('telegram connect failed', error);
+    return undefined;
+  }
+}
+const telegramClient = await connectTelegramWhenLoggedIn();
+
 const app = createApp({
   allowedEmails: settings.allowedEmails,
   databasePath: settings.databasePath,
@@ -156,6 +174,7 @@ const app = createApp({
   ...(summary === undefined ? {} : { summary }),
   ...(prioritization === undefined ? {} : { prioritization }),
   ...(agent === undefined ? {} : { agent }),
+  ...(telegramClient === undefined ? {} : { telegramClient }),
 });
 
 function postToScheduledRoute(path: string, failureLabel: string): void {
