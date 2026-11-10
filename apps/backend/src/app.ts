@@ -710,13 +710,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     } else {
       telegramLastSeenConnectedAt = clock.now().toISOString();
     }
-    const lastMessage = chatMessageStore
+    const lastReceivedTelegramMessage = chatMessageStore
       .listMessages()
       .filter((message) => message.channel === 'telegram' && !message.sentByUser)
       .at(-1);
-    return lastMessage === undefined
+    return lastReceivedTelegramMessage === undefined
       ? { loggedIn: true, lastStartedAt: startedAt }
-      : { loggedIn: true, lastMessageAt: lastMessage.time };
+      : { loggedIn: true, lastMessageAt: lastReceivedTelegramMessage.time };
   };
   const fetchSlackWorkspaceIdentity = async (userToken: string): Promise<{ name: string; url: string | undefined }> => {
     const slackResponse = await fetchSlack('/auth.test', userToken);
