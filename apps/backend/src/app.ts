@@ -987,6 +987,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map((message) => ({
         ...message,
         text: displaySlackMentions(message.text, slackUserNames),
+        workspaceName: slackWorkspacePollFor(message.workspaceTeamId)?.name,
         permalink: slackTriagePermalink(message),
         choices: ['ignore', 'act', 'reply'],
       }));
