@@ -471,6 +471,36 @@ describe('createApp Slack messages', () => {
       }),
     ]);
   });
+  it('leaves out of Urgent at GET /people a VIP Slack contact the user has replied to in their DM since their message', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackMessageStore = openSlackMessageStore(databasePath);
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762102800.000100',
+    });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'UOWN',
+      text: 'Signed it, sending it back now.',
+      timestamp: '1762106400.000100',
+      sentByUser: true,
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
+    });
+    await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'PUT' });
+
+    const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
+
+    expect(urgent).toEqual([]);
+  });
   it('leaves out of Urgent at GET /people a Slack contact whose vip mark the user removed through DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip, even though their DM has waited more than 1 business day', async () => {
     const app = await appWithVipSlackDirectMessageSentAt('1793631600.000100');
     await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'DELETE' });
