@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 04:31 · `apps/backend/src/app-chat.test.ts::leaves out of VIP at GET /people a Telegram contact whose vip mark the user removed through DELETE /telegram-contacts/:userId/marks/vip`
+- Behavior: `DELETE /telegram-contacts/:userId/marks/vip` and `DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip` remove the VIP mark
+- Predicted: AssertionError — both DELETE routes 404, so `vip` at GET /people still lists the Telegram and the Slack contact (two entries)
+- Actual: AssertionError — `vip` listed only the Telegram contact; the Slack contact was never there
+- Type: right-reason mismatch
+- Resolution: GET /people's `vip` group only holds email contacts and marked Telegram senders (`app.ts` peopleGroups); a Slack VIP mark shows only through Urgent "VIP waiting", so the Slack half was vacuous — narrowed the test to the Telegram route; the Slack route needs its own test observed through Urgent.
+
 ## 2026-11-10 03:58 · `apps/dashboard/src/triage-page.test.tsx::removes a Telegram card from the page once the backend accepts its verdict, and keeps the others`
 - Behavior: A Telegram card leaves the queue once its verdict is accepted
 - Predicted: AssertionError in waitFor — the ignored card's text stays on the page because ChatCard has no onAccepted

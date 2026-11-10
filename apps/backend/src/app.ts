@@ -1818,6 +1818,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.removeMark(email, context.req.param('mark'));
     return context.body(null, 200);
   });
+  app.delete('/slack-contacts/:workspaceTeamId/:userId/marks/vip', (context) => {
+    contactDetailsStore.removeMark(slackContactKey(context.req.param()), 'vip');
+    return context.body(null, 200);
+  });
+  app.delete('/telegram-contacts/:userId/marks/vip', (context) => {
+    contactDetailsStore.removeMark(telegramContactKey(context.req.param('userId')), 'vip');
+    return context.body(null, 200);
+  });
   app.patch('/contacts/:email', async (context) => {
     const details = await context.req.json<ContactDetails>();
     if (!contactDetails.safeParse(details).success) {

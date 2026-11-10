@@ -415,6 +415,14 @@ describe('createApp Slack messages', () => {
 
     expect(urgent).toEqual([]);
   });
+  it('leaves out of Urgent at GET /people a Slack contact whose vip mark the user removed through DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip, even though their DM has waited more than 1 business day', async () => {
+    const app = await appWithVipSlackDirectMessageSentAt('1793631600.000100');
+    await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'DELETE' });
+
+    const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
+
+    expect(urgent).toEqual([]);
+  });
 });
 
 // A local Slack that answers auth.test with the user's own id and chat.postMessage with the given answer.

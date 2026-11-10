@@ -511,6 +511,17 @@ describe('createApp chat messages', () => {
 
     expect(urgent).toEqual([]);
   });
+  it('leaves out of VIP at GET /people a Telegram contact whose vip mark the user removed through DELETE /telegram-contacts/:userId/marks/vip', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const app = createApp({ allowedEmails: [], databasePath });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'DELETE' });
+
+    const { vip } = await getJson<{ vip: unknown[] }>(app, '/people');
+
+    expect(vip).toEqual([]);
+  });
   it("lists at GET /waiting-on, on channel telegram and waiting since its time, the sender of a Telegram chat whose newest message is not the user's", async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
