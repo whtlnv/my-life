@@ -37,6 +37,12 @@ const findCardContaining = async (text: string): Promise<HTMLElement> => {
   return card;
 };
 
+const requestsPostedTo = (path: string) =>
+  vi
+    .mocked(fetch)
+    .mock.calls.filter(([input]) => input === path)
+    .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+
 const queueOfActionItems = (action: unknown[]) => ({ action, groups: [], remaining: 0, paused: false });
 
 const chatItem = (chatId: string, chatTitle: string, senderName: string, text: string) => ({
@@ -1525,10 +1531,7 @@ describe('TriagePage', () => {
     await user.click(diegoCard);
     await user.keyboard('t');
 
-    const postedSlackVerdicts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/slack-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedSlackVerdicts = requestsPostedTo('/slack-verdicts');
     expect(postedSlackVerdicts).toEqual([
       {
         method: 'POST',
@@ -1601,10 +1604,7 @@ describe('TriagePage', () => {
     await user.type(composer, 'Yes, I will send comments tomorrow');
     await user.click(within(card).getByRole('button', { name: 'Send' }));
 
-    const postedSlackSends = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/slack-sends')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedSlackSends = requestsPostedTo('/slack-sends');
     expect(postedSlackSends).toEqual([
       {
         method: 'POST',
@@ -1782,10 +1782,7 @@ describe('TriagePage', () => {
     await user.click(within(luciaCard).getByRole('button', { name: /^Ignore/ }));
     await user.click(within(diegoCard).getByRole('button', { name: /^Task/ }));
 
-    const postedSlackVerdicts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/slack-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedSlackVerdicts = requestsPostedTo('/slack-verdicts');
     expect(postedSlackVerdicts).toEqual([
       {
         method: 'POST',
@@ -2131,10 +2128,7 @@ describe('TriagePage', () => {
     await user.click(await findCardContaining('Familia Romero'));
     await user.keyboard('i');
 
-    const postedChatVerdicts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/chat-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
     expect(postedChatVerdicts).toEqual([
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'ignore' } },
     ]);
@@ -2165,10 +2159,7 @@ describe('TriagePage', () => {
     const telegramCard = await findCardContaining('Familia Romero');
     await user.click(within(telegramCard).getByRole('button', { name: /^Ignore/ }));
 
-    const postedChatVerdicts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/chat-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
     expect(postedChatVerdicts).toEqual([
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'ignore' } },
     ]);
@@ -2199,10 +2190,7 @@ describe('TriagePage', () => {
     const telegramCard = await findCardContaining('Familia Romero');
     await user.click(within(telegramCard).getByRole('button', { name: /^Task/ }));
 
-    const postedChatVerdicts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/chat-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
     expect(postedChatVerdicts).toEqual([
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'task' } },
     ]);
@@ -2261,10 +2249,7 @@ describe('TriagePage', () => {
     await user.click(await findCardContaining('Familia Romero'));
     await user.keyboard('t');
 
-    const postedChatVerdicts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/chat-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
     expect(postedChatVerdicts).toEqual([
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'task' } },
     ]);
@@ -2373,10 +2358,7 @@ describe('TriagePage', () => {
     await user.type(within(card).getByRole('textbox'), 'Llego a las ocho');
     await user.click(within(card).getByRole('button', { name: 'Send' }));
 
-    const postedChatSends = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => input === '/chat-sends')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    const postedChatSends = requestsPostedTo('/chat-sends');
     expect(postedChatSends).toEqual([
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', text: 'Llego a las ocho' } },
     ]);
