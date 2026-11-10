@@ -1141,16 +1141,25 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));
     const messages = slackMessageStore.listMessages();
     const slackUserNames = new Map(messages.map((message) => [message.senderUserId, message.senderName]));
-    return messages
-      .filter((message) => message.sentByUser !== true)
-      .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
-      .map((message) => ({
-        ...message,
-        text: displaySlackMentions(message.text, slackUserNames),
-        workspaceName: slackWorkspacePollFor(message.workspaceTeamId)?.name,
-        permalink: slackMessagePermalink(message),
-        choices: ['ignore', 'act', 'reply'],
-      }));
+    return [
+      ...messages
+        .filter((message) => message.sentByUser !== true)
+        .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
+        .reduce((newestByConversation, message) => {
+          const conversationKey = `${message.workspaceTeamId}/${message.conversationId}`;
+          const newest = newestByConversation.get(conversationKey);
+          if (newest === undefined || message.timestamp > newest.timestamp)
+            newestByConversation.set(conversationKey, message);
+          return newestByConversation;
+        }, new Map<string, (typeof messages)[number]>())
+        .values(),
+    ].map((message) => ({
+      ...message,
+      text: displaySlackMentions(message.text, slackUserNames),
+      workspaceName: slackWorkspacePollFor(message.workspaceTeamId)?.name,
+      permalink: slackMessagePermalink(message),
+      choices: ['ignore', 'act', 'reply'],
+    }));
   }
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));

@@ -102,6 +102,35 @@ describe('createApp Slack messages', () => {
     );
   });
 
+  it('lists at GET /triage-queue one Slack item for a conversation with three messages from someone else, carrying the newest of them', async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openSlackMessageStore(databasePath);
+    for (const [timestamp, text] of [
+      ['1762700000.000100', 'Hi there.'],
+      ['1762700000.000300', 'Can you look at the contract today?'],
+      ['1762700000.000200', 'I have a question.'],
+    ]) {
+      store.saveMessage({
+        workspaceTeamId: 'T0001',
+        conversationId: 'D0001',
+        senderUserId: 'U0001',
+        senderName: 'Ana',
+        text: text!,
+        timestamp: timestamp!,
+      });
+    }
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { slackItems } = await getJson<{ slackItems: { timestamp: string; text: string }[] }>(
+      app,
+      '/triage-queue',
+    );
+
+    expect(slackItems.map(({ timestamp, text }) => ({ timestamp, text }))).toEqual([
+      { timestamp: '1762700000.000300', text: 'Can you look at the contract today?' },
+    ]);
+  });
+
   it('leaves out of GET /triage-queue a Slack message the user sent', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({
