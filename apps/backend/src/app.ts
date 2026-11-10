@@ -1924,7 +1924,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const extractedOrganizationOf = (contact: { messageIds: string[] }) =>
       contact.messageIds
         .map((messageId) => latestProposalFor(proposals, messageId)?.organization)
-        .find((organization) => organization !== undefined);
+        .find((organization) => organization !== undefined && organization !== '');
     const organizationOf = (contact: { emails: string[]; messageIds: string[] }) => {
       const primaryEmail = primaryEmailOf(contact);
       return (
