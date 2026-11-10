@@ -146,14 +146,12 @@ function TelegramConnectedChip({
 }
 
 function TelegramChip({ telegram }: { telegram: NonNullable<ShellStatus['telegram']> }) {
-  return telegram.loggedIn ? (
-    <TelegramConnectedChip
-      activityLabel={'lastMessageAt' in telegram ? 'last message' : 'last start'}
-      lastActivityAt={'lastMessageAt' in telegram ? telegram.lastMessageAt : telegram.lastStartedAt}
-      stale={telegram.stale === true}
-    />
+  if (!telegram.loggedIn) return <TelegramNotLoggedInChip />;
+  const stale = telegram.stale === true;
+  return 'lastMessageAt' in telegram ? (
+    <TelegramConnectedChip activityLabel="last message" lastActivityAt={telegram.lastMessageAt} stale={stale} />
   ) : (
-    <TelegramNotLoggedInChip />
+    <TelegramConnectedChip activityLabel="last start" lastActivityAt={telegram.lastStartedAt} stale={stale} />
   );
 }
 
