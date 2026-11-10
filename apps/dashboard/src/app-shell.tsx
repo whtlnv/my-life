@@ -124,7 +124,7 @@ function TelegramNotLoggedInChip() {
   );
 }
 
-function TelegramConnectedChip({ lastActivityAt, stale }: { lastActivityAt: string; stale?: boolean }) {
+function TelegramConnectedChip({ lastActivityAt, stale }: { lastActivityAt: string; stale: boolean }) {
   return (
     <li
       className={stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
