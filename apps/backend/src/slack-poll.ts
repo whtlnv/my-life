@@ -130,6 +130,12 @@ async function searchPagesUntilCaughtUp(
 
 const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
 
+const defaultFirstPollLookbackDays = 7;
+
+function firstPollLookbackDays(input: PollSlackWorkspaceInput): number {
+  return input.firstPollLookbackDays ?? defaultFirstPollLookbackDays;
+}
+
 function dateLookbackDaysBefore(now: Date, lookbackDays: number): string {
   return new Date(now.getTime() - lookbackDays * oneDayInMilliseconds).toISOString().slice(0, 10);
 }
@@ -139,7 +145,7 @@ function secondsLookbackDaysBefore(now: Date, lookbackDays: number): string {
 }
 
 async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
-  const query = `is:dm after:${dateLookbackDaysBefore(input.clock.now(), input.firstPollLookbackDays ?? 7)}`;
+  const query = `is:dm after:${dateLookbackDaysBefore(input.clock.now(), firstPollLookbackDays(input))}`;
   const matches = await searchPagesUntilCaughtUp(input, query, newestStoredTimestampOverall(input.store));
   return matches.map((match) => match.channel);
 }
@@ -147,7 +153,7 @@ async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Pr
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
   const directMessageChannels = await searchedDirectMessageChannels(input);
-  const firstPollLookbackStart = secondsLookbackDaysBefore(input.clock.now(), input.firstPollLookbackDays ?? 7);
+  const firstPollLookbackStart = secondsLookbackDaysBefore(input.clock.now(), firstPollLookbackDays(input));
   for (const channel of directMessageChannels) {
     const oldestParameter = oldestParameterAfter(
       newestStoredTimestampIn(input.store, channel.id) ?? firstPollLookbackStart,
