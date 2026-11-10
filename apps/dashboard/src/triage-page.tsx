@@ -843,6 +843,15 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
         >
           Ignore <Key>i</Key>
         </button>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            void postChatVerdict(item, 't');
+          }}
+        >
+          Task <Key>t</Key>
+        </button>
       </div>
     </article>
   );

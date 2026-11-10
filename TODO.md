@@ -90,7 +90,7 @@
 - [x] Typing `i`, `t` or `r` in a Telegram card's reply box stays text and posts no verdict
 - [x] A Telegram card shows the message text
 - [x] A Telegram card's Ignore button does what `i` does
-- [ ] A Telegram card's Task button does what `t` does
+- [x] A Telegram card's Task button does what `t` does
 - [ ] A Telegram card's Reply button does what `r` does
 - [ ] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
 - [ ] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty

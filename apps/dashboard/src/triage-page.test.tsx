@@ -2105,6 +2105,40 @@ describe('TriagePage', () => {
     ]);
   });
 
+  it("posts the `task` verdict for its message when a Telegram card's Task button is clicked", async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          text: '¿Vienes a cenar el sábado?',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(within(telegramCard).getByRole('button', { name: /^Task/ }));
+
+    const postedChatVerdicts = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/chat-verdicts')
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    expect(postedChatVerdicts).toEqual([
+      { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'task' } },
+    ]);
+  });
+
   it('posts the `task` verdict for its message when the task key `t` is pressed on a Telegram card', async () => {
     answerGetTriageQueueWith({
       action: [],
