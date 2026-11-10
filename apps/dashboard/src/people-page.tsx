@@ -69,6 +69,8 @@ const weekdayAndTimeInBusinessZone = (isoTime: string) =>
 // An email contact and a Slack contact can share a display name, so a Slack row is keyed by its Slack handle.
 const personKey = (person: PersonRow): string => {
   const [slackHandle] = person.slackHandles ?? [];
+  const [telegramHandle] = person.telegramHandles ?? [];
+  if (telegramHandle !== undefined) return `telegram:${telegramHandle.userId}`;
   return slackHandle === undefined ? person.displayName : `slack:${slackHandle.workspaceTeamId}:${slackHandle.userId}`;
 };
 

@@ -299,6 +299,42 @@ describe('PeoplePage', () => {
     expect(within(vipList).queryByText('Valeria Núñez')).not.toBeInTheDocument();
   });
 
+  it('lists a Telegram contact and an email contact with the same display name as two rows, and still two after the list around them changes', async () => {
+    const marta = { displayName: 'Marta Soto', emails: ['marta@acme.com'], organization: 'Acme' };
+    const anaByEmail = { displayName: 'Ana Ruiz', emails: ['ana@mutuus.mx'], organization: 'Mutuus' };
+    const anaOnTelegram = { channel: 'telegram', displayName: 'Ana Ruiz', telegramHandles: [{ userId: '7002' }] };
+    let martaIsVip = false;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string, init?: RequestInit) => {
+        const method = init?.method ?? 'GET';
+        if (input === '/contacts/marta%40acme.com/marks/vip' && method === 'PUT') {
+          martaIsVip = true;
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        if (input === '/people' && method === 'GET') {
+          const lists = martaIsVip
+            ? { vip: [marta], urgent: [], everyoneElse: [anaByEmail, anaOnTelegram] }
+            : { vip: [], urgent: [], everyoneElse: [marta, anaByEmail, anaOnTelegram] };
+          return Promise.resolve(
+            new Response(JSON.stringify(lists), { headers: { 'content-type': 'application/json' } }),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+
+    render(<PeoplePage />);
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    expect(await within(everyoneElseList).findAllByText('Ana Ruiz')).toHaveLength(2);
+    const martaRow = (await within(everyoneElseList).findByText('Marta Soto')).closest('li') as HTMLElement;
+    await userEvent.click(within(martaRow).getByRole('button', { name: /mark.*vip/i }));
+    await within(screen.getByRole('list', { name: 'VIP' })).findByText('Marta Soto');
+
+    expect(within(everyoneElseList).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(everyoneElseList).getAllByText('Ana Ruiz')).toHaveLength(2);
+  });
+
   it('moves a Slack contact into the VIP list when the user marks it VIP through PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip, and out again when the user removes the mark through DELETE', async () => {
     const leo = {
       channel: 'slack',

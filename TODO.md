@@ -102,6 +102,6 @@
 - [x] Mark VIP and Remove VIP on a Telegram row mark and unmark that Telegram contact
 - [x] Mark VIP and Remove VIP on a Slack row mark and unmark that Slack contact
 - [x] A VIP contact listed under Urgent offers Remove VIP, not Mark VIP
-- [ ] A Telegram contact and an email contact with the same display name are listed as two rows
+- [x] A Telegram contact and an email contact with the same display name are listed as two rows
 - [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
 - [ ] Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
