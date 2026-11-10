@@ -1069,20 +1069,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));
     const verdicts = chatMessageStore.listVerdicts();
+    const hasVerdict = (message: { chatId: string; messageId: string }) =>
+      verdicts.some((verdict) => verdict.chatId === message.chatId && verdict.messageId === message.messageId);
     return [...newestMessageByChat.values()]
-      .filter((message) => !message.sentByUser)
-      .filter(
-        (message) =>
-          !verdicts.some((verdict) => verdict.chatId === message.chatId && verdict.messageId === message.messageId),
-      )
+      .filter((message) => !message.sentByUser && !hasVerdict(message))
       .map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
-      channel,
-      chatId,
-      messageId,
-      chatTitle,
-      senderName,
-      time,
-    }));
+        channel,
+        chatId,
+        messageId,
+        chatTitle,
+        senderName,
+        time,
+      }));
   }
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
