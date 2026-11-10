@@ -692,14 +692,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       stale: !isAccountFresh({ email: poll.teamId, lastReportedAt, pollingIntervalInMilliseconds }, clock),
     };
   };
+  const telegramConnectionCheckIntervalInMilliseconds = 60_000;
   let telegramLastSeenConnectedAt = startedAt;
   const describeTelegramConnection = () => {
     if (options.telegramClient === undefined) {
       return { loggedIn: false };
     }
     if (options.telegramClient.isConnected?.() === false) {
-      const lastReportedAt = telegramLastSeenConnectedAt;
-      if (!isAccountFresh({ email: 'telegram', lastReportedAt, pollingIntervalInMilliseconds: 60_000 }, clock)) {
+      const telegramFreshness = {
+        email: 'telegram',
+        lastReportedAt: telegramLastSeenConnectedAt,
+        pollingIntervalInMilliseconds: telegramConnectionCheckIntervalInMilliseconds,
+      };
+      if (!isAccountFresh(telegramFreshness, clock)) {
         return { loggedIn: true, lastStartedAt: startedAt, stale: true };
       }
     } else {
