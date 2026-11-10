@@ -215,17 +215,19 @@ const personRequestedByLocation = (lists: PeopleLists): PersonRow | undefined =>
   return [...lists.vip, ...lists.urgent, ...lists.everyoneElse].find((candidate) => candidate.emails.includes(contact));
 };
 
-const vipMarkPath = (person: PersonRow) => {
+const contactPath = (person: PersonRow) => {
   const [telegramHandle] = person.telegramHandles ?? [];
   if (telegramHandle) {
-    return `/telegram-contacts/${telegramHandle.userId}/marks/vip`;
+    return `/telegram-contacts/${telegramHandle.userId}`;
   }
   const [slackHandle] = person.slackHandles ?? [];
   if (slackHandle) {
-    return `/slack-contacts/${slackHandle.workspaceTeamId}/${slackHandle.userId}/marks/vip`;
+    return `/slack-contacts/${slackHandle.workspaceTeamId}/${slackHandle.userId}`;
   }
-  return `/contacts/${encodeURIComponent(person.emails[0] ?? '')}/marks/vip`;
+  return `/contacts/${encodeURIComponent(person.emails[0] ?? '')}`;
 };
+
+const vipMarkPath = (person: PersonRow) => `${contactPath(person)}/marks/vip`;
 
 export const PeoplePage = () => {
   const [lists, setLists] = useState<PeopleLists>(emptyLists);
@@ -259,17 +261,7 @@ export const PeoplePage = () => {
   };
 
   const showTimeline = (person: PersonRow) => {
-    const [telegramHandle] = person.telegramHandles ?? [];
-    if (telegramHandle) {
-      loadTimeline(`/telegram-contacts/${telegramHandle.userId}/timeline`, person.displayName);
-      return;
-    }
-    const [slackHandle] = person.slackHandles ?? [];
-    if (slackHandle) {
-      loadTimeline(`/slack-contacts/${slackHandle.workspaceTeamId}/${slackHandle.userId}/timeline`, person.displayName);
-      return;
-    }
-    loadTimeline(`/contacts/${encodeURIComponent(person.emails[0] ?? '')}/timeline`, person.displayName);
+    loadTimeline(`${contactPath(person)}/timeline`, person.displayName);
   };
 
   useEffect(() => {
