@@ -832,6 +832,18 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
           </button>
         </div>
       )}
+      <div className="card-foot">
+        <span className="spacer" />
+        <button
+          type="button"
+          className="button button-quiet"
+          onClick={() => {
+            void postChatVerdict(item, 'i');
+          }}
+        >
+          Ignore <Key>i</Key>
+        </button>
+      </div>
     </article>
   );
 }

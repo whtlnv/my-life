@@ -89,7 +89,7 @@
 - [x] `GET /triage-queue` Telegram chat items carry the message text and a link that opens the chat in Telegram
 - [x] Typing `i`, `t` or `r` in a Telegram card's reply box stays text and posts no verdict
 - [x] A Telegram card shows the message text
-- [ ] A Telegram card's Ignore button does what `i` does
+- [x] A Telegram card's Ignore button does what `i` does
 - [ ] A Telegram card's Task button does what `t` does
 - [ ] A Telegram card's Reply button does what `r` does
 - [ ] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
