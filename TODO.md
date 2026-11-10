@@ -30,7 +30,7 @@
 - [x] The login flow asks for the 2FA password before writing the session file when the account has one
 - [x] The login flow does not ask for a 2FA password when the account has none
 - [x] `GET /chat-messages` lists the stored chat messages
-- [ ] `POST /chat-verdicts` with ignore stores the verdict on that chat message
+- [x] `POST /chat-verdicts` with ignore stores the verdict on that chat message
 - [ ] `POST /chat-verdicts` with task creates a task that links back to the Telegram chat and names Telegram as its source
 - [ ] `POST /chat-sends` with text to a Telegram chat sends it through the Telegram session and stores it as sent by the user under the id Telegram returned
 - [ ] `POST /chat-sends` with empty text is refused and nothing is sent

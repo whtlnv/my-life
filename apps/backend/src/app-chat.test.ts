@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
-import { getJson, temporaryDatabasePath } from './app.test-support';
+import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openChatMessageStore } from './chat-message-store';
 
 describe('createApp chat messages', () => {
@@ -24,5 +24,16 @@ describe('createApp chat messages', () => {
     const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
 
     expect(messages).toEqual([storedMessage]);
+  });
+
+  it('stores an ignore verdict on that chat message at POST /chat-verdicts', async () => {
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({ allowedEmails: [], databasePath });
+    const verdict = { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'ignore' };
+
+    const response = await postJson(app, '/chat-verdicts', verdict);
+
+    expect(response.status).toBe(200);
+    expect(openChatMessageStore(databasePath).listVerdicts()).toEqual([verdict]);
   });
 });

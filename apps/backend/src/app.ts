@@ -44,7 +44,7 @@ import {
 
 import { openAcknowledgementStore } from './acknowledgement-store';
 import { profileFileName, readOptionalFile } from './claude-triage';
-import { openChatMessageStore } from './chat-message-store';
+import { type ChatMessageVerdict, openChatMessageStore } from './chat-message-store';
 import { openCreatedFilterStore } from './created-filter-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openContactDetailsStore, type ContactDetails, type ImportedContactRecord } from './contact-details-store';
@@ -579,6 +579,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
+  app.post('/chat-verdicts', async (context) => {
+    chatMessageStore.saveVerdict(await context.req.json<ChatMessageVerdict>());
+    return context.json({ ok: true });
+  });
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
   app.get('/slack-contacts/:workspaceTeamId/:userId/timeline', (context) => {
     const { workspaceTeamId, userId } = context.req.param();
