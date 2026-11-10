@@ -34,4 +34,12 @@ describe('createScriptedTelegramClient', () => {
 
     await expect(client.sendText('99', 'Hello?')).rejects.toThrow();
   });
+
+  it('refuses a send with empty text', async () => {
+    const client = createScriptedTelegramClient({
+      dialogs: [{ chatId: '42', chatTitle: 'Ana López', unreadCount: 1, messages: [questionFromAna] }],
+    });
+
+    await expect(client.sendText('42', '')).rejects.toThrow();
+  });
 });

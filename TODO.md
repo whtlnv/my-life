@@ -17,7 +17,7 @@
 - [x] A Telegram message with no text (a photo or sticker alone) is dropped by the mapping
 - [x] The scripted Telegram client accepts a send to a chat it knows and returns a new message id
 - [x] The scripted Telegram client refuses a send to a chat it does not know
-- [ ] The scripted Telegram client refuses a send with empty text
+- [x] The scripted Telegram client refuses a send with empty text
 - [ ] Telegram is on when the API id, the API hash and a session file are all present
 - [ ] Telegram is off when the session file is missing, even with the API id and hash set
 - [ ] Telegram is off when the API id or the API hash is missing, even with a session file
