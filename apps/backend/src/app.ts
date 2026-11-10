@@ -1940,38 +1940,41 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       displayName: message.senderName,
       telegramHandles: [{ userId: message.senderId }],
     });
-    const urgentSlackSenders = slackMessageStore.listMessages().flatMap((message) => {
+    const urgentChatSender = <Contact extends object>(sender: {
+      threadId: string;
+      receivedAt: string;
+      sentByUser: boolean;
+      contactKey: string;
+      contact: Contact;
+    }): Array<Contact & { reasons: ReturnType<typeof contactUrgency>['reasons'] }> => {
       const { urgent, reasons } = contactUrgency({
-        messages: [
-          {
-            threadId: message.conversationId,
-            receivedAt: slackTimestampAsIso(message.timestamp),
-            sentByUser: message.sentByUser === true,
-          },
-        ],
-        vip: markedContactKeys.has(
-          slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }),
-        ),
+        messages: [{ threadId: sender.threadId, receivedAt: sender.receivedAt, sentByUser: sender.sentByUser }],
+        vip: markedContactKeys.has(sender.contactKey),
         now: clock.now().toISOString(),
         settings: urgencySettings,
       });
-      return urgent ? [{ ...slackSenderAsContact(message), reasons }] : [];
-    });
-    const urgentTelegramSenders = chatMessageStore.listMessages().flatMap((message) => {
-      const { urgent, reasons } = contactUrgency({
-        messages: [{ threadId: message.chatId, receivedAt: message.time, sentByUser: message.sentByUser === true }],
-        vip: markedContactKeys.has(telegramContactKey(message.senderId)),
-        now: clock.now().toISOString(),
-        settings: urgencySettings,
-      });
-      return urgent ? [{ ...telegramSenderAsContact(message), reasons }] : [];
-    });
+      return urgent ? [{ ...sender.contact, reasons }] : [];
+    };
+    const urgentSlackSenders = slackMessageStore.listMessages().flatMap((message) =>
+      urgentChatSender({
+        threadId: message.conversationId,
+        receivedAt: slackTimestampAsIso(message.timestamp),
+        sentByUser: message.sentByUser === true,
+        contactKey: slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }),
+        contact: slackSenderAsContact(message),
+      }),
+    );
+    const urgentTelegramSenders = chatMessageStore.listMessages().flatMap((message) =>
+      urgentChatSender({
+        threadId: message.chatId,
+        receivedAt: message.time,
+        sentByUser: message.sentByUser === true,
+        contactKey: telegramContactKey(message.senderId),
+        contact: telegramSenderAsContact(message),
+      }),
+    );
     return {
-      urgent: [
-        ...urgentContacts.map(withOrganizationAndLastMessage),
-        ...urgentSlackSenders,
-        ...urgentTelegramSenders,
-      ],
+      urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
         ...chatMessageStore
