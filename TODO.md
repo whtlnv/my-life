@@ -117,4 +117,4 @@ Decisions taken while decomposing (the brief is silent on them): a Slack sender 
 - [x] Clicking a Slack item's Reply button opens the composer
 - [x] After a Slack verdict or a successful send, the item leaves the triage page; a send Slack rejects keeps the composer open with the Slack error shown
 - [x] A Slack contact on the People page shows its workspace name and the time of its last message, as email contacts show their organization and last message
-- [ ] `scripts/demo.sh` seeds Slack DMs, a mention and a thread reply; screenshots of the triage page, the People page with a Slack contact and the reply composer are saved under `docs/screenshots/`
+- [x] `scripts/demo.sh` seeds Slack DMs, a mention and a thread reply; screenshots of the triage page, the People page with a Slack contact and the reply composer are saved under `docs/screenshots/`
