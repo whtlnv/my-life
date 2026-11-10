@@ -4,9 +4,7 @@ import { returnBigInt } from 'telegram/Helpers';
 
 import type { ChatMessage } from './chat-message-store';
 import type { TelegramLoginPrompts } from './telegram-login';
-import { mapTelegramMessage, userName } from './telegram-message-mapping';
-
-type TelegramChat = Api.User | Api.Chat | Api.Channel;
+import { mapTelegramMessage, type TelegramChat, userName } from './telegram-message-mapping';
 
 const recentMessagesPerDialog = 20;
 

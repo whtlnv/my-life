@@ -2,18 +2,20 @@ import { utils, type Api } from 'telegram';
 
 import type { ChatMessage } from './chat-message-store';
 
+export type TelegramChat = Api.User | Api.Chat | Api.Channel;
+
 export function userName(user: Api.User): string {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
   return fullName || (user.username ?? user.id.toString());
 }
 
-function isBroadcastChannel(chat: Api.User | Api.Chat | Api.Channel): boolean {
+function isBroadcastChannel(chat: TelegramChat): boolean {
   return 'broadcast' in chat && chat.broadcast;
 }
 
 interface TelegramMessageContext {
   message: Api.Message | Api.MessageService;
-  chat: Api.User | Api.Chat | Api.Channel;
+  chat: TelegramChat;
   sender: Api.User;
 }
 
