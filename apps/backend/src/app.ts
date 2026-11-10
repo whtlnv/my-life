@@ -2101,12 +2101,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
-        ...newestMessagePerSender(chatMessageStore.listMessages().filter(isFromMarkedTelegramSender)).map(
-          telegramSenderAsContact,
-        ),
-        ...newestSlackMessagePerSender(slackMessageStore.listMessages().filter(isFromMarkedSlackSender)).map(
-          slackSenderAsContact,
-        ),
+        ...newestMessagePerSender(telegramMessages.filter(isFromMarkedTelegramSender)).map(telegramSenderAsContact),
+        ...newestSlackMessagePerSender(slackMessages.filter(isFromMarkedSlackSender)).map(slackSenderAsContact),
       ],
       everyoneElse: [
         ...contacts
@@ -2114,16 +2110,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
         ...newestSlackMessagePerSender(
-          slackMessageStore
-            .listMessages()
-            .filter(isFromSomeoneElse)
-            .filter((message) => !isFromMarkedSlackSender(message)),
+          slackMessages.filter(isFromSomeoneElse).filter((message) => !isFromMarkedSlackSender(message)),
         ).map(slackSenderAsContact),
         ...newestMessagePerSender(
-          chatMessageStore
-            .listMessages()
-            .filter(isFromSomeoneElse)
-            .filter((message) => !isFromMarkedTelegramSender(message)),
+          telegramMessages.filter(isFromSomeoneElse).filter((message) => !isFromMarkedTelegramSender(message)),
         ).map(telegramSenderAsContact),
       ],
     };
