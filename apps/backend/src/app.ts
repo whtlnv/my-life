@@ -1821,6 +1821,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       channel: 'slack',
       displayName: message.senderName,
       slackHandles: [{ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }],
+      organization: slackWorkspacePolls?.find(({ teamId }) => teamId === message.workspaceTeamId)?.name,
+      lastMessageAt: slackTimestampAsIso(message.timestamp),
     });
     const urgentSlackSenders = slackMessageStore.listMessages().flatMap((message) => {
       const { urgent, reasons } = contactUrgency({
