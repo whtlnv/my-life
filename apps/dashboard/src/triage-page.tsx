@@ -791,17 +791,21 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
 
+  function act(key: string) {
+    if (key === 'r') {
+      setComposing(true);
+      return;
+    }
+    void postChatVerdict(item, key);
+  }
+
   return (
     <article
       className="card"
       tabIndex={0}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
-        if (event.key === 'r') {
-          setComposing(true);
-          return;
-        }
-        void postChatVerdict(item, event.key);
+        act(event.key);
       }}
     >
       <div className="card-head">
@@ -838,7 +842,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
           type="button"
           className="button button-quiet"
           onClick={() => {
-            void postChatVerdict(item, 'i');
+            act('i');
           }}
         >
           Ignore <Key>i</Key>
@@ -847,7 +851,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
           type="button"
           className="button"
           onClick={() => {
-            void postChatVerdict(item, 't');
+            act('t');
           }}
         >
           Task <Key>t</Key>
@@ -856,7 +860,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
           type="button"
           className="button"
           onClick={() => {
-            setComposing(true);
+            act('r');
           }}
         >
           Reply <Key>r</Key>
