@@ -49,7 +49,7 @@
 - [x] Pressing Send in the composer on a Telegram card posts the text to `POST /chat-sends` with channel `telegram` and the chat id
 - [x] A Telegram sender is listed on the People tab as a contact with a `telegram` handle and their display name
 - [x] The user is not listed as their own Telegram contact
-- [ ] A Telegram contact's timeline shows their Telegram messages, each with its channel
+- [x] A Telegram contact's timeline shows their Telegram messages, each with its channel
 - [ ] A Telegram contact can be marked VIP from the People tab and stays VIP after a restart
 - [ ] A VIP Telegram contact waiting more than 1 business day is listed as Urgent
 - [ ] A VIP Telegram contact waiting less than 1 business day is not listed as Urgent

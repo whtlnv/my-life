@@ -350,4 +350,47 @@ describe('createApp chat messages', () => {
 
     expect(everyoneElse).toEqual([expect.objectContaining({ telegramHandles: [{ userId: '7001' }] })]);
   });
+  it('lists at GET /telegram-contacts/:userId/timeline the Telegram messages that contact sent, newest first, each with its channel', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    const fromLucia = {
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      sentByUser: false,
+    };
+    chatMessageStore.saveMessage({
+      ...fromLucia,
+      messageId: '42',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+    });
+    chatMessageStore.saveMessage({
+      channel: 'telegram',
+      chatId: '7002',
+      chatTitle: 'Bruno Díaz',
+      messageId: '50',
+      senderId: '7002',
+      senderName: 'Bruno Díaz',
+      text: 'Lunch on Friday?',
+      time: '2026-11-09T16:30:00.000Z',
+      sentByUser: false,
+    });
+    chatMessageStore.saveMessage({
+      ...fromLucia,
+      messageId: '44',
+      text: 'Or Friday morning, if Thursday is full.',
+      time: '2026-11-09T17:00:00.000Z',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/telegram-contacts/7001/timeline');
+
+    expect(messages).toEqual([
+      expect.objectContaining({ channel: 'telegram', text: 'Or Friday morning, if Thursday is full.' }),
+      expect.objectContaining({ channel: 'telegram', text: 'Can we move our call to Thursday?' }),
+    ]);
+  });
 });

@@ -646,6 +646,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }));
     return context.json({ messages });
   });
+  app.get('/telegram-contacts/:userId/timeline', (context) => {
+    const { userId } = context.req.param();
+    const messages = chatMessageStore
+      .listMessages()
+      .filter((message) => message.senderId === userId)
+      .sort((first, second) => second.time.localeCompare(first.time));
+    return context.json({ messages });
+  });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
   const slackApiUrl = options.slackApiUrl ?? '';
   const fetchSlack = (path: string, userToken: string, jsonBody?: unknown) => {
