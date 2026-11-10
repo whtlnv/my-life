@@ -52,18 +52,22 @@ async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query:
   return messages.matches;
 }
 
-async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
-  const knownName = input.displayNamesByUserId?.get(userId);
-  if (knownName !== undefined) {
-    return knownName;
-  }
+async function lookUpSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
   const { user } = await callSlack<{ user: { profile: { display_name?: string; real_name?: string } } }>(
     input,
     `/users.info?user=${userId}`,
   );
   // Slack answers an empty display_name, not a missing one, for a user who never set one.
   const names = [user.profile.display_name, user.profile.real_name].filter((name) => name !== undefined && name !== '');
-  const displayName = names[0] ?? userId;
+  return names[0] ?? userId;
+}
+
+async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
+  const knownName = input.displayNamesByUserId?.get(userId);
+  if (knownName !== undefined) {
+    return knownName;
+  }
+  const displayName = await lookUpSlackDisplayName(input, userId);
   input.displayNamesByUserId?.set(userId, displayName);
   return displayName;
 }
