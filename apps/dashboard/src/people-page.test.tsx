@@ -314,4 +314,35 @@ describe('PeoplePage', () => {
     expect(within(row).getByRole('link', { name: message.text })).toHaveAttribute('href', message.permalink);
     expect(row).toHaveTextContent(message.workspaceTeamId);
   });
+
+  it("names the workspace of each message in a Slack contact's timeline when GET /slack-contacts gives its name", async () => {
+    answerGetsWith({
+      '/people': {
+        vip: [],
+        urgent: [],
+        everyoneElse: [
+          { channel: 'slack', displayName: 'Ana', slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }] },
+        ],
+      },
+      '/slack-contacts/T0001/U0001/timeline': {
+        messages: [
+          {
+            workspaceTeamId: 'T0001',
+            workspaceName: 'Acme Studio',
+            text: 'Can you look at the contract today?',
+            timestamp: '1762700000.000100',
+            permalink: 'https://acme-studio.slack.com/archives/D0001/p1762700000000100',
+          },
+        ],
+      },
+    });
+
+    render(<PeoplePage />);
+
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    await userEvent.click(within(everyoneElseList).getByRole('button', { name: 'Ana' }));
+    const row = within(await screen.findByRole('list', { name: 'Timeline of Ana' })).getByRole('listitem');
+    expect(row).toHaveTextContent('Acme Studio');
+    expect(row).not.toHaveTextContent('T0001');
+  });
 });

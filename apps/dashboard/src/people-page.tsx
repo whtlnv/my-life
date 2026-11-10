@@ -32,6 +32,7 @@ interface TimelineMessage {
 
 interface SlackTimelineMessage {
   workspaceTeamId: string;
+  workspaceName?: string;
   text: string;
   timestamp: string;
   permalink: string;
@@ -160,7 +161,7 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
               key={message.timestamp}
               href={message.permalink}
               title={message.text}
-              side={message.workspaceTeamId}
+              side={message.workspaceName ?? message.workspaceTeamId}
             />
           ) : (
             <TimelineRow key={message.id} href={message.link} title={message.subject} side={message.accountEmail} />
