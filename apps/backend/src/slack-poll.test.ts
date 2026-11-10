@@ -103,6 +103,21 @@ describe('pollSlackWorkspace', () => {
     expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0009', senderName: 'U0009' })]);
   });
 
+  it("stores a message's sender name as the sender's real name when Slack answers an empty display name", async () => {
+    const slack = scriptedSlack({
+      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/conversations.history': () => ({
+        ok: true,
+        messages: [{ user: 'U0009', text: 'Hi', ts: '1762700000.000100' }],
+      }),
+      '/users.info': () => ({ ok: true, user: { profile: { display_name: '', real_name: 'Ana Ruiz' } } }),
+    });
+
+    const store = await pollWith(slack);
+
+    expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0009', senderName: 'Ana Ruiz' })]);
+  });
+
   it("finds mentions by searching for the user's own Slack id and stores each match under its channel", async () => {
     const mention = {
       user: 'U0002',

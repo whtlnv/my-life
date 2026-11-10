@@ -49,11 +49,13 @@ async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query:
 }
 
 async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
-  const { user } = await callSlack<{ user: { profile: { display_name?: string } } }>(
+  const { user } = await callSlack<{ user: { profile: { display_name?: string; real_name?: string } } }>(
     input,
     `/users.info?user=${userId}`,
   );
-  return user.profile.display_name ?? userId;
+  // Slack answers an empty display_name, not a missing one, for a user who never set one.
+  const names = [user.profile.display_name, user.profile.real_name].filter((name) => name !== undefined && name !== '');
+  return names[0] ?? userId;
 }
 
 async function saveSlackMessage(
