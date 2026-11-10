@@ -580,7 +580,23 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
   app.post('/chat-verdicts', async (context) => {
-    chatMessageStore.saveVerdict(await context.req.json<ChatMessageVerdict>());
+    const verdict = await context.req.json<ChatMessageVerdict>();
+    chatMessageStore.saveVerdict(verdict);
+    if (verdict.decision === 'task') {
+      const message = chatMessageStore
+        .listMessages()
+        .find((stored) => stored.chatId === verdict.chatId && stored.messageId === verdict.messageId);
+      taskEventStore.save({
+        type: 'proposal-confirmed',
+        taskId: `chat-${verdict.channel}-${verdict.chatId}-${verdict.messageId}`,
+        at: clock.now().toISOString(),
+        proposal: {
+          title: String(message?.text),
+          accountEmail: verdict.channel,
+          link: `https://web.telegram.org/k/#${verdict.chatId}`,
+        },
+      });
+    }
     return context.json({ ok: true });
   });
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));
