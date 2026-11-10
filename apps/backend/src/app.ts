@@ -593,6 +593,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     lastSuccessfulPollAt?: string;
   }
   let slackWorkspacePolls: SlackWorkspacePoll[] | undefined;
+  const slackWorkspacePollFor = (workspaceTeamId: string) =>
+    slackWorkspacePolls?.find(({ teamId }) => teamId === workspaceTeamId);
   const describeSlackWorkspaceFreshness = (poll: SlackWorkspacePoll) => {
     const pollingIntervalInMilliseconds = options.slackPollingIntervalInMilliseconds;
     if (pollingIntervalInMilliseconds === undefined || poll.lastSuccessfulPollAt === undefined) {
@@ -966,7 +968,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   function slackTriagePermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }) {
-    const workspaceUrl = slackWorkspacePolls?.find(({ teamId }) => teamId === message.workspaceTeamId)?.url;
+    const workspaceUrl = slackWorkspacePollFor(message.workspaceTeamId)?.url;
     if (workspaceUrl === undefined) {
       return slackPermalink(message);
     }
@@ -1821,7 +1823,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       channel: 'slack',
       displayName: message.senderName,
       slackHandles: [{ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }],
-      organization: slackWorkspacePolls?.find(({ teamId }) => teamId === message.workspaceTeamId)?.name,
+      organization: slackWorkspacePollFor(message.workspaceTeamId)?.name,
       lastMessageAt: slackTimestampAsIso(message.timestamp),
     });
     const urgentSlackSenders = slackMessageStore.listMessages().flatMap((message) => {
