@@ -6,8 +6,7 @@
 - [x] The Slack fake refuses an `is:dm` search that has no `after:`, answering an error
 - [x] The Slack fake answers an `is:dm` search that has `after:` with its DM matches
 - [x] The Slack fake serves `is:dm` matches across pages, with `paging` naming the page and the page count
-- [ ] A poll stores the messages of a DM conversation that an `is:dm` search match names, though `conversations.list` does not list it
-  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::asks every search for the newest messages first, not the most relevant` — asserts: a poll makes exactly 2 `search.messages` requests — retired-by: "Each poll searches `search.messages?query=is:dm after:<date>&sort=timestamp&sort_dir=desc`"
+- [ ] A poll stores the messages of a DM conversation that an `is:dm after:<date>` search match names (the date 7 days before now, as the Slack fake refuses `is:dm` without `after:`), though `conversations.list` does not list it
 - [ ] A poll does not read the history of a DM conversation that no `is:dm` match names
 - [ ] A poll never calls `conversations.list`
   - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores each DM message with its workspace, conversation, sender, the sender's display name, text and timestamp` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
