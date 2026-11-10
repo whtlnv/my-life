@@ -19,7 +19,7 @@
 - [x] The scripted Telegram client refuses a send to a chat it does not know
 - [x] The scripted Telegram client refuses a send with empty text
 - [x] Telegram is on when the API id, the API hash and a session file are all present
-- [ ] Telegram is off when the session file is missing, even with the API id and hash set
+- [x] Telegram is off when the session file is missing, even with the API id and hash set
 - [ ] Telegram is off when the API id or the API hash is missing, even with a session file
 - [ ] The Telegram session path is `~/Library/Application Support/my-life/telegram-session` when `MY_LIFE_TELEGRAM_SESSION_PATH` is unset
 - [ ] The Telegram session path follows `MY_LIFE_TELEGRAM_SESSION_PATH` when it is set

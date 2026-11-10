@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import type { UrgencySettings } from '@my-life/domain';
@@ -28,7 +29,7 @@ export interface StartupSettings {
 }
 
 export interface TelegramSettings {
-  enabled: true;
+  enabled: boolean;
   apiId: number;
   apiHash: string | undefined;
   sessionPath: string | undefined;
@@ -95,7 +96,7 @@ export function readStartupSettings(
     ),
     slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? defaultSlackApiUrl,
     telegram: {
-      enabled: true,
+      enabled: environment.MY_LIFE_TELEGRAM_SESSION_PATH !== undefined && existsSync(environment.MY_LIFE_TELEGRAM_SESSION_PATH),
       apiId: Number(environment.MY_LIFE_TELEGRAM_API_ID),
       apiHash: environment.MY_LIFE_TELEGRAM_API_HASH,
       sessionPath: environment.MY_LIFE_TELEGRAM_SESSION_PATH,

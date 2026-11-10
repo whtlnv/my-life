@@ -277,4 +277,22 @@ describe('startup settings', () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
+
+  it('turns Telegram off when the session file is missing, even with the API id and hash set', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'my-life-'));
+    try {
+      const settings = readStartupSettings(
+        {
+          MY_LIFE_TELEGRAM_API_ID: '12345',
+          MY_LIFE_TELEGRAM_API_HASH: 'abcdef0123456789',
+          MY_LIFE_TELEGRAM_SESSION_PATH: join(folder, 'telegram-session'),
+        },
+        '/Users/ana',
+      );
+
+      expect(settings.telegram.enabled).toBe(false);
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
+  });
 });
