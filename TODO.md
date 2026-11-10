@@ -25,7 +25,7 @@
 - [x] A conversation with nothing stored is read from 7 days before now (`oldest=` now minus the lookback)
 - [x] With `MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS=3` a conversation with nothing stored is read from 3 days before now
 - [x] The `is:dm` search carries `after:` the lookback date
-- [ ] The mention search carries `after:` the lookback date
+- [x] The mention search carries `after:` the lookback date
 - [ ] The own-message search carries `after:` the lookback date
 - [ ] Two messages from the same user in one poll cause one `users.info` call (backlog: apps/backend/src/slack-poll.ts:44 The Slack poll asks `users.info` for every message on every poll)
 - [ ] Messages from two different users in one poll cause one `users.info` call each
