@@ -2012,6 +2012,32 @@ describe('TriagePage', () => {
     expect(within(telegramCard).getByText(channelLabels.telegram)).toHaveClass('pill');
   });
 
+  it('names the person once on a private-chat Telegram card', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7002',
+          messageId: '43',
+          chatTitle: 'Valeria Núñez',
+          senderName: 'Valeria Núñez',
+          text: '¿Firmaste el contrato?',
+          time: '2026-11-09T16:00:00.000Z',
+          link: 'https://web.telegram.org/k/#7002',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const telegramCard = (await screen.findByText('¿Firmaste el contrato?')).closest('article') as HTMLElement;
+    expect(within(telegramCard).getAllByText('Valeria Núñez')).toHaveLength(1);
+  });
+
   it('puts Telegram cards under a Telegram section heading, each with an Open in Telegram link to its chat', async () => {
     answerGetTriageQueueWith({
       action: [],

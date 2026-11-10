@@ -820,7 +820,7 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
     >
       <div className="card-head">
         <span className="card-who">{item.chatTitle}</span>
-        <span>{item.senderName}</span>
+        {item.senderName !== item.chatTitle && <span>{item.senderName}</span>}
         <span className="pill pill-muted">{timeInBusinessZone(item.time)}</span>
         <span className="pill">{channelLabels[item.channel]}</span>
       </div>

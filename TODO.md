@@ -95,6 +95,6 @@
 - [x] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
 - [x] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty
 - [x] Telegram cards sit under a "Telegram" section heading, each with an "Open in Telegram" link to its chat
-- [ ] A private-chat Telegram card names the person once; a group card names the group and the sender
+- [x] A private-chat Telegram card names the person once; a group card names the group and the sender
 - [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
 - [ ] Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
