@@ -23,7 +23,7 @@
 - [x] Telegram is off when the API id or the API hash is missing, even with a session file
 - [x] The Telegram session path is `~/Library/Application Support/my-life/telegram-session` when `MY_LIFE_TELEGRAM_SESSION_PATH` is unset
 - [x] The Telegram session path follows `MY_LIFE_TELEGRAM_SESSION_PATH` when it is set
-- [ ] When Telegram starts, the recent messages of each dialog with unread messages are stored
+- [x] When Telegram starts, the recent messages of each dialog with unread messages are stored
 - [ ] When Telegram starts, a dialog with no unread messages is not read
 - [ ] A Telegram message that arrives after start is stored when it arrives
 - [ ] The login flow asks for the phone number, then the code Telegram sent, and writes the session file

@@ -12,11 +12,13 @@ interface TelegramScript {
 }
 
 interface ScriptedTelegramClient {
+  listDialogs: () => Promise<ScriptedDialog[]>;
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
 }
 
 export function createScriptedTelegramClient(script: TelegramScript): ScriptedTelegramClient {
   return {
+    listDialogs: () => Promise.resolve(script.dialogs),
     sendText: (chatId, text) => {
       if (!script.dialogs.some((dialog) => dialog.chatId === chatId)) {
         return Promise.reject(new Error(`Unknown Telegram chat ${chatId}`));
