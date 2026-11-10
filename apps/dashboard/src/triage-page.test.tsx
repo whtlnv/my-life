@@ -39,6 +39,16 @@ const findCardContaining = async (text: string): Promise<HTMLElement> => {
 
 const queueOfActionItems = (action: unknown[]) => ({ action, groups: [], remaining: 0, paused: false });
 
+const chatItem = (chatId: string, chatTitle: string, senderName: string, text: string) => ({
+  channel: 'telegram',
+  chatId,
+  messageId: '42',
+  chatTitle,
+  senderName,
+  text,
+  time: '2026-11-09T16:00:00.000Z',
+});
+
 const handledItem = (messageId: string, summary: string) => ({
   messageId,
   accountEmail: 'francisco@psmutuus.com',
@@ -2310,15 +2320,6 @@ describe('TriagePage', () => {
   });
 
   it('removes a Telegram card from the page once the backend accepts its verdict, and keeps the others', async () => {
-    const chatItem = (chatId: string, chatTitle: string, senderName: string, text: string) => ({
-      channel: 'telegram',
-      chatId,
-      messageId: '42',
-      chatTitle,
-      senderName,
-      text,
-      time: '2026-11-09T16:00:00.000Z',
-    });
     answerGetTriageQueueWith(
       {
         action: [],
@@ -2382,15 +2383,6 @@ describe('TriagePage', () => {
   });
 
   it('removes a Telegram card from the page once the backend accepts a reply sent from its composer, and keeps the others', async () => {
-    const chatItem = (chatId: string, chatTitle: string, senderName: string, text: string) => ({
-      channel: 'telegram',
-      chatId,
-      messageId: '42',
-      chatTitle,
-      senderName,
-      text,
-      time: '2026-11-09T16:00:00.000Z',
-    });
     answerGetTriageQueueWith(
       {
         action: [],
