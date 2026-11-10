@@ -1921,10 +1921,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .map((message) => new Date(message.date).getTime()),
       );
     const storedContactDetails = contactDetailsStore.loadAll();
-    const organizationOf = (email: string) => storedContactDetails[email]?.organization ?? senderDomain(email);
+    const extractedOrganizationOf = (contact: { messageIds: string[] }) =>
+      contact.messageIds
+        .map((messageId) => latestProposalFor(proposals, messageId)?.organization)
+        .find((organization) => organization !== undefined);
+    const organizationOf = (contact: { emails: string[]; messageIds: string[] }) =>
+      storedContactDetails[primaryEmailOf(contact)]?.organization ??
+      extractedOrganizationOf(contact) ??
+      senderDomain(primaryEmailOf(contact));
     const withOrganizationAndLastMessage = (contact: { emails: string[]; messageIds: string[] }) => ({
       ...contact,
-      organization: organizationOf(primaryEmailOf(contact)),
+      organization: organizationOf(contact),
       lastMessageAt: new Date(mostRecentMessageTime(contact)).toISOString(),
     });
     const slackSenderAsContact = (message: SlackMessage) => ({

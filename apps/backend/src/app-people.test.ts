@@ -199,6 +199,18 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(everyoneElse).toMatchObject([{ emails: ['luis@example.com'], organization: 'Acme' }]);
   });
 
+  it('gives a contact at GET /people with no stored organization the organization its triaged message’s extraction named, not its sender domain', async () => {
+    const triage = triageAnswering(keepProposalExtracting({ organization: 'Mutuus' }));
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await proposeBudgetReview(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { everyoneElse } = (await response.json()) as { everyoneElse: { emails: string[]; organization: string }[] };
+    expect(everyoneElse).toMatchObject([{ emails: ['luis@example.com'], organization: 'Mutuus' }]);
+  });
+
   it('lists at GET /people a non-VIP contact whose triaged message carries a deadline inside 48 hours under Urgent with the reason "deadline", and not under Everyone else', async () => {
     const tomorrowNoon = '2026-11-03T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [tomorrowNoon] }));
