@@ -8,7 +8,7 @@ import { mapTelegramMessage } from './telegram-message-mapping';
 function stubGramjsClient(overrides: Partial<Parameters<typeof createGramjsTelegramClient>[0]> = {}) {
   return {
     sendMessage: () => Promise.resolve({ id: 1 }),
-    getMe: () => Promise.resolve({ id: { toString: () => '1' }, firstName: '', lastName: '' }),
+    getMe: () => Promise.resolve(new Api.User({ id: returnBigInt(1) })),
     getDialogs: () => Promise.resolve([]),
     getMessages: () => Promise.resolve([]),
     addEventHandler: () => undefined,
@@ -35,13 +35,24 @@ describe('createGramjsTelegramClient', () => {
 
   it('reports its own account as the id and full name gramjs getMe reports', async () => {
     const gramjsClient = stubGramjsClient({
-      getMe: () => Promise.resolve({ id: { toString: () => '777001' }, firstName: 'Ana', lastName: 'Torres' }),
+      getMe: () => Promise.resolve(new Api.User({ id: returnBigInt(777001), firstName: 'Ana', lastName: 'Torres' })),
     });
     const client = createGramjsTelegramClient(gramjsClient);
 
     const ownAccount = await client.getOwnAccount();
 
     expect(ownAccount).toEqual({ id: '777001', name: 'Ana Torres' });
+  });
+
+  it('names its own account by the first name alone when gramjs getMe reports no last name', async () => {
+    const gramjsClient = stubGramjsClient({
+      getMe: () => Promise.resolve(new Api.User({ id: returnBigInt(777001), firstName: 'Ana' })),
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    const ownAccount = await client.getOwnAccount();
+
+    expect(ownAccount).toEqual({ id: '777001', name: 'Ana' });
   });
 
   it('lists each dialog with its unread count and its recent messages mapped by the Telegram mapping, dropping what the mapping drops', async () => {

@@ -2,7 +2,7 @@ import { utils, type Api } from 'telegram';
 
 import type { ChatMessage } from './chat-message-store';
 
-function userName(user: Api.User): string {
+export function userName(user: Api.User): string {
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
   return fullName || (user.username ?? user.id.toString());
 }

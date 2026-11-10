@@ -2,13 +2,13 @@ import type { Api } from 'telegram';
 import { returnBigInt } from 'telegram/Helpers';
 
 import type { ChatMessage } from './chat-message-store';
-import { mapTelegramMessage } from './telegram-message-mapping';
+import { mapTelegramMessage, userName } from './telegram-message-mapping';
 
 type TelegramChat = Api.User | Api.Chat | Api.Channel;
 
 interface GramjsClient {
   sendMessage: (entity: ReturnType<typeof returnBigInt>, parameters: { message: string }) => Promise<{ id: number }>;
-  getMe: () => Promise<{ id: { toString: () => string }; firstName: string; lastName: string }>;
+  getMe: () => Promise<Api.User>;
   getDialogs: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
   getMessages: (entity: TelegramChat) => Promise<Api.Message[]>;
   addEventHandler: (callback: (event: { message: Api.Message }) => unknown) => void;
@@ -29,7 +29,7 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
     },
     getOwnAccount: async () => {
       const me = await gramjsClient.getMe();
-      return { id: me.id.toString(), name: `${me.firstName} ${me.lastName}` };
+      return { id: me.id.toString(), name: userName(me) };
     },
     listDialogs: async () => {
       const dialogs = await gramjsClient.getDialogs();
