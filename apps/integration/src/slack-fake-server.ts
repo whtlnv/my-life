@@ -19,6 +19,11 @@ const threadParentText = 'Can someone share the Q3 numbers?';
 
 const noSearchMatches = { ok: true, messages: { matches: [] } };
 
+const directMessageSearchMatches = {
+  ok: true,
+  messages: { matches: [{ text: directMessageText, user: 'U0001', channel: { id: 'D0001', is_im: true } }] },
+};
+
 const displayNameByUserId: Record<string, string> = { [ownSlackUserId]: 'me', U0003: 'Dana' };
 
 function usersInfoResponse(userId: string) {
@@ -115,6 +120,13 @@ function recordPostedMessage(request: IncomingMessage, response: ServerResponse,
   });
 }
 
+function searchResponseForQuery(scenario: SlackScenario, query: string): unknown {
+  if (query.includes('is:dm') && !query.includes('after:')) return { ok: false, error: 'invalid_search' };
+  if (scenario === 'direct-message' && query.includes('is:dm')) return directMessageSearchMatches;
+  if (scenario === 'mention' && query.startsWith('from:')) return noSearchMatches;
+  return undefined;
+}
+
 export async function startSlackFakeServer(
   scenario: SlackScenario,
   options: { ownSlackUserId?: string; workspaceName?: string; workspaceUrl?: string } = {},
@@ -142,23 +154,9 @@ export async function startSlackFakeServer(
     if (url.pathname === '/search.messages') {
       const query = url.searchParams.get('query') ?? '';
       searchQueries.push(query);
-      if (query.includes('is:dm') && !query.includes('after:')) {
-        response.end(JSON.stringify({ ok: false, error: 'invalid_search' }));
-        return;
-      }
-      if (scenario === 'direct-message' && query.includes('is:dm')) {
-        response.end(
-          JSON.stringify({
-            ok: true,
-            messages: {
-              matches: [{ text: directMessageText, user: 'U0001', channel: { id: 'D0001', is_im: true } }],
-            },
-          }),
-        );
-        return;
-      }
-      if (scenario === 'mention' && query.startsWith('from:')) {
-        response.end(JSON.stringify(noSearchMatches));
+      const searchResponse = searchResponseForQuery(scenario, query);
+      if (searchResponse) {
+        response.end(JSON.stringify(searchResponse));
         return;
       }
     }
