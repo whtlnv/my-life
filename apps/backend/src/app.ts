@@ -44,7 +44,7 @@ import {
 
 import { openAcknowledgementStore } from './acknowledgement-store';
 import { profileFileName, readOptionalFile } from './claude-triage';
-import { type ChatMessageVerdict, openChatMessageStore } from './chat-message-store';
+import { type ChatMessage, type ChatMessageVerdict, openChatMessageStore } from './chat-message-store';
 import { openCreatedFilterStore } from './created-filter-store';
 import { openCategoryModeStore } from './category-mode-store';
 import { openContactDetailsStore, type ContactDetails, type ImportedContactRecord } from './contact-details-store';
@@ -1922,6 +1922,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       organization: slackWorkspacePollFor(message.workspaceTeamId)?.name,
       lastMessageAt: slackTimestampAsIso(message.timestamp),
     });
+    const telegramSenderAsContact = (message: ChatMessage) => ({
+      channel: 'telegram',
+      displayName: message.senderName,
+      telegramHandles: [{ userId: message.senderId }],
+    });
     const urgentSlackSenders = slackMessageStore.listMessages().flatMap((message) => {
       const { urgent, reasons } = contactUrgency({
         messages: [
@@ -1951,11 +1956,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .listMessages()
           .filter((message) => message.sentByUser !== true)
           .map(slackSenderAsContact),
-        ...chatMessageStore.listMessages().map((message) => ({
-          channel: 'telegram',
-          displayName: message.senderName,
-          telegramHandles: [{ userId: message.senderId }],
-        })),
+        ...chatMessageStore.listMessages().map(telegramSenderAsContact),
       ],
     };
   };
