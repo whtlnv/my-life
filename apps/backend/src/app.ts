@@ -1772,7 +1772,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.put('/telegram-contacts/:userId/marks/vip', (context) => {
-    contactDetailsStore.saveMark(`telegram:${context.req.param('userId')}`, 'vip');
+    contactDetailsStore.saveMark(telegramContactKey(context.req.param('userId')), 'vip');
     return context.body(null, 200);
   });
   app.delete(contactMarkRoute, rejectUnknownMark, (context) => {
@@ -1963,7 +1963,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
         ...chatMessageStore
           .listMessages()
-          .filter((message) => markedContactKeys.has(`telegram:${message.senderId}`))
+          .filter((message) => markedContactKeys.has(telegramContactKey(message.senderId)))
           .map(telegramSenderAsContact),
       ],
       everyoneElse: [
@@ -2175,6 +2175,10 @@ function slackTimestampAsIso(timestamp: string): string {
 
 function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string; userId: string }): string {
   return `slack:${workspaceTeamId}/${userId}`;
+}
+
+function telegramContactKey(userId: string): string {
+  return `telegram:${userId}`;
 }
 
 function telegramChatLink(chatId: string): string {
