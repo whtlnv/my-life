@@ -30,9 +30,7 @@ function directMessagePageSearchMatches(page: number) {
   return {
     ok: true,
     messages: {
-      matches: [
-        { text: directMessagePageTexts[page - 1], user: 'U0001', channel: { id: 'D0001', is_im: true } },
-      ],
+      matches: [{ text: directMessagePageTexts[page - 1], user: 'U0001', channel: { id: 'D0001', is_im: true } }],
       paging: { page, pages: directMessagePageTexts.length },
     },
   };
@@ -139,7 +137,8 @@ function recordPostedMessage(request: IncomingMessage, response: ServerResponse,
 function searchResponseForQuery(scenario: SlackScenario, query: string, page: number): unknown {
   if (query.includes('is:dm') && !query.includes('after:')) return { ok: false, error: 'invalid_search' };
   if (scenario === 'direct-message' && query.includes('is:dm')) return directMessageSearchMatches;
-  if (scenario === 'direct-messages-across-pages' && query.includes('is:dm')) return directMessagePageSearchMatches(page);
+  if (scenario === 'direct-messages-across-pages' && query.includes('is:dm'))
+    return directMessagePageSearchMatches(page);
   // Only the DM scenarios have DMs; any other scenario's is:dm search finds nothing.
   if (query.includes('is:dm')) return noSearchMatches;
   if (scenario === 'mention' && query.startsWith('from:')) return noSearchMatches;

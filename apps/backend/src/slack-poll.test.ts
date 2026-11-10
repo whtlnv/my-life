@@ -31,7 +31,9 @@ function scriptedSlack(routes: Record<string, SlackRoute> = {}) {
 }
 
 const pollWith = (slack: ReturnType<typeof scriptedSlack>, store = openSlackMessageStore(':memory:')) =>
-  pollSlackWorkspace({ fetch: slack.fetch, apiUrl: 'https://slack.test', workspace, store, clock: pollClock }).then(() => store);
+  pollSlackWorkspace({ fetch: slack.fetch, apiUrl: 'https://slack.test', workspace, store, clock: pollClock }).then(
+    () => store,
+  );
 
 const pollClock = { now: () => new Date('2026-11-10T18:00:00.000Z') };
 
@@ -106,7 +108,9 @@ describe('pollSlackWorkspace', () => {
           ? {
               ok: true,
               messages: {
-                matches: [{ user: 'U0002', text: 'Ping', ts: '1762780000.000100', channel: { id: 'D0002', is_im: true } }],
+                matches: [
+                  { user: 'U0002', text: 'Ping', ts: '1762780000.000100', channel: { id: 'D0002', is_im: true } },
+                ],
               },
             }
           : { ok: true, messages: { matches: [] } },
