@@ -339,4 +339,10 @@ describe('startup settings', () => {
 
     expect(settings.telegram.sessionPath).toBe('/Users/ana/Library/Application Support/my-life/telegram-session');
   });
+
+  it('keeps the Telegram session at MY_LIFE_TELEGRAM_SESSION_PATH when it is set', () => {
+    const settings = readStartupSettings({ MY_LIFE_TELEGRAM_SESSION_PATH: '/Volumes/vault/telegram.session' }, '/Users/ana');
+
+    expect(settings.telegram.sessionPath).toBe('/Volumes/vault/telegram.session');
+  });
 });

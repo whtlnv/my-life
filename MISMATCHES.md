@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 22:33 · `apps/backend/src/startup-settings.test.ts::keeps the Telegram session at MY_LIFE_TELEGRAM_SESSION_PATH when it is set`
+- Behavior: The Telegram session path follows `MY_LIFE_TELEGRAM_SESSION_PATH` when it is set
+- Predicted: passes on first run (the env value is already read with a `??` fallback in `readTelegramSettings`)
+- Actual: passed
+- Type: passed unexpectedly
+- Resolution: the previous item's green step (ce25dae) already built this behavior. A failing rewrite would have to assert something other than the behavior, so the test stays as a focused pin and the TODO item needs no production code.
+
 ## 2026-11-09 21:31 · `apps/backend/src/telegram-message-mapping.test.ts::maps an outgoing text message the user wrote to a chat message sent by the user, still titled after the peer`
 - Behavior: An outgoing text message the user wrote maps to a chat message sent by the user
 - Predicted: test passes (read the code first: `sentByUser: Boolean(message.out)` is already there), which breaks the Red contract of a failing test
