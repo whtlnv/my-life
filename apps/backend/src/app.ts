@@ -64,6 +64,7 @@ import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
 import { openSlackMessageStore, type SlackMessage, type SlackVerdict } from './slack-message-store';
 import { pollSlackWorkspaces } from './slack-poll';
+import { openSlackSendStore } from './slack-send-store';
 import { openSpendStore } from './spend-store';
 import { openTaskEventStore } from './task-event-store';
 import {
@@ -720,7 +721,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     threadTimestamp?: string;
     text: string;
   }
-  const slackSends: (SlackSendRequest & { sentAt: string })[] = [];
+  const slackSendStore = openSlackSendStore<SlackSendRequest & { sentAt: string }>(databasePath);
   interface SlackPostMessageResult {
     ok: boolean;
     error?: string;
@@ -743,7 +744,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return ownSlackUserId;
   };
   const recordSlackSend = async (send: SlackSendRequest, slackResult: SlackPostMessageResult): Promise<void> => {
-    slackSends.push({ ...send, sentAt: clock.now().toISOString() });
+    slackSendStore.save({ ...send, sentAt: clock.now().toISOString() });
     slackMessageStore.saveMessage({
       workspaceTeamId: send.workspaceTeamId,
       conversationId: slackResult.channel,
@@ -767,7 +768,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     await recordSlackSend(send, slackResult);
     return context.json({});
   });
-  app.get('/slack-sends', (context) => context.json({ sends: slackSends }));
+  app.get('/slack-sends', (context) => context.json({ sends: slackSendStore.loadAll() }));
   app.post('/register', async (context) => {
     const { email } = await context.req.json<{ email: string }>();
     if (!isAllowed(email)) {

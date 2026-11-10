@@ -511,4 +511,31 @@ describe('createApp Slack sends', () => {
       }),
     ]);
   });
+
+  it('lists at GET /slack-sends, after a backend restart on the same database file, a send Slack accepted before it', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackApiUrl = await localSlackAnsweringPostMessage({ ok: true, channel: 'D0001', ts: '1762700900.000900' });
+    const slackWorkspaces = [{ teamId: 'T0001', userToken: 'xoxp-test' }];
+    const clock = { now: () => new Date('2026-11-09T17:00:00.000Z') };
+    const beforeRestart = createApp({ allowedEmails: [], databasePath, slackApiUrl, slackWorkspaces, clock });
+    await postJson(beforeRestart, '/slack-sends', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      threadTimestamp: '1762700000.000100',
+      text: 'On it.',
+    });
+
+    const afterRestart = createApp({ allowedEmails: [], databasePath, slackApiUrl, slackWorkspaces, clock });
+    const { sends } = await getJson<{ sends: unknown[] }>(afterRestart, '/slack-sends');
+
+    expect(sends).toEqual([
+      {
+        workspaceTeamId: 'T0001',
+        conversationId: 'D0001',
+        threadTimestamp: '1762700000.000100',
+        text: 'On it.',
+        sentAt: '2026-11-09T17:00:00.000Z',
+      },
+    ]);
+  });
 });
