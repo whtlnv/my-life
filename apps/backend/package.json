@@ -12,7 +12,8 @@
     "demo": "tsx src/demo.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "telegram-login": "tsx src/telegram-login-main.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.6.0",

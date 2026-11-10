@@ -100,7 +100,7 @@ export function readStartupSettings(
   };
 }
 
-function readTelegramSettings(
+export function readTelegramSettings(
   environment: Record<string, string | undefined>,
   homeDirectory: string,
 ): TelegramSettings {
