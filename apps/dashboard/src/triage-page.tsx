@@ -625,17 +625,18 @@ function postSlackVerdict(item: SlackTriageItem, key: string) {
   const decision = slackDecisionKeys[key];
   if (decision === undefined) return;
   const { workspaceTeamId, conversationId, timestamp } = item;
-  void postJson('/slack-verdicts', { workspaceTeamId, conversationId, timestamp, decision });
+  return postJson('/slack-verdicts', { workspaceTeamId, conversationId, timestamp, decision });
 }
 
 function postSlackSend(item: SlackTriageItem, text: string) {
   const { workspaceTeamId, conversationId, timestamp } = item;
-  void postJson('/slack-sends', { workspaceTeamId, conversationId, threadTimestamp: timestamp, text });
+  return postJson('/slack-sends', { workspaceTeamId, conversationId, threadTimestamp: timestamp, text });
 }
 
-function SlackCard({ item }: { item: SlackTriageItem }) {
+function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: () => void }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
+  const [sendError, setSendError] = useState<string>();
   return (
     <article
       className="card"
@@ -646,7 +647,7 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
           setComposing(true);
           return;
         }
-        postSlackVerdict(item, event.key);
+        whenAccepted(postSlackVerdict(item, event.key), onAccepted);
       }}
     >
       <p>
@@ -660,7 +661,7 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
         type="button"
         className="button"
         onClick={() => {
-          postSlackVerdict(item, 'i');
+          whenAccepted(postSlackVerdict(item, 'i'), onAccepted);
         }}
       >
         Ignore <Key>i</Key>
@@ -669,7 +670,7 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
         type="button"
         className="button"
         onClick={() => {
-          postSlackVerdict(item, 't');
+          whenAccepted(postSlackVerdict(item, 't'), onAccepted);
         }}
       >
         Task <Key>t</Key>
@@ -696,23 +697,45 @@ function SlackCard({ item }: { item: SlackTriageItem }) {
             className="button"
             disabled={reply === ''}
             onClick={() => {
-              postSlackSend(item, reply);
+              void postSlackSend(item, reply).then((response) => {
+                if (response.ok) onAccepted();
+                else
+                  void response.json().then(
+                    ({ error }: { error: string }) => {
+                      setSendError(error);
+                    },
+                    () => undefined,
+                  );
+              });
             }}
           >
             Send
           </button>
+          {sendError !== undefined && <p>{sendError}</p>}
         </>
       )}
     </article>
   );
 }
 
-function SlackSection({ items }: { items: SlackTriageItem[] }) {
+function SlackSection({
+  items,
+  onAccepted,
+}: {
+  items: SlackTriageItem[];
+  onAccepted: (item: SlackTriageItem) => void;
+}) {
   return (
     <section aria-label={sectionTitles.slack} className="section">
       <h2 className="section-title">{sectionTitles.slack}</h2>
       {items.map((item) => (
-        <SlackCard key={`${item.workspaceTeamId}:${item.timestamp}`} item={item} />
+        <SlackCard
+          key={`${item.workspaceTeamId}:${item.timestamp}`}
+          item={item}
+          onAccepted={() => {
+            onAccepted(item);
+          }}
+        />
       ))}
     </section>
   );
@@ -790,6 +813,12 @@ export function TriagePage() {
     );
   }
 
+  function removeSlackItem(item: SlackTriageItem) {
+    setQueue(
+      (current) => current && { ...current, slackItems: (current.slackItems ?? []).filter((other) => other !== item) },
+    );
+  }
+
   const groups = queue.groups.filter((group) => group.category !== 'unknown');
   return (
     <main>
@@ -832,7 +861,7 @@ export function TriagePage() {
           />
         ))}
       </section>
-      {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} />}
+      {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (

@@ -1781,4 +1781,173 @@ describe('TriagePage', () => {
     expect(within(card).getByRole('button', { name: 'Send' })).toBeInTheDocument();
     expect(fetch).not.toHaveBeenCalledWith('/slack-verdicts', expect.anything());
   });
+
+  it('removes a Slack card from the page once the backend accepts its verdict, and keeps the others', async () => {
+    const slackItem = (timestamp: string, senderName: string, text: string) => ({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: `U-${senderName}`,
+      senderName,
+      text,
+      timestamp,
+      permalink: `https://acme.slack.com/archives/D0001/p${timestamp.replace('.', '')}`,
+      choices: ['ignore', 'act', 'reply'],
+    });
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        slackItems: [
+          slackItem('1762700000.000100', 'Lucía Ramos', 'Lunch is moved to Thursday'),
+          slackItem('1762700100.000200', 'Diego Soto', 'The deploy is blocked on your approval'),
+        ],
+        remaining: 0,
+        paused: false,
+      },
+      '/slack-verdicts',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const [luciaCard] = within(slackSection).getAllByRole('article') as [HTMLElement];
+    await user.click(within(luciaCard).getByRole('button', { name: /^Ignore/ }));
+
+    await waitFor(() => {
+      expect(within(slackSection).queryByText('Lunch is moved to Thursday')).not.toBeInTheDocument();
+    });
+    expect(within(slackSection).getByText('The deploy is blocked on your approval')).toBeInTheDocument();
+  });
+
+  it('removes a Slack card from the page once the backend accepts a reply sent from its composer, and keeps the others', async () => {
+    const slackItem = (timestamp: string, senderName: string, text: string) => ({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: `U-${senderName}`,
+      senderName,
+      text,
+      timestamp,
+      permalink: `https://acme.slack.com/archives/D0001/p${timestamp.replace('.', '')}`,
+      choices: ['ignore', 'act', 'reply'],
+    });
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        slackItems: [
+          slackItem('1762700000.000100', 'Lucía Ramos', 'Can you review the deck before Friday?'),
+          slackItem('1762700100.000200', 'Diego Soto', 'The deploy is blocked on your approval'),
+        ],
+        remaining: 0,
+        paused: false,
+      },
+      '/slack-sends',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const [luciaCard] = within(slackSection).getAllByRole('article') as [HTMLElement];
+    await user.click(within(luciaCard).getByRole('button', { name: /^Reply/ }));
+    await user.type(within(luciaCard).getByRole('textbox'), 'Yes, I will send comments tomorrow');
+    await user.click(within(luciaCard).getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => {
+      expect(within(slackSection).queryByText('Can you review the deck before Friday?')).not.toBeInTheDocument();
+    });
+    expect(within(slackSection).getByText('The deploy is blocked on your approval')).toBeInTheDocument();
+  });
+
+  it('keeps the Slack composer open with the Slack error shown when Slack rejects the reply sent from it', async () => {
+    const queue = {
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U0001',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://acme.slack.com/archives/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          input === '/triage-queue'
+            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
+            : input === '/slack-sends'
+              ? new Response(JSON.stringify({ error: 'channel_not_found' }), {
+                  status: 502,
+                  headers: { 'content-type': 'application/json' },
+                })
+              : new Response(null, { status: 404 }),
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    await user.click(within(card).getByRole('button', { name: /^Reply/ }));
+    await user.type(within(card).getByRole('textbox'), 'Yes, I will send comments tomorrow');
+    await user.click(within(card).getByRole('button', { name: 'Send' }));
+
+    expect(await within(card).findByText(/channel_not_found/)).toBeInTheDocument();
+    expect(within(card).getByRole('textbox')).toHaveValue('Yes, I will send comments tomorrow');
+    expect(within(card).getByRole('button', { name: 'Send' })).toBeInTheDocument();
+  });
+
+  it('removes a Slack card from the page once the backend accepts a Task verdict given with its button or the `t` key, and keeps the others', async () => {
+    const slackItem = (timestamp: string, senderName: string, text: string) => ({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: `U-${senderName}`,
+      senderName,
+      text,
+      timestamp,
+      permalink: `https://acme.slack.com/archives/D0001/p${timestamp.replace('.', '')}`,
+      choices: ['ignore', 'act', 'reply'],
+    });
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        slackItems: [
+          slackItem('1762700000.000100', 'Lucía Ramos', 'Can you review the deck before Friday?'),
+          slackItem('1762700100.000200', 'Diego Soto', 'The deploy is blocked on your approval'),
+          slackItem('1762700200.000300', 'Ana Ruiz', 'Lunch is moved to Thursday'),
+        ],
+        remaining: 0,
+        paused: false,
+      },
+      '/slack-verdicts',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const [luciaCard, diegoCard] = within(slackSection).getAllByRole('article') as [HTMLElement, HTMLElement];
+    await user.click(within(luciaCard).getByRole('button', { name: /^Task/ }));
+    await user.click(diegoCard);
+    await user.keyboard('t');
+
+    await waitFor(() => {
+      expect(within(slackSection).queryByText('Can you review the deck before Friday?')).not.toBeInTheDocument();
+      expect(within(slackSection).queryByText('The deploy is blocked on your approval')).not.toBeInTheDocument();
+    });
+    expect(within(slackSection).getByText('Lunch is moved to Thursday')).toBeInTheDocument();
+  });
 });
