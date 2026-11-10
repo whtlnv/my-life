@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 01:10 · `apps/backend/src/app-chat.test.ts::orders Telegram, email and Slack people together at GET /waiting-on, the one who has waited longest first`
+- Behavior: Waiting-on orders Telegram chats with email and Slack by how long each has waited
+- Predicted: passes on first run (commit 566646c already merged Telegram people into the sorted /waiting-on list)
+- Actual: passed
+- Type: passed unexpectedly
+- Resolution: The ordering shipped with the "Waiting-on includes a Telegram chat" item. No failing version of this test exists without changing behavior, so I kept it as a pin for the interleaving; the item has nothing left for /green.
+
 ## 2026-11-10 00:58 · `apps/backend/src/app-chat.test.ts::createApp chat messages > leaves out of Urgent at GET /people a Telegram contact marked vip whose message has waited less than 1 business day for a reply`
 - Behavior: A VIP Telegram contact waiting less than 1 business day is not listed as Urgent
 - Predicted: passes on first run (stated up front): `urgentChatSender` already sends every Telegram message through `contactUrgency`, which applies the `vipWaitingBusinessDays` threshold

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
-import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
+import { budgetReviewReport, getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openChatMessageStore } from './chat-message-store';
 import { createScriptedTelegramClient } from './scripted-telegram-client';
+import { openSlackMessageStore } from './slack-message-store';
 
 function recordingTelegramClient() {
   const scriptedTelegram = createScriptedTelegramClient({
@@ -498,5 +499,27 @@ describe('createApp chat messages', () => {
     const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
 
     expect(people).toEqual([]);
+  });
+  it('orders Telegram, email and Slack people together at GET /waiting-on, the one who has waited longest first', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-02T12:00:00.000Z');
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1793556000.000100',
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    const { people } = await getJson<{ people: { displayName: string; waitingSince: string }[] }>(app, '/waiting-on');
+
+    expect(people.map(({ displayName, waitingSince }) => ({ displayName, waitingSince }))).toEqual([
+      { displayName: 'Ana', waitingSince: '2026-11-01T18:00:00.000Z' },
+      { displayName: 'Lucía Romero', waitingSince: '2026-11-02T12:00:00.000Z' },
+      { displayName: 'Luis', waitingSince: '2026-11-02T15:00:00.000Z' },
+    ]);
   });
 });
