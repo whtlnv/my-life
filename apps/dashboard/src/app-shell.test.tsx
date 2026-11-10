@@ -204,6 +204,18 @@ describe('AppShell', () => {
     expect(item).not.toHaveTextContent(/not logged in|stale/i);
   });
 
+  it('says last start in the Telegram chip tooltip when its time is the last start, not the last message', async () => {
+    const lastStartedAt = '2026-11-10T06:15:00.000Z';
+    answerGetNowWith({ ...nowWithNoAccountsAndNothingToTriage, telegram: { loggedIn: true, lastStartedAt } });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText(/^telegram$/i)).closest('li');
+    expect(item).toHaveAttribute('title', expect.stringMatching(/last start/i));
+    expect(item).not.toHaveAttribute('title', expect.stringMatching(/last message/i));
+  });
+
   it('shows a stale Telegram source chip when the client has not been connected for more than twice its expected interval', async () => {
     const lastMessageAt = '2026-11-10T03:00:00.000Z';
     answerGetNowWith({

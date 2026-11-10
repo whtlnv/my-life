@@ -124,11 +124,19 @@ function TelegramNotLoggedInChip() {
   );
 }
 
-function TelegramConnectedChip({ lastActivityAt, stale }: { lastActivityAt: string; stale: boolean }) {
+function TelegramConnectedChip({
+  activityLabel,
+  lastActivityAt,
+  stale,
+}: {
+  activityLabel: string;
+  lastActivityAt: string;
+  stale: boolean;
+}) {
   return (
     <li
       className={stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
-      title={`Telegram · last message ${timeInBusinessZone(lastActivityAt)}`}
+      title={`Telegram · ${activityLabel} ${timeInBusinessZone(lastActivityAt)}`}
     >
       <span className="dot" aria-hidden="true" />
       <span className="chip-account">telegram</span>
@@ -140,6 +148,7 @@ function TelegramConnectedChip({ lastActivityAt, stale }: { lastActivityAt: stri
 function TelegramChip({ telegram }: { telegram: NonNullable<ShellStatus['telegram']> }) {
   return telegram.loggedIn ? (
     <TelegramConnectedChip
+      activityLabel={'lastMessageAt' in telegram ? 'last message' : 'last start'}
       lastActivityAt={'lastMessageAt' in telegram ? telegram.lastMessageAt : telegram.lastStartedAt}
       stale={telegram.stale === true}
     />
