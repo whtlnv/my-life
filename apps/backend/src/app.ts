@@ -1864,7 +1864,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const peopleGroups = () => {
     const markedContactKeys = contactDetailsStore.markedEmails();
     const writesInPerson = (contact: { messageIds: string[] }) =>
-      reportedMessages.some((message) => contact.messageIds.includes(message.id) && message.listId === undefined);
+      reportedMessages.some(
+        (message) =>
+          contact.messageIds.includes(message.id) &&
+          message.listId === undefined &&
+          !isDigestedCategory(latestProposalFor(proposals, message.id)?.category),
+      );
     const contacts = contactsByEmail(reportedSenders(), proposals).filter(writesInPerson);
     const alwaysMattersLineOfAccount = (accountEmail: string) => {
       const accountProfile = profileOfAccount(accountEmail);
