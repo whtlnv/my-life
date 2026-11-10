@@ -42,7 +42,7 @@ describe('AppShell', () => {
     render(<AppShell route="#/">{null}</AppShell>);
 
     const status = await screen.findByRole('list', { name: 'Sources' });
-    const chips = within(status).getAllByRole('listitem');
+    const chips = await within(status).findAllByRole('listitem');
     expect(chips).toHaveLength(3);
     expect(chips[0]).toHaveTextContent(/work@example.com/);
     expect(chips[0]).toHaveAttribute('title', 'work@example.com · calendar 09:00 · mail 09:01');
