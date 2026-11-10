@@ -233,4 +233,27 @@ describe('createGramjsTelegramClient', () => {
     expect(requests).toEqual([]);
     expect(dialogs).toEqual([]);
   });
+
+  it("takes a dialog message's sender from getSender when gramjs did not attach it", async () => {
+    const luis = new Api.User({ id: returnBigInt(424242), firstName: 'Luis', lastName: 'Ortega' });
+    const message = new Api.Message({
+      id: 1030,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T18:00:00.000Z') / 1000,
+      message: '¿Viste mi correo?',
+      out: false,
+    });
+    message.getSender = () => Promise.resolve(luis);
+    const gramjsClient = stubGramjsClient({
+      getDialogs: () => Promise.resolve([{ entity: luis, unreadCount: 1 }]),
+      getMessages: () => Promise.resolve([message]),
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    const dialogs = await client.listDialogs();
+
+    expect(dialogs).toEqual([
+      { unreadCount: 1, messages: [mapTelegramMessage({ message, chat: luis, sender: luis })] },
+    ]);
+  });
 });

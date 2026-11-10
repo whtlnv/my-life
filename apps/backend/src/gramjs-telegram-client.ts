@@ -9,6 +9,14 @@ type TelegramChat = Api.User | Api.Chat | Api.Channel;
 
 const recentMessagesPerDialog = 20;
 
+// gramjs attaches a message's chat and sender when the update carried them; short updates do not, so they are fetched.
+async function mapWithItsParties(message: Api.Message, knownChat?: TelegramChat): Promise<ChatMessage | undefined> {
+  const chat = knownChat ?? message.chat ?? (await message.getChat());
+  const sender = message.sender ?? (await message.getSender());
+  if (!isTelegramChat(chat) || sender?.className !== 'User') return undefined;
+  return mapTelegramMessage({ message, chat, sender });
+}
+
 // A deleted account or a chat the user was removed from comes back as UserEmpty, ChatForbidden and the like.
 function isTelegramChat(entity: Api.TypeUser | Api.TypeChat | undefined): entity is TelegramChat {
   return entity?.className === 'User' || entity?.className === 'Chat' || entity?.className === 'Channel';
@@ -64,8 +72,8 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
             unreadCount === 0 ? [] : await gramjsClient.getMessages(entity, { limit: recentMessagesPerDialog });
           return {
             unreadCount,
-            messages: messages.flatMap(
-              (message) => mapTelegramMessage({ message, chat: entity, sender: message.sender as Api.User }) ?? [],
+            messages: (await Promise.all(messages.map((message) => mapWithItsParties(message, entity)))).flatMap(
+              (mapped) => mapped ?? [],
             ),
           };
         }),
@@ -85,10 +93,7 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
     },
     onMessage: (handler) => {
       gramjsClient.addEventHandler(async ({ message }) => {
-        const chat = (message.chat ?? (await message.getChat())) as TelegramChat | undefined;
-        const sender = (message.sender ?? (await message.getSender())) as Api.User | undefined;
-        if (!chat || !sender) return;
-        const mapped = mapTelegramMessage({ message, chat, sender });
+        const mapped = await mapWithItsParties(message);
         if (mapped) handler(mapped);
       }, new NewMessage({}));
     },
