@@ -276,6 +276,22 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('refuses an is:dm search that has no after:, answering an error', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const search = (await (
+        await fetch(`${slack.url}/search.messages?query=${encodeURIComponent('is:dm')}`, {
+          headers: { Authorization: `Bearer ${slack.token}` },
+        })
+      ).json()) as { ok: boolean; error?: string };
+
+      expect(search.ok).toBe(false);
+      expect(search.error).toEqual(expect.any(String));
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('polling the direct-message scenario stores its DM message with its workspace, conversation, sender, text and timestamp', async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {

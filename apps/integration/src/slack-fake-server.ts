@@ -142,6 +142,10 @@ export async function startSlackFakeServer(
     if (url.pathname === '/search.messages') {
       const query = url.searchParams.get('query') ?? '';
       searchQueries.push(query);
+      if (query.includes('is:dm') && !query.includes('after:')) {
+        response.end(JSON.stringify({ ok: false, error: 'invalid_search' }));
+        return;
+      }
       if (scenario === 'mention' && query.startsWith('from:')) {
         response.end(JSON.stringify(noSearchMatches));
         return;
