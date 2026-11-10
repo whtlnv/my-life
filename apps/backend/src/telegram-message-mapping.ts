@@ -24,7 +24,7 @@ export function mapTelegramMessage({
   sender,
 }: TelegramMessageContext<Api.User | Api.Chat | Api.Channel, Api.Message | Api.MessageService>):
   ChatMessage | undefined {
-  if (message.className === 'MessageService' || isBroadcastChannel(chat)) {
+  if (message.className === 'MessageService' || isBroadcastChannel(chat) || !message.message) {
     return undefined;
   }
   return {

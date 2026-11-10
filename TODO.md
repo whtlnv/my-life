@@ -14,7 +14,7 @@
 - [x] A text message in a Telegram group maps to a chat message with the group's title as chat title
 - [x] A message in a Telegram broadcast channel is dropped by the mapping
 - [x] A Telegram service message (a member joined, a title changed) is dropped by the mapping
-- [ ] A Telegram message with no text (a photo or sticker alone) is dropped by the mapping
+- [x] A Telegram message with no text (a photo or sticker alone) is dropped by the mapping
 - [ ] The scripted Telegram client accepts a send to a chat it knows and returns a new message id
 - [ ] The scripted Telegram client refuses a send to a chat it does not know
 - [ ] The scripted Telegram client refuses a send with empty text

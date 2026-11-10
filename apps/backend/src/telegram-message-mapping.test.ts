@@ -177,4 +177,17 @@ describe('Telegram message mapping', () => {
 
     expect(mapTelegramMessage({ message, chat: group, sender: luis })).toBeUndefined();
   });
+
+  it('drops a message with no text, such as a photo sent alone, so the mapping returns nothing for it', () => {
+    const message = new Api.Message({
+      id: 1022,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:10:00.000Z') / 1000,
+      message: '',
+      media: new Api.MessageMediaPhoto({ photo: new Api.PhotoEmpty({ id: returnBigInt(5550001) }) }),
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toBeUndefined();
+  });
 });
