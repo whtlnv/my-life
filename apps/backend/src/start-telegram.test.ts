@@ -53,4 +53,23 @@ describe('startTelegram', () => {
       rmSync(dirname(databasePath), { recursive: true, force: true });
     }
   });
+
+  it('does not read a dialog with no unread messages', async () => {
+    const databasePath = temporaryDatabasePath();
+    try {
+      const store = openChatMessageStore(databasePath);
+      const client = createScriptedTelegramClient({
+        dialogs: [
+          { chatId: '42', chatTitle: 'Ana López', unreadCount: 1, messages: [questionFromAna] },
+          { chatId: '-1001', chatTitle: 'Launch team', unreadCount: 0, messages: [questionInLaunchGroup] },
+        ],
+      });
+
+      await startTelegram({ client, store });
+
+      expect(store.listMessages()).toEqual([questionFromAna]);
+    } finally {
+      rmSync(dirname(databasePath), { recursive: true, force: true });
+    }
+  });
 });

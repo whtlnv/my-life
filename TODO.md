@@ -24,7 +24,7 @@
 - [x] The Telegram session path is `~/Library/Application Support/my-life/telegram-session` when `MY_LIFE_TELEGRAM_SESSION_PATH` is unset
 - [x] The Telegram session path follows `MY_LIFE_TELEGRAM_SESSION_PATH` when it is set
 - [x] When Telegram starts, the recent messages of each dialog with unread messages are stored
-- [ ] When Telegram starts, a dialog with no unread messages is not read
+- [x] When Telegram starts, a dialog with no unread messages is not read
 - [ ] A Telegram message that arrives after start is stored when it arrives
 - [ ] The login flow asks for the phone number, then the code Telegram sent, and writes the session file
 - [ ] The login flow asks for the 2FA password before writing the session file when the account has one
