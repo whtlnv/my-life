@@ -99,8 +99,6 @@ function oldestParameterAfter(newestStoredTimestamp: string | undefined): string
   return newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
 }
 
-const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1000;
-
 function isEntirelyNewerThan(pageMatches: { ts: string }[], newestStoredTimestamp: string | undefined): boolean {
   return (
     newestStoredTimestamp !== undefined &&
@@ -130,18 +128,18 @@ async function searchPagesUntilCaughtUp(
   return matches;
 }
 
-function dateSevenDaysBefore(now: Date): string {
-  return new Date(now.getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
-}
-
 const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
+
+function dateLookbackDaysBefore(now: Date, lookbackDays: number): string {
+  return new Date(now.getTime() - lookbackDays * oneDayInMilliseconds).toISOString().slice(0, 10);
+}
 
 function secondsLookbackDaysBefore(now: Date, lookbackDays: number): string {
   return String((now.getTime() - lookbackDays * oneDayInMilliseconds) / 1000);
 }
 
 async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
-  const query = `is:dm after:${dateSevenDaysBefore(input.clock.now())}`;
+  const query = `is:dm after:${dateLookbackDaysBefore(input.clock.now(), input.firstPollLookbackDays ?? 7)}`;
   const matches = await searchPagesUntilCaughtUp(input, query, newestStoredTimestampOverall(input.store));
   return matches.map((match) => match.channel);
 }

@@ -24,7 +24,7 @@
   - already delivered by `slack-poll.test.ts::asks conversations.history on a second poll only for messages newer than the newest stored in that conversation` (supervisor, 2026-11-10)
 - [x] A conversation with nothing stored is read from 7 days before now (`oldest=` now minus the lookback)
 - [x] With `MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS=3` a conversation with nothing stored is read from 3 days before now
-- [ ] The `is:dm` search carries `after:` the lookback date
+- [x] The `is:dm` search carries `after:` the lookback date
 - [ ] The mention search carries `after:` the lookback date
   - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::finds mentions by searching for the user's own Slack id and stores each match under its channel` — asserts: the scripted Slack answers the mention only to a query exactly `<@UOWN>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
   - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a mention match the user sent themselves as sent by the user` — asserts: the scripted Slack answers the mention only to a query exactly `<@UOWN>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
