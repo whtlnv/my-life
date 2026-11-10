@@ -56,7 +56,7 @@ interface Digest {
   key?: string;
   count: number;
   severityCounts: Record<string, number>;
-  summaryLines: string[];
+  summaryLines?: string[];
   significantItems: { messageId: string; summary: string; accountEmail: string; link: string }[];
 }
 
@@ -521,7 +521,7 @@ const severityPillClasses: Record<string, string> = {
 };
 
 function DigestCard({ digest, onAccepted }: { digest: Digest; onAccepted: () => void }) {
-  const [headline, ...rest] = digest.summaryLines;
+  const [headline, ...rest] = digest.summaryLines ?? [];
   const style = { '--swatch': categorySwatches[digest.category] } as CSSProperties;
   return (
     <article className="card digest" style={style}>

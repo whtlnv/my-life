@@ -1293,6 +1293,35 @@ describe('TriagePage', () => {
     expect(within(item).getByText(accountName('francisco@erlia.com'))).toBeInTheDocument();
   });
 
+  it('shows a digest that has no summary yet (the backend omits summaryLines) with its sender and count, and keeps the page up', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      digests: [
+        {
+          id: 'digest-without-summary',
+          accountEmail: 'francisco@psmutuus.com',
+          category: 'system-update',
+          key: 'GitHub',
+          count: 3,
+          severityCounts: {},
+          significantItems: [],
+        },
+      ],
+      handledForYou: [],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const digestsSection = await screen.findByRole('region', { name: sectionTitles.digests });
+    const card = within(digestsSection).getByText('GitHub').closest('article');
+    if (!card) throw new Error('the digest card is not an article');
+    expect(within(card).getByText('3')).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: /Confirm/ })).toBeInTheDocument();
+  });
+
   it('posts the confirm for only the digest whose Confirm button is clicked, and removes that card once accepted', async () => {
     const confirmedDigestId = JSON.stringify(['francisco@psmutuus.com', 'system-update', 'GitHub', 'message-1']);
     const otherDigestId = JSON.stringify(['francisco@psmutuus.com', 'sales', 'sales@initech.com', 'message-2']);
