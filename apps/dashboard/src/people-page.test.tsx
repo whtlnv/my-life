@@ -97,6 +97,28 @@ describe('PeoplePage', () => {
     expect(row).toHaveTextContent('deadline');
   });
 
+  it('offers Remove VIP, not Mark VIP, on the Urgent row of a contact GET /people also lists under VIP', async () => {
+    const ana = {
+      displayName: 'Ana Ruiz',
+      emails: ['ana@mutuus.mx'],
+      messageIds: ['m1'],
+      organization: 'Mutuus',
+      lastMessageAt: '2026-11-06T15:00:00.000Z',
+    };
+    answerGetPeopleWith({
+      vip: [ana],
+      urgent: [{ ...ana, reasons: ['vip waiting'] }],
+      everyoneElse: [],
+    });
+
+    render(<PeoplePage />);
+
+    const urgentList = await screen.findByRole('list', { name: 'Urgent' });
+    const row = await within(urgentList).findByRole('listitem');
+    expect(within(row).getByRole('button', { name: /remove.*vip/i })).toBeInTheDocument();
+    expect(within(row).queryByRole('button', { name: /mark.*vip/i })).not.toBeInTheDocument();
+  });
+
   it("shows a selected contact's merged timeline from GET /contacts/:email/timeline, newest first, each message with its account and source link", async () => {
     const people = {
       vip: [

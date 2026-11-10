@@ -83,7 +83,7 @@ const PeopleList = ({
   people: PersonRow[];
   onSelect: (person: PersonRow) => void;
   onSelectOrganization: (organization: string) => void;
-  vipAction: { label: string; onClick: (person: PersonRow) => void };
+  vipAction: (person: PersonRow) => { label: string; onClick: (person: PersonRow) => void };
 }) => (
   <section className="section">
     <h2 className="section-title">
@@ -140,10 +140,10 @@ const PeopleList = ({
                 type="button"
                 className="button button-quiet"
                 onClick={() => {
-                  vipAction.onClick(person);
+                  vipAction(person).onClick(person);
                 }}
               >
-                {vipAction.label}
+                {vipAction(person).label}
               </button>
             </div>
           </li>
@@ -245,6 +245,7 @@ export const PeoplePage = () => {
   };
   const markVip = { label: 'Mark VIP', onClick: setVipMark('PUT') };
   const removeVip = { label: 'Remove VIP', onClick: setVipMark('DELETE') };
+  const isVip = (person: PersonRow) => lists.vip.some((vip) => personKey(vip) === personKey(person));
 
   const loadTimeline = (path: string, displayName: string) => {
     void fetch(path)
@@ -291,21 +292,21 @@ export const PeoplePage = () => {
             people={lists.vip}
             onSelect={showTimeline}
             onSelectOrganization={showOrganizationTimeline}
-            vipAction={removeVip}
+            vipAction={() => removeVip}
           />
           <PeopleList
             title="Urgent"
             people={lists.urgent}
             onSelect={showTimeline}
             onSelectOrganization={showOrganizationTimeline}
-            vipAction={markVip}
+            vipAction={(person) => (isVip(person) ? removeVip : markVip)}
           />
           <PeopleList
             title="Everyone else"
             people={lists.everyoneElse}
             onSelect={showTimeline}
             onSelectOrganization={showOrganizationTimeline}
-            vipAction={markVip}
+            vipAction={() => markVip}
           />
         </div>
         <aside>
