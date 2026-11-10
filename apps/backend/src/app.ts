@@ -2079,7 +2079,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ...newestMessagePerSender(chatMessageStore.listMessages().filter(isFromMarkedTelegramSender)).map(
           telegramSenderAsContact,
         ),
-        ...slackMessageStore.listMessages().filter(isFromMarkedSlackSender).map(slackSenderAsContact),
+        ...newestSlackMessagePerSender(slackMessageStore.listMessages().filter(isFromMarkedSlackSender)).map(
+          slackSenderAsContact,
+        ),
       ],
       everyoneElse: [
         ...contacts

@@ -449,6 +449,28 @@ describe('createApp Slack messages', () => {
     expect(vip).toEqual([expect.objectContaining({ slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }] })]);
     expect(everyoneElse).toEqual([]);
   });
+  it('lists once under VIP at GET /people, with the time of their newest message, a Slack contact marked vip with several messages', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackMessageStore = openSlackMessageStore(databasePath);
+    const fromAna = { workspaceTeamId: 'T0001', conversationId: 'D0001', senderUserId: 'U0001', senderName: 'Ana' };
+    slackMessageStore.saveMessage({
+      ...fromAna,
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    slackMessageStore.saveMessage({ ...fromAna, text: 'Page 4 is the one.', timestamp: '1762703600.000100' });
+    const app = createApp({ allowedEmails: [], databasePath });
+    await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'PUT' });
+
+    const { vip } = await getJson<{ vip: unknown[] }>(app, '/people');
+
+    expect(vip).toEqual([
+      expect.objectContaining({
+        slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }],
+        lastMessageAt: new Date(1762703600 * 1000).toISOString(),
+      }),
+    ]);
+  });
   it('leaves out of Urgent at GET /people a Slack contact whose vip mark the user removed through DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip, even though their DM has waited more than 1 business day', async () => {
     const app = await appWithVipSlackDirectMessageSentAt('1793631600.000100');
     await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'DELETE' });
