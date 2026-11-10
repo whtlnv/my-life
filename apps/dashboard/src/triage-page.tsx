@@ -852,6 +852,15 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
         >
           Task <Key>t</Key>
         </button>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            setComposing(true);
+          }}
+        >
+          Reply <Key>r</Key>
+        </button>
       </div>
     </article>
   );

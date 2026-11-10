@@ -2139,6 +2139,35 @@ describe('TriagePage', () => {
     ]);
   });
 
+  it("opens the reply composer when a Telegram card's Reply button is clicked", async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          text: '¿Vienes a cenar el sábado?',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(within(telegramCard).getByRole('button', { name: /^Reply/ }));
+
+    expect(within(telegramCard).getByRole('textbox', { name: 'Reply to Familia Romero' })).toBeInTheDocument();
+    expect(within(telegramCard).getByRole('button', { name: 'Send' })).toBeInTheDocument();
+  });
+
   it('posts the `task` verdict for its message when the task key `t` is pressed on a Telegram card', async () => {
     answerGetTriageQueueWith({
       action: [],
