@@ -8,7 +8,14 @@ import { type ChatMessage, openChatMessageStore } from './chat-message-store';
 import { createScriptedTelegramClient } from './scripted-telegram-client';
 import { startTelegram } from './start-telegram';
 
-const temporaryDatabasePath = () => join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+const withTemporaryStore = async (run: (store: ReturnType<typeof openChatMessageStore>) => Promise<void>) => {
+  const databasePath = join(mkdtempSync(join(tmpdir(), 'my-life-')), 'my-life.sqlite');
+  try {
+    await run(openChatMessageStore(databasePath));
+  } finally {
+    rmSync(dirname(databasePath), { recursive: true, force: true });
+  }
+};
 
 const questionFromAna: ChatMessage = {
   channel: 'telegram',
@@ -36,9 +43,7 @@ const questionInLaunchGroup: ChatMessage = {
 
 describe('startTelegram', () => {
   it('stores the recent messages of each dialog with unread messages', async () => {
-    const databasePath = temporaryDatabasePath();
-    try {
-      const store = openChatMessageStore(databasePath);
+    await withTemporaryStore(async (store) => {
       const client = createScriptedTelegramClient({
         dialogs: [
           { chatId: '42', chatTitle: 'Ana López', unreadCount: 1, messages: [questionFromAna] },
@@ -49,15 +54,11 @@ describe('startTelegram', () => {
       await startTelegram({ client, store });
 
       expect(store.listMessages()).toEqual([questionFromAna, questionInLaunchGroup]);
-    } finally {
-      rmSync(dirname(databasePath), { recursive: true, force: true });
-    }
+    });
   });
 
   it('does not read a dialog with no unread messages', async () => {
-    const databasePath = temporaryDatabasePath();
-    try {
-      const store = openChatMessageStore(databasePath);
+    await withTemporaryStore(async (store) => {
       const client = createScriptedTelegramClient({
         dialogs: [
           { chatId: '42', chatTitle: 'Ana López', unreadCount: 1, messages: [questionFromAna] },
@@ -68,8 +69,6 @@ describe('startTelegram', () => {
       await startTelegram({ client, store });
 
       expect(store.listMessages()).toEqual([questionFromAna]);
-    } finally {
-      rmSync(dirname(databasePath), { recursive: true, force: true });
-    }
+    });
   });
 });
