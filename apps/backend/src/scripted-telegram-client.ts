@@ -14,10 +14,15 @@ interface TelegramScript {
 interface ScriptedTelegramClient {
   listDialogs: () => Promise<ScriptedDialog[]>;
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
+  onMessage: (handler: (message: ChatMessage) => void) => void;
+  receive: (message: ChatMessage) => void;
 }
 
 export function createScriptedTelegramClient(script: TelegramScript): ScriptedTelegramClient {
+  const handlers: ((message: ChatMessage) => void)[] = [];
   return {
+    onMessage: (handler) => handlers.push(handler),
+    receive: (message) => handlers.forEach((handler) => handler(message)),
     listDialogs: () => Promise.resolve(script.dialogs),
     sendText: (chatId, text) => {
       if (!script.dialogs.some((dialog) => dialog.chatId === chatId)) {

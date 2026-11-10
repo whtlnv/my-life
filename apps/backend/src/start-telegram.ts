@@ -6,7 +6,10 @@ interface TelegramDialog {
 }
 
 interface StartTelegramDependencies {
-  client: { listDialogs: () => Promise<TelegramDialog[]> };
+  client: {
+    listDialogs: () => Promise<TelegramDialog[]>;
+    onMessage: (handler: (message: ChatMessage) => void) => void;
+  };
   store: { saveMessage: (message: ChatMessage) => void };
 }
 
@@ -15,4 +18,5 @@ export async function startTelegram({ client, store }: StartTelegramDependencies
     if (dialog.unreadCount === 0) continue;
     dialog.messages.forEach((message) => store.saveMessage(message));
   }
+  client.onMessage((message) => store.saveMessage(message));
 }

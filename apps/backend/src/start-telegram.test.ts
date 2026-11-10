@@ -71,4 +71,17 @@ describe('startTelegram', () => {
       expect(store.listMessages()).toEqual([questionFromAna]);
     });
   });
+
+  it('stores a message that arrives after start when it arrives', async () => {
+    await withTemporaryStore(async (store) => {
+      const client = createScriptedTelegramClient({
+        dialogs: [{ chatId: '42', chatTitle: 'Ana López', unreadCount: 0, messages: [] }],
+      });
+      await startTelegram({ client, store });
+
+      client.receive(questionFromAna);
+
+      expect(store.listMessages()).toEqual([questionFromAna]);
+    });
+  });
 });
