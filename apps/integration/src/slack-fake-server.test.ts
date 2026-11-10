@@ -313,6 +313,33 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('in the direct-messages-across-pages scenario serves its is:dm matches over two pages, each naming its page and the page count', async () => {
+    const slack = await startSlackFakeServer('direct-messages-across-pages');
+    try {
+      const searchPage = async (page: number) =>
+        (await (
+          await fetch(
+            `${slack.url}/search.messages?query=${encodeURIComponent('is:dm after:2025-11-01')}&page=${String(page)}`,
+            { headers: { Authorization: `Bearer ${slack.token}` } },
+          )
+        ).json()) as {
+          ok: boolean;
+          messages: { matches: { text: string }[]; paging: { page: number; pages: number } };
+        };
+
+      const firstPage = await searchPage(1);
+      const secondPage = await searchPage(2);
+
+      expect(firstPage.messages.paging).toEqual(expect.objectContaining({ page: 1, pages: 2 }));
+      expect(secondPage.messages.paging).toEqual(expect.objectContaining({ page: 2, pages: 2 }));
+      expect(firstPage.messages.matches).toHaveLength(1);
+      expect(secondPage.messages.matches).toHaveLength(1);
+      expect(secondPage.messages.matches[0]?.text).not.toBe(firstPage.messages.matches[0]?.text);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('polling the direct-message scenario stores its DM message with its workspace, conversation, sender, text and timestamp', async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {

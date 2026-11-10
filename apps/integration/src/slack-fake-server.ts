@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-type SlackScenario = 'direct-message' | 'mention' | 'thread-reply' | 'rate-limited';
+type SlackScenario = 'direct-message' | 'direct-messages-across-pages' | 'mention' | 'thread-reply' | 'rate-limited';
 
 export const directMessageText = 'Can you review the proposal today?';
 
@@ -24,6 +24,20 @@ const directMessageSearchMatches = {
   messages: { matches: [{ text: directMessageText, user: 'U0001', channel: { id: 'D0001', is_im: true } }] },
 };
 
+const directMessagePageTexts = ['First page direct message', 'Second page direct message'];
+
+function directMessagePageSearchMatches(page: number) {
+  return {
+    ok: true,
+    messages: {
+      matches: [
+        { text: directMessagePageTexts[page - 1], user: 'U0001', channel: { id: 'D0001', is_im: true } },
+      ],
+      paging: { page, pages: directMessagePageTexts.length },
+    },
+  };
+}
+
 const displayNameByUserId: Record<string, string> = { [ownSlackUserId]: 'me', U0003: 'Dana' };
 
 function usersInfoResponse(userId: string) {
@@ -39,6 +53,7 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
     },
     '/search.messages': noSearchMatches,
   },
+  'direct-messages-across-pages': {},
   mention: {
     '/conversations.list': { ok: true, channels: [] },
     '/search.messages': {
@@ -120,9 +135,10 @@ function recordPostedMessage(request: IncomingMessage, response: ServerResponse,
   });
 }
 
-function searchResponseForQuery(scenario: SlackScenario, query: string): unknown {
+function searchResponseForQuery(scenario: SlackScenario, query: string, page: number): unknown {
   if (query.includes('is:dm') && !query.includes('after:')) return { ok: false, error: 'invalid_search' };
   if (scenario === 'direct-message' && query.includes('is:dm')) return directMessageSearchMatches;
+  if (scenario === 'direct-messages-across-pages' && query.includes('is:dm')) return directMessagePageSearchMatches(page);
   if (scenario === 'mention' && query.startsWith('from:')) return noSearchMatches;
   return undefined;
 }
@@ -154,7 +170,7 @@ export async function startSlackFakeServer(
     if (url.pathname === '/search.messages') {
       const query = url.searchParams.get('query') ?? '';
       searchQueries.push(query);
-      const searchResponse = searchResponseForQuery(scenario, query);
+      const searchResponse = searchResponseForQuery(scenario, query, Number(url.searchParams.get('page') ?? '1'));
       if (searchResponse) {
         response.end(JSON.stringify(searchResponse));
         return;
