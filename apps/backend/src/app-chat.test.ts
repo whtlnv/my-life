@@ -568,6 +568,29 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+  it('lists once under VIP at GET /people, with the time of their newest message, a Telegram contact marked vip with several messages', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '43',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Thursday at 10 works for me.',
+      time: '2026-11-09T18:00:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+
+    const { vip } = await getJson<{ vip: unknown[] }>(app, '/people');
+
+    expect(vip).toEqual([
+      expect.objectContaining({ telegramHandles: [{ userId: '7001' }], lastMessageAt: '2026-11-09T18:00:00.000Z' }),
+    ]);
+  });
   it('leaves out of Urgent at GET /people a Telegram contact marked vip whose message has waited less than 1 business day for a reply', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-04T15:00:00.000Z');

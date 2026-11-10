@@ -2076,7 +2076,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
-        ...chatMessageStore.listMessages().filter(isFromMarkedTelegramSender).map(telegramSenderAsContact),
+        ...newestMessagePerSender(chatMessageStore.listMessages().filter(isFromMarkedTelegramSender)).map(
+          telegramSenderAsContact,
+        ),
         ...slackMessageStore.listMessages().filter(isFromMarkedSlackSender).map(slackSenderAsContact),
       ],
       everyoneElse: [
