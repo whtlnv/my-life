@@ -88,6 +88,38 @@ describe('pollSlackWorkspace', () => {
     expect(historyRequests.map((url) => url.searchParams.get('oldest'))).toEqual(['1762700000.000100']);
   });
 
+  it('stores the messages of a DM conversation that an is:dm search after the date 7 days before now names, though conversations.list does not list it', async () => {
+    const slack = scriptedSlack({
+      '/conversations.list': () => ({ ok: true, channels: [] }),
+      '/search.messages': (url) =>
+        url.searchParams.get('query') === 'is:dm after:2026-11-03'
+          ? {
+              ok: true,
+              messages: {
+                matches: [{ user: 'U0002', text: 'Ping', ts: '1762780000.000100', channel: { id: 'D0002', is_im: true } }],
+              },
+            }
+          : { ok: true, messages: { matches: [] } },
+      '/conversations.history': (url) =>
+        url.searchParams.get('channel') === 'D0002'
+          ? { ok: true, messages: [{ user: 'U0002', text: 'Are we still on for Friday?', ts: '1762780000.000100' }] }
+          : { ok: false, error: 'channel_not_found' },
+    });
+    const store = openSlackMessageStore(':memory:');
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      workspace,
+      store,
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    });
+
+    expect(store.listMessages()).toEqual([
+      expect.objectContaining({ conversationId: 'D0002', senderUserId: 'U0002', text: 'Are we still on for Friday?' }),
+    ]);
+  });
+
   it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
     const slack = scriptedSlack({
       '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),

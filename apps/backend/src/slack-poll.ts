@@ -11,6 +11,7 @@ interface PollSlackWorkspaceInput {
   workspace: SlackWorkspace;
   store: SlackMessageStore;
   wait?: (milliseconds: number) => Promise<void>;
+  clock?: { now: () => Date };
 }
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
@@ -90,10 +91,21 @@ function oldestParameterAfter(newestStoredTimestamp: string | undefined): string
   return newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
 }
 
+const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1000;
+
+async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
+  if (input.clock === undefined) {
+    return [];
+  }
+  const afterDate = new Date(input.clock.now().getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
+  const matches = await searchSlackMessages<{ channel: { id: string } }>(input, `is:dm after:${afterDate}`);
+  return matches.map((match) => match.channel);
+}
+
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
   const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im,mpim');
-  for (const channel of channels) {
+  for (const channel of [...channels, ...(await searchedDirectMessageChannels(input))]) {
     const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
       input,
