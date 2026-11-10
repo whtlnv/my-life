@@ -12,20 +12,20 @@ Phases (locked decision 17):
 - **Phase 2c:** rolling digests (system updates, sales, calendar and Drive) with Haiku-written summary lines and one confirm per digest; a _Handled for you_ strip with undo — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-2c-*.jpg`); the real-account walk-through is `docs/phase-2c-walkthrough.md`.
 - **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contact and organization timelines), Needs input (category and new-sender questions, task proposals), tasks with states and the prioritization pass, waiting-on — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-3-*.jpg`); the real-account walk-through is `docs/phase-3-walkthrough.md`. Not built: the "significant alert not yet opened" urgent rule, identity-merge questions and the todo-list import (decisions and `PENDING_TASKS.md` § 4 below).
 - **Phase 4:** the in-app agent (the Agent tab): chat over mail, contacts, calendar and tasks on `MY_LIFE_AGENT_MODEL` (default Opus 5.5) under `apps/backend/prompts/agent-v1.md`, cited sources, eight actions through the domain guardrail (`decideAgentAction`; send and delete refused and recorded), a stored action log with undo by action id, the extension's create-draft command — code delivered 2026-11-09 (`DONE.md`); `scripts/demo.sh` seeds it. Not built: FTS5 search and local embeddings (keyword scan still enough); the gaps in `BACKLOG.md` dated 2026-11-09.
-- **Phase 5:** Slack, as a channel in the People view.
+- **Phase 5:** Slack in both workspaces (PS Mutuus, Erlia), one app per workspace with the user token in `.env`: the backend polls DMs, group DMs, mentions and threads the user wrote in every 60 s; Slack items in triage (ignore, task, reply), Slack contacts and timelines on the People tab, Slack in waiting-on; replies through `chat.postMessage` only from the dashboard composer — code delivered 2026-11-09 against the Slack fake (`DONE.md`, `docs/screenshots/2026-11-09-phase-5-*.jpg`); `scripts/demo.sh` polls a scripted Slack. The walk-through against the real workspaces is not done. Not built: Slack contacts merged with email contacts (the scopes have no `users:read.email`); the gaps in `BACKLOG.md` dated 2026-11-09.
 - **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view.
 - **Phase 7:** Gemini meeting notes from Drive.
 - **Phase 8:** cloud.
 
-Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Phase 1's inputs arrived 2026-11-06 (key in `.env`, `profile/psmutuus.md`). Before the Phase 2b walk-through: § 9 (the contacts scopes; the People API is enabled). Before Phase 5: § 5 (Slack app). Before Phase 6: § 6 (Telegram credentials).
+Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Phase 1's inputs arrived 2026-11-06 (key in `.env`, `profile/psmutuus.md`). Before the Phase 2b walk-through: § 9 (the contacts scopes; the People API is enabled). Before Phase 6: § 6 (Telegram credentials).
 
 ---
 
-## Start here (handoff 2026-11-09, after Phase 4)
+## Start here (handoff 2026-11-09, after Phase 5)
 
-Read `CLAUDE.md` first. **Phases 2b through 4 are delivered** (`DONE.md`). Phase 4 added the Agent tab: conversations stored and resumable; the Claude agent adapter (`apps/backend/src/claude-agent.ts`) sends each turn's tools with descriptions and schemas and offers `cite_sources`; the read tools; the actions go through `decideAgentAction` in `packages/domain/src/agent-action.ts` and land in `agent-action-store.ts`; `POST /agent/actions/undo` takes an action id only; the extension carries out create-draft commands (browser base64, never sends).
+Read `CLAUDE.md` first. **Phases 2b through 5 are delivered** (`DONE.md`). Phase 5 added Slack: `apps/backend/src/slack-poll.ts` (DMs and group DMs by `conversations.history` with `oldest`, mentions by `search.messages` for `<@own id>`, replies in threads the user wrote in by `conversations.replies`; the own id, workspace name and URL from `auth.test`), `slack-message-store.ts`, `POST /slack-poll` on `main.ts`'s timer, `POST /slack-sends` (refuses empty text and unknown workspaces; stores the sent reply under Slack's `ts`), and the Slack fake in `apps/integration/src/slack-fake-server.ts`.
 
-**Next:** Phase 5 (Slack). The two apps exist with their user scopes and credentials in `.env`; it is built against the Slack fake server; the user tokens (`PENDING_TASKS.md` § 5) are needed only to run it against the real workspaces.
+**Next:** Phase 6 (WhatsApp and Telegram) waits on `PENDING_TASKS.md` § 6 (Telegram `api_id` and `api_hash`). Until then: the Phase 5 walk-through against the real workspaces (the tokens are in `.env`; the user approves reading them first), and the 2026-11-09 entries in `BACKLOG.md`.
 
 **Waiting on the user**, not built:
 
@@ -33,27 +33,20 @@ Read `CLAUDE.md` first. **Phases 2b through 4 are delivered** (`DONE.md`). Phase
 - When to propose "same person?" merges, and from what (locked decision 22 says the model proposes them).
 - The todo-list import: `PENDING_TASKS.md` § 4 (the path).
 
-What the supervision showed in Phases 3 and 4 — check these every cycle:
+What the supervision showed in Phases 3 to 5 — check these every cycle:
 
+- **A fake more lenient than the real API hides broken calls:** in Phase 5 the mention search sent no query, `conversations.list` asked for no DM types, and every poll re-read whole conversations, all green against a fake that answered anything. Make the fake refuse what the real API refuses.
+- **The demo screenshots find what tests miss:** team ids instead of workspace names, raw `<@U…>` mentions, the user listed as their own contact, an unstyled card where any key posted a verdict. Look at the demo before calling a page done.
+- **Code tested only from `apps/integration` counts for nothing in its own package's coverage floor:** the Slack poll and send route needed co-located backend tests.
+- **A busy Mac fails the suite on timeouts** (the shipped backend took 18 s to start at load 34); wait for the load to drop rather than raising timeouts.
 - **Minimal greens build a test-only path beside the real one:** in Phase 4 the undo route took `tool`/`target` from the request and fell through to archive, the domain guardrail had no caller, the real Claude adapter sent no tool definitions, dropped text blocks and returned no citations, and `main.ts` created no agent — every test passed against fake agents. Read the shipped composition and the real adapter before trusting a green.
 - **Tests run in Node; the extension runs in a service worker:** a Node `Buffer` in extension code passes every test and fails in Chrome.
-
 - **Mocked dashboard tests hide missing backend fields:** the People page crashed on `lastMessageAt` and `organization` the route never sent; waiting-on returned bare emails. Run the demo and open every new page before the phase closes.
 - **The shipped dashboard routes pages in `apps/dashboard/src/main.tsx`, which no test covers:** People and Needs input fell through to Now.
 - **Domain rules can be bypassed by the route:** `GET /people` first computed urgency inline, ignoring the domain and the thresholds; task transitions existed only in the domain until route items were added; the prioritization adapter ignored its input. Read the route and the adapter, not just the domain tests.
 - **Restart items get greened on the narrowest case:** the task restart passed with one confirmed proposal while done, snooze and waiting-on were not stored.
 - **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
 - **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
-
-## Phase 5 — Slack
-
-Outcome: DMs, mentions and threads the user is in from both workspaces join the People view as a channel, feed triage and waiting-on; replies are sent from the dashboard.
-
-- One Slack app per workspace with user scopes (decided with the user 2026-11-09): each workspace's user token (`xoxp-…`) is pasted into `.env` as `MY_LIFE_SLACK_WORKSPACE_<n>_USER_TOKEN` beside its team id; no OAuth flow is built.
-- Backend polls `conversations.history` for DMs and `search.messages` for mentions every 60 s per workspace.
-- Domain: a Slack message becomes a triage item (`ignore` / `act` / `reply`) and, when unanswered, a waiting-on entry.
-- Reply composer in the dashboard → `chat.postMessage` as the user, only on an explicit send.
-- Slack fake HTTP server with scenarios.
 
 ## Phase 6 — WhatsApp and Telegram
 

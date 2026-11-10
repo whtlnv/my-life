@@ -40,6 +40,20 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   so Claude's tool inputs are only checked for required properties by `claude-agent.ts`. Make the schemas strict and send
   `strict: true` when a malformed tool input is seen in practice, or with the next change to the agent tools.
 
+- **[apps/backend/src/app.ts:614] Each Slack workspace's name, URL and last poll live only in memory** (added: 2026-11-09)
+  `slackWorkspacePolls` is filled by `POST /slack-poll`, and `main.ts` first calls it one polling interval after start. Until
+  then, after a restart, Slack items show team ids, links fall back to the hand-built `app.slack.com` form, and the source
+  chip says never polled. Store the `auth.test` answer per workspace, or poll once at startup.
+- **[apps/backend/src/slack-poll.ts:44] The Slack poll asks `users.info` for every message on every poll, and `auth.test` three times** (added: 2026-11-09)
+  No cache of display names or of the own user id. Slack's tier limits allow it at today's volume; cache both per poll when a
+  workspace with many DMs hits 429s.
+- **[apps/backend/src/slack-poll.ts:150] A failed Slack poll is swallowed with no log** (added: 2026-11-09)
+  `pollSlackWorkspaces` catches every error (invalid_auth, a missing scope, a changed response shape) and only leaves the
+  workspace's last poll time unchanged, so the chip turns stale with no reason given. Log the error and show it on the chip.
+- **[apps/backend/src/app.ts:659] Slack sends are listed from memory** (added: 2026-11-09)
+  `GET /slack-sends` reads `slackSends`, an array in `createApp`; the sent reply itself is stored in the Slack message store, so
+  waiting-on survives a restart, but the send log does not. Store sends append-only like verdicts.
+
 ## Out of Scope
 
 - **[apps/backend/src/app.ts:629] Three separate `auth.test` readers** (added: 2026-11-09)
