@@ -53,6 +53,12 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/dashboard/src/app-shell.tsx:23] The `GET /now` Telegram status shape is declared apart from the route that builds it** (added: 2026-11-10)
+  `ShellStatus.telegram` here (`loggedIn`, `lastMessageAt` / `lastStartedAt`, `stale`) and `describeTelegramConnection` in
+  `apps/backend/src/app.ts` must change together, and nothing ties them: a renamed field compiles and the chip shows the
+  wrong state. Deferred for the same reason as the `/now` entry below: there is no `/now` contract to share, and adding one
+  is new `packages/contracts` surface delivered test-first.
+
 - **[apps/backend/src/app.ts:629] Three separate `auth.test` readers** (added: 2026-11-09)
   `fetchSlackWorkspaceIdentity` and `fetchOwnSlackUserId` in `app.ts` and `fetchOwnSlackUserId` in `slack-poll.ts` each
   call `auth.test` and pick fields out of its answer, so a change to how the identity is read has to be made three times.
