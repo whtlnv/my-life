@@ -1,7 +1,12 @@
 import { writeFileSync } from 'node:fs';
 
+export interface TelegramLoginPrompts {
+  phoneNumber: () => Promise<string>;
+  phoneCode: () => Promise<string>;
+}
+
 interface TelegramLoginClient {
-  signIn(prompts: { phoneNumber: () => Promise<string>; phoneCode: () => Promise<string> }): Promise<string>;
+  signIn(prompts: TelegramLoginPrompts): Promise<string>;
 }
 
 export async function runTelegramLogin(options: {

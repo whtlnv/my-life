@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { runTelegramLogin } from './telegram-login';
+import { runTelegramLogin, type TelegramLoginPrompts } from './telegram-login';
 
 describe('runTelegramLogin', () => {
   it('asks for the phone number, then the code Telegram sent, and writes the session file', async () => {
@@ -14,7 +14,7 @@ describe('runTelegramLogin', () => {
       const answers = ['+5215512345678', '24680'];
       const received: string[] = [];
       const client = {
-        signIn: async (prompts: { phoneNumber: () => Promise<string>; phoneCode: () => Promise<string> }) => {
+        signIn: async (prompts: TelegramLoginPrompts) => {
           received.push(await prompts.phoneNumber());
           received.push(await prompts.phoneCode());
           return 'saved-session-string';
