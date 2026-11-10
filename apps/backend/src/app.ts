@@ -2002,7 +2002,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
         ...slackMessageStore.listMessages().filter(isFromSomeoneElse).map(slackSenderAsContact),
-        ...chatMessageStore.listMessages().filter(isFromSomeoneElse).map(telegramSenderAsContact),
+        ...chatMessageStore
+          .listMessages()
+          .filter(isFromSomeoneElse)
+          .filter((message) => !markedContactKeys.has(telegramContactKey(message.senderId)))
+          .map(telegramSenderAsContact),
       ],
     };
   };

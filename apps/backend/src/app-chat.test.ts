@@ -429,6 +429,17 @@ describe('createApp chat messages', () => {
 
     expect(vip).toEqual([expect.objectContaining({ telegramHandles: [{ userId: '7001' }] })]);
   });
+  it('leaves out of Everyone else at GET /people a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip, listing it under VIP only', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const app = createApp({ allowedEmails: [], databasePath });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+
+    const { vip, everyoneElse } = await getJson<{ vip: unknown[]; everyoneElse: unknown[] }>(app, '/people');
+
+    expect(vip).toEqual([expect.objectContaining({ telegramHandles: [{ userId: '7001' }] })]);
+    expect(everyoneElse).toEqual([]);
+  });
   it('lists at GET /people under Urgent, with the reason "VIP waiting", a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip whose message has waited more than 1 business day for a reply', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-02T17:00:00.000Z');
