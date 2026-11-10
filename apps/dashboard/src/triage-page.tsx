@@ -179,6 +179,19 @@ function whenAccepted(request: Promise<Response> | undefined, onAccepted: () => 
   });
 }
 
+function whenSent(request: Promise<Response>, onSent: () => void, onError: (error: string) => void) {
+  void request.then((response) => {
+    if (response.ok) onSent();
+    else
+      void response.json().then(
+        ({ error }: { error: string }) => {
+          onError(error);
+        },
+        () => undefined,
+      );
+  });
+}
+
 function Key({ children }: { children: ReactNode }) {
   return <kbd>{children}</kbd>;
 }
@@ -663,16 +676,7 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
   }
 
   function sendReply() {
-    void postSlackSend(item, reply).then((response) => {
-      if (response.ok) onAccepted();
-      else
-        void response.json().then(
-          ({ error }: { error: string }) => {
-            setSendError(error);
-          },
-          () => undefined,
-        );
-    });
+    whenSent(postSlackSend(item, reply), onAccepted, setSendError);
   }
 
   return (
@@ -793,16 +797,7 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
   const [sendError, setSendError] = useState<string>();
 
   function sendReply() {
-    void postChatSend(item, reply).then((response) => {
-      if (response.ok) onAccepted();
-      else
-        void response.json().then(
-          ({ error }: { error: string }) => {
-            setSendError(error);
-          },
-          () => undefined,
-        );
-    });
+    whenSent(postChatSend(item, reply), onAccepted, setSendError);
   }
 
   function act(key: string) {
@@ -840,12 +835,7 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
           />
           {sendError !== undefined && <p className="slack-composer-error">{sendError}</p>}
           <span className="hint">{sendPromise}</span>
-          <button
-            type="button"
-            className="button button-primary"
-            disabled={reply === ''}
-            onClick={sendReply}
-          >
+          <button type="button" className="button button-primary" disabled={reply === ''} onClick={sendReply}>
             Send
           </button>
         </div>
