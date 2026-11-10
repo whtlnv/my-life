@@ -56,11 +56,12 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
       ok: true,
       messages: {
         matches: [
+          // As in real Slack, a search match carries no thread_ts: a reply names its thread only in its permalink.
           {
             text: threadParentText,
             user: ownSlackUserId,
             ts: threadTimestamp,
-            thread_ts: threadTimestamp,
+            permalink: `https://acme.slack.com/archives/C0002/p${threadTimestamp.replace('.', '')}?thread_ts=${threadTimestamp}&cid=C0002`,
             channel: { id: 'C0002', is_im: false },
           },
         ],

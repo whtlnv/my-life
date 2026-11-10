@@ -114,22 +114,28 @@ async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
   }
 }
 
+// Slack's search matches carry no thread_ts; a reply names its thread only in its permalink's query.
+function threadTimestampOf(match: { permalink?: string }): string | null {
+  return match.permalink === undefined ? null : new URL(match.permalink).searchParams.get('thread_ts');
+}
+
 async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
   const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
-  const matches = await searchSlackMessages<{ thread_ts?: string; channel: { id: string } }>(input, ownMessagesQuery);
+  const matches = await searchSlackMessages<{ permalink?: string; channel: { id: string } }>(input, ownMessagesQuery);
   for (const match of matches) {
-    if (match.thread_ts === undefined) {
+    const threadTimestamp = threadTimestampOf(match);
+    if (threadTimestamp === null) {
       continue;
     }
-    const newestStoredReplyTimestamp = input.store.newestTimestampInThread(match.channel.id, match.thread_ts);
+    const newestStoredReplyTimestamp = input.store.newestTimestampInThread(match.channel.id, threadTimestamp);
     const oldestParameter = oldestParameterAfter(newestStoredReplyTimestamp);
     const { messages: replies } = await callSlack<{ messages: SlackMessage[] }>(
       input,
-      `/conversations.replies?channel=${match.channel.id}&ts=${match.thread_ts}${oldestParameter}`,
+      `/conversations.replies?channel=${match.channel.id}&ts=${threadTimestamp}${oldestParameter}`,
     );
     for (const reply of replies) {
-      await saveSlackMessage(input, match.channel.id, reply, { threadTimestamp: match.thread_ts, ownSlackUserId });
+      await saveSlackMessage(input, match.channel.id, reply, { threadTimestamp, ownSlackUserId });
     }
   }
 }

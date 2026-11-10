@@ -114,7 +114,7 @@ describe('Slack fake server', () => {
         })
       ).json()) as {
         ok: boolean;
-        messages: { matches: { user: string; ts: string; thread_ts: string; channel: { id: string } }[] };
+        messages: { matches: { user: string; ts: string; permalink: string; channel: { id: string } }[] };
       };
 
       expect(search.ok).toBe(true);
@@ -122,7 +122,7 @@ describe('Slack fake server', () => {
       const [match] = search.messages.matches;
       expect(match?.user).toBe(ownSlackUserId);
       expect(match?.channel.id).toBe('C0002');
-      expect(match?.thread_ts).toBe('1762700200.000300');
+      expect(new URL(match?.permalink ?? '').searchParams.get('thread_ts')).toBe('1762700200.000300');
     } finally {
       await slack.close();
     }

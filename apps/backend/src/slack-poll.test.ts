@@ -176,7 +176,20 @@ describe('pollSlackWorkspace', () => {
           ? {
               ok: true,
               messages: {
-                matches: [{ channel: { id: 'C0002' }, thread_ts: '1762700200.000300' }, { channel: { id: 'C0003' } }],
+                // Slack's search matches carry no thread_ts: a reply names its thread only in its permalink.
+                matches: [
+                  {
+                    channel: { id: 'C0002' },
+                    ts: '1762700250.000350',
+                    permalink:
+                      'https://acme.slack.com/archives/C0002/p1762700250000350?thread_ts=1762700200.000300&cid=C0002',
+                  },
+                  {
+                    channel: { id: 'C0003' },
+                    ts: '1762700260.000360',
+                    permalink: 'https://acme.slack.com/archives/C0003/p1762700260000360',
+                  },
+                ],
               },
             }
           : { ok: true, messages: { matches: [] } },
@@ -206,7 +219,19 @@ describe('pollSlackWorkspace', () => {
     const slack = scriptedSlack({
       '/search.messages': (url) =>
         url.searchParams.get('query') === `from:<@${ownSlackUserId}>`
-          ? { ok: true, messages: { matches: [{ channel: { id: 'C0002' }, thread_ts: '1762700200.000300' }] } }
+          ? {
+              ok: true,
+              messages: {
+                matches: [
+                  {
+                    channel: { id: 'C0002' },
+                    ts: '1762700250.000350',
+                    permalink:
+                      'https://acme.slack.com/archives/C0002/p1762700250000350?thread_ts=1762700200.000300&cid=C0002',
+                  },
+                ],
+              },
+            }
           : { ok: true, messages: { matches: [] } },
       '/conversations.replies': () => ({
         ok: true,
