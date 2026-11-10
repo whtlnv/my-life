@@ -2169,13 +2169,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const userRepliedLaterInChat = (message: (typeof chatMessages)[number]): boolean =>
       chatMessages.some(
         (reply) =>
-          reply.sentByUser === true &&
+          reply.sentByUser &&
           reply.channel === message.channel &&
           reply.chatId === message.chatId &&
           reply.time > message.time,
       );
     const telegramPeople = chatMessages
-      .filter((message) => message.sentByUser !== true && !userRepliedLaterInChat(message))
+      .filter((message) => !message.sentByUser && !userRepliedLaterInChat(message))
       .map((message) => ({ channel: 'telegram', displayName: message.senderName, waitingSince: message.time }));
     return context.json({
       people: [...people, ...slackPeople, ...telegramPeople].toSorted((first, second) =>
