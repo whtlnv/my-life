@@ -1511,7 +1511,7 @@ describe('TriagePage', () => {
     const postedSlackVerdicts = vi
       .mocked(fetch)
       .mock.calls.filter(([input]) => input === '/slack-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(String(init?.body)) as unknown }));
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
     expect(postedSlackVerdicts).toEqual([
       {
         method: 'POST',
@@ -1587,7 +1587,7 @@ describe('TriagePage', () => {
     const postedSlackSends = vi
       .mocked(fetch)
       .mock.calls.filter(([input]) => input === '/slack-sends')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(String(init?.body)) as unknown }));
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
     expect(postedSlackSends).toEqual([
       {
         method: 'POST',
@@ -1663,7 +1663,7 @@ describe('TriagePage', () => {
     const postedSlackSendBodies = vi
       .mocked(fetch)
       .mock.calls.filter(([input]) => input === '/slack-sends')
-      .map(([, init]) => JSON.parse(String(init?.body)) as unknown);
+      .map(([, init]) => JSON.parse(init?.body as string) as unknown);
     expect(postedSlackSendBodies).toEqual([
       { workspaceTeamId: 'T0001', conversationId: 'C0001', threadTimestamp: '1762700000.000200', text: 'On it' },
     ]);
@@ -1735,7 +1735,7 @@ describe('TriagePage', () => {
     ]);
   });
 
-  it('posts the `ignore` verdict when a Slack card\'s Ignore button is clicked, and the `act` verdict when another card\'s Task button is clicked', async () => {
+  it("posts the `ignore` verdict when a Slack card's Ignore button is clicked, and the `act` verdict when another card's Task button is clicked", async () => {
     const slackItem = (timestamp: string, senderName: string, text: string) => ({
       workspaceTeamId: 'T0001',
       conversationId: 'D0001',
@@ -1768,7 +1768,7 @@ describe('TriagePage', () => {
     const postedSlackVerdicts = vi
       .mocked(fetch)
       .mock.calls.filter(([input]) => input === '/slack-verdicts')
-      .map(([, init]) => ({ method: init?.method, body: JSON.parse(String(init?.body)) as unknown }));
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
     expect(postedSlackVerdicts).toEqual([
       {
         method: 'POST',
