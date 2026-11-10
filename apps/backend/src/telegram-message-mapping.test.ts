@@ -51,4 +51,22 @@ describe('Telegram message mapping', () => {
       sentByUser: true,
     });
   });
+
+  it('names a peer who has no last name by their first name alone, in both the chat title and the sender name', () => {
+    const marta = new Api.User({ id: returnBigInt(515151), firstName: 'Marta' });
+    const message = new Api.Message({
+      id: 1019,
+      peerId: new Api.PeerUser({ userId: returnBigInt(515151) }),
+      date: Date.parse('2026-11-09T17:00:00.000Z') / 1000,
+      message: 'Te mando el contrato',
+      out: false,
+    });
+
+    const mapped = mapTelegramMessage({ message, chat: marta, sender: marta });
+
+    expect({ chatTitle: mapped.chatTitle, senderName: mapped.senderName }).toEqual({
+      chatTitle: 'Marta',
+      senderName: 'Marta',
+    });
+  });
 });
