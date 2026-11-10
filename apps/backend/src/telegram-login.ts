@@ -14,12 +14,14 @@ interface TelegramLoginClient {
 export async function runTelegramLogin(options: {
   client: TelegramLoginClient;
   ask: (question: string) => Promise<string>;
+  askHidden?: (question: string) => Promise<string>;
   sessionPath: string;
 }): Promise<void> {
+  const askHidden = options.askHidden ?? options.ask;
   const session = await options.client.signIn({
     phoneNumber: () => options.ask('Phone number: '),
     phoneCode: () => options.ask('Code Telegram sent: '),
-    password: () => options.ask('Two-step verification password: '),
+    password: () => askHidden('Two-step verification password: '),
   });
   // The session is a credential: it logs in as the user, so only the user may read it.
   mkdirSync(dirname(options.sessionPath), { recursive: true });

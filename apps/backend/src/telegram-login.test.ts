@@ -93,4 +93,35 @@ describe('runTelegramLogin', () => {
       expect(statSync(nestedSessionPath).mode & 0o777).toBe(0o600);
     });
   });
+
+  it('asks for the 2FA password through the hidden prompt when one is given, so the password is not echoed', async () => {
+    await withSessionPath(async (sessionPath) => {
+      const askedOpenly: string[] = [];
+      const askedHidden: string[] = [];
+      const client = {
+        signIn: async (prompts: TelegramLoginPrompts) => {
+          await prompts.phoneNumber();
+          await prompts.phoneCode();
+          return `session for ${await prompts.password()}`;
+        },
+      };
+
+      await runTelegramLogin({
+        client,
+        ask: (question) => {
+          askedOpenly.push(question);
+          return Promise.resolve('typed openly');
+        },
+        askHidden: (question) => {
+          askedHidden.push(question);
+          return Promise.resolve('correct horse battery staple');
+        },
+        sessionPath,
+      });
+
+      expect(askedOpenly).toEqual(['Phone number: ', 'Code Telegram sent: ']);
+      expect(askedHidden).toEqual(['Two-step verification password: ']);
+      expect(readFileSync(sessionPath, 'utf8')).toBe('session for correct horse battery staple');
+    });
+  });
 });
