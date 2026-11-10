@@ -100,8 +100,8 @@ function readSlackWorkspace(
   workspaceNumber: number,
 ): SlackWorkspaceSettings {
   return {
-    teamId: environment[`MY_LIFE_SLACK_WORKSPACE_${workspaceNumber}_TEAM_ID`],
-    userToken: environment[`MY_LIFE_SLACK_WORKSPACE_${workspaceNumber}_USER_TOKEN`],
+    teamId: environment[`MY_LIFE_SLACK_WORKSPACE_${String(workspaceNumber)}_TEAM_ID`],
+    userToken: environment[`MY_LIFE_SLACK_WORKSPACE_${String(workspaceNumber)}_USER_TOKEN`],
   };
 }
 
