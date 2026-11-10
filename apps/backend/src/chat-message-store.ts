@@ -1,6 +1,6 @@
 import { openDatabase } from './open-database';
 
-export type ChatMessage = {
+export interface ChatMessage {
   channel: string;
   chatId: string;
   chatTitle: string;
@@ -10,14 +10,14 @@ export type ChatMessage = {
   text: string;
   time: string;
   sentByUser: boolean;
-};
+}
 
-export type ChatMessageVerdict = {
+export interface ChatMessageVerdict {
   channel: string;
   chatId: string;
   messageId: string;
   decision: string;
-};
+}
 
 type ChatMessageRow = Omit<ChatMessage, 'sentByUser'> & { sentByUser: number };
 
