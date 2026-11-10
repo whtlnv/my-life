@@ -319,4 +319,35 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+  it('leaves out of GET /people a Telegram message the user sent, so the user is not listed as their own contact', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    chatMessageStore.saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+    });
+    chatMessageStore.saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '43',
+      senderId: '9000',
+      senderName: 'Francisco',
+      text: 'Thursday works.',
+      time: '2026-11-09T16:05:00.000Z',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([expect.objectContaining({ telegramHandles: [{ userId: '7001' }] })]);
+  });
 });

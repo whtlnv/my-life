@@ -1956,7 +1956,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .listMessages()
           .filter((message) => message.sentByUser !== true)
           .map(slackSenderAsContact),
-        ...chatMessageStore.listMessages().map(telegramSenderAsContact),
+        ...chatMessageStore
+          .listMessages()
+          .filter((message) => message.sentByUser !== true)
+          .map(telegramSenderAsContact),
       ],
     };
   };
