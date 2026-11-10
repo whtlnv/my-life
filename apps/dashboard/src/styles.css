@@ -165,7 +165,6 @@ kbd {
 .topbar-inner {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
   max-width: var(--content-width);
   margin: 0 auto;
   padding: var(--space-2) var(--space-5);
