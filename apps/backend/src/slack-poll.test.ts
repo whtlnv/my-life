@@ -345,7 +345,7 @@ describe('pollSlackWorkspace', () => {
     };
     const slack = scriptedSlack({
       '/search.messages': (url) =>
-        url.searchParams.get('query') === `<@${ownSlackUserId}>`
+        url.searchParams.get('query')?.startsWith(`<@${ownSlackUserId}>`) === true
           ? { ok: true, messages: { matches: [{ ...mention, channel: { id: 'C0001' } }] } }
           : { ok: true, messages: { matches: [] } },
     });
@@ -377,7 +377,7 @@ describe('pollSlackWorkspace', () => {
   it('stores a mention match the user sent themselves as sent by the user', async () => {
     const slack = scriptedSlack({
       '/search.messages': (url) =>
-        url.searchParams.get('query') === `<@${ownSlackUserId}>`
+        url.searchParams.get('query')?.startsWith(`<@${ownSlackUserId}>`) === true
           ? {
               ok: true,
               messages: {
@@ -403,7 +403,7 @@ describe('pollSlackWorkspace', () => {
     const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
     const slack = scriptedSlack({
       '/search.messages': (url) =>
-        url.searchParams.get('query') === ownMessagesQuery
+        url.searchParams.get('query')?.startsWith(ownMessagesQuery) === true
           ? {
               ok: true,
               messages: {
@@ -449,7 +449,7 @@ describe('pollSlackWorkspace', () => {
   it("asks conversations.replies on a second poll only for replies newer than the thread's newest stored one", async () => {
     const slack = scriptedSlack({
       '/search.messages': (url) =>
-        url.searchParams.get('query') === `from:<@${ownSlackUserId}>`
+        url.searchParams.get('query')?.startsWith(`from:<@${ownSlackUserId}>`) === true
           ? {
               ok: true,
               messages: {

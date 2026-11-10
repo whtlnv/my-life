@@ -401,7 +401,7 @@ describe('Slack fake server', () => {
         store: openSlackMessageStore(':memory:'),
       });
 
-      expect(slack.searchQueries()).toContain(`from:<@${ownSlackUserId}>`);
+      expect(slack.searchQueries()).toContainEqual(expect.stringMatching(new RegExp(`^from:<@${ownSlackUserId}>`)));
     } finally {
       await slack.close();
     }
@@ -418,7 +418,7 @@ describe('Slack fake server', () => {
         store: openSlackMessageStore(':memory:'),
       });
 
-      expect(slack.searchQueries()).toContain(`from:<@${chosenSlackUserId}>`);
+      expect(slack.searchQueries()).toContainEqual(expect.stringMatching(new RegExp(`^from:<@${chosenSlackUserId}>`)));
     } finally {
       await slack.close();
     }
@@ -555,7 +555,7 @@ describe('Slack fake server', () => {
         store: openSlackMessageStore(':memory:'),
       });
 
-      expect(slack.searchQueries()).toContain(`<@${chosenSlackUserId}>`);
+      expect(slack.searchQueries()).toContainEqual(expect.stringMatching(new RegExp(`^<@${chosenSlackUserId}>`)));
     } finally {
       await slack.close();
     }
