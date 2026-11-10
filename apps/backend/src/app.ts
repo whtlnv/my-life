@@ -131,6 +131,7 @@ type TriageRequest = ReportedMessage & {
 interface TelegramSender {
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
   getOwnAccount?: () => Promise<{ id: string; name: string }>;
+  isConnected?: () => boolean;
 }
 
 export interface AppOptions {
@@ -696,6 +697,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return { loggedIn: false };
     }
     const lastMessage = chatMessageStore.listMessages().at(-1);
+    if (options.telegramClient.isConnected?.() === false) {
+      return { loggedIn: true, lastStartedAt: startedAt, stale: true };
+    }
     return lastMessage === undefined
       ? { loggedIn: true, lastStartedAt: startedAt }
       : { loggedIn: true, lastMessageAt: lastMessage.time };

@@ -77,7 +77,7 @@
 - [x] The gramjs-backed adapter reads at most 20 recent messages per dialog (gramjs's `limit`), and only for dialogs with unread messages
 - [x] The gramjs-backed adapter registers its new-message handler with gramjs's `NewMessage` event builder, and takes the chat and sender from `getChat()` and `getSender()` when the message does not carry them
 - [x] `GET /now` reports Telegram as not logged in when Telegram is off, and as connected with the time of the last start or message when it is on, so the header chip shows in the shipped app
-- [ ] `GET /now` reports Telegram as stale when the client has been disconnected for more than twice the 60 s check interval
+- [x] `GET /now` reports Telegram as stale when the client has been disconnected for more than twice the 60 s check interval
 - [ ] The Telegram chip's tooltip says "last start" when its time is the last start and "last message" when it is the last message
 - [ ] The gramjs-backed adapter's sign-in passes the phone number, code and 2FA prompts to gramjs and returns the saved session string
 - [ ] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path

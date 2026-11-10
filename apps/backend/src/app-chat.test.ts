@@ -566,4 +566,20 @@ describe('createApp chat messages', () => {
 
     expect(telegram).toEqual({ loggedIn: true, lastStartedAt: '2026-11-10T06:15:00.000Z' });
   });
+
+  it('reports Telegram at GET /now as stale when the client has been disconnected for more than twice the 60 s check interval', async () => {
+    const { telegramClient } = recordingTelegramClient();
+    let currentTime = new Date('2026-11-10T06:15:00.000Z');
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      telegramClient: { ...telegramClient, isConnected: () => false },
+      clock: { now: () => currentTime },
+    });
+    currentTime = new Date('2026-11-10T06:17:01.000Z');
+
+    const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
+
+    expect(telegram).toEqual({ loggedIn: true, lastStartedAt: '2026-11-10T06:15:00.000Z', stale: true });
+  });
 });
