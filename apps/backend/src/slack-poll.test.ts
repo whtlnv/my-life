@@ -175,6 +175,25 @@ describe('pollSlackWorkspace', () => {
     expect(mentionQueries).toEqual([`<@${ownSlackUserId}> after:2026-11-07`]);
   });
 
+  it("searches for the user's own messages after the date 3 days before now when the first-poll lookback is 3 days", async () => {
+    const slack = scriptedSlack();
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      workspace,
+      store: openSlackMessageStore(':memory:'),
+      clock: pollClock,
+      firstPollLookbackDays: 3,
+    });
+
+    const ownMessageQueries = slack.requests
+      .filter((url) => url.pathname === '/search.messages')
+      .map((url) => url.searchParams.get('query'))
+      .filter((query) => query?.startsWith(`from:<@${ownSlackUserId}>`) === true);
+    expect(ownMessageQueries).toEqual([`from:<@${ownSlackUserId}> after:2026-11-07`]);
+  });
+
   it('stores the messages of a DM conversation that an is:dm search after the date 7 days before now names, though conversations.list does not list it', async () => {
     const slack = scriptedSlack({
       '/conversations.list': () => ({ ok: true, channels: [] }),

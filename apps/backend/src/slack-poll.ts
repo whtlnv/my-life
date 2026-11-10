@@ -184,7 +184,7 @@ function threadTimestampOf(match: { permalink?: string }): string | null {
 
 async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
-  const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
+  const ownMessagesQuery = `from:<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
   const matches = await searchSlackMessages<{ permalink?: string; channel: { id: string } }>(input, ownMessagesQuery);
   for (const match of matches) {
     const threadTimestamp = threadTimestampOf(match);
