@@ -1951,6 +1951,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .listMessages()
           .filter((message) => message.sentByUser !== true)
           .map(slackSenderAsContact),
+        ...chatMessageStore.listMessages().map((message) => ({
+          channel: 'telegram',
+          displayName: message.senderName,
+          telegramHandles: [{ userId: message.senderId }],
+        })),
       ],
     };
   };

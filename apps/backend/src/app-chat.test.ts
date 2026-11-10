@@ -293,4 +293,30 @@ describe('createApp chat messages', () => {
 
     expect(chatItems).toEqual([]);
   });
+
+  it('lists at GET /people, under Everyone else on channel telegram, the sender of a Telegram message as a contact with a Telegram handle of their user id and their display name', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([
+      expect.objectContaining({
+        channel: 'telegram',
+        displayName: 'Lucía Romero',
+        telegramHandles: [{ userId: '7001' }],
+      }),
+    ]);
+  });
 });
