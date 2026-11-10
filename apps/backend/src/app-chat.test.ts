@@ -463,4 +463,19 @@ describe('createApp chat messages', () => {
 
     expect(urgent).toEqual([]);
   });
+  it('lists at GET /waiting-on, on channel telegram and waiting since its time, the sender of a Telegram chat whose newest message is not the user\'s', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([
+      expect.objectContaining({
+        channel: 'telegram',
+        displayName: 'Lucía Romero',
+        waitingSince: '2026-11-09T16:00:00.000Z',
+      }),
+    ]);
+  });
 });
