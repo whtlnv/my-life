@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 21:31 · `apps/backend/src/telegram-message-mapping.test.ts::maps an outgoing text message the user wrote to a chat message sent by the user, still titled after the peer`
+- Behavior: An outgoing text message the user wrote maps to a chat message sent by the user
+- Predicted: test passes (read the code first: `sentByUser: Boolean(message.out)` is already there), which breaks the Red contract of a failing test
+- Actual: test passes
+- Type: passed unexpectedly (against the Red contract; the code-read prediction held)
+- Resolution: the previous green step (288c04c) wrote `Boolean(message.out)` instead of the minimal `false`, so this item was implemented early; no failing test exists for it without driving a different behavior, so the test is kept as a pin and /green has nothing to add.
+
 ## 2026-11-09 21:20 · `apps/backend/src/chat-message-store.test.ts::lists a second verdict on the same chat message beside the first, not in its place`
 - Behavior: A second verdict on the same chat message is listed beside the first, not in its place
 - Predicted: passes (read before running: `chat_message_verdicts` has no unique key and saves with a plain INSERT ordered by rowid)

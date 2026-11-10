@@ -28,4 +28,27 @@ describe('Telegram message mapping', () => {
       sentByUser: false,
     });
   });
+
+  it('maps an outgoing text message the user wrote to a chat message sent by the user, still titled after the peer', () => {
+    const user = new Api.User({ id: returnBigInt(777001), firstName: 'Francisco', lastName: 'Catalá', self: true });
+    const message = new Api.Message({
+      id: 1018,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T16:32:00.000Z') / 1000,
+      message: 'Sí, el jueves a las 10',
+      out: true,
+    });
+
+    expect(mapTelegramMessage({ message, chat: luis, sender: user })).toEqual({
+      channel: 'telegram',
+      chatId: '424242',
+      chatTitle: 'Luis Ortega',
+      messageId: '1018',
+      senderId: '777001',
+      senderName: 'Francisco Catalá',
+      text: 'Sí, el jueves a las 10',
+      time: '2026-11-09T16:32:00.000Z',
+      sentByUser: true,
+    });
+  });
 });
