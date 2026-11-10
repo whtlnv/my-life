@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import { TelegramClient } from 'telegram';
+import { LogLevel } from 'telegram/extensions/Logger';
 import { StringSession } from 'telegram/sessions';
 
 import { createGramjsTelegramClient } from './gramjs-telegram-client';
@@ -16,7 +17,7 @@ export function createGramjsClient({ apiId, apiHash, sessionPath }: TelegramConn
   const savedSession = existsSync(sessionPath) ? readFileSync(sessionPath, 'utf8').trim() : '';
   const session = new StringSession(savedSession);
   const client = new TelegramClient(session, apiId, apiHash, { connectionRetries: 5 });
-  client.setLogLevel('error' as Parameters<TelegramClient['setLogLevel']>[0]);
+  client.setLogLevel(LogLevel.ERROR);
   return client;
 }
 
