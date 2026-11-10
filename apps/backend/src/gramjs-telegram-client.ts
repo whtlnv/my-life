@@ -29,12 +29,7 @@ interface GramjsClient {
   getDialogs: () => Promise<{ entity?: Api.TypeUser | Api.TypeChat | undefined; unreadCount: number }[]>;
   getMessages: (entity: TelegramChat, parameters: { limit: number }) => Promise<Api.Message[]>;
   addEventHandler: (callback: (event: { message: Api.Message }) => unknown, eventBuilder: NewMessage) => void;
-  start: (parameters: {
-    phoneNumber: () => Promise<string>;
-    phoneCode: () => Promise<string>;
-    password: () => Promise<string>;
-    onError: (error: Error) => void;
-  }) => Promise<void>;
+  start: (parameters: TelegramLoginPrompts & { onError: (error: Error) => void }) => Promise<void>;
   session: { save: () => unknown };
 }
 
