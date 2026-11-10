@@ -20,6 +20,14 @@ import {
 
 const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
 
+const luisBudgetReviewActionProposal = {
+  action: 'act',
+  category: 'action',
+  summary: 'Luis asks for a budget review',
+  extract: {},
+  reason: 'Luis asks the user directly',
+} as const;
+
 describe('backend app: GET /people and GET /waiting-on', () => {
   it('lists at GET /people a contact marked vip through PUT /contacts/:email/marks/vip under VIP and not under Everyone else', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
@@ -162,13 +170,7 @@ describe('backend app: GET /people and GET /waiting-on', () => {
 
   it('leaves out of GET /people Everyone else a sender whose only message was proposed in an automated category, and keeps a sender whose message was proposed as an action', async () => {
     const triage = triageAnsweringByMessageId({
-      'message-1': {
-        action: 'act',
-        category: 'action',
-        summary: 'Luis asks for a budget review',
-        extract: {},
-        reason: 'Luis asks the user directly',
-      },
+      'message-1': luisBudgetReviewActionProposal,
       'message-2': shopNewsletterArchiveProposal,
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
@@ -184,13 +186,7 @@ describe('backend app: GET /people and GET /waiting-on', () => {
 
   it('keeps in GET /people Everyone else a sender with one message proposed in an automated category besides one proposed as an action', async () => {
     const triage = triageAnsweringByMessageId({
-      'message-1': {
-        action: 'act',
-        category: 'action',
-        summary: 'Luis asks for a budget review',
-        extract: {},
-        reason: 'Luis asks the user directly',
-      },
+      'message-1': luisBudgetReviewActionProposal,
       'message-2': shopNewsletterArchiveProposal,
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
@@ -488,13 +484,7 @@ describe('backend app: GET /people and GET /waiting-on', () => {
 
   it('leaves out of GET /waiting-on a sender whose waiting message was proposed in an automated category, and keeps a sender whose message was proposed as an action', async () => {
     const triage = triageAnsweringByMessageId({
-      'message-1': {
-        action: 'act',
-        category: 'action',
-        summary: 'Luis asks for a budget review',
-        extract: {},
-        reason: 'Luis asks the user directly',
-      },
+      'message-1': luisBudgetReviewActionProposal,
       'message-2': shopNewsletterArchiveProposal,
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
@@ -509,13 +499,7 @@ describe('backend app: GET /people and GET /waiting-on', () => {
 
   it('leaves out of GET /waiting-on a sender whose waiting message was proposed as an expense, and keeps a sender whose message was proposed as an action', async () => {
     const triage = triageAnsweringByMessageId({
-      'message-1': {
-        action: 'act',
-        category: 'action',
-        summary: 'Luis asks for a budget review',
-        extract: {},
-        reason: 'Luis asks the user directly',
-      },
+      'message-1': luisBudgetReviewActionProposal,
       'message-2': expenseInvoiceProposal('Acme', '2026-11-02'),
     });
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
