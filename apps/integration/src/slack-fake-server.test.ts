@@ -897,6 +897,27 @@ describe('Slack fake server', () => {
     }
   });
 
+  it("after a POST /slack-poll, each message in a Slack contact's timeline carries the workspace name its auth.test gives as team", async () => {
+    const slack = await startSlackFakeServer('direct-message', { workspaceName: 'Acme Studio' });
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+      await backend.request('/slack-poll', { method: 'POST' });
+
+      const { messages } = (await (await backend.request('/slack-contacts/T0001/U0001/timeline')).json()) as {
+        messages: { workspaceName?: string }[];
+      };
+
+      expect(messages.map((message) => message.workspaceName)).toEqual(['Acme Studio']);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('after a POST /slack-poll, a Slack triage item links to the workspace URL its auth.test gives followed by archives/<conversation>/p<timestamp without the dot>', async () => {
     const slack = await startSlackFakeServer('direct-message', { workspaceUrl: 'https://acme-studio.slack.com/' });
     try {
