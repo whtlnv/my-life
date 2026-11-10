@@ -61,11 +61,17 @@
 - [ ] Everyone else leaves out a sender whose messages are all automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
 - [ ] Everyone else keeps a sender with at least one message that is not automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
 - [ ] Slack sends made before the backend restarts are listed by `GET /slack-sends` after it (backlog: apps/backend/src/app.ts:659 Slack sends are listed from memory)
+- [ ] A VIP Telegram contact is listed under VIP and not under Everyone else
 - [ ] The header's Telegram chip says "telegram not logged in" when there is no session
 - [ ] The header's Telegram chip shows connected with the time of the last message received
 - [ ] The header's Telegram chip shows connected with the time of the last successful start when no message has arrived since
 - [ ] The header's Telegram chip shows stale when the client has not been connected for more than twice its expected interval
-- [ ] The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent
+- [ ] The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent (tested over a stub of the gramjs client's methods, never the network)
+- [ ] The gramjs-backed adapter's own account is the id and full name gramjs's `getMe` reports
+- [ ] The gramjs-backed adapter lists each dialog with its unread count and its recent messages mapped by the Telegram mapping, dropping what the mapping drops
+- [ ] The gramjs-backed adapter hands each new message gramjs delivers to the `onMessage` handler, mapped, and drops what the mapping drops
+- [ ] The gramjs-backed adapter's sign-in passes the phone number, code and 2FA prompts to gramjs and returns the saved session string
+- [ ] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
 - [ ] The shipped backend started with the Telegram API id, hash and a session file creates the gramjs-backed client and serves its stored messages at `GET /chat-messages`
 - [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
 - [ ] Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
