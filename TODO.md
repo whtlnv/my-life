@@ -88,7 +88,7 @@
 - [x] The shipped `main.ts` connects Telegram and passes the gramjs-backed client to `createApp` when Telegram is on, and logs "telegram not logged in" and starts without it when it is off; the shipped backend without a session reports Telegram not logged in at `GET /now`
 - [x] `GET /triage-queue` Telegram chat items carry the message text and a link that opens the chat in Telegram
 - [x] Typing `i`, `t` or `r` in a Telegram card's reply box stays text and posts no verdict
-- [ ] A Telegram card shows the message text
+- [x] A Telegram card shows the message text
 - [ ] A Telegram card's Ignore, Task and Reply buttons do what `i`, `t` and `r` do
 - [ ] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
 - [ ] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty

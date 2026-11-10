@@ -76,6 +76,7 @@ interface ChatTriageItem {
   messageId: string;
   chatTitle: string;
   senderName: string;
+  text: string;
   time: string;
 }
 
@@ -809,6 +810,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
         <span className="pill pill-muted">{timeInBusinessZone(item.time)}</span>
         <span className="pill">{channelLabels[item.channel]}</span>
       </div>
+      <p className="card-ask">{item.text}</p>
       {composing && (
         <div className="slack-composer">
           <textarea

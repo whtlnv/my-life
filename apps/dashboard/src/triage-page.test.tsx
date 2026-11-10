@@ -2012,6 +2012,31 @@ describe('TriagePage', () => {
     expect(within(telegramCard).getByText(channelLabels.telegram)).toHaveClass('pill');
   });
 
+  it('shows the message text on a Telegram triage card', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          text: '¿Vienes a cenar el sábado?',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    expect(within(telegramCard).getByText('¿Vienes a cenar el sábado?')).toBeInTheDocument();
+  });
+
   it('posts the `ignore` verdict for its message when the ignore key `i` is pressed on a Telegram card', async () => {
     answerGetTriageQueueWith({
       action: [],
