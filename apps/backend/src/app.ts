@@ -606,12 +606,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/chat-sends', async (context) => {
     const send = await context.req.json<{ channel: string; chatId: string; text: string }>();
-    if (send.text === '' || send.channel !== 'telegram' || options.telegramClient === undefined) {
+    const telegramClient = options.telegramClient;
+    if (send.text === '' || send.channel !== 'telegram' || telegramClient === undefined) {
       return context.body(null, 400);
     }
     let sent;
     try {
-      sent = await options.telegramClient!.sendText(send.chatId, send.text);
+      sent = await telegramClient.sendText(send.chatId, send.text);
     } catch (error) {
       return context.json({ error: (error as Error).message }, 502);
     }
