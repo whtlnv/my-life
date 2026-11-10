@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 17:16 · `apps/backend/src/slack-poll.test.ts::asks users.info once for each of two senders who wrote in one poll`
+- Behavior: Messages from two different users in one poll cause one `users.info` call each
+- Predicted: passes on first run (`displayNamesByUserId` is a Map keyed by user id, so distinct senders already get one lookup each)
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: The previous cycle (26e1929) already produces this behavior and no honest rewrite can make it fail, so the test was removed rather than left as a vacuous red; the item needs no production change.
+
 ## 2026-11-10 04:31 · `apps/backend/src/app-chat.test.ts::leaves out of VIP at GET /people a Telegram contact whose vip mark the user removed through DELETE /telegram-contacts/:userId/marks/vip`
 - Behavior: `DELETE /telegram-contacts/:userId/marks/vip` and `DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip` remove the VIP mark
 - Predicted: AssertionError — both DELETE routes 404, so `vip` at GET /people still lists the Telegram and the Slack contact (two entries)

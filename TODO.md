@@ -28,7 +28,8 @@
 - [x] The mention search carries `after:` the lookback date
 - [x] The own-message search carries `after:` the lookback date
 - [x] Two messages from the same user in one poll cause one `users.info` call (backlog: apps/backend/src/slack-poll.ts:44 The Slack poll asks `users.info` for every message on every poll)
-- [ ] Messages from two different users in one poll cause one `users.info` call each
+- [x] Messages from two different users in one poll cause one `users.info` call each
+  - already delivered by 26e1929 (the name cache is keyed by user id); passed on first run, see MISMATCHES.md (supervisor, 2026-11-10)
 - [ ] A second poll in the same backend asks `users.info` about no user the first poll already named
 - [ ] A workspace poll calls `auth.test` once (backlog: apps/backend/src/slack-poll.ts:44 … and `auth.test` three times)
 - [ ] A Slack conversation with three messages from someone else shows one triage card, carrying the newest of them
