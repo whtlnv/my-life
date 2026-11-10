@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 17:55 · `apps/backend/src/app-slack.test.ts::lists again at GET /triage-queue a conversation's Slack item, carrying the newer message, when a message arrives after the user confirmed ignore on its newest one`
+- Behavior: A Slack message newer than the card's verdict brings the conversation's card back, carrying the newer message
+- Predicted: passes on first run (verdicts are keyed per message and `describeSlackItems` takes the newest message per conversation before filtering decided ones); fallback AssertionError with `slackItems` empty
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: already delivered by 4695991/337eb0a (newest-per-conversation plus per-message verdicts); kept as a regression pin, since it fails if a verdict ever hides the whole conversation, and no production code is needed for this item.
+
 ## 2026-11-10 17:34 · `apps/backend/src/app-slack.test.ts::lists at GET /triage-queue one Slack item for each of two conversations with messages from someone else, each carrying its own newest message`
 - Behavior: Two Slack conversations with messages from someone else show one triage card each
 - Predicted: passes on first run — `newestMessagePerSlackConversation` (apps/backend/src/app.ts:1140) already keys by workspace and conversation id
