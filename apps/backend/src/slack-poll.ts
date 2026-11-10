@@ -133,6 +133,10 @@ function dateSevenDaysBefore(now: Date): string {
   return new Date(now.getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
 }
 
+function secondsSevenDaysBefore(now: Date): string {
+  return String((now.getTime() - sevenDaysInMilliseconds) / 1000);
+}
+
 async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
   const query = `is:dm after:${dateSevenDaysBefore(input.clock.now())}`;
   const matches = await searchPagesUntilCaughtUp(input, query, newestStoredTimestampOverall(input.store));
@@ -143,7 +147,9 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
   const ownSlackUserId = await fetchOwnSlackUserId(input);
   const directMessageChannels = await searchedDirectMessageChannels(input);
   for (const channel of directMessageChannels) {
-    const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
+    const oldestParameter = oldestParameterAfter(
+      newestStoredTimestampIn(input.store, channel.id) ?? secondsSevenDaysBefore(input.clock.now()),
+    );
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
       input,
       `/conversations.history?channel=${channel.id}${oldestParameter}`,

@@ -100,6 +100,21 @@ describe('pollSlackWorkspace', () => {
     expect(historyRequests.map((url) => url.searchParams.get('oldest'))).toEqual(['1762700000.000100']);
   });
 
+  it('asks conversations.history for a conversation with nothing stored only for messages from 7 days before now', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollWith(slack);
+
+    const historyRequests = slack.requests.filter((url) => url.pathname === '/conversations.history');
+    const sevenDaysBeforePollClockInSeconds = Date.parse('2026-11-03T18:00:00.000Z') / 1000;
+    expect(historyRequests.map((url) => Number(url.searchParams.get('oldest')))).toEqual([
+      sevenDaysBeforePollClockInSeconds,
+    ]);
+  });
+
   it('stores the messages of a DM conversation that an is:dm search after the date 7 days before now names, though conversations.list does not list it', async () => {
     const slack = scriptedSlack({
       '/conversations.list': () => ({ ok: true, channels: [] }),
