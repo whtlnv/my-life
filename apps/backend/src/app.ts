@@ -127,6 +127,10 @@ type TriageRequest = ReportedMessage & {
   threadState?: string | undefined;
 };
 
+interface TelegramSender {
+  sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
+}
+
 export interface AppOptions {
   allowedEmails: string[];
   clock?: Clock;
@@ -138,7 +142,7 @@ export interface AppOptions {
   gmailPollingIntervalInMilliseconds?: number;
   slackApiUrl?: string;
   slackWorkspaces?: { teamId: string; userToken: string }[];
-  telegramClient?: { sendText: (chatId: string, text: string) => Promise<{ messageId: string }> };
+  telegramClient?: TelegramSender;
   slackPollingIntervalInMilliseconds?: number;
   urgency?: { unansweredAskBusinessDays: number };
   triage?: {
