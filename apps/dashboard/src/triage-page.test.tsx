@@ -1725,7 +1725,7 @@ describe('TriagePage', () => {
     const buttonKeys = within(card)
       .getAllByRole('button')
       .map((button) => [
-        button.textContent?.replace(button.querySelector('kbd')?.textContent ?? '', '').trim(),
+        button.textContent.replace(button.querySelector('kbd')?.textContent ?? '', '').trim(),
         button.querySelector('kbd')?.textContent,
       ]);
     expect(buttonKeys).toEqual([
