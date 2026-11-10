@@ -2299,13 +2299,14 @@ describe('TriagePage', () => {
     await user.keyboard('r');
     const slackSendPromise = within(slackCard).getByRole('button', { name: 'Send' }).previousElementSibling
       ?.textContent;
+    if (slackSendPromise == null) throw new Error('the Slack composer shows no send promise beside Send');
 
     const telegramCard = await findCardContaining('Familia Romero');
     await user.click(telegramCard);
     await user.keyboard('r');
 
     expect(within(telegramCard).getByRole('textbox')).toBeInTheDocument();
-    expect(within(telegramCard).getByText(slackSendPromise as string)).toBeInTheDocument();
+    expect(within(telegramCard).getByText(slackSendPromise)).toBeInTheDocument();
   });
 
   it('removes a Telegram card from the page once the backend accepts its verdict, and keeps the others', async () => {
