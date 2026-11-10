@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -79,6 +79,18 @@ describe('runTelegramLogin', () => {
 
       expect(questions).toHaveLength(2);
       expect(readFileSync(sessionPath, 'utf8')).toBe('saved-session-string');
+    });
+  });
+
+  it('creates the session folder and writes the session file readable only by the user', async () => {
+    await withSessionPath(async (sessionPath) => {
+      const nestedSessionPath = join(sessionPath, 'my-life', 'telegram-session');
+      const client = { signIn: () => Promise.resolve('saved-session-string') };
+
+      await runTelegramLogin({ client, ask: scriptedAsk([]), sessionPath: nestedSessionPath });
+
+      expect(readFileSync(nestedSessionPath, 'utf8')).toBe('saved-session-string');
+      expect(statSync(nestedSessionPath).mode & 0o777).toBe(0o600);
     });
   });
 });

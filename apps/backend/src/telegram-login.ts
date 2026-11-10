@@ -1,4 +1,5 @@
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 export interface TelegramLoginPrompts {
   phoneNumber: () => Promise<string>;
@@ -20,5 +21,7 @@ export async function runTelegramLogin(options: {
     phoneCode: () => options.ask('Code Telegram sent: '),
     password: () => options.ask('Two-step verification password: '),
   });
-  writeFileSync(options.sessionPath, session);
+  // The session is a credential: it logs in as the user, so only the user may read it.
+  mkdirSync(dirname(options.sessionPath), { recursive: true });
+  writeFileSync(options.sessionPath, session, { mode: 0o600 });
 }
