@@ -70,6 +70,14 @@
 - [x] The gramjs-backed adapter's own account is the id and full name gramjs's `getMe` reports
 - [x] The gramjs-backed adapter lists each dialog with its unread count and its recent messages mapped by the Telegram mapping, dropping what the mapping drops
 - [x] The gramjs-backed adapter hands each new message gramjs delivers to the `onMessage` handler, mapped, and drops what the mapping drops
+- [ ] The Telegram mapping's chat id is Telegram's marked peer id (`utils.getPeerId`): a user's id, a basic group's negative id, a supergroup's `-100…` id — built from real gramjs `Api.User`, `Api.Chat` and `Api.Channel` objects
+- [ ] The gramjs-backed adapter sends to a chat by its marked peer id as a number entity (a big integer), never as a string gramjs would read as a username
+- [ ] The gramjs-backed adapter's own account with no last name is named by the first name alone, with no "undefined"
+- [ ] The gramjs-backed adapter reads at most 20 recent messages per dialog (gramjs's `limit`), and only for dialogs with unread messages
+- [ ] The gramjs-backed adapter registers its new-message handler with gramjs's `NewMessage` event builder, and takes the chat and sender from `getChat()` and `getSender()` when the message does not carry them
+- [ ] `GET /now` reports Telegram as not logged in when Telegram is off, and as connected with the time of the last start or message when it is on, so the header chip shows in the shipped app
+- [ ] `GET /now` reports Telegram as stale when the client has been disconnected for more than twice the 60 s check interval
+- [ ] The Telegram chip's tooltip says "last start" when its time is the last start and "last message" when it is the last message
 - [ ] The gramjs-backed adapter's sign-in passes the phone number, code and 2FA prompts to gramjs and returns the saved session string
 - [ ] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
 - [ ] The shipped backend started with the Telegram API id, hash and a session file creates the gramjs-backed client and serves its stored messages at `GET /chat-messages`
