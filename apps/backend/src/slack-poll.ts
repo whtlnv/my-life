@@ -93,11 +93,11 @@ function oldestParameterAfter(newestStoredTimestamp: string | undefined): string
 
 const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1000;
 
-async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
-  if (input.clock === undefined) {
-    return [];
-  }
-  const afterDate = new Date(input.clock.now().getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
+async function searchedDirectMessageChannels(
+  input: PollSlackWorkspaceInput,
+  clock: { now: () => Date },
+): Promise<{ id: string }[]> {
+  const afterDate = new Date(clock.now().getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
   const matches = await searchSlackMessages<{ channel: { id: string } }>(input, `is:dm after:${afterDate}`);
   return matches.map((match) => match.channel);
 }
@@ -105,7 +105,8 @@ async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Pr
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
   const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im,mpim');
-  const directMessageChannels = input.clock === undefined ? channels : await searchedDirectMessageChannels(input);
+  const directMessageChannels =
+    input.clock === undefined ? channels : await searchedDirectMessageChannels(input, input.clock);
   for (const channel of directMessageChannels) {
     const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
