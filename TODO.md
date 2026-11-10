@@ -1,2 +1,68 @@
 # TODO.md — working set
 
+## Phase 6a — Telegram
+
+- [ ] A Telegram message saved to the chat store is listed back with its channel, chat id, chat title, message id, sender id, sender name, text, ISO time and whether the user sent it
+- [ ] Saving a message with the same channel, chat id and message id twice lists it once
+- [ ] Two messages with the same chat id and message id but different channels are both listed
+- [ ] Chat messages saved before the store is reopened are listed after it is reopened
+- [ ] An ignore or task verdict on a chat message is stored and listed after the store is reopened
+- [ ] A second verdict on the same chat message is listed beside the first, not in its place
+- [ ] An incoming text message in a Telegram private chat maps to a chat message with channel `telegram`, the peer's name as chat title, the sender's id and name, the text, the ISO time, not sent by the user
+- [ ] An outgoing text message the user wrote maps to a chat message sent by the user
+- [ ] A text message in a Telegram group maps to a chat message with the group's title as chat title
+- [ ] A message in a Telegram broadcast channel is dropped by the mapping
+- [ ] A Telegram service message (a member joined, a title changed) is dropped by the mapping
+- [ ] A Telegram message with no text (a photo or sticker alone) is dropped by the mapping
+- [ ] The scripted Telegram client accepts a send to a chat it knows and returns a new message id
+- [ ] The scripted Telegram client refuses a send to a chat it does not know
+- [ ] The scripted Telegram client refuses a send with empty text
+- [ ] Telegram is on when the API id, the API hash and a session file are all present
+- [ ] Telegram is off when the session file is missing, even with the API id and hash set
+- [ ] Telegram is off when the API id or the API hash is missing, even with a session file
+- [ ] The Telegram session path is `~/Library/Application Support/my-life/telegram-session` when `MY_LIFE_TELEGRAM_SESSION_PATH` is unset
+- [ ] The Telegram session path follows `MY_LIFE_TELEGRAM_SESSION_PATH` when it is set
+- [ ] When Telegram starts, the recent messages of each dialog with unread messages are stored
+- [ ] When Telegram starts, a dialog with no unread messages is not read
+- [ ] A Telegram message that arrives after start is stored when it arrives
+- [ ] The login flow asks for the phone number, then the code Telegram sent, and writes the session file
+- [ ] The login flow asks for the 2FA password before writing the session file when the account has one
+- [ ] The login flow does not ask for a 2FA password when the account has none
+- [ ] `GET /chat-messages` lists the stored chat messages
+- [ ] `POST /chat-verdicts` with ignore stores the verdict on that chat message
+- [ ] `POST /chat-verdicts` with task creates a task that links back to the Telegram chat and names Telegram as its source
+- [ ] `POST /chat-sends` with text to a Telegram chat sends it through the Telegram session and stores it as sent by the user under the id Telegram returned
+- [ ] `POST /chat-sends` with empty text is refused and nothing is sent
+- [ ] `POST /chat-sends` for a channel that is not configured is refused and nothing is sent
+- [ ] `POST /chat-sends` answers 502 with Telegram's error when Telegram refuses the send
+- [ ] Chat sends are listed with their time after the backend restarts
+- [ ] A Telegram chat whose newest message is not the user's and has no verdict is a triage item with the chat title, sender and time
+- [ ] A Telegram chat whose newest message is the user's is not a triage item
+- [ ] A Telegram chat whose newest message has a verdict is not a triage item
+- [ ] A Telegram triage card shows the chat title, sender, time and a Telegram channel pill
+- [ ] Pressing `i` on a Telegram card posts an ignore verdict for its message
+- [ ] Pressing `t` on a Telegram card posts a task verdict for its message
+- [ ] Pressing `r` on a Telegram card opens the composer saying "Sent as you, only when you press Send"
+- [ ] Pressing Send in the composer on a Telegram card posts the text to `POST /chat-sends` with channel `telegram` and the chat id
+- [ ] A Telegram sender is listed on the People tab as a contact with a `telegram` handle and their display name
+- [ ] The user is not listed as their own Telegram contact
+- [ ] A Telegram contact's timeline shows their Telegram messages, each with its channel
+- [ ] A Telegram contact can be marked VIP from the People tab and stays VIP after a restart
+- [ ] A VIP Telegram contact waiting more than 1 business day is listed as Urgent
+- [ ] A VIP Telegram contact waiting less than 1 business day is not listed as Urgent
+- [ ] Waiting-on includes a Telegram chat whose newest message is not the user's
+- [ ] Waiting-on leaves out a Telegram chat whose newest message is the user's
+- [ ] Waiting-on orders Telegram chats with email and Slack by how long each has waited
+- [ ] A person on the People tab with no stored organization shows the organization the extraction named before their domain (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [ ] A person with no stored organization and none from the extraction shows their domain (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [ ] Everyone else leaves out a sender whose messages are all automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [ ] Everyone else keeps a sender with at least one message that is not automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [ ] Slack sends made before the backend restarts are listed by `GET /slack-sends` after it (backlog: apps/backend/src/app.ts:659 Slack sends are listed from memory)
+- [ ] The header's Telegram chip says "telegram not logged in" when there is no session
+- [ ] The header's Telegram chip shows connected with the time of the last message received
+- [ ] The header's Telegram chip shows connected with the time of the last successful start when no message has arrived since
+- [ ] The header's Telegram chip shows stale when the client has not been connected for more than twice its expected interval
+- [ ] The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent
+- [ ] The shipped backend started with the Telegram API id, hash and a session file creates the gramjs-backed client and serves its stored messages at `GET /chat-messages`
+- [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
+- [ ] Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
