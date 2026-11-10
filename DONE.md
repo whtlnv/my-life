@@ -1,3 +1,110 @@
+- [x] 2026-11-10 · A Telegram message saved to the chat store is listed back with its channel, chat id, chat title, message id, sender id, sender name, text, ISO time and whether the user sent it
+- [x] 2026-11-10 · Saving a message with the same channel, chat id and message id twice lists it once
+- [x] 2026-11-10 · Two messages with the same chat id and message id but different channels are both listed
+- [x] 2026-11-10 · Chat messages saved before the store is reopened are listed after it is reopened
+- [x] 2026-11-10 · An ignore or task verdict on a chat message is stored and listed after the store is reopened
+- [x] 2026-11-10 · A second verdict on the same chat message is listed beside the first, not in its place
+- [x] 2026-11-10 · An incoming text message in a Telegram private chat maps to a chat message with channel `telegram`, the peer's name as chat title, the sender's id and name, the text, the ISO time, not sent by the user
+- [x] 2026-11-10 · An outgoing text message the user wrote maps to a chat message sent by the user
+- [x] 2026-11-10 · A Telegram user with no last name (or no first name) maps to a sender name and chat title without "undefined" or a stray space; a user with neither falls back to their username, then their id
+- [x] 2026-11-10 · A text message in a Telegram group maps to a chat message with the group's title as chat title
+- [x] 2026-11-10 · A message in a Telegram broadcast channel is dropped by the mapping
+- [x] 2026-11-10 · A Telegram service message (a member joined, a title changed) is dropped by the mapping
+- [x] 2026-11-10 · A Telegram message with no text (a photo or sticker alone) is dropped by the mapping
+- [x] 2026-11-10 · The scripted Telegram client accepts a send to a chat it knows and returns a new message id
+- [x] 2026-11-10 · The scripted Telegram client refuses a send to a chat it does not know
+- [x] 2026-11-10 · The scripted Telegram client refuses a send with empty text
+- [x] 2026-11-10 · Telegram is on when the API id, the API hash and a session file are all present
+- [x] 2026-11-10 · Telegram is off when the session file is missing, even with the API id and hash set
+- [x] 2026-11-10 · Telegram is off when the API id or the API hash is missing, even with a session file
+- [x] 2026-11-10 · The Telegram session path is `~/Library/Application Support/my-life/telegram-session` when `MY_LIFE_TELEGRAM_SESSION_PATH` is unset
+- [x] 2026-11-10 · The Telegram session path follows `MY_LIFE_TELEGRAM_SESSION_PATH` when it is set
+- [x] 2026-11-10 · When Telegram starts, the recent messages of each dialog with unread messages are stored
+- [x] 2026-11-10 · When Telegram starts, a dialog with no unread messages is not read
+- [x] 2026-11-10 · A Telegram message that arrives after start is stored when it arrives
+- [x] 2026-11-10 · The login flow asks for the phone number, then the code Telegram sent, and writes the session file
+- [x] 2026-11-10 · The login flow asks for the 2FA password before writing the session file when the account has one
+- [x] 2026-11-10 · The login flow does not ask for a 2FA password when the account has none
+- [x] 2026-11-10 · `GET /chat-messages` lists the stored chat messages
+- [x] 2026-11-10 · `POST /chat-verdicts` with ignore stores the verdict on that chat message
+- [x] 2026-11-10 · `POST /chat-verdicts` with task creates a task that links back to the Telegram chat and names Telegram as its source
+- [x] 2026-11-10 · `POST /chat-sends` with text to a Telegram chat sends it through the Telegram session and stores it as sent by the user under the id Telegram returned
+- [x] 2026-11-10 · `POST /chat-sends` with empty text is refused and nothing is sent
+- [x] 2026-11-10 · `POST /chat-sends` for a channel that is not configured is refused and nothing is sent
+- [x] 2026-11-10 · `POST /chat-sends` answers 502 with Telegram's error when Telegram refuses the send
+- [x] 2026-11-10 · Chat sends are listed with their time after the backend restarts
+- [x] 2026-11-10 · A Telegram chat whose newest message is not the user's and has no verdict is a triage item with the chat title, sender and time
+- [x] 2026-11-10 · A Telegram chat whose newest message is the user's is not a triage item
+- [x] 2026-11-10 · A Telegram chat whose newest message has a verdict is not a triage item
+- [x] 2026-11-10 · A Telegram triage card shows the chat title, sender, time and a Telegram channel pill
+- [x] 2026-11-10 · Pressing `i` on a Telegram card posts an ignore verdict for its message
+- [x] 2026-11-10 · `POST /chat-sends` with channel `telegram` while Telegram is off (no client configured) answers 400 and nothing is sent or stored
+- [x] 2026-11-10 · A reply sent through `POST /chat-sends` is stored with the chat's title (from the chat's stored messages) and the user's own Telegram id and name (from the client's own account), not empty strings
+- [x] 2026-11-10 · Pressing `t` on a Telegram card posts a task verdict for its message
+- [x] 2026-11-10 · Pressing `r` on a Telegram card opens the composer saying "Sent as you, only when you press Send"
+- [x] 2026-11-10 · Pressing Send in the composer on a Telegram card posts the text to `POST /chat-sends` with channel `telegram` and the chat id
+- [x] 2026-11-10 · A Telegram sender is listed on the People tab as a contact with a `telegram` handle and their display name
+- [x] 2026-11-10 · The user is not listed as their own Telegram contact
+- [x] 2026-11-10 · A Telegram contact's timeline shows their Telegram messages, each with its channel
+- [x] 2026-11-10 · A Telegram contact can be marked VIP from the People tab and stays VIP after a restart
+- [x] 2026-11-10 · A VIP Telegram contact waiting more than 1 business day is listed as Urgent
+- [x] 2026-11-10 · A VIP Telegram contact waiting less than 1 business day is not listed as Urgent
+- [x] 2026-11-10 · Waiting-on includes a Telegram chat whose newest message is not the user's
+- [x] 2026-11-10 · Waiting-on leaves out a Telegram chat whose newest message is the user's
+- [x] 2026-11-10 · Waiting-on orders Telegram chats with email and Slack by how long each has waited
+- [x] 2026-11-10 · A person on the People tab with no stored organization shows the organization the extraction named before their domain (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [x] 2026-11-10 · A person with no stored organization and none from the extraction shows their domain (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [x] 2026-11-10 · Everyone else leaves out a sender whose messages are all automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [x] 2026-11-10 · Everyone else keeps a sender with at least one message that is not automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [x] 2026-11-10 · Slack sends made before the backend restarts are listed by `GET /slack-sends` after it (backlog: apps/backend/src/app.ts:659 Slack sends are listed from memory)
+- [x] 2026-11-10 · A VIP Telegram contact is listed under VIP and not under Everyone else
+- [x] 2026-11-10 · The header's Telegram chip says "telegram not logged in" when there is no session
+- [x] 2026-11-10 · The header's Telegram chip shows connected with the time of the last message received
+- [x] 2026-11-10 · The header's Telegram chip shows connected with the time of the last successful start when no message has arrived since
+- [x] 2026-11-10 · The header's Telegram chip shows stale when the client has not been connected for more than twice its expected interval
+- [x] 2026-11-10 · The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent (tested over a stub of the gramjs client's methods, never the network)
+- [x] 2026-11-10 · The gramjs-backed adapter's own account is the id and full name gramjs's `getMe` reports
+- [x] 2026-11-10 · The gramjs-backed adapter lists each dialog with its unread count and its recent messages mapped by the Telegram mapping, dropping what the mapping drops
+- [x] 2026-11-10 · The gramjs-backed adapter hands each new message gramjs delivers to the `onMessage` handler, mapped, and drops what the mapping drops
+- [x] 2026-11-10 · The Telegram mapping's chat id is Telegram's marked peer id (`utils.getPeerId`): a user's id, a basic group's negative id, a supergroup's `-100…` id — built from real gramjs `Api.User`, `Api.Chat` and `Api.Channel` objects
+- [x] 2026-11-10 · The gramjs-backed adapter sends to a chat by its marked peer id as a number entity (a big integer), never as a string gramjs would read as a username
+  - predicted-contradiction: `apps/backend/src/gramjs-telegram-client.test.ts::createGramjsTelegramClient sends text to a chat and returns the id of the message gramjs reports sent` — asserts: gramjs `sendMessage` receives the chat id as the string entity `'42'` — retired-by: "as a number entity (a big integer), never as a string gramjs would read as a username"
+- [x] 2026-11-10 · The gramjs-backed adapter's own account with no last name is named by the first name alone, with no "undefined"
+- [x] 2026-11-10 · The gramjs-backed adapter reads at most 20 recent messages per dialog (gramjs's `limit`), and only for dialogs with unread messages
+- [x] 2026-11-10 · The gramjs-backed adapter registers its new-message handler with gramjs's `NewMessage` event builder, and takes the chat and sender from `getChat()` and `getSender()` when the message does not carry them
+- [x] 2026-11-10 · `GET /now` reports Telegram as not logged in when Telegram is off, and as connected with the time of the last start or message when it is on, so the header chip shows in the shipped app
+- [x] 2026-11-10 · `GET /now` reports Telegram as stale when the client has been disconnected for more than twice the 60 s check interval
+- [x] 2026-11-10 · The Telegram chip's tooltip says "last start" when its time is the last start and "last message" when it is the last message
+- [x] 2026-11-10 · `GET /now` does not report Telegram as stale while the client has been disconnected for less than twice the 60 s check interval since it was last seen connected
+- [x] 2026-11-10 · The Telegram chip's last-message time is the newest Telegram message someone else sent, not a reply the user sent or a message from another channel
+- [x] 2026-11-10 · The gramjs-backed adapter's sign-in passes the phone number, code and 2FA prompts to gramjs and returns the saved session string
+- [x] 2026-11-10 · `createApp` given a Telegram client starts it: the recent messages of its dialogs with unread messages and every new message it delivers are stored and listed at `GET /chat-messages` (scripted client)
+- [x] 2026-11-10 · `connectTelegram` builds gramjs's `TelegramClient` from the session file, the API id and the API hash, and gramjs's real `TelegramClient` type-checks as the adapter's gramjs client (a type-level test)
+- [x] 2026-11-10 · `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
+- [x] 2026-11-10 · The shipped `main.ts` connects Telegram and passes the gramjs-backed client to `createApp` when Telegram is on, and logs "telegram not logged in" and starts without it when it is off; the shipped backend without a session reports Telegram not logged in at `GET /now`
+- [x] 2026-11-10 · `GET /triage-queue` Telegram chat items carry the message text and a link that opens the chat in Telegram
+- [x] 2026-11-10 · Typing `i`, `t` or `r` in a Telegram card's reply box stays text and posts no verdict
+- [x] 2026-11-10 · A Telegram card shows the message text
+- [x] 2026-11-10 · A Telegram card's Ignore button does what `i` does
+- [x] 2026-11-10 · A Telegram card's Task button does what `t` does
+- [x] 2026-11-10 · A Telegram card's Reply button does what `r` does
+- [x] 2026-11-10 · A Telegram card leaves the queue once its verdict is accepted or its reply is sent
+- [x] 2026-11-10 · A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty
+- [x] 2026-11-10 · Telegram cards sit under a "Telegram" section heading, each with an "Open in Telegram" link to its chat
+- [x] 2026-11-10 · A private-chat Telegram card names the person once; a group card names the group and the sender
+- [x] 2026-11-10 · `GET /people` Telegram rows carry the time of the contact's last message, so the row shows "last message …"
+- [x] 2026-11-10 · `DELETE /telegram-contacts/:userId/marks/vip` and `DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip` remove the VIP mark
+- [x] 2026-11-10 · Clicking a Telegram contact on the People tab shows their Telegram timeline, each message with its text, time and an "Open in Telegram" link
+- [x] 2026-11-10 · Mark VIP and Remove VIP on a Telegram row mark and unmark that Telegram contact
+- [x] 2026-11-10 · Mark VIP and Remove VIP on a Slack row mark and unmark that Slack contact
+- [x] 2026-11-10 · A VIP contact listed under Urgent offers Remove VIP, not Mark VIP
+- [x] 2026-11-10 · A Telegram contact and an email contact with the same display name are listed as two rows
+- [x] 2026-11-10 · A Telegram contact with several messages is listed once on the People tab, with the time of their newest message
+- [x] 2026-11-10 · A Slack contact with several messages is listed once on the People tab, with the time of their newest message
+- [x] 2026-11-10 · A Telegram or Slack contact is listed once under Urgent however many of their messages wait, with every reason that applies
+- [x] 2026-11-10 · A Slack contact marked VIP is listed under VIP and not under Everyone else
+- [x] 2026-11-10 · `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
+- [x] 2026-11-10 · Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
 - [x] 2026-11-09 · When the backend starts with `MY_LIFE_SLACK_WORKSPACE_1_TEAM_ID` and `MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN` set (and the same for `_2_`), its settings list each workspace with its team id and user token
 - [x] 2026-11-09 · When a workspace has a team id but no user token, it is left out of the Slack workspaces in the settings
 - [x] 2026-11-09 · With `MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS` unset, the Slack polling interval is 60 s
