@@ -33,7 +33,7 @@
 - [x] `POST /chat-verdicts` with ignore stores the verdict on that chat message
 - [x] `POST /chat-verdicts` with task creates a task that links back to the Telegram chat and names Telegram as its source
 - [x] `POST /chat-sends` with text to a Telegram chat sends it through the Telegram session and stores it as sent by the user under the id Telegram returned
-- [ ] `POST /chat-sends` with empty text is refused and nothing is sent
+- [x] `POST /chat-sends` with empty text is refused and nothing is sent
 - [ ] `POST /chat-sends` for a channel that is not configured is refused and nothing is sent
 - [ ] `POST /chat-sends` answers 502 with Telegram's error when Telegram refuses the send
 - [ ] Chat sends are listed with their time after the backend restarts
