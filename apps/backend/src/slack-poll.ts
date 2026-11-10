@@ -13,6 +13,7 @@ interface PollSlackWorkspaceInput {
   wait?: (milliseconds: number) => Promise<void>;
   clock: { now: () => Date };
   firstPollLookbackDays?: number;
+  displayNamesByUserId?: Map<string, string>;
 }
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
@@ -52,13 +53,19 @@ async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query:
 }
 
 async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
+  const knownName = input.displayNamesByUserId?.get(userId);
+  if (knownName !== undefined) {
+    return knownName;
+  }
   const { user } = await callSlack<{ user: { profile: { display_name?: string; real_name?: string } } }>(
     input,
     `/users.info?user=${userId}`,
   );
   // Slack answers an empty display_name, not a missing one, for a user who never set one.
   const names = [user.profile.display_name, user.profile.real_name].filter((name) => name !== undefined && name !== '');
-  return names[0] ?? userId;
+  const displayName = names[0] ?? userId;
+  input.displayNamesByUserId?.set(userId, displayName);
+  return displayName;
 }
 
 async function saveSlackMessage(
@@ -203,7 +210,8 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
   }
 }
 
-export async function pollSlackWorkspace(input: PollSlackWorkspaceInput): Promise<void> {
+export async function pollSlackWorkspace(pollInput: PollSlackWorkspaceInput): Promise<void> {
+  const input = { ...pollInput, displayNamesByUserId: new Map<string, string>() };
   await pollDirectMessages(input);
   await pollMentions(input);
   await pollThreadsTheUserWroteIn(input);

@@ -375,6 +375,24 @@ describe('pollSlackWorkspace', () => {
     expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0009', senderName: 'Ana Ruiz' })]);
   });
 
+  it('asks users.info once for a sender who wrote two messages in one poll', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({
+        ok: true,
+        messages: [
+          { user: 'U0001', text: 'Can you look at the contract today?', ts: '1762700000.000100' },
+          { user: 'U0001', text: 'It is the one from Monday.', ts: '1762700050.000150' },
+        ],
+      }),
+    });
+
+    await pollWith(slack);
+
+    const usersInfoRequests = slack.requests.filter((url) => url.pathname === '/users.info');
+    expect(usersInfoRequests.map((url) => url.searchParams.get('user'))).toEqual(['U0001']);
+  });
+
   it("finds mentions by searching for the user's own Slack id and stores each match under its channel", async () => {
     const mention = {
       user: 'U0002',
