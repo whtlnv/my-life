@@ -593,7 +593,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         proposal: {
           title: String(message?.text),
           accountEmail: verdict.channel,
-          link: `https://web.telegram.org/k/#${verdict.chatId}`,
+          link: telegramChatLink(verdict.chatId),
         },
       });
     }
@@ -2103,6 +2103,10 @@ function slackTimestampAsIso(timestamp: string): string {
 
 function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string; userId: string }): string {
   return `slack:${workspaceTeamId}/${userId}`;
+}
+
+function telegramChatLink(chatId: string): string {
+  return `https://web.telegram.org/k/#${chatId}`;
 }
 
 function slackClientLink(message: SlackMessageReference): string {
