@@ -110,8 +110,16 @@ async function searchedDirectMessageChannels(
     .map((message) => message.timestamp)
     .sort()
     .at(-1);
-  if (newestStoredTimestamp !== undefined && matches.every((match) => match.ts > newestStoredTimestamp)) {
-    matches.push(...(await searchSlackMessages<{ ts: string; channel: { id: string } }>(input, query, 2)));
+  let page = 1;
+  let pageMatches = matches;
+  while (
+    newestStoredTimestamp !== undefined &&
+    pageMatches.length > 0 &&
+    pageMatches.every((match) => match.ts > newestStoredTimestamp)
+  ) {
+    page += 1;
+    pageMatches = await searchSlackMessages<{ ts: string; channel: { id: string } }>(input, query, page);
+    matches.push(...pageMatches);
   }
   return matches.map((match) => match.channel);
 }

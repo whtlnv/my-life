@@ -208,6 +208,45 @@ describe('pollSlackWorkspace', () => {
     expect(directMessageSearchPages).toContain('2');
   });
 
+  it('requests no further search.messages page once a page holds a match older than the newest stored message', async () => {
+    const store = openSlackMessageStore(':memory:');
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Name of U0001',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+      sentByUser: false,
+    });
+    const pageMatches: Record<string, { user: string; text: string; ts: string; channel: { id: string } }[]> = {
+      '1': [{ user: 'U0002', text: 'Ping', ts: '1762780000.000200', channel: { id: 'D0002' } }],
+      '2': [{ user: 'U0003', text: 'Hello', ts: '1762770000.000100', channel: { id: 'D0003' } }],
+      '3': [
+        { user: 'U0004', text: 'Lunch?', ts: '1762760000.000100', channel: { id: 'D0004' } },
+        { user: 'U0005', text: 'Old news', ts: '1762600000.000100', channel: { id: 'D0005' } },
+      ],
+      '4': [{ user: 'U0006', text: 'Older still', ts: '1762500000.000100', channel: { id: 'D0006' } }],
+    };
+    const slack = scriptedSlack({
+      '/search.messages': (url) => {
+        if (url.searchParams.get('query')?.startsWith('is:dm') !== true) {
+          return { ok: true, messages: { matches: [] } };
+        }
+        const page = url.searchParams.get('page') ?? '1';
+        return { ok: true, messages: { matches: pageMatches[page] ?? [], paging: { page: Number(page), pages: 4 } } };
+      },
+      '/conversations.history': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollWith(slack, store);
+
+    const directMessageSearchPages = slack.requests
+      .filter((url) => url.pathname === '/search.messages' && url.searchParams.get('query')?.startsWith('is:dm'))
+      .map((url) => url.searchParams.get('page') ?? '1');
+    expect(directMessageSearchPages).toEqual(['1', '2', '3']);
+  });
+
   it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
     const slack = scriptedSlack({
       '/search.messages': directMessageSearchNaming('D0001'),
