@@ -1,6 +1,9 @@
+import { Api } from 'telegram';
+import { returnBigInt } from 'telegram/Helpers';
 import { describe, expect, it } from 'vitest';
 
 import { createGramjsTelegramClient } from './gramjs-telegram-client';
+import { mapTelegramMessage } from './telegram-message-mapping';
 
 describe('createGramjsTelegramClient', () => {
   it('sends text to a chat and returns the id of the message gramjs reports sent', async () => {
@@ -30,5 +33,46 @@ describe('createGramjsTelegramClient', () => {
     const ownAccount = await client.getOwnAccount();
 
     expect(ownAccount).toEqual({ id: '777001', name: 'Ana Torres' });
+  });
+
+  it('lists each dialog with its unread count and its recent messages mapped by the Telegram mapping, dropping what the mapping drops', async () => {
+    const luis = new Api.User({ id: returnBigInt(424242), firstName: 'Luis', lastName: 'Ortega' });
+    const textMessage = new Api.Message({
+      id: 1017,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T16:30:00.000Z') / 1000,
+      message: '¿Nos vemos el jueves?',
+      out: false,
+    });
+    textMessage._sender = luis;
+    const photoOnlyMessage = new Api.Message({
+      id: 1018,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T16:31:00.000Z') / 1000,
+      message: '',
+      out: false,
+    });
+    photoOnlyMessage._sender = luis;
+    const requestedEntities: unknown[] = [];
+    const gramjsClient = {
+      sendMessage: () => Promise.resolve({ id: 1 }),
+      getMe: () => Promise.resolve({ id: { toString: () => '1' }, firstName: '', lastName: '' }),
+      getDialogs: () => Promise.resolve([{ entity: luis, unreadCount: 2 }]),
+      getMessages: (entity: unknown) => {
+        requestedEntities.push(entity);
+        return Promise.resolve([textMessage, photoOnlyMessage]);
+      },
+    };
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    const dialogs = await client.listDialogs();
+
+    expect(requestedEntities).toEqual([luis]);
+    expect(dialogs).toEqual([
+      {
+        unreadCount: 2,
+        messages: [mapTelegramMessage({ message: textMessage, chat: luis, sender: luis })],
+      },
+    ]);
   });
 });
