@@ -11,6 +11,7 @@ function stubGramjsClient(overrides: Partial<Parameters<typeof createGramjsTeleg
     getMe: () => Promise.resolve({ id: { toString: () => '1' }, firstName: '', lastName: '' }),
     getDialogs: () => Promise.resolve([]),
     getMessages: () => Promise.resolve([]),
+    addEventHandler: () => undefined,
     ...overrides,
   };
 }
@@ -107,7 +108,7 @@ describe('createGramjsTelegramClient', () => {
       addEventHandler: (callback: (event: { message: Api.Message }) => unknown) => {
         newMessageCallbacks.push(callback);
       },
-    } as Partial<Parameters<typeof createGramjsTelegramClient>[0]>);
+    });
     const client = createGramjsTelegramClient(gramjsClient);
     const handled: unknown[] = [];
 

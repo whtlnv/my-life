@@ -10,7 +10,7 @@ interface GramjsClient {
   getMe: () => Promise<{ id: { toString: () => string }; firstName: string; lastName: string }>;
   getDialogs: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
   getMessages: (entity: TelegramChat) => Promise<Api.Message[]>;
-  addEventHandler?: (callback: (event: { message: Api.Message }) => unknown) => void;
+  addEventHandler: (callback: (event: { message: Api.Message }) => unknown) => void;
 }
 
 interface GramjsTelegramClient {
@@ -45,7 +45,7 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
       );
     },
     onMessage: (handler) => {
-      gramjsClient.addEventHandler?.(({ message }) => {
+      gramjsClient.addEventHandler(({ message }) => {
         const mapped = mapTelegramMessage({
           message,
           chat: message.chat as TelegramChat,
