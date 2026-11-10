@@ -94,6 +94,28 @@ describe('createGramjsTelegramClient', () => {
     ]);
   });
 
+  it('asks gramjs for at most 20 recent messages of each dialog with unread messages, and none of a dialog with none unread', async () => {
+    const luis = new Api.User({ id: returnBigInt(424242), firstName: 'Luis', lastName: 'Ortega' });
+    const marta = new Api.User({ id: returnBigInt(515151), firstName: 'Marta', lastName: 'Soto' });
+    const requests: { entity: unknown; parameters: unknown }[] = [];
+    const gramjsClient = stubGramjsClient({
+      getDialogs: () =>
+        Promise.resolve([
+          { entity: luis, unreadCount: 3 },
+          { entity: marta, unreadCount: 0 },
+        ]),
+      getMessages: (entity, parameters) => {
+        requests.push({ entity, parameters });
+        return Promise.resolve([]);
+      },
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    await client.listDialogs();
+
+    expect(requests).toEqual([{ entity: luis, parameters: { limit: 20 } }]);
+  });
+
   it('hands each new message gramjs delivers to the onMessage handler, mapped, and drops what the mapping drops', async () => {
     const luis = new Api.User({ id: returnBigInt(424242), firstName: 'Luis', lastName: 'Ortega' });
     const textMessage = new Api.Message({

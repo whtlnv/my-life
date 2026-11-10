@@ -6,11 +6,13 @@ import { mapTelegramMessage, userName } from './telegram-message-mapping';
 
 type TelegramChat = Api.User | Api.Chat | Api.Channel;
 
+const recentMessagesPerDialog = 20;
+
 interface GramjsClient {
   sendMessage: (entity: ReturnType<typeof returnBigInt>, parameters: { message: string }) => Promise<{ id: number }>;
   getMe: () => Promise<Api.User>;
   getDialogs: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
-  getMessages: (entity: TelegramChat) => Promise<Api.Message[]>;
+  getMessages: (entity: TelegramChat, parameters: { limit: number }) => Promise<Api.Message[]>;
   addEventHandler: (callback: (event: { message: Api.Message }) => unknown) => void;
 }
 
@@ -35,7 +37,8 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
       const dialogs = await gramjsClient.getDialogs();
       return Promise.all(
         dialogs.map(async ({ entity, unreadCount }) => {
-          const messages = await gramjsClient.getMessages(entity);
+          const messages =
+            unreadCount === 0 ? [] : await gramjsClient.getMessages(entity, { limit: recentMessagesPerDialog });
           return {
             unreadCount,
             messages: messages.flatMap(
