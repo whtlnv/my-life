@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 23:37 · `apps/backend/src/app-chat.test.ts::createApp chat messages > lists at GET /chat-messages, after the backend restarts, a chat send with the time it was sent`
+- Behavior: Chat sends are listed with their time after the backend restarts
+- Predicted: passes on first run (POST /chat-sends already saves clock.now() as time into the SQLite chat store)
+- Actual: passed — 1 passed, 7 skipped
+- Type: passed unexpectedly
+- Resolution: The behavior is already covered by the `/chat-sends` item and "Chat messages saved before the store is reopened are listed after it is reopened". Any rewrite that fails would drive a different behavior, so I removed the test and wrote no Red test. The TODO item can be checked off as already delivered.
+
 ## 2026-11-09 23:03 · `apps/backend/src/telegram-login.test.ts::runTelegramLogin > does not ask for a 2FA password when the account has none`
 - Behavior: The login flow does not ask for a 2FA password when the account has none
 - Predicted: passes on first run (stated up front): the password prompt is a callback that only asks when called, so the behavior arrived with the previous item
