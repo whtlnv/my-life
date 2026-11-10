@@ -1771,6 +1771,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.saveMark(slackContactKey(context.req.param()), 'vip');
     return context.body(null, 200);
   });
+  app.put('/telegram-contacts/:userId/marks/vip', (context) => {
+    contactDetailsStore.saveMark(`telegram:${context.req.param('userId')}`, 'vip');
+    return context.body(null, 200);
+  });
   app.delete(contactMarkRoute, rejectUnknownMark, (context) => {
     const email = context.req.param('email');
     contactDetailsStore.removeMark(email, context.req.param('mark'));
@@ -1955,7 +1959,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     });
     return {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders],
-      vip: contacts.filter(isVip).map(withOrganizationAndLastMessage),
+      vip: [
+        ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
+        ...chatMessageStore
+          .listMessages()
+          .filter((message) => markedContactKeys.has(`telegram:${message.senderId}`))
+          .map(telegramSenderAsContact),
+      ],
       everyoneElse: [
         ...contacts
           .filter((contact) => !isVip(contact) && !isUrgent(contact))

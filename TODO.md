@@ -50,7 +50,7 @@
 - [x] A Telegram sender is listed on the People tab as a contact with a `telegram` handle and their display name
 - [x] The user is not listed as their own Telegram contact
 - [x] A Telegram contact's timeline shows their Telegram messages, each with its channel
-- [ ] A Telegram contact can be marked VIP from the People tab and stays VIP after a restart
+- [x] A Telegram contact can be marked VIP from the People tab and stays VIP after a restart
 - [ ] A VIP Telegram contact waiting more than 1 business day is listed as Urgent
 - [ ] A VIP Telegram contact waiting less than 1 business day is not listed as Urgent
 - [ ] Waiting-on includes a Telegram chat whose newest message is not the user's

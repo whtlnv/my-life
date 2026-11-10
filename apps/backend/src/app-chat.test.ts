@@ -393,4 +393,25 @@ describe('createApp chat messages', () => {
       expect.objectContaining({ channel: 'telegram', text: 'Can we move our call to Thursday?' }),
     ]);
   });
+  it('lists at GET /people under VIP, after a backend restart on the same database file, a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip before it', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+    });
+    const beforeRestart = createApp({ allowedEmails: [], databasePath });
+    await beforeRestart.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+
+    const afterRestart = createApp({ allowedEmails: [], databasePath });
+    const { vip } = await getJson<{ vip: unknown[] }>(afterRestart, '/people');
+
+    expect(vip).toEqual([expect.objectContaining({ telegramHandles: [{ userId: '7001' }] })]);
+  });
 });
