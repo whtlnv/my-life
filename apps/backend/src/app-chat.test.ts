@@ -445,4 +445,28 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+  it('leaves out of Urgent at GET /people a Telegram contact marked vip whose message has waited less than 1 business day for a reply', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-04T15:00:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
+    });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+
+    const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
+
+    expect(urgent).toEqual([]);
+  });
 });

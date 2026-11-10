@@ -52,7 +52,7 @@
 - [x] A Telegram contact's timeline shows their Telegram messages, each with its channel
 - [x] A Telegram contact can be marked VIP from the People tab and stays VIP after a restart
 - [x] A VIP Telegram contact waiting more than 1 business day is listed as Urgent
-- [ ] A VIP Telegram contact waiting less than 1 business day is not listed as Urgent
+- [x] A VIP Telegram contact waiting less than 1 business day is not listed as Urgent
 - [ ] Waiting-on includes a Telegram chat whose newest message is not the user's
 - [ ] Waiting-on leaves out a Telegram chat whose newest message is the user's
 - [ ] Waiting-on orders Telegram chats with email and Slack by how long each has waited

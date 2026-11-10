@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 00:58 · `apps/backend/src/app-chat.test.ts::createApp chat messages > leaves out of Urgent at GET /people a Telegram contact marked vip whose message has waited less than 1 business day for a reply`
+- Behavior: A VIP Telegram contact waiting less than 1 business day is not listed as Urgent
+- Predicted: passes on first run (stated up front): `urgentChatSender` already sends every Telegram message through `contactUrgency`, which applies the `vipWaitingBusinessDays` threshold
+- Actual: passed — 1 passed, 17 skipped
+- Type: passed unexpectedly
+- Resolution: The previous item (7f3b85c) built the threshold through the shared domain check, so the negative case came with it. No rewrite that stays on this behavior can fail. The test stays as a regression pin, mirroring the Slack one, and the item needs no green step.
+
 ## 2026-11-09 23:37 · `apps/backend/src/app-chat.test.ts::createApp chat messages > lists at GET /chat-messages, after the backend restarts, a chat send with the time it was sent`
 - Behavior: Chat sends are listed with their time after the backend restarts
 - Predicted: passes on first run (POST /chat-sends already saves clock.now() as time into the SQLite chat store)
