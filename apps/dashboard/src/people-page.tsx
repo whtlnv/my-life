@@ -212,6 +212,14 @@ const personRequestedByLocation = (lists: PeopleLists): PersonRow | undefined =>
   return [...lists.vip, ...lists.urgent, ...lists.everyoneElse].find((candidate) => candidate.emails.includes(contact));
 };
 
+const vipMarkPath = (person: PersonRow) => {
+  const [telegramHandle] = person.telegramHandles ?? [];
+  if (telegramHandle) {
+    return `/telegram-contacts/${telegramHandle.userId}/marks/vip`;
+  }
+  return `/contacts/${encodeURIComponent(person.emails[0] ?? '')}/marks/vip`;
+};
+
 export const PeoplePage = () => {
   const [lists, setLists] = useState<PeopleLists>(emptyLists);
   const [selected, setSelected] = useState<SelectedTimeline | undefined>(undefined);
@@ -226,14 +234,6 @@ export const PeoplePage = () => {
 
   const loadPeople = () => {
     void fetchPeople();
-  };
-
-  const vipMarkPath = (person: PersonRow) => {
-    const [telegramHandle] = person.telegramHandles ?? [];
-    if (telegramHandle) {
-      return `/telegram-contacts/${telegramHandle.userId}/marks/vip`;
-    }
-    return `/contacts/${encodeURIComponent(person.emails[0] ?? '')}/marks/vip`;
   };
 
   const setVipMark = (method: 'PUT' | 'DELETE') => (person: PersonRow) => {
