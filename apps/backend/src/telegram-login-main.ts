@@ -23,7 +23,7 @@ const ask = (question: string) => terminal.question(question);
 async function askHidden(question: string): Promise<string> {
   stdout.write(question);
   const write = stdout.write.bind(stdout);
-  stdout.write = (() => true) as typeof stdout.write;
+  stdout.write = () => true;
   try {
     return await terminal.question('');
   } finally {
