@@ -13,6 +13,8 @@ function stubGramjsClient(overrides: Partial<Parameters<typeof createGramjsTeleg
     getDialogs: () => Promise.resolve([]),
     getMessages: () => Promise.resolve([]),
     addEventHandler: () => undefined,
+    start: () => Promise.resolve(),
+    session: { save: () => '' },
     ...overrides,
   };
 }
@@ -193,5 +195,25 @@ describe('createGramjsTelegramClient', () => {
     for (const callback of newMessageCallbacks) await callback({ message: shortUpdateMessage });
 
     expect(handled).toEqual([mapTelegramMessage({ message: shortUpdateMessage, chat: luis, sender: luis })]);
+  });
+
+  it("signs in by handing gramjs's start the phone number, code and 2FA prompts, and returns the session gramjs saves", async () => {
+    const asked: string[] = [];
+    const gramjsClient = stubGramjsClient({
+      start: async ({ phoneNumber, phoneCode, password }) => {
+        asked.push(await phoneNumber(), await phoneCode(), await password());
+      },
+      session: { save: () => 'saved-session-string' },
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    const session = await client.signIn({
+      phoneNumber: () => Promise.resolve('+5215512345678'),
+      phoneCode: () => Promise.resolve('24680'),
+      password: () => Promise.resolve('correct horse battery staple'),
+    });
+
+    expect(asked).toEqual(['+5215512345678', '24680', 'correct horse battery staple']);
+    expect(session).toBe('saved-session-string');
   });
 });
