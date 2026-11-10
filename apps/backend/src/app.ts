@@ -1066,6 +1066,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         choices: ['ignore', 'act', 'reply'],
       }));
   }
+  function describeChatItems() {
+    const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));
+    return [...newestMessageByChat.values()].map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
+      channel,
+      chatId,
+      messageId,
+      chatTitle,
+      senderName,
+      time,
+    }));
+  }
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
     const undoneMessageIds = undoAutomaticStore.loadAll();
@@ -1073,16 +1084,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...splitActionFromGroups(proposals, verdicts),
       digests: recordAndDescribeListedDigests(verdicts),
       slackItems: describeSlackItems(),
-      chatItems: [
-        ...new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message])).values(),
-      ].map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
-        channel,
-        chatId,
-        messageId,
-        chatTitle,
-        senderName,
-        time,
-      })),
+      chatItems: describeChatItems(),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
