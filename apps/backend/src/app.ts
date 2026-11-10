@@ -428,24 +428,34 @@ function listImportedContacts(imports: ImportedContactRecord[]): ListedContact[]
   }, []);
 }
 
-function newestMessagePerSender(messages: ChatMessage[]): ChatMessage[] {
-  const newestBySender = new Map<string, ChatMessage>();
+function newestPerSender<Message>(
+  messages: Message[],
+  senderKeyOf: (message: Message) => string,
+  isNewer: (message: Message, than: Message) => boolean,
+): Message[] {
+  const newestBySender = new Map<string, Message>();
   for (const message of messages) {
-    const newest = newestBySender.get(message.senderId);
-    if (newest === undefined || message.time > newest.time) newestBySender.set(message.senderId, message);
+    const senderKey = senderKeyOf(message);
+    const newest = newestBySender.get(senderKey);
+    if (newest === undefined || isNewer(message, newest)) newestBySender.set(senderKey, message);
   }
   return [...newestBySender.values()];
 }
 
+function newestMessagePerSender(messages: ChatMessage[]): ChatMessage[] {
+  return newestPerSender(
+    messages,
+    (message) => message.senderId,
+    (message, than) => message.time > than.time,
+  );
+}
+
 function newestSlackMessagePerSender(messages: SlackMessage[]): SlackMessage[] {
-  const newestBySender = new Map<string, SlackMessage>();
-  for (const message of messages) {
-    const senderKey = slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId });
-    const newest = newestBySender.get(senderKey);
-    if (newest === undefined || Number(message.timestamp) > Number(newest.timestamp))
-      newestBySender.set(senderKey, message);
-  }
-  return [...newestBySender.values()];
+  return newestPerSender(
+    messages,
+    (message) => slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }),
+    (message, than) => Number(message.timestamp) > Number(than.timestamp),
+  );
 }
 
 // The HTTP app, built without a port so tests call it directly through `app.request`.
@@ -2067,7 +2077,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((contact) => !isVip(contact) && !isUrgent(contact))
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
-        ...newestSlackMessagePerSender(slackMessageStore.listMessages().filter(isFromSomeoneElse)).map(slackSenderAsContact),
+        ...newestSlackMessagePerSender(slackMessageStore.listMessages().filter(isFromSomeoneElse)).map(
+          slackSenderAsContact,
+        ),
         ...newestMessagePerSender(
           chatMessageStore
             .listMessages()
