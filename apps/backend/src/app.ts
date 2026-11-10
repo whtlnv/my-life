@@ -2048,11 +2048,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
         ...slackMessageStore.listMessages().filter(isFromSomeoneElse).map(slackSenderAsContact),
-        ...chatMessageStore
-          .listMessages()
-          .filter(isFromSomeoneElse)
-          .filter((message) => !isFromMarkedTelegramSender(message))
-          .map(telegramSenderAsContact),
+        ...[
+          ...chatMessageStore
+            .listMessages()
+            .filter(isFromSomeoneElse)
+            .filter((message) => !isFromMarkedTelegramSender(message))
+            .reduce((newestBySender, message) => {
+              const newest = newestBySender.get(message.senderId);
+              if (newest === undefined || message.time > newest.time) newestBySender.set(message.senderId, message);
+              return newestBySender;
+            }, new Map<string, ChatMessage>())
+            .values(),
+        ].map(telegramSenderAsContact),
       ],
     };
   };

@@ -370,6 +370,37 @@ describe('createApp chat messages', () => {
       expect.objectContaining({ telegramHandles: [{ userId: '7001' }], lastMessageAt: '2026-11-09T16:00:00.000Z' }),
     ]);
   });
+  it('lists a Telegram contact with several messages once at GET /people, with the time of their newest message as lastMessageAt', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    const fromLucia = {
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      sentByUser: false,
+    } as const;
+    chatMessageStore.saveMessage({
+      ...fromLucia,
+      messageId: '43',
+      text: 'Thursday at 10 works for me.',
+      time: '2026-11-09T18:00:00.000Z',
+    });
+    chatMessageStore.saveMessage({
+      ...fromLucia,
+      messageId: '42',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([
+      expect.objectContaining({ telegramHandles: [{ userId: '7001' }], lastMessageAt: '2026-11-09T18:00:00.000Z' }),
+    ]);
+  });
   it('leaves out of GET /people a Telegram message the user sent, so the user is not listed as their own contact', async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);

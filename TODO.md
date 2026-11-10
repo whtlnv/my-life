@@ -103,7 +103,7 @@
 - [x] Mark VIP and Remove VIP on a Slack row mark and unmark that Slack contact
 - [x] A VIP contact listed under Urgent offers Remove VIP, not Mark VIP
 - [x] A Telegram contact and an email contact with the same display name are listed as two rows
-- [ ] A Telegram contact with several messages is listed once on the People tab, with the time of their newest message
+- [x] A Telegram contact with several messages is listed once on the People tab, with the time of their newest message
 - [ ] A Slack contact with several messages is listed once on the People tab, with the time of their newest message
 - [ ] A Telegram or Slack contact is listed once under Urgent however many of their messages wait, with every reason that applies
 - [ ] A Slack contact marked VIP is listed under VIP and not under Everyone else
