@@ -56,6 +56,12 @@ const weekdayAndTimeInBusinessZone = (isoTime: string) =>
     timeZone: businessTimeZone,
   }).format(new Date(isoTime));
 
+// An email contact and a Slack contact can share a display name, so a Slack row is keyed by its Slack handle.
+const personKey = (person: PersonRow): string => {
+  const [slackHandle] = person.slackHandles ?? [];
+  return slackHandle === undefined ? person.displayName : `slack:${slackHandle.workspaceTeamId}:${slackHandle.userId}`;
+};
+
 const PeopleList = ({
   title,
   people,
@@ -77,7 +83,7 @@ const PeopleList = ({
       {people.length === 0 && <p className="muted">Nobody here</p>}
       <ul aria-label={title} className="rows">
         {people.map((person) => (
-          <li key={person.displayName} className="row">
+          <li key={personKey(person)} className="row">
             <div className="row-main">
               <p className="row-title">
                 <button
