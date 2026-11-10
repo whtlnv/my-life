@@ -8,7 +8,7 @@ export function userName(user: Api.User): string {
 }
 
 function isBroadcastChannel(chat: Api.User | Api.Chat | Api.Channel): boolean {
-  return 'broadcast' in chat && Boolean(chat.broadcast);
+  return 'broadcast' in chat && chat.broadcast;
 }
 
 interface TelegramMessageContext {
