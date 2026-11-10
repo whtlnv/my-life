@@ -229,6 +229,19 @@ describe('startup settings', () => {
     expect(settings.slackWorkspaces).toEqual([{ teamId: 'T0001', userToken: 'xoxp-first' }]);
   });
 
+  it('configures no Slack workspace when MY_LIFE_SLACK_POLLING is off, even with tokens set', () => {
+    const settings = readStartupSettings(
+      {
+        MY_LIFE_SLACK_POLLING: 'off',
+        MY_LIFE_SLACK_WORKSPACE_1_TEAM_ID: 'T0001',
+        MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN: 'xoxp-first',
+      },
+      '/Users/ana',
+    );
+
+    expect(settings.slackWorkspaces).toEqual([]);
+  });
+
   it('polls Slack every 60 seconds when MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS is unset', () => {
     const settings = readStartupSettings({}, '/Users/ana');
 

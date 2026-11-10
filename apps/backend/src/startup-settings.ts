@@ -120,6 +120,7 @@ function defaultTelegramSessionPath(homeDirectory: string): string {
 }
 
 function readSlackWorkspaces(environment: Record<string, string | undefined>): SlackWorkspaceSettings[] {
+  if (environment.MY_LIFE_SLACK_POLLING === 'off') return [];
   return [readSlackWorkspace(environment, 1), readSlackWorkspace(environment, 2)].filter(
     (workspace) => workspace.userToken !== undefined,
   );
