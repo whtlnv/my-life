@@ -1154,16 +1154,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const messages = slackMessageStore.listMessages();
     const slackUserNames = new Map(messages.map((message) => [message.senderUserId, message.senderName]));
     return newestMessagePerSlackConversation(
-      messages
-        .filter((message) => message.sentByUser !== true)
-        .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message))),
-    ).map((message) => ({
-      ...message,
-      text: displaySlackMentions(message.text, slackUserNames),
-      workspaceName: slackWorkspacePollFor(message.workspaceTeamId)?.name,
-      permalink: slackMessagePermalink(message),
-      choices: ['ignore', 'act', 'reply'],
-    }));
+      messages.filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message))),
+    )
+      .filter((message) => message.sentByUser !== true)
+      .map((message) => ({
+        ...message,
+        text: displaySlackMentions(message.text, slackUserNames),
+        workspaceName: slackWorkspacePollFor(message.workspaceTeamId)?.name,
+        permalink: slackMessagePermalink(message),
+        choices: ['ignore', 'act', 'reply'],
+      }));
   }
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));

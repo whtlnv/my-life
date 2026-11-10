@@ -34,7 +34,7 @@
 - [x] A workspace poll calls `auth.test` once (backlog: apps/backend/src/slack-poll.ts:44 … and `auth.test` three times)
 - [x] A Slack conversation with three messages from someone else shows one triage card, carrying the newest of them
 - [x] Two Slack conversations with messages from someone else show one triage card each
-- [ ] A Slack conversation whose newest message the user wrote shows no triage card
+- [x] A Slack conversation whose newest message the user wrote shows no triage card
 - [ ] A thread reply and a top-level message in the same channel show as two triage cards, the thread being its own conversation
 - [ ] A verdict on a Slack card's message clears the card
 - [ ] A Slack message newer than the card's verdict brings the conversation's card back, carrying the newer message

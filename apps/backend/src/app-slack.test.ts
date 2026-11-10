@@ -166,6 +166,33 @@ describe('createApp Slack messages', () => {
     expect(slackItems).toHaveLength(2);
   });
 
+  it('lists at GET /triage-queue no Slack item for a conversation whose newest message the user wrote', async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openSlackMessageStore(databasePath);
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0000',
+      senderName: 'Francisco',
+      text: 'Yes, I will send it back tonight.',
+      timestamp: '1762700000.000200',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { slackItems } = await getJson<{ slackItems: unknown[] }>(app, '/triage-queue');
+
+    expect(slackItems).toEqual([]);
+  });
+
   it('leaves out of GET /triage-queue a Slack message the user sent', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({
