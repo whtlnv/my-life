@@ -22,6 +22,7 @@ interface ScriptedTelegramClient {
 
 export function createScriptedTelegramClient(script: TelegramScript): ScriptedTelegramClient {
   const handlers: MessageHandler[] = [];
+  let sendCount = 0;
   return {
     onMessage: (handler) => handlers.push(handler),
     receive: (message) => handlers.forEach((handler) => handler(message)),
@@ -33,7 +34,8 @@ export function createScriptedTelegramClient(script: TelegramScript): ScriptedTe
       if (text === '') {
         return Promise.reject(new Error('Refusing to send empty text'));
       }
-      return Promise.resolve({ messageId: 'sent-1' });
+      sendCount += 1;
+      return Promise.resolve({ messageId: `sent-${String(sendCount)}` });
     },
   };
 }
