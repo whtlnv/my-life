@@ -23,6 +23,20 @@ function recordingTelegramClient() {
   return { telegramClient, textsSentToTelegram, idsTelegramReturned };
 }
 
+function saveTelegramMessageFromLucia(databasePath: string, time: string) {
+  openChatMessageStore(databasePath).saveMessage({
+    channel: 'telegram',
+    chatId: '7001',
+    chatTitle: 'Lucía Romero',
+    messageId: '42',
+    senderId: '7001',
+    senderName: 'Lucía Romero',
+    text: 'Can we move our call to Thursday?',
+    time,
+    sentByUser: false,
+  });
+}
+
 describe('createApp chat messages', () => {
   it('lists at GET /chat-messages the chat messages stored in the chat store', async () => {
     const databasePath = temporaryDatabasePath();
@@ -416,17 +430,7 @@ describe('createApp chat messages', () => {
   });
   it('lists at GET /people under Urgent, with the reason "VIP waiting", a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip whose message has waited more than 1 business day for a reply', async () => {
     const databasePath = temporaryDatabasePath();
-    openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '7001',
-      chatTitle: 'Lucía Romero',
-      messageId: '42',
-      senderId: '7001',
-      senderName: 'Lucía Romero',
-      text: 'Can we move our call to Thursday?',
-      time: '2026-11-02T17:00:00.000Z',
-      sentByUser: false,
-    });
+    saveTelegramMessageFromLucia(databasePath, '2026-11-02T17:00:00.000Z');
     const app = createApp({
       allowedEmails: [],
       databasePath,
@@ -447,17 +451,7 @@ describe('createApp chat messages', () => {
   });
   it('leaves out of Urgent at GET /people a Telegram contact marked vip whose message has waited less than 1 business day for a reply', async () => {
     const databasePath = temporaryDatabasePath();
-    openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '7001',
-      chatTitle: 'Lucía Romero',
-      messageId: '42',
-      senderId: '7001',
-      senderName: 'Lucía Romero',
-      text: 'Can we move our call to Thursday?',
-      time: '2026-11-04T15:00:00.000Z',
-      sentByUser: false,
-    });
+    saveTelegramMessageFromLucia(databasePath, '2026-11-04T15:00:00.000Z');
     const app = createApp({
       allowedEmails: [],
       databasePath,
