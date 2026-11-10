@@ -219,16 +219,24 @@ export async function pollSlackWorkspace(pollInput: PollSlackWorkspaceInput): Pr
   await pollThreadsTheUserWroteIn(input, ownSlackUserId);
 }
 
-type PollSlackWorkspacesInput = Omit<PollSlackWorkspaceInput, 'workspace'> & { workspaces: SlackWorkspace[] };
+type PollSlackWorkspacesInput = Omit<PollSlackWorkspaceInput, 'workspace'> & {
+  workspaces: SlackWorkspace[];
+  logPollFailure?: (teamId: string, error: unknown) => void;
+};
 
-export async function pollSlackWorkspaces({ workspaces, ...input }: PollSlackWorkspacesInput): Promise<Set<string>> {
+export async function pollSlackWorkspaces({
+  workspaces,
+  logPollFailure,
+  ...input
+}: PollSlackWorkspacesInput): Promise<Set<string>> {
   const succeededTeamIds = new Set<string>();
   for (const workspace of workspaces) {
     try {
       await pollSlackWorkspace({ ...input, workspace });
       succeededTeamIds.add(workspace.teamId);
-    } catch {
+    } catch (error) {
       // A workspace that fails (e.g. invalid_auth) is skipped so the others are still polled.
+      logPollFailure?.(workspace.teamId, error);
     }
   }
   return succeededTeamIds;

@@ -609,4 +609,22 @@ describe('pollSlackWorkspaces', () => {
     expect([...succeeded]).toEqual(['T0002']);
     expect(store.listMessages().map((message) => message.workspaceTeamId)).toEqual(['T0002']);
   });
+
+  it("logs a failed workspace's team id and the error", async () => {
+    const slack = scriptedSlack({ '/auth.test': () => ({ ok: false, error: 'invalid_auth' }) });
+    const loggedFailures: { teamId: string; error: unknown }[] = [];
+
+    await pollSlackWorkspaces({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      clock: pollClock,
+      workspaces: [{ teamId: 'T0001', userToken: 'xoxp-revoked' }],
+      store: openSlackMessageStore(':memory:'),
+      logPollFailure: (teamId, error) => loggedFailures.push({ teamId, error }),
+    });
+
+    expect(loggedFailures).toEqual([
+      { teamId: 'T0001', error: new Error('Slack workspace T0001 answered invalid_auth') },
+    ]);
+  });
 });
