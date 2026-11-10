@@ -129,7 +129,7 @@ type TriageRequest = ReportedMessage & {
   threadState?: string | undefined;
 };
 
-interface TelegramSender extends Partial<TelegramStartClient> {
+interface TelegramAppClient extends Partial<TelegramStartClient> {
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
   getOwnAccount?: () => Promise<{ id: string; name: string }>;
   isConnected?: () => boolean;
@@ -146,7 +146,7 @@ export interface AppOptions {
   gmailPollingIntervalInMilliseconds?: number;
   slackApiUrl?: string;
   slackWorkspaces?: { teamId: string; userToken: string }[];
-  telegramClient?: TelegramSender;
+  telegramClient?: TelegramAppClient;
   slackPollingIntervalInMilliseconds?: number;
   urgency?: { unansweredAskBusinessDays: number };
   triage?: {
