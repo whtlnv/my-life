@@ -2162,4 +2162,35 @@ describe('TriagePage', () => {
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', text: 'Llego a las ocho' } },
     ]);
   });
+
+  it('keeps `i`, `t` and `r` typed in a Telegram card reply box as text and posts no verdict', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(card);
+    await user.keyboard('r');
+    const replyBox = within(card).getByRole('textbox');
+    await user.type(replyBox, 'tiro');
+
+    expect(replyBox).toHaveValue('tiro');
+    expect(vi.mocked(fetch).mock.calls.filter(([input]) => input === '/chat-verdicts')).toEqual([]);
+  });
 });

@@ -795,6 +795,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
       className="card"
       tabIndex={0}
       onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
         if (event.key === 'r') {
           setComposing(true);
           return;
