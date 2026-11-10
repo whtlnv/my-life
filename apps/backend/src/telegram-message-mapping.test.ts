@@ -190,4 +190,26 @@ describe('Telegram message mapping', () => {
 
     expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toBeUndefined();
   });
+
+  it("maps a message in a supergroup to a chat message whose chat id is the supergroup's -100 marked peer id", () => {
+    const supergroup = new Api.Channel({
+      id: returnBigInt(707070),
+      title: 'Mutuus equipo',
+      photo: new Api.ChatPhotoEmpty(),
+      date: Date.parse('2026-01-01T00:00:00.000Z') / 1000,
+      megagroup: true,
+    });
+    const message = new Api.Message({
+      id: 4001,
+      peerId: new Api.PeerChannel({ channelId: returnBigInt(707070) }),
+      fromId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T21:00:00.000Z') / 1000,
+      message: '¿Quién revisa el contrato?',
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: supergroup, sender: luis })).toEqual(
+      expect.objectContaining({ chatId: '-100707070', chatTitle: 'Mutuus equipo' }),
+    );
+  });
 });
