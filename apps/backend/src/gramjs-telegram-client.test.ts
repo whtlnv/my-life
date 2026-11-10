@@ -81,4 +81,42 @@ describe('createGramjsTelegramClient', () => {
       },
     ]);
   });
+
+  it('hands each new message gramjs delivers to the onMessage handler, mapped, and drops what the mapping drops', async () => {
+    const luis = new Api.User({ id: returnBigInt(424242), firstName: 'Luis', lastName: 'Ortega' });
+    const textMessage = new Api.Message({
+      id: 1019,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T17:00:00.000Z') / 1000,
+      message: 'Ya llegué',
+      out: false,
+    });
+    textMessage._sender = luis;
+    textMessage._chat = luis;
+    const photoOnlyMessage = new Api.Message({
+      id: 1020,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T17:01:00.000Z') / 1000,
+      message: '',
+      out: false,
+    });
+    photoOnlyMessage._sender = luis;
+    photoOnlyMessage._chat = luis;
+    const newMessageCallbacks: ((event: { message: Api.Message }) => unknown)[] = [];
+    const gramjsClient = stubGramjsClient({
+      addEventHandler: (callback: (event: { message: Api.Message }) => unknown) => {
+        newMessageCallbacks.push(callback);
+      },
+    } as Partial<Parameters<typeof createGramjsTelegramClient>[0]>);
+    const client = createGramjsTelegramClient(gramjsClient);
+    const handled: unknown[] = [];
+
+    client.onMessage((message) => handled.push(message));
+    for (const callback of newMessageCallbacks) {
+      await callback({ message: textMessage });
+      await callback({ message: photoOnlyMessage });
+    }
+
+    expect(handled).toEqual([mapTelegramMessage({ message: textMessage, chat: luis, sender: luis })]);
+  });
 });

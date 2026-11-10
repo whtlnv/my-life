@@ -69,7 +69,7 @@
 - [x] The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent (tested over a stub of the gramjs client's methods, never the network)
 - [x] The gramjs-backed adapter's own account is the id and full name gramjs's `getMe` reports
 - [x] The gramjs-backed adapter lists each dialog with its unread count and its recent messages mapped by the Telegram mapping, dropping what the mapping drops
-- [ ] The gramjs-backed adapter hands each new message gramjs delivers to the `onMessage` handler, mapped, and drops what the mapping drops
+- [x] The gramjs-backed adapter hands each new message gramjs delivers to the `onMessage` handler, mapped, and drops what the mapping drops
 - [ ] The gramjs-backed adapter's sign-in passes the phone number, code and 2FA prompts to gramjs and returns the saved session string
 - [ ] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
 - [ ] The shipped backend started with the Telegram API id, hash and a session file creates the gramjs-backed client and serves its stored messages at `GET /chat-messages`
