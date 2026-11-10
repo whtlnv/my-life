@@ -156,4 +156,25 @@ describe('Telegram message mapping', () => {
 
     expect(mapTelegramMessage({ message, chat: channel, sender: luis })).toBeUndefined();
   });
+
+  it('drops a service message in a group, such as a member joining, so the mapping returns nothing for it', () => {
+    const group = new Api.Chat({
+      id: returnBigInt(909090),
+      title: 'Erlia socios',
+      photo: new Api.ChatPhotoEmpty(),
+      participantsCount: 4,
+      date: Date.parse('2026-01-01T00:00:00.000Z') / 1000,
+      version: 2,
+    });
+    const message = new Api.MessageService({
+      id: 2002,
+      peerId: new Api.PeerChat({ chatId: returnBigInt(909090) }),
+      fromId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:05:00.000Z') / 1000,
+      action: new Api.MessageActionChatAddUser({ users: [returnBigInt(424242)] }),
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: group, sender: luis })).toBeUndefined();
+  });
 });

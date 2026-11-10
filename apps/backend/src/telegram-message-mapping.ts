@@ -7,16 +7,20 @@ function userName(user: Api.User): string {
   return fullName || (user.username ?? user.id.toString());
 }
 
-type TelegramMessageContext<TChat> = { message: Api.Message; chat: TChat; sender: Api.User };
+type TelegramMessageContext<TChat, TMessage = Api.Message> = { message: TMessage; chat: TChat; sender: Api.User };
 
 export function mapTelegramMessage(context: TelegramMessageContext<Api.User | Api.Chat>): ChatMessage;
 export function mapTelegramMessage(context: TelegramMessageContext<Api.Channel>): ChatMessage | undefined;
+export function mapTelegramMessage(
+  context: TelegramMessageContext<Api.User | Api.Chat | Api.Channel, Api.MessageService>,
+): undefined;
 export function mapTelegramMessage({
   message,
   chat,
   sender,
-}: TelegramMessageContext<Api.User | Api.Chat | Api.Channel>): ChatMessage | undefined {
-  if ('broadcast' in chat && chat.broadcast) {
+}: TelegramMessageContext<Api.User | Api.Chat | Api.Channel, Api.Message | Api.MessageService>):
+  ChatMessage | undefined {
+  if (message.className === 'MessageService' || ('broadcast' in chat && chat.broadcast)) {
     return undefined;
   }
   return {

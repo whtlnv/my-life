@@ -13,7 +13,7 @@
 - [x] A Telegram user with no last name (or no first name) maps to a sender name and chat title without "undefined" or a stray space; a user with neither falls back to their username, then their id
 - [x] A text message in a Telegram group maps to a chat message with the group's title as chat title
 - [x] A message in a Telegram broadcast channel is dropped by the mapping
-- [ ] A Telegram service message (a member joined, a title changed) is dropped by the mapping
+- [x] A Telegram service message (a member joined, a title changed) is dropped by the mapping
 - [ ] A Telegram message with no text (a photo or sticker alone) is dropped by the mapping
 - [ ] The scripted Telegram client accepts a send to a chat it knows and returns a new message id
 - [ ] The scripted Telegram client refuses a send to a chat it does not know
