@@ -20,7 +20,8 @@
 - [x] A poll requests the next `search.messages` page when every match on the current page is newer than the newest stored message
 - [x] Keystone: the shipped `POST /slack-poll` passes its clock, so the real poll finds DMs through `is:dm` search; the clock is required and the `conversations.list` path is gone (inserted by the supervisor 2026-11-10: the no-clock path still listed DMs in production)
 - [x] A poll requests no further page once a page holds a match older than the newest stored message
-- [ ] A conversation with stored messages is read from its newest stored message (`oldest=` that timestamp)
+- [x] A conversation with stored messages is read from its newest stored message (`oldest=` that timestamp)
+  - already delivered by `slack-poll.test.ts::asks conversations.history on a second poll only for messages newer than the newest stored in that conversation` (supervisor, 2026-11-10)
 - [ ] A conversation with nothing stored is read from 7 days before now (`oldest=` now minus the lookback)
 - [ ] With `MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS=3` a conversation with nothing stored is read from 3 days before now
 - [ ] The `is:dm` search carries `after:` the lookback date
