@@ -91,7 +91,11 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
 
 const token = 'xoxp-fake';
 
-type PostedMessage = { channel: string; threadTimestamp: string; text: string };
+interface PostedMessage {
+  channel: string;
+  threadTimestamp: string;
+  text: string;
+}
 
 function respondRateLimited(response: ServerResponse) {
   response.writeHead(429, { 'Retry-After': '1' });
@@ -110,7 +114,10 @@ function recordPostedMessage(request: IncomingMessage, response: ServerResponse,
   });
 }
 
-export async function startSlackFakeServer(scenario: SlackScenario, options: { ownSlackUserId?: string; workspaceName?: string; workspaceUrl?: string } = {}) {
+export async function startSlackFakeServer(
+  scenario: SlackScenario,
+  options: { ownSlackUserId?: string; workspaceName?: string; workspaceUrl?: string } = {},
+) {
   const responseByPath = responseByPathByScenario[scenario];
   let rateLimitPending = scenario === 'rate-limited';
   const postedMessages: PostedMessage[] = [];
@@ -148,7 +155,14 @@ export async function startSlackFakeServer(scenario: SlackScenario, options: { o
       return;
     }
     if (url.pathname === '/auth.test') {
-      response.end(JSON.stringify({ ok: true, user_id: options.ownSlackUserId ?? ownSlackUserId, team: options.workspaceName, url: options.workspaceUrl }));
+      response.end(
+        JSON.stringify({
+          ok: true,
+          user_id: options.ownSlackUserId ?? ownSlackUserId,
+          team: options.workspaceName,
+          url: options.workspaceUrl,
+        }),
+      );
       return;
     }
     response.end(JSON.stringify(responseByPath[url.pathname]));

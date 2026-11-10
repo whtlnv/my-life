@@ -639,9 +639,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
     return context.json({});
   });
-  type SlackSendRequest = { workspaceTeamId: string; conversationId: string; threadTimestamp?: string; text: string };
+  interface SlackSendRequest {
+    workspaceTeamId: string;
+    conversationId: string;
+    threadTimestamp?: string;
+    text: string;
+  }
   const slackSends: (SlackSendRequest & { sentAt: string })[] = [];
-  type SlackPostMessageResult = { ok: boolean; error?: string; channel: string; ts: string };
+  interface SlackPostMessageResult {
+    ok: boolean;
+    error?: string;
+    channel: string;
+    ts: string;
+  }
   const slackUserTokenFor = (workspaceTeamId: string): string =>
     configuredSlackWorkspaces.find(({ teamId }) => teamId === workspaceTeamId)?.userToken ?? '';
   const postSlackMessage = async (send: SlackSendRequest): Promise<SlackPostMessageResult> => {

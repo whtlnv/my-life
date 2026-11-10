@@ -1,14 +1,17 @@
 import type { SlackMessageStore } from './slack-message-store';
 
-type SlackWorkspace = { teamId: string; userToken: string };
+interface SlackWorkspace {
+  teamId: string;
+  userToken: string;
+}
 
-type PollSlackWorkspaceInput = {
+interface PollSlackWorkspaceInput {
   fetch: typeof fetch;
   apiUrl: string;
   workspace: SlackWorkspace;
   store: SlackMessageStore;
   wait?: (milliseconds: number) => Promise<void>;
-};
+}
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
   const response = await input.fetch(`${input.apiUrl}${path}`, {
@@ -31,7 +34,11 @@ async function fetchOwnSlackUserId(input: PollSlackWorkspaceInput): Promise<stri
   return ownSlackUserId;
 }
 
-type SlackMessage = { user: string; text: string; ts: string };
+interface SlackMessage {
+  user: string;
+  text: string;
+  ts: string;
+}
 
 async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string): Promise<Match[]> {
   const { messages } = await callSlack<{ messages: { matches: Match[] } }>(
@@ -42,7 +49,10 @@ async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query:
 }
 
 async function fetchSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
-  const { user } = await callSlack<{ user: { profile: { display_name?: string } } }>(input, `/users.info?user=${userId}`);
+  const { user } = await callSlack<{ user: { profile: { display_name?: string } } }>(
+    input,
+    `/users.info?user=${userId}`,
+  );
   return user.profile.display_name ?? userId;
 }
 

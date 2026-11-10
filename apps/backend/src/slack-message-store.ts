@@ -1,6 +1,6 @@
 import { openDatabase } from './open-database';
 
-export type SlackMessage = {
+export interface SlackMessage {
   workspaceTeamId: string;
   conversationId: string;
   senderUserId: string;
@@ -8,7 +8,7 @@ export type SlackMessage = {
   text: string;
   timestamp: string;
   sentByUser?: true;
-};
+}
 
 type SavedSlackMessage = Omit<SlackMessage, 'sentByUser' | 'senderName'> & {
   senderName?: string | undefined;
@@ -16,12 +16,12 @@ type SavedSlackMessage = Omit<SlackMessage, 'sentByUser' | 'senderName'> & {
   sentByUser?: boolean;
 };
 
-export type SlackVerdict = {
+export interface SlackVerdict {
   workspaceTeamId: string;
   conversationId: string;
   timestamp: string;
   decision: string;
-};
+}
 
 export type SlackMessageStore = ReturnType<typeof openSlackMessageStore>;
 
