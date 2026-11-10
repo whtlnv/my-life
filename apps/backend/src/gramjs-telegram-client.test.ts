@@ -18,4 +18,16 @@ describe('createGramjsTelegramClient', () => {
     expect(sentMessages).toEqual([{ entity: '42', message: 'Sending it now' }]);
     expect(sent).toEqual({ messageId: '314' });
   });
+
+  it('reports its own account as the id and full name gramjs getMe reports', async () => {
+    const gramjsClient = {
+      sendMessage: () => Promise.resolve({ id: 1 }),
+      getMe: () => Promise.resolve({ id: { toString: () => '777001' }, firstName: 'Ana', lastName: 'Torres' }),
+    };
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    const ownAccount = await client.getOwnAccount();
+
+    expect(ownAccount).toEqual({ id: '777001', name: 'Ana Torres' });
+  });
 });
