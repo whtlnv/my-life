@@ -1164,7 +1164,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         senderName,
         text,
         time,
-        link: `https://web.telegram.org/k/#${chatId}`,
+        link: telegramChatLink(chatId),
       }));
   }
   app.get('/triage-queue', (context) => {
