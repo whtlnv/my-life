@@ -1073,6 +1073,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...splitActionFromGroups(proposals, verdicts),
       digests: recordAndDescribeListedDigests(verdicts),
       slackItems: describeSlackItems(),
+      chatItems: [
+        ...new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message])).values(),
+      ].map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
+        channel,
+        chatId,
+        messageId,
+        chatTitle,
+        senderName,
+        time,
+      })),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),

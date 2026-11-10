@@ -156,4 +156,45 @@ describe('createApp chat messages', () => {
     expect(await response.json()).toEqual({ error: 'CHAT_WRITE_FORBIDDEN' });
     expect(messages).toEqual([]);
   });
+
+  it('lists at GET /triage-queue a Telegram chat whose newest message is from someone else and has no verdict as a chat item with its chat title, sender and time', async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openChatMessageStore(databasePath);
+    store.saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '41',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Are you around this week?',
+      time: '2026-11-09T15:00:00.000Z',
+      sentByUser: false,
+    });
+    store.saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { chatItems } = await getJson<{ chatItems: unknown[] }>(app, '/triage-queue');
+
+    expect(chatItems).toEqual([
+      expect.objectContaining({
+        channel: 'telegram',
+        chatId: '7001',
+        messageId: '42',
+        chatTitle: 'Lucía Romero',
+        senderName: 'Lucía Romero',
+        time: '2026-11-09T16:00:00.000Z',
+      }),
+    ]);
+  });
 });
