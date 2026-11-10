@@ -1,5 +1,5 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { accountName } from './account-name';
 import { timeInBusinessZone } from './app-shell';
@@ -2104,68 +2104,28 @@ describe('TriagePage', () => {
     expect(within(telegramCard).getByText('¿Vienes a cenar el sábado?')).toBeInTheDocument();
   });
 
-  it('posts the `ignore` verdict for its message when the ignore key `i` is pressed on a Telegram card', async () => {
-    answerGetTriageQueueWith({
-      action: [],
-      groups: [],
-      chatItems: [
-        {
-          channel: 'telegram',
-          chatId: '7001',
-          messageId: '42',
-          chatTitle: 'Familia Romero',
-          senderName: 'Lucía Romero',
-          time: '2026-11-09T16:00:00.000Z',
-        },
-      ],
-      remaining: 0,
-      paused: false,
-    });
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    await user.click(await findCardContaining('Familia Romero'));
-    await user.keyboard('i');
-
-    const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
-    expect(postedChatVerdicts).toEqual([
-      { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'ignore' } },
-    ]);
-  });
-
-  it("posts the `ignore` verdict for its message when a Telegram card's Ignore button is clicked", async () => {
-    answerGetTriageQueueWith({
-      action: [],
-      groups: [],
-      chatItems: [
-        {
-          channel: 'telegram',
-          chatId: '7001',
-          messageId: '42',
-          chatTitle: 'Familia Romero',
-          senderName: 'Lucía Romero',
-          text: '¿Vienes a cenar el sábado?',
-          time: '2026-11-09T16:00:00.000Z',
-        },
-      ],
-      remaining: 0,
-      paused: false,
-    });
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    const telegramCard = await findCardContaining('Familia Romero');
-    await user.click(within(telegramCard).getByRole('button', { name: /^Ignore/ }));
-
-    const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
-    expect(postedChatVerdicts).toEqual([
-      { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'ignore' } },
-    ]);
-  });
-
-  it("posts the `task` verdict for its message when a Telegram card's Task button is clicked", async () => {
+  it.each([
+    {
+      decision: 'ignore',
+      how: 'the ignore key `i` is pressed',
+      act: (user: UserEvent, card: HTMLElement) => user.click(card).then(() => user.keyboard('i')),
+    },
+    {
+      decision: 'ignore',
+      how: 'its Ignore button is clicked',
+      act: (user: UserEvent, card: HTMLElement) => user.click(within(card).getByRole('button', { name: /^Ignore/ })),
+    },
+    {
+      decision: 'task',
+      how: 'its Task button is clicked',
+      act: (user: UserEvent, card: HTMLElement) => user.click(within(card).getByRole('button', { name: /^Task/ })),
+    },
+    {
+      decision: 'task',
+      how: 'the task key `t` is pressed',
+      act: (user: UserEvent, card: HTMLElement) => user.click(card).then(() => user.keyboard('t')),
+    },
+  ])('posts the `$decision` verdict for its message when $how on a Telegram card', async ({ decision, act }) => {
     answerGetTriageQueueWith({
       action: [],
       groups: [],
@@ -2187,12 +2147,11 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const telegramCard = await findCardContaining('Familia Romero');
-    await user.click(within(telegramCard).getByRole('button', { name: /^Task/ }));
+    await act(user, await findCardContaining('Familia Romero'));
 
     const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
     expect(postedChatVerdicts).toEqual([
-      { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'task' } },
+      { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision } },
     ]);
   });
 
@@ -2223,36 +2182,6 @@ describe('TriagePage', () => {
 
     expect(within(telegramCard).getByRole('textbox', { name: 'Reply to Familia Romero' })).toBeInTheDocument();
     expect(within(telegramCard).getByRole('button', { name: 'Send' })).toBeInTheDocument();
-  });
-
-  it('posts the `task` verdict for its message when the task key `t` is pressed on a Telegram card', async () => {
-    answerGetTriageQueueWith({
-      action: [],
-      groups: [],
-      chatItems: [
-        {
-          channel: 'telegram',
-          chatId: '7001',
-          messageId: '42',
-          chatTitle: 'Familia Romero',
-          senderName: 'Lucía Romero',
-          time: '2026-11-09T16:00:00.000Z',
-        },
-      ],
-      remaining: 0,
-      paused: false,
-    });
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    await user.click(await findCardContaining('Familia Romero'));
-    await user.keyboard('t');
-
-    const postedChatVerdicts = requestsPostedTo('/chat-verdicts');
-    expect(postedChatVerdicts).toEqual([
-      { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'task' } },
-    ]);
   });
 
   it('opens a composer when the reply key `r` is pressed on a Telegram card, saying the same send promise as the Slack composer', async () => {
