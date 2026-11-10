@@ -1,6 +1,6 @@
 interface GramjsClient {
   sendMessage: (entity: string, parameters: { message: string }) => Promise<{ id: number }>;
-  getMe?: () => Promise<{ id: { toString: () => string }; firstName: string; lastName: string }>;
+  getMe: () => Promise<{ id: { toString: () => string }; firstName: string; lastName: string }>;
 }
 
 interface GramjsTelegramClient {
@@ -15,8 +15,7 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
       return { messageId: String(sent.id) };
     },
     getOwnAccount: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const me = await gramjsClient.getMe!();
+      const me = await gramjsClient.getMe();
       return { id: me.id.toString(), name: `${me.firstName} ${me.lastName}` };
     },
   };

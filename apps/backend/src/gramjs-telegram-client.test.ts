@@ -10,6 +10,7 @@ describe('createGramjsTelegramClient', () => {
         sentMessages.push({ entity, message });
         return Promise.resolve({ id: 314 });
       },
+      getMe: () => Promise.resolve({ id: { toString: () => '1' }, firstName: '', lastName: '' }),
     };
     const client = createGramjsTelegramClient(gramjsClient);
 
