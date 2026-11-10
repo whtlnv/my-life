@@ -1987,13 +1987,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         contact: telegramSenderAsContact(message),
       }),
     );
+    const isFromMarkedTelegramSender = (message: { senderId: string }): boolean =>
+      markedContactKeys.has(telegramContactKey(message.senderId));
     return {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
         ...chatMessageStore
           .listMessages()
-          .filter((message) => markedContactKeys.has(telegramContactKey(message.senderId)))
+          .filter(isFromMarkedTelegramSender)
           .map(telegramSenderAsContact),
       ],
       everyoneElse: [
@@ -2005,7 +2007,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ...chatMessageStore
           .listMessages()
           .filter(isFromSomeoneElse)
-          .filter((message) => !markedContactKeys.has(telegramContactKey(message.senderId)))
+          .filter((message) => !isFromMarkedTelegramSender(message))
           .map(telegramSenderAsContact),
       ],
     };
