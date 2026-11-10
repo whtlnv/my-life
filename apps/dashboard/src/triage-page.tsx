@@ -650,6 +650,8 @@ function slackMessageTime(timestamp: string): string {
   return timeInBusinessZone(new Date(Number(timestamp.split('.')[0]) * 1000).toISOString());
 }
 
+const sendPromise = 'Sent as you, only when you press Send';
+
 function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: () => void }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
@@ -703,7 +705,7 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
           />
           {sendError !== undefined && <p className="slack-composer-error">{sendError}</p>}
           <div className="slack-composer-actions">
-            <span className="hint">Sent as you, only when you press Send</span>
+            <span className="hint">{sendPromise}</span>
             <button type="button" className="button button-primary" disabled={reply === ''} onClick={sendReply}>
               Send
             </button>
@@ -780,11 +782,17 @@ function postChatVerdict(item: ChatTriageItem, key: string) {
 }
 
 function ChatCard({ item }: { item: ChatTriageItem }) {
+  const [composing, setComposing] = useState(false);
+
   return (
     <article
       className="card"
       tabIndex={0}
       onKeyDown={(event) => {
+        if (event.key === 'r') {
+          setComposing(true);
+          return;
+        }
         void postChatVerdict(item, event.key);
       }}
     >
@@ -794,6 +802,12 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
         <span className="pill pill-muted">{timeInBusinessZone(item.time)}</span>
         <span className="pill">{channelLabels[item.channel]}</span>
       </div>
+      {composing && (
+        <div className="slack-composer">
+          <textarea aria-label={`Reply to ${item.chatTitle}`} />
+          <span className="hint">{sendPromise}</span>
+        </div>
+      )}
     </article>
   );
 }

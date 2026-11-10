@@ -2079,4 +2079,51 @@ describe('TriagePage', () => {
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'task' } },
     ]);
   });
+
+  it("opens a composer when the reply key `r` is pressed on a Telegram card, saying the same send promise as the Slack composer", async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          senderUserId: 'U-Lucía Ramos',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const slackCard = within(slackSection).getByRole('article');
+    await user.click(slackCard);
+    await user.keyboard('r');
+    const slackSendPromise = within(slackCard).getByRole('button', { name: 'Send' }).previousElementSibling?.textContent;
+
+    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(telegramCard);
+    await user.keyboard('r');
+
+    expect(within(telegramCard).getByRole('textbox')).toBeInTheDocument();
+    expect(within(telegramCard).getByText(slackSendPromise as string)).toBeInTheDocument();
+  });
 });
