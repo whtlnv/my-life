@@ -13,7 +13,7 @@ Phases (locked decision 17):
 - **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contact and organization timelines), Needs input (category and new-sender questions, task proposals), tasks with states and the prioritization pass, waiting-on — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-3-*.jpg`); the real-account walk-through is `docs/phase-3-walkthrough.md`. Not built: the "significant alert not yet opened" urgent rule, identity-merge questions and the todo-list import (decisions and `PENDING_TASKS.md` § 4 below).
 - **Phase 4:** the in-app agent (the Agent tab): chat over mail, contacts, calendar and tasks on `MY_LIFE_AGENT_MODEL` (default Opus 5.5) under `apps/backend/prompts/agent-v1.md`, cited sources, eight actions through the domain guardrail (`decideAgentAction`; send and delete refused and recorded), a stored action log with undo by action id, the extension's create-draft command — code delivered 2026-11-09 (`DONE.md`); `scripts/demo.sh` seeds it. Not built: FTS5 search and local embeddings (keyword scan still enough); the gaps in `BACKLOG.md` dated 2026-11-09.
 - **Phase 5:** Slack in both workspaces (PS Mutuus, Erlia), one app per workspace with the user token in `.env`: the backend polls DMs, group DMs, mentions and threads the user wrote in every 60 s; Slack items in triage (ignore, task, reply), Slack contacts and timelines on the People tab, Slack in waiting-on; replies through `chat.postMessage` only from the dashboard composer — code delivered 2026-11-09 against the Slack fake (`DONE.md`, `docs/screenshots/2026-11-09-phase-5-*.jpg`); `scripts/demo.sh` polls a scripted Slack. The walk-through against the real workspaces is not done. Not built: Slack contacts merged with email contacts (the scopes have no `users:read.email`); the gaps in `BACKLOG.md` dated 2026-11-09.
-- **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view.
+- **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view: 6a Telegram, then 6b WhatsApp.
 - **Phase 7:** Gemini meeting notes from Drive.
 - **Phase 8:** cloud.
 
@@ -48,14 +48,32 @@ What the supervision showed in Phases 3 to 5 — check these every cycle:
 - **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
 - **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
 
-## Phase 6 — WhatsApp and Telegram
+## Phase 6a — Telegram
 
-Outcome: unread chats appear in waiting-on and the triage queue; the user replies from the dashboard.
+Outcome: the user's Telegram private chats and groups appear in triage, in waiting-on and on the People tab; the user replies from the dashboard composer and the reply goes out through the user's own Telegram session. Built against a scripted Telegram client; the real session is checked once with the user.
 
-- Telegram: gramjs user session in the backend (`PENDING_TASKS.md` § 6), updates → messages; send through the same session.
-- WhatsApp: content script on `web.whatsapp.com` parses the chat list and the open chat into a payload (parsers are pure functions over saved HTML fixtures); posts on DOM mutation with a 10 s debounce; a `send` command from the backend selects the chat and drives the composer.
-- Domain: chat messages join triage and waiting-on with the same model as Slack.
-- Fixture set for the WhatsApp parser plus a fixture-drift check that fails loudly when a selector matches nothing.
+- **One chat store for both chat channels** (`apps/backend/src/chat-message-store.ts`, SQLite like `slack-message-store.ts`): a message has a channel (`telegram` now, `whatsapp` in 6b), a chat id, a chat title, a message id, a sender id, a sender name, text, an ISO time and whether the user sent it; saving the same channel, chat and message id twice keeps one. Verdicts (ignore, task) are stored append-only beside them. 6b reuses this store unchanged.
+- **A Telegram port in the backend** (`TelegramClient`: start with a callback for new messages, list recent messages per dialog, send text to a chat and get the sent message's id back). The real adapter wraps gramjs (`telegram`, pinned at an exact version; a `chore:` commit adds it) with a `StringSession`. The mapping from a gramjs message to a stored chat message is a pure function, tested on constructed messages: private chats and groups are kept; broadcast channels, service messages and messages with no text are dropped; the user's own outgoing messages are marked sent by the user. Tests use a scripted client, never the network.
+- **Configuration:** `MY_LIFE_TELEGRAM_API_ID`, `MY_LIFE_TELEGRAM_API_HASH` (already in `.env`) and the session file `MY_LIFE_TELEGRAM_SESSION_PATH` (default `~/Library/Application Support/my-life/telegram-session`, never in git). With the id, hash and a session file, `main.ts` starts the client: on start it stores the recent messages of the dialogs with unread messages (so a restart loses nothing), then every new message as it arrives. Without them Telegram is off and the header says "telegram not logged in".
+- **The one-time login:** `scripts/telegram-login.sh` runs a backend script that asks for the phone number, the code Telegram sends and the 2FA password if set, then writes the session file. It is run once with the user (`PENDING_TASKS.md` § 6); the prompts are behind an injectable reader so the flow is tested with scripted answers and a scripted client.
+- **Routes:** `GET /chat-messages`, `POST /chat-verdicts` (task creates a task that links back to the chat and says Telegram), `POST /chat-sends` (refuses empty text and a channel that is not configured; on success stores the sent message as sent by the user with the id Telegram returned; a Telegram error answers 502 with the error). Sends are recorded append-only with their time.
+- **Triage:** each unanswered Telegram message (the newest message in its chat is not the user's and has no verdict) is a triage item with the chat title, sender, time, a channel pill, and Ignore (`i`), Task (`t`), Reply (`r`) like the Slack card, reusing its classes in `styles.css`; Reply opens the same composer ("Sent as you, only when you press Send").
+- **People and waiting-on:** Telegram senders become contacts with a `telegram` handle (their Telegram id, display name as the name); a contact timeline shows Telegram messages with their channel; waiting-on includes Telegram chats whose newest message is not the user's, ordered with email and Slack by how long they have waited; VIP Urgent applies to them.
+- **Header:** a Telegram status chip — connected with the time of the last message received or of the last successful start, stale after twice its expected interval without the client connected, "not logged in" when there is no session.
+- **Demo:** `scripts/demo.sh` starts the backend with a scripted Telegram client carrying two chats (a private chat from a VIP, a group with a question to the user) and the dashboard shows them; screenshots of triage, People and the composer go to `docs/screenshots/`.
+- **Lessons to apply:** the scripted client refuses what gramjs refuses (sending to an unknown chat, an empty message); `main.ts` must create the real client — read the composition, not just the tests; co-located backend tests for the coverage floors.
+
+## Phase 6b — WhatsApp
+
+Outcome: WhatsApp chats from the `web.whatsapp.com` tab appear in triage, waiting-on and People through the same chat store; a reply typed in the dashboard is sent by the content script driving the WhatsApp composer.
+
+- **Content script** (`apps/extension/src/entrypoints/whatsapp.content.ts`, matches `https://web.whatsapp.com/*`) in whichever profile has the tab open (`PENDING_TASKS.md` § 7 default: the first profile). It parses the chat list (title, unread count, last message time) and the open chat's messages (message id from the row's `data-id`, sent by the user when it starts with `true_`, sender and time from `data-pre-plain-text`, text) and posts them to `POST /chat-messages` as channel `whatsapp`, on DOM mutation with a 10 s debounce.
+- **Parsers are pure functions over saved HTML fixtures** in `apps/extension/src/`, tested under jsdom (a pinned dev dependency). The first fixtures are hand-written from WhatsApp Web's structure (no real messages in git); `docs/decisions/` records that fidelity gap and the real page is checked once with the user.
+- **Fixture drift fails loudly:** when the chat pane is present but a required selector matches nothing, the content script reports a parser failure to the backend instead of an empty list, and the header's WhatsApp chip says "whatsapp parser broken" until a good parse arrives. A test per required selector.
+- **Payload schema** in `packages/contracts` (zod), validated on both sides.
+- **Send:** `POST /chat-sends` for channel `whatsapp` queues a `send-whatsapp` command (chat title, text) on the existing `GET /commands` queue; the content script selects the chat, types the text into the composer and presses send, then acknowledges; an unacknowledged send shows as pending on the card. Tested against a fixture document.
+- **Header:** a WhatsApp chip with the time of the last report, stale after twice the 10 s debounce plus a margin (config), and the parser-broken state.
+- **Demo:** `scripts/demo.sh` posts WhatsApp chats; screenshots as in 6a.
 
 ## Phase 7 — Gemini meeting notes
 
