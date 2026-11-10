@@ -326,17 +326,7 @@ describe('createApp chat messages', () => {
 
   it('lists at GET /people, under Everyone else on channel telegram, the sender of a Telegram message as a contact with a Telegram handle of their user id and their display name', async () => {
     const databasePath = temporaryDatabasePath();
-    openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '7001',
-      chatTitle: 'Lucía Romero',
-      messageId: '42',
-      senderId: '7001',
-      senderName: 'Lucía Romero',
-      text: 'Can we move our call to Thursday?',
-      time: '2026-11-09T16:00:00.000Z',
-      sentByUser: false,
-    });
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
     const app = createApp({ allowedEmails: [], databasePath });
 
     const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
@@ -351,17 +341,7 @@ describe('createApp chat messages', () => {
   });
   it('gives a Telegram contact at GET /people the time of their last message as lastMessageAt, so the row can show "last message …"', async () => {
     const databasePath = temporaryDatabasePath();
-    openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '7001',
-      chatTitle: 'Lucía Romero',
-      messageId: '42',
-      senderId: '7001',
-      senderName: 'Lucía Romero',
-      text: 'Can we move our call to Thursday?',
-      time: '2026-11-09T16:00:00.000Z',
-      sentByUser: false,
-    });
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
     const app = createApp({ allowedEmails: [], databasePath });
 
     const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
@@ -486,17 +466,7 @@ describe('createApp chat messages', () => {
   });
   it('lists at GET /people under VIP, after a backend restart on the same database file, a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip before it', async () => {
     const databasePath = temporaryDatabasePath();
-    openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '7001',
-      chatTitle: 'Lucía Romero',
-      messageId: '42',
-      senderId: '7001',
-      senderName: 'Lucía Romero',
-      text: 'Can we move our call to Thursday?',
-      time: '2026-11-09T16:00:00.000Z',
-      sentByUser: false,
-    });
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
     const beforeRestart = createApp({ allowedEmails: [], databasePath });
     await beforeRestart.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
 
