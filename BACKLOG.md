@@ -42,6 +42,19 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/app.ts:985] A task made from a Slack item stores the workspace team id as its `accountEmail`** (added: 2026-11-09)
+  `POST /slack-verdicts` saves `accountEmail: verdict.workspaceTeamId`, so a field every reader takes for an email address
+  holds `T0001` for Slack tasks. Deferred because the field is stored in the task event log and returned by `GET /tasks`,
+  which `app-slack.test.ts` pins, so renaming it (to an account id) changes stored data and the API output.
+- **[apps/backend/src/contact-details-store.ts:65] `markedEmails` and `saveMark(email, …)` now hold Slack contact keys too** (added: 2026-11-09)
+  `PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip` saves a `slack:<team>/<user>` key through `saveMark`, so
+  `markedEmails()` returns keys that are not emails; the local in `GET /people` is renamed `markedContactKeys`, the store is
+  not. Deferred because `contact-details-store.ts` sits outside 96c4939..HEAD.
+- **[apps/integration/src/slack-fake-server.test.ts:23] One 1285-line file of 53 tests mixes three subjects** (added: 2026-11-09)
+  The fake's own answers, `pollSlackWorkspace` against the fake and the backend's Slack routes against the fake share one
+  `describe`, so a reader of a failing route test scrolls past the fake's self-tests. Deferred because the split needs test
+  files with no sibling source in `apps/integration`, against the project's co-location rule; decide the layout first.
+
 - **[apps/dashboard/src/agent-page.tsx:77] The agent action and conversation shapes are declared apart from the routes that build them** (added: 2026-11-09)
   `AgentAction` and `ConversationSummary` here and `StoredAgentAction` in `apps/backend/src/agent-action-store.ts` (with the
   `GET /agent/conversations` map in `app.ts`) must change together, and nothing ties them: a renamed field compiles and the
