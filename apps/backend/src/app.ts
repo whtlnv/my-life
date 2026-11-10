@@ -1925,10 +1925,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       contact.messageIds
         .map((messageId) => latestProposalFor(proposals, messageId)?.organization)
         .find((organization) => organization !== undefined);
-    const organizationOf = (contact: { emails: string[]; messageIds: string[] }) =>
-      storedContactDetails[primaryEmailOf(contact)]?.organization ??
-      extractedOrganizationOf(contact) ??
-      senderDomain(primaryEmailOf(contact));
+    const organizationOf = (contact: { emails: string[]; messageIds: string[] }) => {
+      const primaryEmail = primaryEmailOf(contact);
+      return (
+        storedContactDetails[primaryEmail]?.organization ??
+        extractedOrganizationOf(contact) ??
+        senderDomain(primaryEmail)
+      );
+    };
     const withOrganizationAndLastMessage = (contact: { emails: string[]; messageIds: string[] }) => ({
       ...contact,
       organization: organizationOf(contact),
