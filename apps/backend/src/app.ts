@@ -138,6 +138,7 @@ export interface AppOptions {
   gmailPollingIntervalInMilliseconds?: number;
   slackApiUrl?: string;
   slackWorkspaces?: { teamId: string; userToken: string }[];
+  telegramClient?: { sendText: (chatId: string, text: string) => Promise<{ messageId: string }> };
   slackPollingIntervalInMilliseconds?: number;
   urgency?: { unansweredAskBusinessDays: number };
   triage?: {
@@ -597,6 +598,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         },
       });
     }
+    return context.json({ ok: true });
+  });
+  app.post('/chat-sends', async (context) => {
+    const send = await context.req.json<{ channel: string; chatId: string; text: string }>();
+    const sent = await options.telegramClient!.sendText(send.chatId, send.text);
+    chatMessageStore.saveMessage({
+      channel: send.channel,
+      chatId: send.chatId,
+      chatTitle: '',
+      messageId: sent.messageId,
+      senderId: '',
+      senderName: '',
+      text: send.text,
+      time: clock.now().toISOString(),
+      sentByUser: true,
+    });
     return context.json({ ok: true });
   });
   app.get('/slack-messages', (context) => context.json({ messages: slackMessageStore.listMessages() }));

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from './app';
 import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openChatMessageStore } from './chat-message-store';
+import { createScriptedTelegramClient } from './scripted-telegram-client';
 
 describe('createApp chat messages', () => {
   it('lists at GET /chat-messages the chat messages stored in the chat store', async () => {
@@ -61,6 +62,41 @@ describe('createApp chat messages', () => {
         title: 'Can we move our call to Thursday?',
         link: 'https://web.telegram.org/k/#7001',
         accountEmail: 'telegram',
+      }),
+    ]);
+  });
+  it('sends text at POST /chat-sends through the Telegram session and lists it as sent by the user under the id Telegram returned', async () => {
+    const databasePath = temporaryDatabasePath();
+    const scriptedTelegram = createScriptedTelegramClient({
+      dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [] }],
+    });
+    const idsTelegramReturned: string[] = [];
+    const telegramClient = {
+      ...scriptedTelegram,
+      sendText: async (chatId: string, text: string) => {
+        const sent = await scriptedTelegram.sendText(chatId, text);
+        idsTelegramReturned.push(sent.messageId);
+        return sent;
+      },
+    };
+    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+
+    const response = await postJson(app, '/chat-sends', {
+      channel: 'telegram',
+      chatId: '7001',
+      text: 'Thursday works, same time',
+    });
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(response.status).toBe(200);
+    expect(idsTelegramReturned).toHaveLength(1);
+    expect(messages).toEqual([
+      expect.objectContaining({
+        channel: 'telegram',
+        chatId: '7001',
+        messageId: idsTelegramReturned[0],
+        text: 'Thursday works, same time',
+        sentByUser: true,
       }),
     ]);
   });
