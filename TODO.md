@@ -17,7 +17,7 @@
   - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::waits as long as Retry-After says when Slack answers 429, then retries and stores the message` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
   - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::polls every workspace, skips one whose token Slack rejects, and names the workspaces that succeeded` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
   - predicted-contradiction: `apps/integration/src/slack-fake-server.test.ts::a poll lists both direct and group direct message conversations, asking conversations.list for types im and mpim` — asserts: a poll calls `conversations.list` once with types `im,mpim` — retired-by: "A poll never calls `conversations.list`"
-- [ ] A poll requests the next `search.messages` page when every match on the current page is newer than the newest stored message
+- [x] A poll requests the next `search.messages` page when every match on the current page is newer than the newest stored message
 - [ ] A poll requests no further page once a page holds a match older than the newest stored message
 - [ ] A conversation with stored messages is read from its newest stored message (`oldest=` that timestamp)
 - [ ] A conversation with nothing stored is read from 7 days before now (`oldest=` now minus the lookback)
