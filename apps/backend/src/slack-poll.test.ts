@@ -115,6 +115,28 @@ describe('pollSlackWorkspace', () => {
     ]);
   });
 
+  it('asks conversations.history for a conversation with nothing stored only for messages from 3 days before now when the first-poll lookback is 3 days', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      workspace,
+      store: openSlackMessageStore(':memory:'),
+      clock: pollClock,
+      firstPollLookbackDays: 3,
+    });
+
+    const historyRequests = slack.requests.filter((url) => url.pathname === '/conversations.history');
+    const threeDaysBeforePollClockInSeconds = Date.parse('2026-11-07T18:00:00.000Z') / 1000;
+    expect(historyRequests.map((url) => Number(url.searchParams.get('oldest')))).toEqual([
+      threeDaysBeforePollClockInSeconds,
+    ]);
+  });
+
   it('stores the messages of a DM conversation that an is:dm search after the date 7 days before now names, though conversations.list does not list it', async () => {
     const slack = scriptedSlack({
       '/conversations.list': () => ({ ok: true, channels: [] }),

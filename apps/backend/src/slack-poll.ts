@@ -12,6 +12,7 @@ interface PollSlackWorkspaceInput {
   store: SlackMessageStore;
   wait?: (milliseconds: number) => Promise<void>;
   clock: { now: () => Date };
+  firstPollLookbackDays?: number;
 }
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
@@ -133,8 +134,10 @@ function dateSevenDaysBefore(now: Date): string {
   return new Date(now.getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
 }
 
-function secondsSevenDaysBefore(now: Date): string {
-  return String((now.getTime() - sevenDaysInMilliseconds) / 1000);
+const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
+
+function secondsLookbackDaysBefore(now: Date, lookbackDays: number): string {
+  return String((now.getTime() - lookbackDays * oneDayInMilliseconds) / 1000);
 }
 
 async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
@@ -148,7 +151,7 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
   const directMessageChannels = await searchedDirectMessageChannels(input);
   for (const channel of directMessageChannels) {
     const oldestParameter = oldestParameterAfter(
-      newestStoredTimestampIn(input.store, channel.id) ?? secondsSevenDaysBefore(input.clock.now()),
+      newestStoredTimestampIn(input.store, channel.id) ?? secondsLookbackDaysBefore(input.clock.now(), input.firstPollLookbackDays ?? 7),
     );
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
       input,
