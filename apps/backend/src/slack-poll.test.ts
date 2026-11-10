@@ -142,6 +142,20 @@ describe('pollSlackWorkspace', () => {
     expect(historyRequests.map((url) => url.searchParams.get('channel'))).toEqual([]);
   });
 
+  it('never calls conversations.list', async () => {
+    const slack = scriptedSlack();
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      workspace,
+      store: openSlackMessageStore(':memory:'),
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    });
+
+    expect(slack.requests.map((url) => url.pathname)).not.toContain('/conversations.list');
+  });
+
   it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
     const slack = scriptedSlack({
       '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),

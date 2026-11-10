@@ -104,9 +104,10 @@ async function searchedDirectMessageChannels(
 
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
-  const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im,mpim');
   const directMessageChannels =
-    input.clock === undefined ? channels : await searchedDirectMessageChannels(input, input.clock);
+    input.clock === undefined
+      ? (await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im,mpim')).channels
+      : await searchedDirectMessageChannels(input, input.clock);
   for (const channel of directMessageChannels) {
     const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
