@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
 
 import { createApp, currentTriagePromptVersion } from './app';
+import { createScriptedTelegramClient } from './scripted-telegram-client';
 
 // The demo instance scripts/demo.sh serves: every account reporting, a meeting in progress, a full triage queue. Its
 // triage is scripted (the proposal is looked up by message id), so it costs nothing and needs no key.
@@ -791,6 +792,64 @@ const demoSlack = createServer((request, response) => {
 await new Promise<void>((resolve) => demoSlack.listen(0, '127.0.0.1', resolve));
 const demoSlackUrl = `http://127.0.0.1:${String((demoSlack.address() as AddressInfo).port)}`;
 
+// A scripted Telegram session: a private chat from Valeria (marked VIP below), waiting since yesterday, and the Erlia
+// partners' group with a question to the user. Replies sent from the composer go to this script, never to Telegram.
+const minutesAgoIso = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
+const demoTelegramMessage = (fields: {
+  chatId: string;
+  chatTitle: string;
+  messageId: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  minutesAgo: number;
+}) => {
+  const { minutesAgo, ...message } = fields;
+  return { channel: 'telegram', ...message, time: minutesAgoIso(minutesAgo), sentByUser: false };
+};
+const valeriaTelegramId = '5550101';
+const demoTelegramScript = createScriptedTelegramClient({
+  dialogs: [
+    {
+      chatId: valeriaTelegramId,
+      chatTitle: 'Valeria Núñez',
+      unreadCount: 1,
+      messages: [
+        demoTelegramMessage({
+          chatId: valeriaTelegramId,
+          chatTitle: 'Valeria Núñez',
+          messageId: '881',
+          senderId: valeriaTelegramId,
+          senderName: 'Valeria Núñez',
+          text: '¿Pudiste ver la propuesta del fondo? Necesito tu respuesta antes del comité del jueves.',
+          minutesAgo: 30 * 60,
+        }),
+      ],
+    },
+    {
+      chatId: '-100424200',
+      chatTitle: 'Erlia socios',
+      unreadCount: 2,
+      messages: [
+        demoTelegramMessage({
+          chatId: '-100424200',
+          chatTitle: 'Erlia socios',
+          messageId: '3120',
+          senderId: '5550202',
+          senderName: 'Diego Ferrer',
+          text: 'Francisco, ¿confirmas que firmamos con el nuevo proveedor de nómina este mes?',
+          minutesAgo: 75,
+        }),
+      ],
+    },
+  ],
+});
+const demoTelegram = {
+  ...demoTelegramScript,
+  getOwnAccount: () => Promise.resolve({ id: '5550000', name: 'Francisco Catalá' }),
+  isConnected: () => true,
+};
+
 const app = createApp({
   allowedEmails: Object.values(accounts),
   databasePath,
@@ -800,6 +859,7 @@ const app = createApp({
   slackApiUrl: demoSlackUrl,
   slackWorkspaces: demoSlackWorkspaces.map(({ teamId, userToken }) => ({ teamId, userToken })),
   slackPollingIntervalInMilliseconds: 60_000,
+  telegramClient: demoTelegram,
   triage: {
     propose: (message) =>
       Promise.resolve({
@@ -939,6 +999,8 @@ async function seed(): Promise<void> {
   if (archiveAction !== undefined) await postJson('/agent/actions/undo', { actionId: archiveAction.id });
   // Slack: both workspaces are polled from the scripted Slack above.
   await app.request('/slack-poll', { method: 'POST' });
+  // Telegram: the scripted session's chats were stored at start; Valeria is a VIP.
+  await app.request(`/telegram-contacts/${valeriaTelegramId}/marks/vip`, { method: 'PUT' });
 }
 
 // Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).
