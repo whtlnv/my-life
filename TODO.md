@@ -41,7 +41,7 @@
 - [x] A Telegram chat whose newest message is the user's is not a triage item
 - [x] A Telegram chat whose newest message has a verdict is not a triage item
 - [x] A Telegram triage card shows the chat title, sender, time and a Telegram channel pill
-- [ ] Pressing `i` on a Telegram card posts an ignore verdict for its message
+- [x] Pressing `i` on a Telegram card posts an ignore verdict for its message
 - [ ] Pressing `t` on a Telegram card posts a task verdict for its message
 - [ ] Pressing `r` on a Telegram card opens the composer saying "Sent as you, only when you press Send"
 - [ ] Pressing Send in the composer on a Telegram card posts the text to `POST /chat-sends` with channel `telegram` and the chat id

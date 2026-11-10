@@ -2011,4 +2011,38 @@ describe('TriagePage', () => {
     expect(within(telegramCard).getByText(timeInBusinessZone('2026-11-09T16:00:00.000Z'))).toBeInTheDocument();
     expect(within(telegramCard).getByText(channelLabels.telegram)).toHaveClass('pill');
   });
+
+  it('posts the `ignore` verdict for its message when the ignore key `i` is pressed on a Telegram card', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const chatTitle = await screen.findByText('Familia Romero');
+    await user.click(chatTitle.closest('article') as HTMLElement);
+    await user.keyboard('i');
+
+    const postedChatVerdicts = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/chat-verdicts')
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    expect(postedChatVerdicts).toEqual([
+      { method: 'POST', body: { channel: 'telegram', chatId: '7001', messageId: '42', decision: 'ignore' } },
+    ]);
+  });
 });

@@ -771,8 +771,15 @@ function SlackSection({
 }
 
 function ChatCard({ item }: { item: ChatTriageItem }) {
+  const { channel, chatId, messageId } = item;
   return (
-    <article className="card">
+    <article
+      className="card"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'i') void postJson('/chat-verdicts', { channel, chatId, messageId, decision: 'ignore' });
+      }}
+    >
       <div className="card-head">
         <span className="card-who">{item.chatTitle}</span>
         <span>{item.senderName}</span>
