@@ -39,7 +39,7 @@
 - [x] Chat sends are listed with their time after the backend restarts
 - [x] A Telegram chat whose newest message is not the user's and has no verdict is a triage item with the chat title, sender and time
 - [x] A Telegram chat whose newest message is the user's is not a triage item
-- [ ] A Telegram chat whose newest message has a verdict is not a triage item
+- [x] A Telegram chat whose newest message has a verdict is not a triage item
 - [ ] A Telegram triage card shows the chat title, sender, time and a Telegram channel pill
 - [ ] Pressing `i` on a Telegram card posts an ignore verdict for its message
 - [ ] Pressing `t` on a Telegram card posts a task verdict for its message

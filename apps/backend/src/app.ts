@@ -1068,8 +1068,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));
+    const verdicts = chatMessageStore.listVerdicts();
     return [...newestMessageByChat.values()]
       .filter((message) => !message.sentByUser)
+      .filter(
+        (message) =>
+          !verdicts.some((verdict) => verdict.chatId === message.chatId && verdict.messageId === message.messageId),
+      )
       .map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
       channel,
       chatId,
