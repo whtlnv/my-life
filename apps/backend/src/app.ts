@@ -450,10 +450,14 @@ function newestMessagePerSender(messages: ChatMessage[]): ChatMessage[] {
   );
 }
 
+function slackSenderContactKey(message: SlackMessage): string {
+  return slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId });
+}
+
 function newestSlackMessagePerSender(messages: SlackMessage[]): SlackMessage[] {
   return newestPerSender(
     messages,
-    (message) => slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }),
+    slackSenderContactKey,
     (message, than) => Number(message.timestamp) > Number(than.timestamp),
   );
 }
@@ -2051,7 +2055,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         threadId: message.conversationId,
         receivedAt: slackTimestampAsIso(message.timestamp),
         sentByUser: message.sentByUser === true,
-        contactKey: slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }),
+        contactKey: slackSenderContactKey(message),
         contact: slackSenderAsContact(message),
       }),
     );
@@ -2067,7 +2071,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const isFromMarkedTelegramSender = (message: { senderId: string }): boolean =>
       markedContactKeys.has(telegramContactKey(message.senderId));
     const isFromMarkedSlackSender = (message: SlackMessage): boolean =>
-      markedContactKeys.has(slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }));
+      markedContactKeys.has(slackSenderContactKey(message));
     return {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
