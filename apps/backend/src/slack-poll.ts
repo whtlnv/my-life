@@ -80,7 +80,7 @@ function oldestParameterAfter(newestStoredTimestamp: string | undefined): string
 
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
-  const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im');
+  const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im,mpim');
   for (const channel of channels) {
     const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(

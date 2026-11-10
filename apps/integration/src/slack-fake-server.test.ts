@@ -458,6 +458,28 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('a poll lists both direct and group direct message conversations, asking conversations.list for types im and mpim', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const listRequests: URL[] = [];
+      const recordingFetch: typeof fetch = (request, init) => {
+        const url = new URL(request instanceof Request ? request.url : request.toString());
+        if (url.pathname === '/conversations.list') listRequests.push(url);
+        return fetch(request, init);
+      };
+
+      await pollSlackWorkspace({
+        fetch: recordingFetch,
+        apiUrl: slack.url,
+        workspace: { teamId: 'T0001', userToken: slack.token },
+        store: openSlackMessageStore(':memory:'),
+      });
+
+      expect(listRequests.map((url) => url.searchParams.get('types')?.split(',').sort())).toEqual([['im', 'mpim']]);
+    } finally {
+      await slack.close();
+    }
+  });
   it('a poll does not store a reply in a thread the user never wrote in', async () => {
     const slack = await startSlackFakeServer('thread-reply');
     try {
