@@ -829,16 +829,19 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
         <div className="slack-composer">
           <textarea
             aria-label={`Reply to ${item.chatTitle}`}
+            placeholder={`Reply to ${item.chatTitle} in ${channelLabels[item.channel]}`}
             value={reply}
             onChange={(event) => {
               setReply(event.target.value);
             }}
           />
           {sendError !== undefined && <p className="slack-composer-error">{sendError}</p>}
-          <span className="hint">{sendPromise}</span>
-          <button type="button" className="button button-primary" disabled={reply === ''} onClick={sendReply}>
-            Send
-          </button>
+          <div className="slack-composer-actions">
+            <span className="hint">{sendPromise}</span>
+            <button type="button" className="button button-primary" disabled={reply === ''} onClick={sendReply}>
+              Send
+            </button>
+          </div>
         </div>
       )}
       <div className="card-foot">
