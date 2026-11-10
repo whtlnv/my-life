@@ -414,4 +414,35 @@ describe('createApp chat messages', () => {
 
     expect(vip).toEqual([expect.objectContaining({ telegramHandles: [{ userId: '7001' }] })]);
   });
+  it('lists at GET /people under Urgent, with the reason "VIP waiting", a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip whose message has waited more than 1 business day for a reply', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-02T17:00:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
+    });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+
+    const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
+
+    expect(urgent).toEqual([
+      expect.objectContaining({
+        channel: 'telegram',
+        displayName: 'Lucía Romero',
+        telegramHandles: [{ userId: '7001' }],
+        reasons: ['VIP waiting'],
+      }),
+    ]);
+  });
 });

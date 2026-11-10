@@ -1957,8 +1957,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
       return urgent ? [{ ...slackSenderAsContact(message), reasons }] : [];
     });
+    const urgentTelegramSenders = chatMessageStore.listMessages().flatMap((message) => {
+      const { urgent, reasons } = contactUrgency({
+        messages: [{ threadId: message.chatId, receivedAt: message.time, sentByUser: message.sentByUser === true }],
+        vip: markedContactKeys.has(telegramContactKey(message.senderId)),
+        now: clock.now().toISOString(),
+        settings: urgencySettings,
+      });
+      return urgent ? [{ ...telegramSenderAsContact(message), reasons }] : [];
+    });
     return {
-      urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders],
+      urgent: [
+        ...urgentContacts.map(withOrganizationAndLastMessage),
+        ...urgentSlackSenders,
+        ...urgentTelegramSenders,
+      ],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
         ...chatMessageStore
