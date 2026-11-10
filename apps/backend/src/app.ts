@@ -696,10 +696,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (options.telegramClient === undefined) {
       return { loggedIn: false };
     }
-    const lastMessage = chatMessageStore.listMessages().at(-1);
     if (options.telegramClient.isConnected?.() === false) {
       return { loggedIn: true, lastStartedAt: startedAt, stale: true };
     }
+    const lastMessage = chatMessageStore.listMessages().at(-1);
     return lastMessage === undefined
       ? { loggedIn: true, lastStartedAt: startedAt }
       : { loggedIn: true, lastMessageAt: lastMessage.time };
