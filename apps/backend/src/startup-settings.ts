@@ -33,7 +33,7 @@ export interface TelegramSettings {
   enabled: boolean;
   apiId: number;
   apiHash: string | undefined;
-  sessionPath: string | undefined;
+  sessionPath: string;
 }
 
 export interface SlackWorkspaceSettings {
@@ -104,17 +104,19 @@ function readTelegramSettings(
   environment: Record<string, string | undefined>,
   homeDirectory: string,
 ): TelegramSettings {
-  const sessionPath =
-    environment.MY_LIFE_TELEGRAM_SESSION_PATH ??
-    join(homeDirectory, 'Library', 'Application Support', 'my-life', 'telegram-session');
+  const sessionPath = environment.MY_LIFE_TELEGRAM_SESSION_PATH ?? defaultTelegramSessionPath(homeDirectory);
   const apiHash = environment.MY_LIFE_TELEGRAM_API_HASH;
   const apiId = environment.MY_LIFE_TELEGRAM_API_ID;
   return {
-    enabled: apiId !== undefined && apiHash !== undefined && sessionPath !== undefined && existsSync(sessionPath),
+    enabled: apiId !== undefined && apiHash !== undefined && existsSync(sessionPath),
     apiId: Number(apiId),
     apiHash,
     sessionPath,
   };
+}
+
+function defaultTelegramSessionPath(homeDirectory: string): string {
+  return join(homeDirectory, 'Library', 'Application Support', 'my-life', 'telegram-session');
 }
 
 function readSlackWorkspaces(environment: Record<string, string | undefined>): SlackWorkspaceSettings[] {
