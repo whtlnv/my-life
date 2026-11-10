@@ -129,6 +129,7 @@ type TriageRequest = ReportedMessage & {
 
 interface TelegramSender {
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
+  getOwnAccount?: () => Promise<{ id: string; name: string }>;
 }
 
 export interface AppOptions {
@@ -616,13 +617,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     } catch (error) {
       return context.json({ error: (error as Error).message }, 502);
     }
+    const ownAccount = await telegramClient.getOwnAccount?.();
+    const chatTitle = chatMessageStore.listMessages().find((message) => message.chatId === send.chatId)?.chatTitle;
     chatMessageStore.saveMessage({
       channel: send.channel,
       chatId: send.chatId,
-      chatTitle: '',
+      chatTitle: chatTitle ?? '',
       messageId: sent.messageId,
-      senderId: '',
-      senderName: '',
+      senderId: ownAccount?.id ?? '',
+      senderName: ownAccount?.name ?? '',
       text: send.text,
       time: clock.now().toISOString(),
       sentByUser: true,

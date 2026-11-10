@@ -43,7 +43,7 @@
 - [x] A Telegram triage card shows the chat title, sender, time and a Telegram channel pill
 - [x] Pressing `i` on a Telegram card posts an ignore verdict for its message
 - [x] `POST /chat-sends` with channel `telegram` while Telegram is off (no client configured) answers 400 and nothing is sent or stored
-- [ ] A reply sent through `POST /chat-sends` is stored with the chat's title (from the chat's stored messages) and the user's own Telegram id and name (from the client's own account), not empty strings
+- [x] A reply sent through `POST /chat-sends` is stored with the chat's title (from the chat's stored messages) and the user's own Telegram id and name (from the client's own account), not empty strings
 - [ ] Pressing `t` on a Telegram card posts a task verdict for its message
 - [ ] Pressing `r` on a Telegram card opens the composer saying "Sent as you, only when you press Send"
 - [ ] Pressing Send in the composer on a Telegram card posts the text to `POST /chat-sends` with channel `telegram` and the chat id

@@ -108,6 +108,34 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('stores a reply sent at POST /chat-sends with the chat title of the chat\'s stored messages and the user\'s own Telegram id and name', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+    });
+    const { telegramClient: recordingClient } = recordingTelegramClient();
+    const telegramClient = {
+      ...recordingClient,
+      getOwnAccount: () => Promise.resolve({ id: '777001', name: 'Ana Torres' }),
+    };
+    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+
+    await postJson(app, '/chat-sends', { channel: 'telegram', chatId: '7001', text: 'Thursday works, same time' });
+    const { messages } = await getJson<{ messages: { sentByUser: boolean }[] }>(app, '/chat-messages');
+
+    expect(messages.filter((message) => message.sentByUser)).toEqual([
+      expect.objectContaining({ chatTitle: 'Lucía Romero', senderId: '777001', senderName: 'Ana Torres' }),
+    ]);
+  });
+
   it('refuses at POST /chat-sends, with 400, a send with empty text, and sends and stores nothing', async () => {
     const databasePath = temporaryDatabasePath();
     const { telegramClient, textsSentToTelegram } = recordingTelegramClient();
