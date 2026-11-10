@@ -31,6 +31,12 @@ const answerGetTriageQueueWith = (body: unknown, acceptedPostPath?: string) => {
   vi.stubGlobal('fetch', fetchStub);
 };
 
+const findCardContaining = async (text: string): Promise<HTMLElement> => {
+  const card = (await screen.findByText(text)).closest('article');
+  if (card === null) throw new Error(`"${text}" is not inside a card`);
+  return card;
+};
+
 const queueOfActionItems = (action: unknown[]) => ({ action, groups: [], remaining: 0, paused: false });
 
 const handledItem = (messageId: string, summary: string) => ({
@@ -2003,10 +2009,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const chatTitle = await screen.findByText('Familia Romero');
-    const card = chatTitle.closest('article');
-    expect(card).not.toBeNull();
-    const telegramCard = card as HTMLElement;
+    const telegramCard = await findCardContaining('Familia Romero');
     expect(within(telegramCard).getByText('Lucía Romero')).toBeInTheDocument();
     expect(within(telegramCard).getByText(timeInBusinessZone('2026-11-09T16:00:00.000Z'))).toBeInTheDocument();
     expect(within(telegramCard).getByText(channelLabels.telegram)).toHaveClass('pill');
@@ -2034,7 +2037,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const telegramCard = (await screen.findByText('¿Firmaste el contrato?')).closest('article') as HTMLElement;
+    const telegramCard = await findCardContaining('¿Firmaste el contrato?');
     expect(within(telegramCard).getAllByText('Valeria Núñez')).toHaveLength(1);
   });
 
@@ -2090,7 +2093,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const telegramCard = await findCardContaining('Familia Romero');
     expect(within(telegramCard).getByText('¿Vienes a cenar el sábado?')).toBeInTheDocument();
   });
 
@@ -2115,8 +2118,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const chatTitle = await screen.findByText('Familia Romero');
-    await user.click(chatTitle.closest('article') as HTMLElement);
+    await user.click(await findCardContaining('Familia Romero'));
     await user.keyboard('i');
 
     const postedChatVerdicts = vi
@@ -2150,7 +2152,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const telegramCard = await findCardContaining('Familia Romero');
     await user.click(within(telegramCard).getByRole('button', { name: /^Ignore/ }));
 
     const postedChatVerdicts = vi
@@ -2184,7 +2186,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const telegramCard = await findCardContaining('Familia Romero');
     await user.click(within(telegramCard).getByRole('button', { name: /^Task/ }));
 
     const postedChatVerdicts = vi
@@ -2218,7 +2220,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const telegramCard = await findCardContaining('Familia Romero');
     await user.click(within(telegramCard).getByRole('button', { name: /^Reply/ }));
 
     expect(within(telegramCard).getByRole('textbox', { name: 'Reply to Familia Romero' })).toBeInTheDocument();
@@ -2246,8 +2248,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const chatTitle = await screen.findByText('Familia Romero');
-    await user.click(chatTitle.closest('article') as HTMLElement);
+    await user.click(await findCardContaining('Familia Romero'));
     await user.keyboard('t');
 
     const postedChatVerdicts = vi
@@ -2299,7 +2300,7 @@ describe('TriagePage', () => {
     const slackSendPromise = within(slackCard).getByRole('button', { name: 'Send' }).previousElementSibling
       ?.textContent;
 
-    const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const telegramCard = await findCardContaining('Familia Romero');
     await user.click(telegramCard);
     await user.keyboard('r');
 
@@ -2334,7 +2335,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const familiaCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const familiaCard = await findCardContaining('Familia Romero');
     await user.click(within(familiaCard).getByRole('button', { name: /^Ignore/ }));
 
     await waitFor(() => {
@@ -2364,7 +2365,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const card = await findCardContaining('Familia Romero');
     await user.click(card);
     await user.keyboard('r');
     await user.type(within(card).getByRole('textbox'), 'Llego a las ocho');
@@ -2406,7 +2407,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const familiaCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const familiaCard = await findCardContaining('Familia Romero');
     await user.click(within(familiaCard).getByRole('button', { name: /^Reply/ }));
     await user.type(within(familiaCard).getByRole('textbox'), 'Llego a las ocho');
     await user.click(within(familiaCard).getByRole('button', { name: 'Send' }));
@@ -2438,7 +2439,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const card = await findCardContaining('Familia Romero');
     await user.click(card);
     await user.keyboard('r');
     const replyBox = within(card).getByRole('textbox');
@@ -2484,7 +2485,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const card = await findCardContaining('Familia Romero');
     await user.click(within(card).getByRole('button', { name: /^Reply/ }));
     await user.type(within(card).getByRole('textbox'), 'Llego a las ocho');
     await user.click(within(card).getByRole('button', { name: 'Send' }));
@@ -2516,7 +2517,7 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    const card = await findCardContaining('Familia Romero');
     await user.click(within(card).getByRole('button', { name: /^Reply/ }));
 
     expect(within(card).getByRole('button', { name: 'Send' })).toBeDisabled();
