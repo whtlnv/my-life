@@ -8,7 +8,7 @@
 - [x] Chat messages saved before the store is reopened are listed after it is reopened
 - [x] An ignore or task verdict on a chat message is stored and listed after the store is reopened
 - [x] A second verdict on the same chat message is listed beside the first, not in its place
-- [ ] An incoming text message in a Telegram private chat maps to a chat message with channel `telegram`, the peer's name as chat title, the sender's id and name, the text, the ISO time, not sent by the user
+- [x] An incoming text message in a Telegram private chat maps to a chat message with channel `telegram`, the peer's name as chat title, the sender's id and name, the text, the ISO time, not sent by the user
 - [ ] An outgoing text message the user wrote maps to a chat message sent by the user
 - [ ] A text message in a Telegram group maps to a chat message with the group's title as chat title
 - [ ] A message in a Telegram broadcast channel is dropped by the mapping
