@@ -120,6 +120,28 @@ describe('pollSlackWorkspace', () => {
     ]);
   });
 
+  it('does not read the history of a DM conversation that no is:dm match names', async () => {
+    const slack = scriptedSlack({
+      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': () => ({ ok: true, messages: { matches: [] } }),
+      '/conversations.history': () => ({
+        ok: true,
+        messages: [{ user: 'U0001', text: 'Can you look at the contract today?', ts: '1762700000.000100' }],
+      }),
+    });
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      workspace,
+      store: openSlackMessageStore(':memory:'),
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    });
+
+    const historyRequests = slack.requests.filter((url) => url.pathname === '/conversations.history');
+    expect(historyRequests.map((url) => url.searchParams.get('channel'))).toEqual([]);
+  });
+
   it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
     const slack = scriptedSlack({
       '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
