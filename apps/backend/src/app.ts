@@ -2040,7 +2040,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       messages: { threadId: string; receivedAt: string; sentByUser: boolean }[];
       contactKey: string;
       contact: Contact;
-    }): Array<Contact & { reasons: ReturnType<typeof contactUrgency>['reasons'] }> => {
+    }): (Contact & { reasons: ReturnType<typeof contactUrgency>['reasons'] })[] => {
       const { urgent, reasons } = contactUrgency({
         messages: sender.messages,
         vip: markedContactKeys.has(sender.contactKey),
