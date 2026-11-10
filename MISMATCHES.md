@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 01:31 · `apps/backend/src/app-people.test.ts::keeps in GET /people Everyone else a sender with one message proposed in an automated category besides one proposed as an action`
+- Behavior: Everyone else keeps a sender with at least one message that is not automated mail
+- Predicted: passes on first run — `writesInPerson` already keeps a contact when `reportedMessages.some(...)` finds a non-automated message
+- Actual: passed (1 passed, 24 skipped)
+- Type: passed unexpectedly (predicted; nothing missing)
+- Resolution: The previous cycle (2495836) built this with `.some`, so there is no failing test left to write; the test stays as a pin, because changing `.some` to `.every` would drop Luis (message-2 is in an automated category) and fail it.
+
 ## 2026-11-10 01:10 · `apps/backend/src/app-chat.test.ts::orders Telegram, email and Slack people together at GET /waiting-on, the one who has waited longest first`
 - Behavior: Waiting-on orders Telegram chats with email and Slack by how long each has waited
 - Predicted: passes on first run (commit 566646c already merged Telegram people into the sorted /waiting-on list)

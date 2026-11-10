@@ -59,7 +59,7 @@
 - [x] A person on the People tab with no stored organization shows the organization the extraction named before their domain (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
 - [x] A person with no stored organization and none from the extraction shows their domain (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
 - [x] Everyone else leaves out a sender whose messages are all automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
-- [ ] Everyone else keeps a sender with at least one message that is not automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
+- [x] Everyone else keeps a sender with at least one message that is not automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
 - [ ] Slack sends made before the backend restarts are listed by `GET /slack-sends` after it (backlog: apps/backend/src/app.ts:659 Slack sends are listed from memory)
 - [ ] A VIP Telegram contact is listed under VIP and not under Everyone else
 - [ ] The header's Telegram chip says "telegram not logged in" when there is no session

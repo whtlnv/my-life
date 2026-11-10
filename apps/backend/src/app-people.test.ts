@@ -182,6 +182,32 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(everyoneElse.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
   });
 
+  it('keeps in GET /people Everyone else a sender with one message proposed in an automated category besides one proposed as an action', async () => {
+    const triage = triageAnsweringByMessageId({
+      'message-1': {
+        action: 'act',
+        category: 'action',
+        summary: 'Luis asks for a budget review',
+        extract: {},
+        reason: 'Luis asks the user directly',
+      },
+      'message-2': shopNewsletterArchiveProposal,
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
+    const luisMessage = budgetReviewReport.messages[0];
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [luisMessage, { ...luisMessage, id: 'message-2', threadId: 'thread-2', subject: 'Shop news' }],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { everyoneElse } = (await response.json()) as { everyoneElse: { emails: string[] }[] };
+    expect(everyoneElse.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+  });
+
   it('gives each contact at GET /people, under VIP and under Everyone else, its organization and the time of its most recent message', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const [luisMessage, martaMessage] = budgetReviewReportWithSecondMessageFromMarta.messages;
