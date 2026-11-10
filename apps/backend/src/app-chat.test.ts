@@ -582,4 +582,23 @@ describe('createApp chat messages', () => {
 
     expect(telegram).toEqual({ loggedIn: true, lastStartedAt: '2026-11-10T06:15:00.000Z', stale: true });
   });
+  it('does not report Telegram at GET /now as stale while the client has been disconnected for less than twice the 60 s check interval since it was last seen connected', async () => {
+    const { telegramClient } = recordingTelegramClient();
+    let currentTime = new Date('2026-11-10T06:15:00.000Z');
+    let connected = true;
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      telegramClient: { ...telegramClient, isConnected: () => connected },
+      clock: { now: () => currentTime },
+    });
+    currentTime = new Date('2026-11-10T06:20:00.000Z');
+    await getJson<{ telegram: unknown }>(app, '/now');
+    connected = false;
+    currentTime = new Date('2026-11-10T06:21:00.000Z');
+
+    const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
+
+    expect(telegram).toEqual({ loggedIn: true, lastStartedAt: '2026-11-10T06:15:00.000Z' });
+  });
 });
