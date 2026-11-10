@@ -34,7 +34,7 @@ export function openSlackMessageStore(databasePath: string) {
     'INSERT OR IGNORE INTO slack_messages (workspace_team_id, conversation_id, sender_user_id, sender_name, text, timestamp, thread_timestamp, sent_by_user) VALUES (@workspaceTeamId, @conversationId, @senderUserId, @senderName, @text, @timestamp, @threadTimestamp, @sentByUser)',
   );
   const selectMessages = database.prepare<[], Omit<SlackMessage, 'sentByUser'> & { sentByUser: number }>(
-    'SELECT workspace_team_id AS workspaceTeamId, conversation_id AS conversationId, sender_user_id AS senderUserId, sender_name AS senderName, text, timestamp, sent_by_user AS sentByUser FROM slack_messages ORDER BY rowid',
+    'SELECT workspace_team_id AS workspaceTeamId, conversation_id AS conversationId, sender_user_id AS senderUserId, sender_name AS senderName, text, timestamp, sent_by_user AS sentByUser FROM slack_messages ORDER BY CAST(timestamp AS REAL), rowid',
   );
   database.exec(
     'CREATE TABLE IF NOT EXISTS slack_verdicts (workspace_team_id TEXT NOT NULL, conversation_id TEXT NOT NULL, timestamp TEXT NOT NULL, decision TEXT NOT NULL)',
