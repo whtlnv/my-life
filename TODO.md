@@ -11,7 +11,7 @@
 - [x] An incoming text message in a Telegram private chat maps to a chat message with channel `telegram`, the peer's name as chat title, the sender's id and name, the text, the ISO time, not sent by the user
 - [x] An outgoing text message the user wrote maps to a chat message sent by the user
 - [x] A Telegram user with no last name (or no first name) maps to a sender name and chat title without "undefined" or a stray space; a user with neither falls back to their username, then their id
-- [ ] A text message in a Telegram group maps to a chat message with the group's title as chat title
+- [x] A text message in a Telegram group maps to a chat message with the group's title as chat title
 - [ ] A message in a Telegram broadcast channel is dropped by the mapping
 - [ ] A Telegram service message (a member joined, a title changed) is dropped by the mapping
 - [ ] A Telegram message with no text (a photo or sticker alone) is dropped by the mapping

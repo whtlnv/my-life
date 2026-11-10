@@ -105,4 +105,35 @@ describe('Telegram message mapping', () => {
       senderName: '717171',
     });
   });
+
+  it('maps a text message in a group to a chat message titled after the group and sent by the member who wrote it', () => {
+    const group = new Api.Chat({
+      id: returnBigInt(909090),
+      title: 'Erlia socios',
+      photo: new Api.ChatPhotoEmpty(),
+      participantsCount: 3,
+      date: Date.parse('2026-01-01T00:00:00.000Z') / 1000,
+      version: 1,
+    });
+    const message = new Api.Message({
+      id: 2001,
+      peerId: new Api.PeerChat({ chatId: returnBigInt(909090) }),
+      fromId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:00:00.000Z') / 1000,
+      message: 'Revisen el deck antes del viernes',
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: group, sender: luis })).toEqual({
+      channel: 'telegram',
+      chatId: '909090',
+      chatTitle: 'Erlia socios',
+      messageId: '2001',
+      senderId: '424242',
+      senderName: 'Luis Ortega',
+      text: 'Revisen el deck antes del viernes',
+      time: '2026-11-09T19:00:00.000Z',
+      sentByUser: false,
+    });
+  });
 });

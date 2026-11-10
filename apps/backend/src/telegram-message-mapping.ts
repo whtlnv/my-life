@@ -13,13 +13,13 @@ export function mapTelegramMessage({
   sender,
 }: {
   message: Api.Message;
-  chat: Api.User;
+  chat: Api.User | Api.Chat;
   sender: Api.User;
 }): ChatMessage {
   return {
     channel: 'telegram',
     chatId: chat.id.toString(),
-    chatTitle: userName(chat),
+    chatTitle: 'title' in chat ? chat.title : userName(chat),
     messageId: String(message.id),
     senderId: sender.id.toString(),
     senderName: userName(sender),
