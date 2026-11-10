@@ -719,14 +719,6 @@ function answerSlack(path: string, query: URLSearchParams, workspace: DemoSlackW
         team: workspace.name,
         url: workspace.url,
       };
-    case '/conversations.list':
-      return {
-        ok: true,
-        channels: [...new Set(workspace.directMessages.map(({ channel }) => channel))].map((id) => ({
-          id,
-          is_im: true,
-        })),
-      };
     case '/conversations.history':
       return {
         ok: true,
@@ -735,8 +727,14 @@ function answerSlack(path: string, query: URLSearchParams, workspace: DemoSlackW
           .filter(newerThan(query.get('oldest'))),
       };
     case '/search.messages': {
+      const searchQuery = query.get('query') ?? '';
       const ownMessagesQuery = `from:<@${workspace.ownUserId}>`;
-      const matches = query.get('query') === ownMessagesQuery ? workspace.ownThreadMessages : workspace.mentions;
+      const matchesBySearch = (): typeof workspace.mentions => {
+        if (searchQuery.startsWith('is:dm')) return workspace.directMessages;
+        if (searchQuery.startsWith(ownMessagesQuery)) return workspace.ownThreadMessages;
+        return workspace.mentions;
+      };
+      const matches = matchesBySearch();
       return {
         ok: true,
         messages: { matches: matches.map((match) => ({ ...match, channel: { id: match.channel } })) },

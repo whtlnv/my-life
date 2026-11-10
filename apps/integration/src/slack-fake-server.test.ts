@@ -20,33 +20,9 @@ import {
   threadReplyText,
 } from './slack-fake-server';
 
+const pollClock = { now: () => new Date('2026-11-10T18:00:00.000Z') };
+
 describe('Slack fake server', () => {
-  it('in the direct-message scenario lists one DM conversation and returns its message from conversations.history', async () => {
-    const slack = await startSlackFakeServer('direct-message');
-    try {
-      const list = (await (
-        await fetch(`${slack.url}/conversations.list?types=im`, { headers: { Authorization: `Bearer ${slack.token}` } })
-      ).json()) as { ok: boolean; channels: { id: string; is_im: boolean }[] };
-
-      expect(list.ok).toBe(true);
-      expect(list.channels).toHaveLength(1);
-      const [conversation] = list.channels;
-      expect(conversation?.is_im).toBe(true);
-
-      const history = (await (
-        await fetch(`${slack.url}/conversations.history?channel=${conversation?.id ?? ''}`, {
-          headers: { Authorization: `Bearer ${slack.token}` },
-        })
-      ).json()) as { ok: boolean; messages: { text: string; user: string; ts: string }[] };
-
-      expect(history.ok).toBe(true);
-      expect(history.messages).toHaveLength(1);
-      expect(history.messages[0]?.text).toBe(directMessageText);
-    } finally {
-      await slack.close();
-    }
-  });
-
   it('in the direct-message scenario lists no DM conversation from conversations.list without types, as Slack lists only public channels by default', async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {
@@ -348,6 +324,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -374,6 +351,7 @@ describe('Slack fake server', () => {
         pollSlackWorkspace({
           fetch,
           apiUrl: slack.url,
+          clock: pollClock,
           workspace: { teamId: 'T0001', userToken: slack.token },
           store,
         });
@@ -394,6 +372,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -417,6 +396,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store: openSlackMessageStore(':memory:'),
       });
@@ -433,6 +413,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store: openSlackMessageStore(':memory:'),
       });
@@ -450,6 +431,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -481,6 +463,7 @@ describe('Slack fake server', () => {
         pollSlackWorkspace({
           fetch: recordingFetch,
           apiUrl: slack.url,
+          clock: pollClock,
           workspace: { teamId: 'T0001', userToken: slack.token },
           store,
         });
@@ -508,6 +491,7 @@ describe('Slack fake server', () => {
         pollSlackWorkspace({
           fetch: recordingFetch,
           apiUrl: slack.url,
+          clock: pollClock,
           workspace: { teamId: 'T0001', userToken: slack.token },
           store,
         });
@@ -517,28 +501,6 @@ describe('Slack fake server', () => {
       await poll();
 
       expect(historyRequests.map((url) => url.searchParams.get('oldest'))).toEqual(['1762700000.000100']);
-    } finally {
-      await slack.close();
-    }
-  });
-  it('a poll lists both direct and group direct message conversations, asking conversations.list for types im and mpim', async () => {
-    const slack = await startSlackFakeServer('direct-message');
-    try {
-      const listRequests: URL[] = [];
-      const recordingFetch: typeof fetch = (request, init) => {
-        const url = new URL(request instanceof Request ? request.url : request.toString());
-        if (url.pathname === '/conversations.list') listRequests.push(url);
-        return fetch(request, init);
-      };
-
-      await pollSlackWorkspace({
-        fetch: recordingFetch,
-        apiUrl: slack.url,
-        workspace: { teamId: 'T0001', userToken: slack.token },
-        store: openSlackMessageStore(':memory:'),
-      });
-
-      expect(listRequests.map((url) => url.searchParams.get('types')?.split(',').sort())).toEqual([['im', 'mpim']]);
     } finally {
       await slack.close();
     }
@@ -571,6 +533,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch: fetchWhereTheUserWroteOnlyOutsideTheThread,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -587,6 +550,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store: openSlackMessageStore(':memory:'),
       });
@@ -619,6 +583,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch: fetchHonoringRepliesOldest,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -649,6 +614,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch: fetchWithTheUsersOwnDirectMessage,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -683,6 +649,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch: fetchWithTheUsersOwnThreadReply,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store: openSlackMessageStore(databasePath),
       });
@@ -707,6 +674,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -729,6 +697,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
       });
@@ -758,6 +727,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspace({
         fetch: fetchRateLimitingTheFirstHistoryRequest,
         apiUrl: slack.url,
+        clock: pollClock,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
         wait: (milliseconds: number) => {
@@ -789,6 +759,7 @@ describe('Slack fake server', () => {
       await pollSlackWorkspaces({
         fetch: fetchCountingRevokedTokenRequests,
         apiUrl: slack.url,
+        clock: pollClock,
         workspaces: [
           { teamId: 'T0002', userToken: revokedToken },
           { teamId: 'T0001', userToken: slack.token },

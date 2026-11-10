@@ -771,6 +771,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       apiUrl: slackApiUrl,
       workspaces: configuredSlackWorkspaces,
       store: slackMessageStore,
+      clock,
     });
     slackWorkspacePolls = await Promise.all(
       configuredSlackWorkspaces.map(async ({ teamId, userToken }) =>

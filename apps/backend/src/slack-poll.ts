@@ -11,7 +11,7 @@ interface PollSlackWorkspaceInput {
   workspace: SlackWorkspace;
   store: SlackMessageStore;
   wait?: (milliseconds: number) => Promise<void>;
-  clock?: { now: () => Date };
+  clock: { now: () => Date };
 }
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
@@ -116,17 +116,9 @@ async function searchedDirectMessageChannels(
   return matches.map((match) => match.channel);
 }
 
-async function listedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
-  const { channels } = await callSlack<{ channels: { id: string }[] }>(input, '/conversations.list?types=im,mpim');
-  return channels;
-}
-
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
-  const directMessageChannels =
-    input.clock === undefined
-      ? await listedDirectMessageChannels(input)
-      : await searchedDirectMessageChannels(input, input.clock);
+  const directMessageChannels = await searchedDirectMessageChannels(input, input.clock);
   for (const channel of directMessageChannels) {
     const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(

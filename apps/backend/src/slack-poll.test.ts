@@ -31,12 +31,22 @@ function scriptedSlack(routes: Record<string, SlackRoute> = {}) {
 }
 
 const pollWith = (slack: ReturnType<typeof scriptedSlack>, store = openSlackMessageStore(':memory:')) =>
-  pollSlackWorkspace({ fetch: slack.fetch, apiUrl: 'https://slack.test', workspace, store }).then(() => store);
+  pollSlackWorkspace({ fetch: slack.fetch, apiUrl: 'https://slack.test', workspace, store, clock: pollClock }).then(() => store);
+
+const pollClock = { now: () => new Date('2026-11-10T18:00:00.000Z') };
+
+// An is:dm search answering one match in the given DM conversation; every other search finds nothing.
+const directMessageSearchNaming =
+  (conversationId: string): SlackRoute =>
+  (url) =>
+    url.searchParams.get('query')?.startsWith('is:dm') === true
+      ? { ok: true, messages: { matches: [{ ts: '1762700000.000100', channel: { id: conversationId } }] } }
+      : { ok: true, messages: { matches: [] } };
 
 describe('pollSlackWorkspace', () => {
   it("stores each DM message with its workspace, conversation, sender, the sender's display name, text and timestamp", async () => {
     const slack = scriptedSlack({
-      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => ({
         ok: true,
         messages: [{ user: 'U0001', text: 'Can you look at the contract today?', ts: '1762700000.000100' }],
@@ -59,7 +69,7 @@ describe('pollSlackWorkspace', () => {
 
   it('stores a DM message the user sent as sent by the user', async () => {
     const slack = scriptedSlack({
-      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => ({
         ok: true,
         messages: [{ user: ownSlackUserId, text: 'On it.', ts: '1762700100.000200' }],
@@ -73,7 +83,7 @@ describe('pollSlackWorkspace', () => {
 
   it('asks conversations.history on a second poll only for messages newer than the newest stored in that conversation', async () => {
     const slack = scriptedSlack({
-      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => ({
         ok: true,
         messages: [{ user: 'U0001', text: 'Can you look at the contract today?', ts: '1762700000.000100' }],
@@ -200,7 +210,7 @@ describe('pollSlackWorkspace', () => {
 
   it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
     const slack = scriptedSlack({
-      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => ({
         ok: true,
         messages: [{ user: 'U0009', text: 'Hi', ts: '1762700000.000100' }],
@@ -215,7 +225,7 @@ describe('pollSlackWorkspace', () => {
 
   it("stores a message's sender name as the sender's real name when Slack answers an empty display name", async () => {
     const slack = scriptedSlack({
-      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => ({
         ok: true,
         messages: [{ user: 'U0009', text: 'Hi', ts: '1762700000.000100' }],
@@ -373,7 +383,7 @@ describe('pollSlackWorkspace', () => {
     let historyCalls = 0;
     const waits: number[] = [];
     const slack = scriptedSlack({
-      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => {
         historyCalls += 1;
         return historyCalls === 1
@@ -386,6 +396,7 @@ describe('pollSlackWorkspace', () => {
     await pollSlackWorkspace({
       fetch: slack.fetch,
       apiUrl: 'https://slack.test',
+      clock: pollClock,
       workspace,
       store,
       wait: (milliseconds) => {
@@ -409,7 +420,7 @@ describe('pollSlackWorkspaces', () => {
   it('polls every workspace, skips one whose token Slack rejects, and names the workspaces that succeeded', async () => {
     const slack = scriptedSlack({
       '/auth.test': () => ({ ok: true, user_id: ownSlackUserId }),
-      '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
+      '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => ({
         ok: true,
         messages: [{ user: 'U0001', text: 'Hi', ts: '1762700000.000100' }],
@@ -424,6 +435,7 @@ describe('pollSlackWorkspaces', () => {
     const succeeded = await pollSlackWorkspaces({
       fetch: rejectingTokenFetch,
       apiUrl: 'https://slack.test',
+      clock: pollClock,
       workspaces: [
         { teamId: 'T0001', userToken: 'xoxp-revoked' },
         { teamId: 'T0002', userToken: 'xoxp-test' },

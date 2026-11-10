@@ -46,7 +46,8 @@ function usersInfoResponse(userId: string) {
 
 const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> = {
   'direct-message': {
-    '/conversations.list': { ok: true, channels: [{ id: 'D0001', is_im: true, user: 'U0001' }] },
+    // As on the real PS Mutuus workspace (2026-11-10): the active DM is not on conversations.list's first page.
+    '/conversations.list': { ok: true, channels: [] },
     '/conversations.history': {
       ok: true,
       messages: [{ type: 'message', user: 'U0001', text: directMessageText, ts: '1762700000.000100' }],
@@ -139,6 +140,8 @@ function searchResponseForQuery(scenario: SlackScenario, query: string, page: nu
   if (query.includes('is:dm') && !query.includes('after:')) return { ok: false, error: 'invalid_search' };
   if (scenario === 'direct-message' && query.includes('is:dm')) return directMessageSearchMatches;
   if (scenario === 'direct-messages-across-pages' && query.includes('is:dm')) return directMessagePageSearchMatches(page);
+  // Only the DM scenarios have DMs; any other scenario's is:dm search finds nothing.
+  if (query.includes('is:dm')) return noSearchMatches;
   if (scenario === 'mention' && query.startsWith('from:')) return noSearchMatches;
   return undefined;
 }
