@@ -95,12 +95,17 @@ export function readStartupSettings(
       parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, defaultSlackPollingIntervalInSeconds),
     ),
     slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? defaultSlackApiUrl,
-    telegram: {
-      enabled: environment.MY_LIFE_TELEGRAM_SESSION_PATH !== undefined && existsSync(environment.MY_LIFE_TELEGRAM_SESSION_PATH),
-      apiId: Number(environment.MY_LIFE_TELEGRAM_API_ID),
-      apiHash: environment.MY_LIFE_TELEGRAM_API_HASH,
-      sessionPath: environment.MY_LIFE_TELEGRAM_SESSION_PATH,
-    },
+    telegram: readTelegramSettings(environment),
+  };
+}
+
+function readTelegramSettings(environment: Record<string, string | undefined>): TelegramSettings {
+  const sessionPath = environment.MY_LIFE_TELEGRAM_SESSION_PATH;
+  return {
+    enabled: sessionPath !== undefined && existsSync(sessionPath),
+    apiId: Number(environment.MY_LIFE_TELEGRAM_API_ID),
+    apiHash: environment.MY_LIFE_TELEGRAM_API_HASH,
+    sessionPath,
   };
 }
 
