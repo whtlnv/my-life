@@ -130,6 +130,14 @@ function TelegramConnectedChip({ lastMessageAt }: { lastMessageAt: string }) {
   );
 }
 
+function TelegramChip({ telegram }: { telegram: NonNullable<ShellStatus['telegram']> }) {
+  return telegram.loggedIn ? (
+    <TelegramConnectedChip lastMessageAt={telegram.lastMessageAt} />
+  ) : (
+    <TelegramNotLoggedInChip />
+  );
+}
+
 function Tab({ href, current, children }: { href: string; current: boolean; children: ReactNode }) {
   return (
     <a className="tab" href={href} aria-current={current ? 'page' : undefined}>
@@ -208,10 +216,7 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             {(status.slackWorkspaces ?? []).map((workspace) => (
               <SlackWorkspaceChip key={workspace.teamId} workspace={workspace} />
             ))}
-            {status.telegram?.loggedIn === false && <TelegramNotLoggedInChip />}
-            {status.telegram?.loggedIn === true && (
-              <TelegramConnectedChip lastMessageAt={status.telegram.lastMessageAt} />
-            )}
+            {status.telegram && <TelegramChip telegram={status.telegram} />}
           </ul>
         </div>
       </header>
