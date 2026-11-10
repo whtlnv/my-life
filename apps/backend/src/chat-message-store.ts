@@ -14,7 +14,13 @@ export function openChatMessageStore(_databasePath: string) {
   const messages: ChatMessage[] = [];
   return {
     saveMessage(message: ChatMessage): void {
-      messages.push(message);
+      const alreadySaved = messages.some(
+        (saved) =>
+          saved.channel === message.channel &&
+          saved.chatId === message.chatId &&
+          saved.messageId === message.messageId,
+      );
+      if (!alreadySaved) messages.push(message);
     },
     listMessages(): ChatMessage[] {
       return messages;

@@ -3,7 +3,7 @@
 ## Phase 6a — Telegram
 
 - [x] A Telegram message saved to the chat store is listed back with its channel, chat id, chat title, message id, sender id, sender name, text, ISO time and whether the user sent it
-- [ ] Saving a message with the same channel, chat id and message id twice lists it once
+- [x] Saving a message with the same channel, chat id and message id twice lists it once
 - [ ] Two messages with the same chat id and message id but different channels are both listed
 - [ ] Chat messages saved before the store is reopened are listed after it is reopened
 - [ ] An ignore or task verdict on a chat message is stored and listed after the store is reopened
