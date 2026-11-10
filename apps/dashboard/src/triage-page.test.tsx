@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { accountName } from './account-name';
+import { timeInBusinessZone } from './app-shell';
 import { categoryLabel } from './category-labels';
 
 import {
@@ -1443,6 +1444,36 @@ describe('TriagePage', () => {
     expect(within(diegoCard).getByText(/Diego Soto/)).toBeInTheDocument();
     expect(within(diegoCard).getByText(/T0002/)).toBeInTheDocument();
     expect(within(diegoCard).getByText(/The deploy is blocked on your approval/)).toBeInTheDocument();
+  });
+
+  it("shows on a Slack card its workspace's name and the time the message was sent", async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      slackItems: [
+        {
+          workspaceTeamId: 'T0001',
+          workspaceName: 'Acme Studio',
+          conversationId: 'D0001',
+          senderUserId: 'U0001',
+          senderName: 'Lucía Ramos',
+          text: 'Can you review the deck before Friday?',
+          timestamp: '1762700000.000100',
+          permalink: 'https://acme-studio.slack.com/archives/D0001/p1762700000000100',
+          choices: ['ignore', 'act', 'reply'],
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const slackSection = await screen.findByRole('region', { name: sectionTitles.slack });
+    const card = within(slackSection).getByRole('article');
+    expect(within(card).getByText('Acme Studio')).toBeInTheDocument();
+    expect(within(card).getByText(timeInBusinessZone('2025-11-09T14:53:20.000Z'))).toBeInTheDocument();
+    expect(card).not.toHaveTextContent('T0001');
   });
 
   it('posts the `ignore` verdict when the ignore key `i` is pressed on a Slack card, and the `act` verdict when the act key `t` is pressed on another', async () => {

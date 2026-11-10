@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, ty
 
 import { triageCategories } from '@my-life/contracts';
 
-import { businessTimeZone } from './app-shell';
+import { businessTimeZone, timeInBusinessZone } from './app-shell';
 import { accountName } from './account-name';
 import { categoryLabel, categorySwatches } from './category-labels';
 
@@ -62,6 +62,7 @@ interface Digest {
 
 interface SlackTriageItem {
   workspaceTeamId: string;
+  workspaceName?: string;
   conversationId: string;
   senderName: string;
   text: string;
@@ -633,6 +634,11 @@ function postSlackSend(item: SlackTriageItem, text: string) {
   return postJson('/slack-sends', { workspaceTeamId, conversationId, threadTimestamp: timestamp, text });
 }
 
+// A Slack timestamp is seconds since the epoch, with a sequence after the dot.
+function slackMessageTime(timestamp: string): string {
+  return timeInBusinessZone(new Date(Number(timestamp.split('.')[0]) * 1000).toISOString());
+}
+
 function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: () => void }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
@@ -668,54 +674,64 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
         decide(event.key);
       }}
     >
-      <p>
-        {item.senderName} · {item.workspaceTeamId}
-      </p>
-      <p>{item.text}</p>
-      <a href={item.permalink} target="_blank" rel="noreferrer">
-        Open in Slack ↗
-      </a>
-      <button
-        type="button"
-        className="button"
-        onClick={() => {
-          decide('i');
-        }}
-      >
-        Ignore <Key>i</Key>
-      </button>
-      <button
-        type="button"
-        className="button"
-        onClick={() => {
-          decide('t');
-        }}
-      >
-        Task <Key>t</Key>
-      </button>
-      <button
-        type="button"
-        className="button"
-        onClick={() => {
-          setComposing(true);
-        }}
-      >
-        Reply <Key>r</Key>
-      </button>
+      <div className="card-head">
+        <span className="card-who">{item.senderName}</span>
+        <span className="pill pill-muted">{slackMessageTime(item.timestamp)}</span>
+        <span className="pill">{item.workspaceName ?? item.workspaceTeamId}</span>
+      </div>
+      <p className="card-ask">{item.text}</p>
       {composing && (
-        <>
+        <div className="slack-composer">
           <textarea
+            aria-label={`Reply to ${item.senderName}`}
+            placeholder={`Reply to ${item.senderName} in Slack`}
             value={reply}
             onChange={(event) => {
               setReply(event.target.value);
             }}
           />
-          <button type="button" className="button" disabled={reply === ''} onClick={sendReply}>
-            Send
-          </button>
-          {sendError !== undefined && <p>{sendError}</p>}
-        </>
+          {sendError !== undefined && <p className="slack-composer-error">{sendError}</p>}
+          <div className="slack-composer-actions">
+            <span className="hint">Sent as you, only when you press Send</span>
+            <button type="button" className="button button-primary" disabled={reply === ''} onClick={sendReply}>
+              Send
+            </button>
+          </div>
+        </div>
       )}
+      <div className="card-foot">
+        <a href={item.permalink} target="_blank" rel="noreferrer">
+          Open in Slack ↗
+        </a>
+        <span className="spacer" />
+        <button
+          type="button"
+          className="button button-quiet"
+          onClick={() => {
+            decide('i');
+          }}
+        >
+          Ignore <Key>i</Key>
+        </button>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            decide('t');
+          }}
+        >
+          Task <Key>t</Key>
+        </button>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            setComposing(true);
+          }}
+        >
+          Reply <Key>r</Key>
+        </button>
+      </div>
     </article>
   );
 }
