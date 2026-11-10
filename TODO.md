@@ -86,5 +86,13 @@
 - [x] `connectTelegram` builds gramjs's `TelegramClient` from the session file, the API id and the API hash, and gramjs's real `TelegramClient` type-checks as the adapter's gramjs client (a type-level test)
 - [x] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
 - [x] The shipped `main.ts` connects Telegram and passes the gramjs-backed client to `createApp` when Telegram is on, and logs "telegram not logged in" and starts without it when it is off; the shipped backend without a session reports Telegram not logged in at `GET /now`
+- [ ] `GET /triage-queue` Telegram chat items carry the message text and a link that opens the chat in Telegram
+- [ ] Typing `i`, `t` or `r` in a Telegram card's reply box stays text and posts no verdict
+- [ ] A Telegram card shows the message text
+- [ ] A Telegram card's Ignore, Task and Reply buttons do what `i`, `t` and `r` do
+- [ ] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
+- [ ] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty
+- [ ] Telegram cards sit under a "Telegram" section heading, each with an "Open in Telegram" link to its chat
+- [ ] A private-chat Telegram card names the person once; a group card names the group and the sender
 - [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
 - [ ] Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
