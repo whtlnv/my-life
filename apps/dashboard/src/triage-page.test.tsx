@@ -2126,4 +2126,40 @@ describe('TriagePage', () => {
     expect(within(telegramCard).getByRole('textbox')).toBeInTheDocument();
     expect(within(telegramCard).getByText(slackSendPromise as string)).toBeInTheDocument();
   });
+
+  it('posts the typed text with channel `telegram` and the chat id to `POST /chat-sends` when Send is pressed in a Telegram card composer', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(card);
+    await user.keyboard('r');
+    await user.type(within(card).getByRole('textbox'), 'Llego a las ocho');
+    await user.click(within(card).getByRole('button', { name: 'Send' }));
+
+    const postedChatSends = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => input === '/chat-sends')
+      .map(([, init]) => ({ method: init?.method, body: JSON.parse(init?.body as string) as unknown }));
+    expect(postedChatSends).toEqual([
+      { method: 'POST', body: { channel: 'telegram', chatId: '7001', text: 'Llego a las ocho' } },
+    ]);
+  });
 });

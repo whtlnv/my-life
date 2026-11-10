@@ -783,6 +783,7 @@ function postChatVerdict(item: ChatTriageItem, key: string) {
 
 function ChatCard({ item }: { item: ChatTriageItem }) {
   const [composing, setComposing] = useState(false);
+  const [reply, setReply] = useState('');
 
   return (
     <article
@@ -804,8 +805,23 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
       </div>
       {composing && (
         <div className="slack-composer">
-          <textarea aria-label={`Reply to ${item.chatTitle}`} />
+          <textarea
+            aria-label={`Reply to ${item.chatTitle}`}
+            value={reply}
+            onChange={(event) => {
+              setReply(event.target.value);
+            }}
+          />
           <span className="hint">{sendPromise}</span>
+          <button
+            type="button"
+            className="button button-primary"
+            onClick={() => {
+              void postJson('/chat-sends', { channel: item.channel, chatId: item.chatId, text: reply });
+            }}
+          >
+            Send
+          </button>
         </div>
       )}
     </article>
