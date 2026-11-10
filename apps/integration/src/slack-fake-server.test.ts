@@ -874,6 +874,29 @@ describe('Slack fake server', () => {
     }
   });
 
+  it("after a POST /slack-poll, a Slack contact's timeline links each message to its permalink under the workspace URL its auth.test gives", async () => {
+    const slack = await startSlackFakeServer('direct-message', { workspaceUrl: 'https://acme-studio.slack.com/' });
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+      await backend.request('/slack-poll', { method: 'POST' });
+
+      const { messages } = (await (await backend.request('/slack-contacts/T0001/U0001/timeline')).json()) as {
+        messages: { permalink: string }[];
+      };
+
+      expect(messages.map((message) => message.permalink)).toEqual([
+        'https://acme-studio.slack.com/archives/D0001/p1762700000000100',
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('after a POST /slack-poll, a Slack triage item links to the workspace URL its auth.test gives followed by archives/<conversation>/p<timestamp without the dot>', async () => {
     const slack = await startSlackFakeServer('direct-message', { workspaceUrl: 'https://acme-studio.slack.com/' });
     try {

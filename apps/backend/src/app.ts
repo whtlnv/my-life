@@ -582,7 +582,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .listMessages()
       .filter((message) => message.workspaceTeamId === workspaceTeamId && message.senderUserId === userId)
       .sort((first, second) => Number(second.timestamp) - Number(first.timestamp))
-      .map((message) => ({ ...message, permalink: slackPermalink(message) }));
+      .map((message) => ({ ...message, permalink: slackTriagePermalink(message) }));
     return context.json({ messages });
   });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
