@@ -70,8 +70,18 @@ interface SlackTriageItem {
   permalink: string;
 }
 
+interface ChatTriageItem {
+  channel: 'telegram';
+  chatId: string;
+  messageId: string;
+  chatTitle: string;
+  senderName: string;
+  time: string;
+}
+
 interface TriageQueueResponse {
   action: TriageItem[];
+  chatItems?: ChatTriageItem[];
   slackItems?: SlackTriageItem[];
   groups: TriageGroup[];
   digests?: Digest[];
@@ -88,6 +98,7 @@ export const sectionTitles = {
   handledForYou: 'Handled for you',
   slack: 'Slack',
 };
+export const channelLabels = { telegram: 'Telegram' };
 export const noDueTimeText = 'No due time';
 export const nothingNeedsInputText = 'No questions waiting';
 export const significantFlagText = 'Significant';
@@ -880,6 +891,16 @@ export function TriagePage() {
         ))}
       </section>
       {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
+      {queue.chatItems?.map((item) => (
+        <article key={`${item.chatId}:${item.messageId}`} className="card">
+          <div className="card-head">
+            <span className="card-who">{item.chatTitle}</span>
+            <span>{item.senderName}</span>
+            <span className="pill pill-muted">{timeInBusinessZone(item.time)}</span>
+            <span className="pill">{channelLabels[item.channel]}</span>
+          </div>
+        </article>
+      ))}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (

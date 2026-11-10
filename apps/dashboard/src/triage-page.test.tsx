@@ -6,6 +6,7 @@ import { timeInBusinessZone } from './app-shell';
 import { categoryLabel } from './category-labels';
 
 import {
+  channelLabels,
   fetchedAtText,
   noDueTimeText,
   nothingNeedsInputText,
@@ -1980,5 +1981,34 @@ describe('TriagePage', () => {
       expect(within(slackSection).queryByText('The deploy is blocked on your approval')).not.toBeInTheDocument();
     });
     expect(within(slackSection).getByText('Lunch is moved to Thursday')).toBeInTheDocument();
+  });
+
+  it('shows a Telegram triage card with its chat title, sender, time and a Telegram channel pill', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const chatTitle = await screen.findByText('Familia Romero');
+    const card = chatTitle.closest('article');
+    expect(card).not.toBeNull();
+    const telegramCard = card as HTMLElement;
+    expect(within(telegramCard).getByText('Lucía Romero')).toBeInTheDocument();
+    expect(within(telegramCard).getByText(timeInBusinessZone('2026-11-09T16:00:00.000Z'))).toBeInTheDocument();
+    expect(within(telegramCard).getByText(channelLabels.telegram)).toHaveClass('pill');
   });
 });
