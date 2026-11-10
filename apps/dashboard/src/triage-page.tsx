@@ -637,6 +637,24 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
   const [sendError, setSendError] = useState<string>();
+
+  function decide(key: string) {
+    whenAccepted(postSlackVerdict(item, key), onAccepted);
+  }
+
+  function sendReply() {
+    void postSlackSend(item, reply).then((response) => {
+      if (response.ok) onAccepted();
+      else
+        void response.json().then(
+          ({ error }: { error: string }) => {
+            setSendError(error);
+          },
+          () => undefined,
+        );
+    });
+  }
+
   return (
     <article
       className="card"
@@ -647,7 +665,7 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
           setComposing(true);
           return;
         }
-        whenAccepted(postSlackVerdict(item, event.key), onAccepted);
+        decide(event.key);
       }}
     >
       <p>
@@ -661,7 +679,7 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
         type="button"
         className="button"
         onClick={() => {
-          whenAccepted(postSlackVerdict(item, 'i'), onAccepted);
+          decide('i');
         }}
       >
         Ignore <Key>i</Key>
@@ -670,7 +688,7 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
         type="button"
         className="button"
         onClick={() => {
-          whenAccepted(postSlackVerdict(item, 't'), onAccepted);
+          decide('t');
         }}
       >
         Task <Key>t</Key>
@@ -692,23 +710,7 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
               setReply(event.target.value);
             }}
           />
-          <button
-            type="button"
-            className="button"
-            disabled={reply === ''}
-            onClick={() => {
-              void postSlackSend(item, reply).then((response) => {
-                if (response.ok) onAccepted();
-                else
-                  void response.json().then(
-                    ({ error }: { error: string }) => {
-                      setSendError(error);
-                    },
-                    () => undefined,
-                  );
-              });
-            }}
-          >
+          <button type="button" className="button" disabled={reply === ''} onClick={sendReply}>
             Send
           </button>
           {sendError !== undefined && <p>{sendError}</p>}
