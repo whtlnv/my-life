@@ -36,7 +36,7 @@
 - [x] Two Slack conversations with messages from someone else show one triage card each
 - [x] A Slack conversation whose newest message the user wrote shows no triage card
 - [x] A thread reply and a top-level message in the same channel show as two triage cards, the thread being its own conversation
-- [ ] A verdict on a Slack card's message clears the card
+- [x] A verdict on a Slack card's message clears the card
 - [ ] A Slack message newer than the card's verdict brings the conversation's card back, carrying the newer message
 - [ ] A failed Slack workspace poll logs the workspace's team id and the error (backlog: apps/backend/src/slack-poll.ts:150 A failed Slack poll is swallowed with no log)
 - [ ] A successful Slack workspace poll logs no error

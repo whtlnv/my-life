@@ -268,6 +268,35 @@ describe('createApp Slack messages', () => {
     expect(slackItems).toEqual([]);
   });
 
+  it("removes from GET /triage-queue a conversation's Slack item once the user confirms ignore on its newest message, though older messages in it have no verdict", async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openSlackMessageStore(databasePath);
+    for (const [timestamp, text] of [
+      ['1762700000.000100', 'Hi there.'],
+      ['1762700000.000200', 'Can you look at the contract today?'],
+    ]) {
+      store.saveMessage({
+        workspaceTeamId: 'T0001',
+        conversationId: 'D0001',
+        senderUserId: 'U0001',
+        senderName: 'Ana',
+        text: text!,
+        timestamp: timestamp!,
+      });
+    }
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    await postJson(app, '/slack-verdicts', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      timestamp: '1762700000.000200',
+      decision: 'ignore',
+    });
+    const { slackItems } = await getJson<{ slackItems: unknown[] }>(app, '/triage-queue');
+
+    expect(slackItems).toEqual([]);
+  });
+
   it('keeps out of GET /triage-queue, after a backend restart on the same database file, a Slack item the user confirmed ignore on before it', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({

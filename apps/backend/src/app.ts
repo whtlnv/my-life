@@ -1160,8 +1160,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));
     const messages = slackMessageStore.listMessages();
     const slackUserNames = new Map(messages.map((message) => [message.senderUserId, message.senderName]));
-    const undecidedMessages = messages.filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)));
-    return newestMessagePerSlackConversation(undecidedMessages)
+    return newestMessagePerSlackConversation(messages)
+      .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
       .filter((message) => message.sentByUser !== true)
       .map((message) => ({
         ...message,
