@@ -35,7 +35,7 @@
 - [x] `POST /chat-sends` with text to a Telegram chat sends it through the Telegram session and stores it as sent by the user under the id Telegram returned
 - [x] `POST /chat-sends` with empty text is refused and nothing is sent
 - [x] `POST /chat-sends` for a channel that is not configured is refused and nothing is sent
-- [ ] `POST /chat-sends` answers 502 with Telegram's error when Telegram refuses the send
+- [x] `POST /chat-sends` answers 502 with Telegram's error when Telegram refuses the send
 - [ ] Chat sends are listed with their time after the backend restarts
 - [ ] A Telegram chat whose newest message is not the user's and has no verdict is a triage item with the chat title, sender and time
 - [ ] A Telegram chat whose newest message is the user's is not a triage item

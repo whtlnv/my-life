@@ -609,7 +609,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (send.text === '' || send.channel !== 'telegram') {
       return context.body(null, 400);
     }
-    const sent = await options.telegramClient!.sendText(send.chatId, send.text);
+    let sent;
+    try {
+      sent = await options.telegramClient!.sendText(send.chatId, send.text);
+    } catch (error) {
+      return context.json({ error: (error as Error).message }, 502);
+    }
     chatMessageStore.saveMessage({
       channel: send.channel,
       chatId: send.chatId,

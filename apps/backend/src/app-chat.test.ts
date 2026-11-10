@@ -137,4 +137,23 @@ describe('createApp chat messages', () => {
     expect(textsSentToTelegram).toEqual([]);
     expect(messages).toEqual([]);
   });
+
+  it('answers POST /chat-sends with 502 and the Telegram error when Telegram refuses the send, and stores nothing', async () => {
+    const databasePath = temporaryDatabasePath();
+    const telegramClient = {
+      sendText: () => Promise.reject(new Error('CHAT_WRITE_FORBIDDEN')),
+    };
+    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+
+    const response = await postJson(app, '/chat-sends', {
+      channel: 'telegram',
+      chatId: '7001',
+      text: 'Thursday works, same time',
+    });
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: 'CHAT_WRITE_FORBIDDEN' });
+    expect(messages).toEqual([]);
+  });
 });
