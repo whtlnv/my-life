@@ -3,7 +3,7 @@ import type { Api } from 'telegram';
 import type { ChatMessage } from './chat-message-store';
 
 function userName(user: Api.User): string {
-  return [user.firstName, user.lastName].filter(Boolean).join(' ') || (user.username ?? '');
+  return [user.firstName, user.lastName].filter(Boolean).join(' ') || (user.username ?? user.id.toString());
 }
 
 export function mapTelegramMessage({
