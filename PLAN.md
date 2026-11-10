@@ -13,7 +13,7 @@ Phases (locked decision 17):
 - **Phase 3:** the People view (VIP, Urgent computed, Everyone else; contact and organization timelines), Needs input (category and new-sender questions, task proposals), tasks with states and the prioritization pass, waiting-on — code delivered 2026-11-08 (`DONE.md`, `docs/screenshots/2026-11-08-phase-3-*.jpg`); the real-account walk-through is `docs/phase-3-walkthrough.md`. Not built: the "significant alert not yet opened" urgent rule, identity-merge questions and the todo-list import (decisions and `PENDING_TASKS.md` § 4 below).
 - **Phase 4:** the in-app agent (the Agent tab): chat over mail, contacts, calendar and tasks on `MY_LIFE_AGENT_MODEL` (default Opus 5.5) under `apps/backend/prompts/agent-v1.md`, cited sources, eight actions through the domain guardrail (`decideAgentAction`; send and delete refused and recorded), a stored action log with undo by action id, the extension's create-draft command — code delivered 2026-11-09 (`DONE.md`); `scripts/demo.sh` seeds it. Not built: FTS5 search and local embeddings (keyword scan still enough); the gaps in `BACKLOG.md` dated 2026-11-09.
 - **Phase 5:** Slack in both workspaces (PS Mutuus, Erlia), one app per workspace with the user token in `.env`: the backend polls DMs, group DMs, mentions and threads the user wrote in every 60 s; Slack items in triage (ignore, task, reply), Slack contacts and timelines on the People tab, Slack in waiting-on; replies through `chat.postMessage` only from the dashboard composer — code delivered 2026-11-09 against the Slack fake (`DONE.md`, `docs/screenshots/2026-11-09-phase-5-*.jpg`); `scripts/demo.sh` polls a scripted Slack. The walk-through against the real workspaces is not done. Not built: Slack contacts merged with email contacts (the scopes have no `users:read.email`); the gaps in `BACKLOG.md` dated 2026-11-09.
-- **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view: 6a Telegram, then 6b WhatsApp.
+- **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view: **6a Telegram** — code delivered 2026-11-10 against a scripted client (`DONE.md`, `docs/screenshots/2026-11-10-phase-6a-*.jpg`): gramjs behind `apps/backend/src/gramjs-telegram-client.ts`, the chat store `chat-message-store.ts` shared with 6b, `scripts/telegram-login.sh`; the walk-through on the real account is `docs/phase-6a-walkthrough.md` and waits on the one-time login (`PENDING_TASKS.md` § 6). Then **6b WhatsApp**.
 - **Phase 7:** Gemini meeting notes from Drive.
 - **Phase 8:** cloud.
 
@@ -21,11 +21,11 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 ---
 
-## Start here (handoff 2026-11-09, after Phase 5)
+## Start here (handoff 2026-11-10, after Phase 6a)
 
-Read `CLAUDE.md` first. **Phases 2b through 5 are delivered** (`DONE.md`). Phase 5 added Slack: `apps/backend/src/slack-poll.ts` (DMs and group DMs by `conversations.history` with `oldest`, mentions by `search.messages` for `<@own id>`, replies in threads the user wrote in by `conversations.replies`; the own id, workspace name and URL from `auth.test`), `slack-message-store.ts`, `POST /slack-poll` on `main.ts`'s timer, `POST /slack-sends` (refuses empty text and unknown workspaces; stores the sent reply under Slack's `ts`), and the Slack fake in `apps/integration/src/slack-fake-server.ts`.
+Read `CLAUDE.md` first. **Phases 2b through 6a are delivered** (`DONE.md`). Phase 6a added Telegram: `chat-message-store.ts` (one store for every chat channel, keyed by channel, chat id and message id; verdicts append-only), `telegram-message-mapping.ts` (gramjs messages to chat messages; chat ids are marked peer ids), `gramjs-telegram-client.ts` (the port over gramjs, whose real `TelegramClient` type-checks against it in `telegram-connection.ts`), `start-telegram.ts` (unread dialogs, then live messages, started by `createApp` when given a client), `/chat-messages`, `/chat-verdicts`, `/chat-sends`, Telegram in `/now`, `/people`, `/waiting-on` and the triage queue, and the scripted client in `scripted-telegram-client.ts` that tests and `scripts/demo.sh` use.
 
-**Next:** Phase 6 (WhatsApp and Telegram); the Telegram `api_id` and `api_hash` are in `.env` (2026-11-09), the phone login is done with the user during the phase. Also open: the Phase 5 walk-through against the real workspaces (the tokens are in `.env`; the user approves reading them first), and the 2026-11-09 entries in `BACKLOG.md`.
+**Next:** Phase 6b (WhatsApp, below). Also open: the user's one-time Telegram login and `docs/phase-6a-walkthrough.md`; the Phase 5 walk-through against the real Slack workspaces (the user approves reading them first); the dated entries in `BACKLOG.md`.
 
 **Waiting on the user**, not built:
 
@@ -33,8 +33,12 @@ Read `CLAUDE.md` first. **Phases 2b through 5 are delivered** (`DONE.md`). Phase
 - When to propose "same person?" merges, and from what (locked decision 22 says the model proposes them).
 - The todo-list import: `PENDING_TASKS.md` § 4 (the path).
 
-What the supervision showed in Phases 3 to 5 — check these every cycle:
+What the supervision showed in Phases 3 to 6a — check these every cycle:
 
+- **A stub of a client library is as lenient as a fake API:** in 6a every adapter test passed while the real gramjs calls were wrong (no `NewMessage` builder, so live messages never arrive; string chat ids read as usernames; no `limit`, so one message per chat; unmarked group ids). Type-check the real client against the port, and read the library's types before trusting a green.
+- **Contacts listed once per message, not per person:** Slack and Telegram rows on the People tab were built from each message; seed the demo with several messages from one person.
+- **A domain rule fed one message cannot see the user's reply:** VIP Urgent never cleared after the user answered, because the route passed only the sender's newest message.
+- **Composition code built by minimal greens has no caller:** nothing started the Telegram client until a keystone made `createApp` start it.
 - **A fake more lenient than the real API hides broken calls:** in Phase 5 the mention search sent no query, `conversations.list` asked for no DM types, and every poll re-read whole conversations, all green against a fake that answered anything. Make the fake refuse what the real API refuses.
 - **The demo screenshots find what tests miss:** team ids instead of workspace names, raw `<@U…>` mentions, the user listed as their own contact, an unstyled card where any key posted a verdict. Look at the demo before calling a page done.
 - **Code tested only from `apps/integration` counts for nothing in its own package's coverage floor:** the Slack poll and send route needed co-located backend tests.
@@ -47,21 +51,6 @@ What the supervision showed in Phases 3 to 5 — check these every cycle:
 - **Restart items get greened on the narrowest case:** the task restart passed with one confirmed proposal while done, snooze and waiting-on were not stored.
 - **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
 - **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
-
-## Phase 6a — Telegram
-
-Outcome: the user's Telegram private chats and groups appear in triage, in waiting-on and on the People tab; the user replies from the dashboard composer and the reply goes out through the user's own Telegram session. Built against a scripted Telegram client; the real session is checked once with the user.
-
-- **One chat store for both chat channels** (`apps/backend/src/chat-message-store.ts`, SQLite like `slack-message-store.ts`): a message has a channel (`telegram` now, `whatsapp` in 6b), a chat id, a chat title, a message id, a sender id, a sender name, text, an ISO time and whether the user sent it; saving the same channel, chat and message id twice keeps one. Verdicts (ignore, task) are stored append-only beside them. 6b reuses this store unchanged.
-- **A Telegram port in the backend** (`TelegramClient`: start with a callback for new messages, list recent messages per dialog, send text to a chat and get the sent message's id back). The real adapter wraps gramjs (`telegram`, pinned at an exact version; a `chore:` commit adds it) with a `StringSession`. The mapping from a gramjs message to a stored chat message is a pure function, tested on constructed messages: private chats and groups are kept; broadcast channels, service messages and messages with no text are dropped; the user's own outgoing messages are marked sent by the user. Tests use a scripted client, never the network.
-- **Configuration:** `MY_LIFE_TELEGRAM_API_ID`, `MY_LIFE_TELEGRAM_API_HASH` (already in `.env`) and the session file `MY_LIFE_TELEGRAM_SESSION_PATH` (default `~/Library/Application Support/my-life/telegram-session`, never in git). With the id, hash and a session file, `main.ts` starts the client: on start it stores the recent messages of the dialogs with unread messages (so a restart loses nothing), then every new message as it arrives. Without them Telegram is off and the header says "telegram not logged in".
-- **The one-time login:** `scripts/telegram-login.sh` runs a backend script that asks for the phone number, the code Telegram sends and the 2FA password if set, then writes the session file. It is run once with the user (`PENDING_TASKS.md` § 6); the prompts are behind an injectable reader so the flow is tested with scripted answers and a scripted client.
-- **Routes:** `GET /chat-messages`, `POST /chat-verdicts` (task creates a task that links back to the chat and says Telegram), `POST /chat-sends` (refuses empty text and a channel that is not configured; on success stores the sent message as sent by the user with the id Telegram returned; a Telegram error answers 502 with the error). Sends are recorded append-only with their time.
-- **Triage:** each unanswered Telegram message (the newest message in its chat is not the user's and has no verdict) is a triage item with the chat title, sender, time, a channel pill, and Ignore (`i`), Task (`t`), Reply (`r`) like the Slack card, reusing its classes in `styles.css`; Reply opens the same composer ("Sent as you, only when you press Send").
-- **People and waiting-on:** Telegram senders become contacts with a `telegram` handle (their Telegram id, display name as the name); a contact timeline shows Telegram messages with their channel; waiting-on includes Telegram chats whose newest message is not the user's, ordered with email and Slack by how long they have waited; VIP Urgent applies to them.
-- **Header:** a Telegram status chip — connected with the time of the last message received or of the last successful start, stale after twice its expected interval without the client connected, "not logged in" when there is no session.
-- **Demo:** `scripts/demo.sh` starts the backend with a scripted Telegram client carrying two chats (a private chat from a VIP, a group with a question to the user) and the dashboard shows them; screenshots of triage, People and the composer go to `docs/screenshots/`.
-- **Lessons to apply:** the scripted client refuses what gramjs refuses (sending to an unknown chat, an empty message); `main.ts` must create the real client — read the composition, not just the tests; co-located backend tests for the coverage floors.
 
 ## Phase 6b — WhatsApp
 
