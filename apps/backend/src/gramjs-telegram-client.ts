@@ -50,12 +50,11 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
       );
     },
     onMessage: (handler) => {
-      gramjsClient.addEventHandler(({ message }) => {
-        const mapped = mapTelegramMessage({
-          message,
-          chat: message.chat as TelegramChat,
-          sender: message.sender as Api.User,
-        });
+      gramjsClient.addEventHandler(async ({ message }) => {
+        const chat = (message.chat ?? (await message.getChat())) as TelegramChat | undefined;
+        const sender = (message.sender ?? (await message.getSender())) as Api.User | undefined;
+        if (!chat || !sender) return;
+        const mapped = mapTelegramMessage({ message, chat, sender });
         if (mapped) handler(mapped);
       }, new NewMessage({}));
     },

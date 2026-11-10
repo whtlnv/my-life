@@ -168,4 +168,30 @@ describe('createGramjsTelegramClient', () => {
 
     expect(eventBuilders).toEqual([expect.any(NewMessage)]);
   });
+
+  it('takes the chat and sender of a new message from getChat and getSender when the message does not carry them', async () => {
+    const luis = new Api.User({ id: returnBigInt(424242), firstName: 'Luis', lastName: 'Ortega' });
+    const shortUpdateMessage = new Api.Message({
+      id: 1021,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T17:05:00.000Z') / 1000,
+      message: '¿Me confirmas la hora?',
+      out: false,
+    });
+    shortUpdateMessage.getChat = () => Promise.resolve(luis);
+    shortUpdateMessage.getSender = () => Promise.resolve(luis);
+    const newMessageCallbacks: ((event: { message: Api.Message }) => unknown)[] = [];
+    const gramjsClient = stubGramjsClient({
+      addEventHandler: (callback) => {
+        newMessageCallbacks.push(callback);
+      },
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+    const handled: unknown[] = [];
+
+    client.onMessage((message) => handled.push(message));
+    for (const callback of newMessageCallbacks) await callback({ message: shortUpdateMessage });
+
+    expect(handled).toEqual([mapTelegramMessage({ message: shortUpdateMessage, chat: luis, sender: luis })]);
+  });
 });
