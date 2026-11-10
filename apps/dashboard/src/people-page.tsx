@@ -77,13 +77,13 @@ const PeopleList = ({
   people,
   onSelect,
   onSelectOrganization,
-  vipAction,
+  vipActionFor,
 }: {
   title: string;
   people: PersonRow[];
   onSelect: (person: PersonRow) => void;
   onSelectOrganization: (organization: string) => void;
-  vipAction: (person: PersonRow) => { label: string; onClick: (person: PersonRow) => void };
+  vipActionFor: (person: PersonRow) => { label: string; onClick: (person: PersonRow) => void };
 }) => (
   <section className="section">
     <h2 className="section-title">
@@ -140,10 +140,10 @@ const PeopleList = ({
                 type="button"
                 className="button button-quiet"
                 onClick={() => {
-                  vipAction(person).onClick(person);
+                  vipActionFor(person).onClick(person);
                 }}
               >
-                {vipAction(person).label}
+                {vipActionFor(person).label}
               </button>
             </div>
           </li>
@@ -292,21 +292,21 @@ export const PeoplePage = () => {
             people={lists.vip}
             onSelect={showTimeline}
             onSelectOrganization={showOrganizationTimeline}
-            vipAction={() => removeVip}
+            vipActionFor={() => removeVip}
           />
           <PeopleList
             title="Urgent"
             people={lists.urgent}
             onSelect={showTimeline}
             onSelectOrganization={showOrganizationTimeline}
-            vipAction={(person) => (isVip(person) ? removeVip : markVip)}
+            vipActionFor={(person) => (isVip(person) ? removeVip : markVip)}
           />
           <PeopleList
             title="Everyone else"
             people={lists.everyoneElse}
             onSelect={showTimeline}
             onSelectOrganization={showOrganizationTimeline}
-            vipAction={() => markVip}
+            vipActionFor={() => markVip}
           />
         </div>
         <aside>
