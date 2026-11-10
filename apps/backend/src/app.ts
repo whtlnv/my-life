@@ -1771,7 +1771,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ messages });
   });
   const peopleGroups = () => {
-    const markedEmails = contactDetailsStore.markedEmails();
+    const markedContactKeys = contactDetailsStore.markedEmails();
     const writesInPerson = (contact: { messageIds: string[] }) =>
       reportedMessages.some((message) => contact.messageIds.includes(message.id) && message.listId === undefined);
     const contacts = contactsByEmail(reportedSenders(), proposals).filter(writesInPerson);
@@ -1787,7 +1787,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const isVip = (contact: { emails: string[]; messageIds: string[] }) => {
       const primaryEmail = primaryEmailOf(contact);
       return (
-        markedEmails.has(primaryEmail) ||
+        markedContactKeys.has(primaryEmail) ||
         (isOnAlwaysMattersLine(contact) && !contactDetailsStore.userRemovedMark(primaryEmail, 'vip'))
       );
     };
@@ -1852,7 +1852,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
             sentByUser: message.sentByUser === true,
           },
         ],
-        vip: markedEmails.has(
+        vip: markedContactKeys.has(
           slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }),
         ),
         now: clock.now().toISOString(),
