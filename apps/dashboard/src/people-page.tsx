@@ -228,8 +228,16 @@ export const PeoplePage = () => {
     void fetchPeople();
   };
 
+  const vipMarkPath = (person: PersonRow) => {
+    const [telegramHandle] = person.telegramHandles ?? [];
+    if (telegramHandle) {
+      return `/telegram-contacts/${telegramHandle.userId}/marks/vip`;
+    }
+    return `/contacts/${encodeURIComponent(person.emails[0] ?? '')}/marks/vip`;
+  };
+
   const setVipMark = (method: 'PUT' | 'DELETE') => (person: PersonRow) => {
-    void fetch(`/contacts/${encodeURIComponent(person.emails[0] ?? '')}/marks/vip`, { method }).then(loadPeople);
+    void fetch(vipMarkPath(person), { method }).then(loadPeople);
   };
   const markVip = { label: 'Mark VIP', onClick: setVipMark('PUT') };
   const removeVip = { label: 'Remove VIP', onClick: setVipMark('DELETE') };
