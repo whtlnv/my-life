@@ -216,4 +216,21 @@ describe('createGramjsTelegramClient', () => {
     expect(asked).toEqual(['+5215512345678', '24680', 'correct horse battery staple']);
     expect(session).toBe('saved-session-string');
   });
+
+  it('skips a dialog whose entity gramjs could not resolve to a user, group or channel (a deleted account, a forbidden chat)', async () => {
+    const requests: unknown[] = [];
+    const gramjsClient = stubGramjsClient({
+      getDialogs: () => Promise.resolve([{ entity: new Api.UserEmpty({ id: returnBigInt(999) }), unreadCount: 2 }]),
+      getMessages: (entity) => {
+        requests.push(entity);
+        return Promise.resolve([]);
+      },
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    const dialogs = await client.listDialogs();
+
+    expect(requests).toEqual([]);
+    expect(dialogs).toEqual([]);
+  });
 });

@@ -9,10 +9,15 @@ type TelegramChat = Api.User | Api.Chat | Api.Channel;
 
 const recentMessagesPerDialog = 20;
 
+// A deleted account or a chat the user was removed from comes back as UserEmpty, ChatForbidden and the like.
+function isTelegramChat(entity: Api.TypeUser | Api.TypeChat | undefined): entity is TelegramChat {
+  return entity?.className === 'User' || entity?.className === 'Chat' || entity?.className === 'Channel';
+}
+
 interface GramjsClient {
   sendMessage: (entity: ReturnType<typeof returnBigInt>, parameters: { message: string }) => Promise<{ id: number }>;
   getMe: () => Promise<Api.User>;
-  getDialogs: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
+  getDialogs: () => Promise<{ entity?: Api.TypeUser | Api.TypeChat | undefined; unreadCount: number }[]>;
   getMessages: (entity: TelegramChat, parameters: { limit: number }) => Promise<Api.Message[]>;
   addEventHandler: (callback: (event: { message: Api.Message }) => unknown, eventBuilder: NewMessage) => void;
   start: (parameters: {
@@ -50,8 +55,11 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
     },
     listDialogs: async () => {
       const dialogs = await gramjsClient.getDialogs();
+      const resolvedDialogs = dialogs.flatMap(({ entity, unreadCount }) =>
+        isTelegramChat(entity) ? [{ entity, unreadCount }] : [],
+      );
       return Promise.all(
-        dialogs.map(async ({ entity, unreadCount }) => {
+        resolvedDialogs.map(async ({ entity, unreadCount }) => {
           const messages =
             unreadCount === 0 ? [] : await gramjsClient.getMessages(entity, { limit: recentMessagesPerDialog });
           return {
