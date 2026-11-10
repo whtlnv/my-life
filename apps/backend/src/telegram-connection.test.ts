@@ -24,4 +24,17 @@ describe('createGramjsClient', () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it('builds the client with an empty session when no session file exists yet, as the first login needs', () => {
+    const directory = mkdtempSync(join(tmpdir(), 'my-life-'));
+    try {
+      const sessionPath = join(directory, 'telegram-session');
+
+      const client = createGramjsClient({ apiId: 12345678, apiHash: '0123456789abcdef0123456789abcdef', sessionPath });
+
+      expect(client.session.save()).toBe('');
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
 });

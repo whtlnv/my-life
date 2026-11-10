@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
@@ -13,7 +13,8 @@ interface TelegramConnectionSettings {
 
 // gramjs's client over the session `scripts/telegram-login.sh` saved. Building it does not touch the network.
 export function createGramjsClient({ apiId, apiHash, sessionPath }: TelegramConnectionSettings): TelegramClient {
-  const session = new StringSession(readFileSync(sessionPath, 'utf8').trim());
+  const savedSession = existsSync(sessionPath) ? readFileSync(sessionPath, 'utf8').trim() : '';
+  const session = new StringSession(savedSession);
   const client = new TelegramClient(session, apiId, apiHash, { connectionRetries: 5 });
   client.setLogLevel('error' as Parameters<TelegramClient['setLogLevel']>[0]);
   return client;
