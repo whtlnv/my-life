@@ -52,59 +52,44 @@ describe('Telegram message mapping', () => {
     });
   });
 
-  it('names a peer who has no last name by their first name alone, in both the chat title and the sender name', () => {
-    const marta = new Api.User({ id: returnBigInt(515151), firstName: 'Marta' });
-    const message = new Api.Message({
-      id: 1019,
-      peerId: new Api.PeerUser({ userId: returnBigInt(515151) }),
-      date: Date.parse('2026-11-09T17:00:00.000Z') / 1000,
-      message: 'Te mando el contrato',
-      out: false,
-    });
+  it.each([
+    {
+      peerWithout: 'no last name',
+      displayedAs: 'their first name alone',
+      peer: new Api.User({ id: returnBigInt(515151), firstName: 'Marta' }),
+      expectedName: 'Marta',
+    },
+    {
+      peerWithout: 'neither a first nor a last name',
+      displayedAs: 'their username',
+      peer: new Api.User({ id: returnBigInt(616161), username: 'ghost_courier' }),
+      expectedName: 'ghost_courier',
+    },
+    {
+      peerWithout: 'no first name, no last name and no username',
+      displayedAs: 'their id',
+      peer: new Api.User({ id: returnBigInt(717171) }),
+      expectedName: '717171',
+    },
+  ])(
+    'names a peer who has $peerWithout by $displayedAs, in both the chat title and the sender name',
+    ({ peer, expectedName }) => {
+      const message = new Api.Message({
+        id: 1019,
+        peerId: new Api.PeerUser({ userId: peer.id }),
+        date: Date.parse('2026-11-09T17:00:00.000Z') / 1000,
+        message: 'Te mando el contrato',
+        out: false,
+      });
 
-    const mapped = mapTelegramMessage({ message, chat: marta, sender: marta });
+      const mapped = mapTelegramMessage({ message, chat: peer, sender: peer });
 
-    expect({ chatTitle: mapped?.chatTitle, senderName: mapped?.senderName }).toEqual({
-      chatTitle: 'Marta',
-      senderName: 'Marta',
-    });
-  });
-
-  it('names a peer who has neither a first nor a last name by their username, in both the chat title and the sender name', () => {
-    const ghost = new Api.User({ id: returnBigInt(616161), username: 'ghost_courier' });
-    const message = new Api.Message({
-      id: 1020,
-      peerId: new Api.PeerUser({ userId: returnBigInt(616161) }),
-      date: Date.parse('2026-11-09T18:00:00.000Z') / 1000,
-      message: 'Paquete entregado',
-      out: false,
-    });
-
-    const mapped = mapTelegramMessage({ message, chat: ghost, sender: ghost });
-
-    expect({ chatTitle: mapped?.chatTitle, senderName: mapped?.senderName }).toEqual({
-      chatTitle: 'ghost_courier',
-      senderName: 'ghost_courier',
-    });
-  });
-
-  it('names a peer who has no first name, no last name and no username by their id, in both the chat title and the sender name', () => {
-    const nameless = new Api.User({ id: returnBigInt(717171) });
-    const message = new Api.Message({
-      id: 1021,
-      peerId: new Api.PeerUser({ userId: returnBigInt(717171) }),
-      date: Date.parse('2026-11-09T18:30:00.000Z') / 1000,
-      message: 'Hola',
-      out: false,
-    });
-
-    const mapped = mapTelegramMessage({ message, chat: nameless, sender: nameless });
-
-    expect({ chatTitle: mapped?.chatTitle, senderName: mapped?.senderName }).toEqual({
-      chatTitle: '717171',
-      senderName: '717171',
-    });
-  });
+      expect({ chatTitle: mapped?.chatTitle, senderName: mapped?.senderName }).toEqual({
+        chatTitle: expectedName,
+        senderName: expectedName,
+      });
+    },
+  );
 
   it('maps a text message in a group to a chat message titled after the group and sent by the member who wrote it', () => {
     const group = new Api.Chat({
