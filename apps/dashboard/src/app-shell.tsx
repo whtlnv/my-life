@@ -24,7 +24,9 @@ interface ShellStatus {
 
 interface SlackWorkspaceStatus {
   teamId: string;
-  lastSuccessfulPollAt: string;
+  name?: string;
+  lastSuccessfulPollAt?: string;
+  stale?: boolean;
 }
 
 interface AccountStatus {
@@ -93,13 +95,19 @@ function AccountChip({ account }: { account: AccountStatus }) {
 }
 
 function SlackWorkspaceChip({ workspace }: { workspace: SlackWorkspaceStatus }) {
+  const name = workspace.name ?? workspace.teamId;
+  const polled =
+    workspace.lastSuccessfulPollAt === undefined
+      ? 'never polled'
+      : `polled ${timeInBusinessZone(workspace.lastSuccessfulPollAt)}`;
   return (
     <li
-      className="chip chip-source is-fresh"
-      title={`Slack ${workspace.teamId} · polled ${timeInBusinessZone(workspace.lastSuccessfulPollAt)}`}
+      className={workspace.stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
+      title={`Slack ${name} · ${polled}`}
     >
       <span className="dot" aria-hidden="true" />
-      <span className="chip-account">{workspace.teamId}</span>
+      <span className="chip-account">{name}</span>
+      {workspace.stale && <span className="chip-detail is-stale">slack stale</span>}
     </li>
   );
 }

@@ -148,4 +148,20 @@ describe('AppShell', () => {
     expect(item).toHaveClass('is-fresh');
     expect(item).not.toHaveTextContent(/stale/i);
   });
+
+  it('shows a stale Slack workspace as a source chip named after the workspace, marked stale', async () => {
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      slackWorkspaces: [
+        { teamId: 'T0001', name: 'Acme Studio', lastSuccessfulPollAt: '2026-11-09T16:00:00.000Z', stale: true },
+      ],
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText('Acme Studio')).closest('li');
+    expect(item).toHaveClass('is-stale');
+    expect(item).toHaveTextContent(/stale/i);
+  });
 });
