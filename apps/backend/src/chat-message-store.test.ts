@@ -52,4 +52,30 @@ describe('chat message store', () => {
       rmSync(dirname(databasePath), { recursive: true, force: true });
     }
   });
+
+  it('lists two messages with the same chat id and message id but different channels both', () => {
+    const databasePath = temporaryDatabasePath();
+    try {
+      const store = openChatMessageStore(databasePath);
+      const telegramMessage = {
+        channel: 'telegram',
+        chatId: '424242',
+        chatTitle: 'Luis Ortega',
+        messageId: '1017',
+        senderId: '424242',
+        senderName: 'Luis Ortega',
+        text: '¿Nos vemos el jueves?',
+        time: '2026-11-09T16:30:00.000Z',
+        sentByUser: false,
+      };
+      const whatsappMessage = { ...telegramMessage, channel: 'whatsapp' };
+
+      store.saveMessage(telegramMessage);
+      store.saveMessage(whatsappMessage);
+
+      expect(store.listMessages()).toEqual([telegramMessage, whatsappMessage]);
+    } finally {
+      rmSync(dirname(databasePath), { recursive: true, force: true });
+    }
+  });
 });

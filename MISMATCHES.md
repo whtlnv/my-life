@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 21:13 · `apps/backend/src/chat-message-store.test.ts::lists two messages with the same chat id and message id but different channels both`
+- Behavior: Two messages with the same chat id and message id but different channels are both listed
+- Predicted: pass. Commit 86c1e95 already made `saveMessage` skip a duplicate only when channel, chat id and message id all match
+- Actual: pass (1 passed)
+- Type: passed unexpectedly
+- Resolution: The previous green step already built this behavior, and no rewrite can make the test fail without breaking production code. The test stays as a regression pin on the channel part of the key; there is nothing for `/green` to do for this item.
+
 ## 2026-11-09 16:24 · `apps/dashboard/src/triage-page.test.tsx::gives a Slack card Ignore, Task and Reply buttons, each labelled with its key `i`, `t` and `r``
 - Behavior: A Slack item on the triage page has Ignore, Task and Reply buttons labelled with their keys `i`, `t` and `r`
 - Predicted: AssertionError — the card renders no buttons, so the label/key pairs are `[]`
