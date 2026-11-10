@@ -697,8 +697,9 @@ describe('Slack fake server', () => {
         apiUrl: slack.url,
         workspace: { teamId: 'T0001', userToken: slack.token },
         store,
-        wait: async (milliseconds: number) => {
+        wait: (milliseconds: number) => {
           waitedMilliseconds.push(milliseconds);
+          return Promise.resolve();
         },
       });
 
@@ -730,7 +731,7 @@ describe('Slack fake server', () => {
           { teamId: 'T0001', userToken: slack.token },
         ],
         store,
-        wait: async () => {},
+        wait: () => Promise.resolve(),
       });
 
       expect(requestsWithTheRevokedToken).toBe(1);
