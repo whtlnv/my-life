@@ -582,7 +582,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .listMessages()
       .filter((message) => message.workspaceTeamId === workspaceTeamId && message.senderUserId === userId)
       .sort((first, second) => Number(second.timestamp) - Number(first.timestamp))
-      .map((message) => ({ ...message, permalink: slackTriagePermalink(message) }));
+      .map((message) => ({ ...message, permalink: slackMessagePermalink(message) }));
     return context.json({ messages });
   });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
@@ -961,13 +961,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         proposal: {
           title: String(message?.text),
           accountEmail: verdict.workspaceTeamId,
-          link: slackTriagePermalink(verdict),
+          link: slackMessagePermalink(verdict),
         },
       });
     }
     return context.body(null, 200);
   });
-  function slackTriagePermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }) {
+  function slackMessagePermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }) {
     const workspaceUrl = slackWorkspacePollFor(message.workspaceTeamId)?.url;
     if (workspaceUrl === undefined) {
       return slackPermalink(message);
@@ -988,7 +988,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         ...message,
         text: displaySlackMentions(message.text, slackUserNames),
         workspaceName: slackWorkspacePollFor(message.workspaceTeamId)?.name,
-        permalink: slackTriagePermalink(message),
+        permalink: slackMessagePermalink(message),
         choices: ['ignore', 'act', 'reply'],
       }));
   }
