@@ -15,7 +15,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
-- **[apps/backend/src/app.ts:1997] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09)
+- **[apps/backend/src/app.ts:2246] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10)
   Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
   scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
   agent (Phase 4) needs ranking.
@@ -26,18 +26,12 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   proposals that produced an archive command or a task. A digest's listed message ids are also overwritten by every
   `GET /triage-queue`, so a second open tab widens what the first tab's confirm reaches.
 
-- **[apps/backend/src/app.ts:1839] The People lists ignore the extraction's organization name and include automated senders** (added: 2026-11-08; rescoped 2026-11-09)
-  `GET /people` now prefers a stored contact's organization (the Google Contacts import) but still falls back to the sender's
-  domain (`psmutuus.com`) where only the extraction has a name (Mutuus), and Everyone else lists Sentry, AWS and newsletters
-  beside people. Fall back to the extraction's organization before the domain, and leave out senders whose messages are all
-  automated mail, as `GET /waiting-on` does.
-
 - **[apps/backend/src/main.ts:134] The agent's tools go to Claude with `strict: false`** (added: 2026-11-09)
   The agent tool schemas (`stringInputs` in `app.ts`) do not set `additionalProperties: false`, which strict tool use requires,
   so Claude's tool inputs are only checked for required properties by `claude-agent.ts`. Make the schemas strict and send
   `strict: true` when a malformed tool input is seen in practice, or with the next change to the agent tools.
 
-- **[apps/backend/src/app.ts:614] Each Slack workspace's name, URL and last poll live only in memory** (added: 2026-11-09)
+- **[apps/backend/src/app.ts:723] Each Slack workspace's name, URL and last poll live only in memory** (added: 2026-11-09; location corrected 2026-11-10)
   `slackWorkspacePolls` is filled by `POST /slack-poll`, and `main.ts` first calls it one polling interval after start. Until
   then, after a restart, Slack items show team ids, links fall back to the hand-built `app.slack.com` form, and the source
   chip says never polled. Store the `auth.test` answer per workspace, or poll once at startup.
@@ -47,9 +41,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 - **[apps/backend/src/slack-poll.ts:150] A failed Slack poll is swallowed with no log** (added: 2026-11-09)
   `pollSlackWorkspaces` catches every error (invalid_auth, a missing scope, a changed response shape) and only leaves the
   workspace's last poll time unchanged, so the chip turns stale with no reason given. Log the error and show it on the chip.
-- **[apps/backend/src/app.ts:659] Slack sends are listed from memory** (added: 2026-11-09)
-  `GET /slack-sends` reads `slackSends`, an array in `createApp`; the sent reply itself is stored in the Slack message store, so
-  waiting-on survives a restart, but the send log does not. Store sends append-only like verdicts.
 
 ## Out of Scope
 
@@ -59,12 +50,12 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   wrong state. Deferred for the same reason as the `/now` entry below: there is no `/now` contract to share, and adding one
   is new `packages/contracts` surface delivered test-first.
 
-- **[apps/backend/src/app.ts:629] Three separate `auth.test` readers** (added: 2026-11-09)
+- **[apps/backend/src/app.ts:763] Three separate `auth.test` readers** (added: 2026-11-09; location corrected 2026-11-10)
   `fetchSlackWorkspaceIdentity` and `fetchOwnSlackUserId` in `app.ts` and `fetchOwnSlackUserId` in `slack-poll.ts` each
   call `auth.test` and pick fields out of its answer, so a change to how the identity is read has to be made three times.
   Deferred because unifying them sends the app's calls through `callSlack`, which retries on 429 and throws on
   `invalid_auth`. That changes what `POST /slack-poll` and `POST /slack-sends` do when Slack fails.
-- **[apps/backend/src/app.ts:985] A task made from a Slack item stores the workspace team id as its `accountEmail`** (added: 2026-11-09)
+- **[apps/backend/src/app.ts:1120] A task made from a Slack item stores the workspace team id as its `accountEmail`** (added: 2026-11-09; location corrected 2026-11-10)
   `POST /slack-verdicts` saves `accountEmail: verdict.workspaceTeamId`, so a field every reader takes for an email address
   holds `T0001` for Slack tasks. Deferred because the field is stored in the task event log and returned by `GET /tasks`,
   which `app-slack.test.ts` pins, so renaming it (to an account id) changes stored data and the API output.
@@ -91,7 +82,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `recordingAction` in `apps/backend/src/app.ts` reads only `record.outcome` and runs the tool itself, so `effects` looks
   like the list of actions to perform while nothing performs it. Deferred because `agent-action.test.ts` asserts the field
   in two tests, so dropping it changes the function's tested output; it is a `/test-quality` matter first.
-- **[apps/backend/src/app.ts:1813] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09)
+- **[apps/backend/src/app.ts:1981] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10)
   `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
   reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
   for them would look live and do nothing. Deferred because honoring them changes what `createApp` does with its options.
@@ -132,8 +123,8 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:422] `createApp` is one 1606-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09)
-  The file is 2126 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:466] `createApp` is one 1813-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10)
+  The file is 2384 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
@@ -164,7 +155,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `defaultPort` and `defaultBackendUrl` in `apps/extension/src/backend-url.ts` must change together, but nothing ties them. Deferred
   because the fix has to edit `backend-url.ts`, which is outside aa9e97f..HEAD, and no existing shared package holds plain
   constants (`packages/contracts` holds zod schemas).
-- **[apps/dashboard/src/app-shell.tsx:33] Dashboard hard-codes the business time zone** (added: 2026-11-02; description corrected 2026-11-07; location corrected 2026-11-08)
-  `businessTimeZone` here, which every dashboard page imports, is a third copy of `America/Mexico_City`, alongside the two
+- **[apps/dashboard/src/app-shell.tsx:33] Dashboard hard-codes the business time zone** (added: 2026-11-02; description corrected 2026-11-07; location corrected 2026-11-08; description corrected 2026-11-10)
+  `businessTimeZone` here, which the Now, Triage, People, Filters and Agent pages import, is a third copy of `America/Mexico_City`, alongside the two
   (backend `startup-settings.ts`, extension `background.ts`) in § Config gaps. Deferred to the same change: when the time
   zone becomes a setting, the dashboard should get it from `GET /now`, which changes behavior.
