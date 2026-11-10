@@ -444,6 +444,15 @@ describe('createApp chat messages', () => {
       expect.objectContaining({ channel: 'telegram', text: 'Can we move our call to Thursday?' }),
     ]);
   });
+  it('gives each message at GET /telegram-contacts/:userId/timeline a link that opens its chat in Telegram', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/telegram-contacts/7001/timeline');
+
+    expect(messages).toEqual([expect.objectContaining({ link: 'https://web.telegram.org/k/#7001' })]);
+  });
   it('lists at GET /people under VIP, after a backend restart on the same database file, a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip before it', async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({

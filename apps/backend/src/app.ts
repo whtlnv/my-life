@@ -661,7 +661,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const messages = chatMessageStore
       .listMessages()
       .filter((message) => message.senderId === userId)
-      .sort((first, second) => second.time.localeCompare(first.time));
+      .sort((first, second) => second.time.localeCompare(first.time))
+      .map((message) => ({ ...message, link: telegramChatLink(message.chatId) }));
     return context.json({ messages });
   });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
