@@ -102,4 +102,21 @@ describe('chat message store', () => {
       rmSync(dirname(databasePath), { recursive: true, force: true });
     }
   });
+
+  it('lists ignore and task verdicts on chat messages saved before the store is reopened', () => {
+    const databasePath = temporaryDatabasePath();
+    try {
+      const ignoreVerdict = { channel: 'telegram', chatId: '424242', messageId: '1017', decision: 'ignore' };
+      const taskVerdict = { channel: 'telegram', chatId: '515151', messageId: '2044', decision: 'task' };
+      const store = openChatMessageStore(databasePath);
+      store.saveVerdict(ignoreVerdict);
+      store.saveVerdict(taskVerdict);
+
+      const reopened = openChatMessageStore(databasePath);
+
+      expect(reopened.listVerdicts()).toEqual([ignoreVerdict, taskVerdict]);
+    } finally {
+      rmSync(dirname(databasePath), { recursive: true, force: true });
+    }
+  });
 });

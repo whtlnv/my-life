@@ -12,6 +12,13 @@ export type ChatMessage = {
   sentByUser: boolean;
 };
 
+export type ChatMessageVerdict = {
+  channel: string;
+  chatId: string;
+  messageId: string;
+  decision: string;
+};
+
 type ChatMessageRow = Omit<ChatMessage, 'sentByUser'> & { sentByUser: number };
 
 export function openChatMessageStore(databasePath: string) {
@@ -21,6 +28,17 @@ export function openChatMessageStore(databasePath: string) {
       channel TEXT NOT NULL, chat_id TEXT NOT NULL, chat_title TEXT NOT NULL, message_id TEXT NOT NULL,
       sender_id TEXT NOT NULL, sender_name TEXT NOT NULL, text TEXT NOT NULL, time TEXT NOT NULL,
       sent_by_user INTEGER NOT NULL, PRIMARY KEY (channel, chat_id, message_id))`,
+  );
+  database.exec(
+    `CREATE TABLE IF NOT EXISTS chat_message_verdicts (
+      channel TEXT NOT NULL, chat_id TEXT NOT NULL, message_id TEXT NOT NULL, decision TEXT NOT NULL)`,
+  );
+  const insertVerdict = database.prepare(
+    `INSERT INTO chat_message_verdicts (channel, chat_id, message_id, decision) VALUES (?, ?, ?, ?)`,
+  );
+  const selectVerdicts = database.prepare<[], ChatMessageVerdict>(
+    `SELECT channel, chat_id AS chatId, message_id AS messageId, decision
+      FROM chat_message_verdicts ORDER BY rowid`,
   );
   const insertMessage = database.prepare(
     `INSERT OR IGNORE INTO chat_messages
@@ -48,6 +66,12 @@ export function openChatMessageStore(databasePath: string) {
     },
     listMessages(): ChatMessage[] {
       return selectMessages.all().map((row) => ({ ...row, sentByUser: row.sentByUser === 1 }));
+    },
+    saveVerdict(verdict: ChatMessageVerdict): void {
+      insertVerdict.run(verdict.channel, verdict.chatId, verdict.messageId, verdict.decision);
+    },
+    listVerdicts(): ChatMessageVerdict[] {
+      return selectVerdicts.all();
     },
   };
 }
