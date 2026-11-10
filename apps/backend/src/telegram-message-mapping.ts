@@ -7,6 +7,10 @@ function userName(user: Api.User): string {
   return fullName || (user.username ?? user.id.toString());
 }
 
+function isBroadcastChannel(chat: Api.User | Api.Chat | Api.Channel): boolean {
+  return 'broadcast' in chat && Boolean(chat.broadcast);
+}
+
 type TelegramMessageContext<TChat, TMessage = Api.Message> = { message: TMessage; chat: TChat; sender: Api.User };
 
 export function mapTelegramMessage(context: TelegramMessageContext<Api.User | Api.Chat>): ChatMessage;
@@ -20,7 +24,7 @@ export function mapTelegramMessage({
   sender,
 }: TelegramMessageContext<Api.User | Api.Chat | Api.Channel, Api.Message | Api.MessageService>):
   ChatMessage | undefined {
-  if (message.className === 'MessageService' || ('broadcast' in chat && chat.broadcast)) {
+  if (message.className === 'MessageService' || isBroadcastChannel(chat)) {
     return undefined;
   }
   return {
