@@ -69,4 +69,22 @@ describe('Telegram message mapping', () => {
       senderName: 'Marta',
     });
   });
+
+  it('names a peer who has neither a first nor a last name by their username, in both the chat title and the sender name', () => {
+    const ghost = new Api.User({ id: returnBigInt(616161), username: 'ghost_courier' });
+    const message = new Api.Message({
+      id: 1020,
+      peerId: new Api.PeerUser({ userId: returnBigInt(616161) }),
+      date: Date.parse('2026-11-09T18:00:00.000Z') / 1000,
+      message: 'Paquete entregado',
+      out: false,
+    });
+
+    const mapped = mapTelegramMessage({ message, chat: ghost, sender: ghost });
+
+    expect({ chatTitle: mapped.chatTitle, senderName: mapped.senderName }).toEqual({
+      chatTitle: 'ghost_courier',
+      senderName: 'ghost_courier',
+    });
+  });
 });
