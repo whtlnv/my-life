@@ -1922,6 +1922,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       organization: slackWorkspacePollFor(message.workspaceTeamId)?.name,
       lastMessageAt: slackTimestampAsIso(message.timestamp),
     });
+    const isFromSomeoneElse = (message: { sentByUser?: boolean }): boolean => message.sentByUser !== true;
     const telegramSenderAsContact = (message: ChatMessage) => ({
       channel: 'telegram',
       displayName: message.senderName,
@@ -1952,14 +1953,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((contact) => !isVip(contact) && !isUrgent(contact))
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
-        ...slackMessageStore
-          .listMessages()
-          .filter((message) => message.sentByUser !== true)
-          .map(slackSenderAsContact),
-        ...chatMessageStore
-          .listMessages()
-          .filter((message) => message.sentByUser !== true)
-          .map(telegramSenderAsContact),
+        ...slackMessageStore.listMessages().filter(isFromSomeoneElse).map(slackSenderAsContact),
+        ...chatMessageStore.listMessages().filter(isFromSomeoneElse).map(telegramSenderAsContact),
       ],
     };
   };
