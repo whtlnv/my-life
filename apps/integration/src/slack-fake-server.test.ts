@@ -152,18 +152,17 @@ describe('Slack fake server', () => {
   it('answers users.info with the display name of each user in the scenario', async () => {
     const slack = await startSlackFakeServer('thread-reply');
     try {
-      const displayNames: string[] = [];
-      for (const userId of [ownSlackUserId, 'U0003']) {
+      const scenarioDisplayNames: [string, string][] = [
+        [ownSlackUserId, 'me'],
+        ['U0003', 'Dana'],
+      ];
+      for (const [userId, displayName] of scenarioDisplayNames) {
         const info = (await (
           await fetch(`${slack.url}/users.info?user=${userId}`, { headers: { Authorization: `Bearer ${slack.token}` } })
         ).json()) as { ok: boolean; user: { id: string; profile: { display_name: string } } };
 
-        expect(info.ok).toBe(true);
-        expect(info.user.id).toBe(userId);
-        expect(info.user.profile.display_name).not.toBe('');
-        displayNames.push(info.user.profile.display_name);
+        expect(info).toEqual({ ok: true, user: { id: userId, profile: { display_name: displayName } } });
       }
-      expect(new Set(displayNames).size).toBe(2);
     } finally {
       await slack.close();
     }
