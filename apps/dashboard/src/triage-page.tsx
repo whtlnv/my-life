@@ -700,7 +700,7 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
       </div>
       <p className="card-ask">{item.text}</p>
       {composing && (
-        <div className="slack-composer">
+        <div className="reply-composer">
           <textarea
             aria-label={`Reply to ${item.senderName}`}
             placeholder={`Reply to ${item.senderName} in Slack`}
@@ -709,8 +709,8 @@ function SlackCard({ item, onAccepted }: { item: SlackTriageItem; onAccepted: ()
               setReply(event.target.value);
             }}
           />
-          {sendError !== undefined && <p className="slack-composer-error">{sendError}</p>}
-          <div className="slack-composer-actions">
+          {sendError !== undefined && <p className="reply-composer-error">{sendError}</p>}
+          <div className="reply-composer-actions">
             <span className="hint">{sendPromise}</span>
             <button type="button" className="button button-primary" disabled={reply === ''} onClick={sendReply}>
               Send
@@ -826,7 +826,7 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
       </div>
       <p className="card-ask">{item.text}</p>
       {composing && (
-        <div className="slack-composer">
+        <div className="reply-composer">
           <textarea
             aria-label={`Reply to ${item.chatTitle}`}
             placeholder={`Reply to ${item.chatTitle} in ${channelLabels[item.channel]}`}
@@ -835,8 +835,8 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
               setReply(event.target.value);
             }}
           />
-          {sendError !== undefined && <p className="slack-composer-error">{sendError}</p>}
-          <div className="slack-composer-actions">
+          {sendError !== undefined && <p className="reply-composer-error">{sendError}</p>}
+          <div className="reply-composer-actions">
             <span className="hint">{sendPromise}</span>
             <button type="button" className="button button-primary" disabled={reply === ''} onClick={sendReply}>
               Send
