@@ -92,7 +92,7 @@
 - [x] A Telegram card's Ignore button does what `i` does
 - [x] A Telegram card's Task button does what `t` does
 - [x] A Telegram card's Reply button does what `r` does
-- [ ] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
+- [x] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
 - [ ] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty
 - [ ] Telegram cards sit under a "Telegram" section heading, each with an "Open in Telegram" link to its chat
 - [ ] A private-chat Telegram card names the person once; a group card names the group and the sender

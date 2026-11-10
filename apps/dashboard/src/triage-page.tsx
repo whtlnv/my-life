@@ -787,7 +787,7 @@ function postChatSend(item: ChatTriageItem, text: string) {
   return postJson('/chat-sends', { channel, chatId, text });
 }
 
-function ChatCard({ item }: { item: ChatTriageItem }) {
+function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () => void }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
 
@@ -796,7 +796,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
       setComposing(true);
       return;
     }
-    void postChatVerdict(item, key);
+    whenAccepted(postChatVerdict(item, key), onAccepted);
   }
 
   return (
@@ -829,7 +829,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
             type="button"
             className="button button-primary"
             onClick={() => {
-              void postChatSend(item, reply);
+              whenAccepted(postChatSend(item, reply), onAccepted);
             }}
           >
             Send
@@ -948,6 +948,12 @@ export function TriagePage() {
     );
   }
 
+  function removeChatItem(item: ChatTriageItem) {
+    setQueue(
+      (current) => current && { ...current, chatItems: (current.chatItems ?? []).filter((other) => other !== item) },
+    );
+  }
+
   const groups = queue.groups.filter((group) => group.category !== 'unknown');
   return (
     <main>
@@ -992,7 +998,13 @@ export function TriagePage() {
       </section>
       {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
       {queue.chatItems?.map((item) => (
-        <ChatCard key={`${item.chatId}:${item.messageId}`} item={item} />
+        <ChatCard
+          key={`${item.chatId}:${item.messageId}`}
+          item={item}
+          onAccepted={() => {
+            removeChatItem(item);
+          }}
+        />
       ))}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>

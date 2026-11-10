@@ -2249,6 +2249,42 @@ describe('TriagePage', () => {
     expect(within(telegramCard).getByText(slackSendPromise as string)).toBeInTheDocument();
   });
 
+  it('removes a Telegram card from the page once the backend accepts its verdict, and keeps the others', async () => {
+    const chatItem = (chatId: string, chatTitle: string, senderName: string, text: string) => ({
+      channel: 'telegram',
+      chatId,
+      messageId: '42',
+      chatTitle,
+      senderName,
+      text,
+      time: '2026-11-09T16:00:00.000Z',
+    });
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        chatItems: [
+          chatItem('7001', 'Familia Romero', 'Lucía Romero', '¿Vienes a cenar el sábado?'),
+          chatItem('7002', 'Diego Soto', 'Diego Soto', '¿Revisaste el contrato?'),
+        ],
+        remaining: 0,
+        paused: false,
+      },
+      '/chat-verdicts',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const familiaCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(within(familiaCard).getByRole('button', { name: /^Ignore/ }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('¿Vienes a cenar el sábado?')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('¿Revisaste el contrato?')).toBeInTheDocument();
+  });
+
   it('posts the typed text with channel `telegram` and the chat id to `POST /chat-sends` when Send is pressed in a Telegram card composer', async () => {
     answerGetTriageQueueWith({
       action: [],
@@ -2283,6 +2319,44 @@ describe('TriagePage', () => {
     expect(postedChatSends).toEqual([
       { method: 'POST', body: { channel: 'telegram', chatId: '7001', text: 'Llego a las ocho' } },
     ]);
+  });
+
+  it('removes a Telegram card from the page once the backend accepts a reply sent from its composer, and keeps the others', async () => {
+    const chatItem = (chatId: string, chatTitle: string, senderName: string, text: string) => ({
+      channel: 'telegram',
+      chatId,
+      messageId: '42',
+      chatTitle,
+      senderName,
+      text,
+      time: '2026-11-09T16:00:00.000Z',
+    });
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        chatItems: [
+          chatItem('7001', 'Familia Romero', 'Lucía Romero', '¿Vienes a cenar el sábado?'),
+          chatItem('7002', 'Diego Soto', 'Diego Soto', '¿Revisaste el contrato?'),
+        ],
+        remaining: 0,
+        paused: false,
+      },
+      '/chat-sends',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const familiaCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(within(familiaCard).getByRole('button', { name: /^Reply/ }));
+    await user.type(within(familiaCard).getByRole('textbox'), 'Llego a las ocho');
+    await user.click(within(familiaCard).getByRole('button', { name: 'Send' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('¿Vienes a cenar el sábado?')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('¿Revisaste el contrato?')).toBeInTheDocument();
   });
 
   it('keeps `i`, `t` and `r` typed in a Telegram card reply box as text and posts no verdict', async () => {

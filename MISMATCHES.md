@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 03:58 · `apps/dashboard/src/triage-page.test.tsx::removes a Telegram card from the page once the backend accepts its verdict, and keeps the others`
+- Behavior: A Telegram card leaves the queue once its verdict is accepted
+- Predicted: AssertionError in waitFor — the ignored card's text stays on the page because ChatCard has no onAccepted
+- Actual: findByText('Familia Romero') threw on multiple matches — the fixture used the chat title as the sender name, so the card head rendered it twice
+- Type: wrong-reason
+- Resolution: gave each fixture chat a distinct sender name; the test now fails on the predicted assertion
+
 ## 2026-11-10 01:31 · `apps/backend/src/app-people.test.ts::keeps in GET /people Everyone else a sender with one message proposed in an automated category besides one proposed as an action`
 - Behavior: Everyone else keeps a sender with at least one message that is not automated mail
 - Predicted: passes on first run — `writesInPerson` already keeps a contact when `reportedMessages.some(...)` finds a non-automated message
