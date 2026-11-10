@@ -606,7 +606,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/chat-sends', async (context) => {
     const send = await context.req.json<{ channel: string; chatId: string; text: string }>();
-    if (send.text === '') {
+    if (send.text === '' || send.channel !== 'telegram') {
       return context.body(null, 400);
     }
     const sent = await options.telegramClient!.sendText(send.chatId, send.text);

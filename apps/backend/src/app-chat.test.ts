@@ -123,4 +123,31 @@ describe('createApp chat messages', () => {
     expect(textsSentToTelegram).toEqual([]);
     expect(messages).toEqual([]);
   });
+
+  it('refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing', async () => {
+    const databasePath = temporaryDatabasePath();
+    const scriptedTelegram = createScriptedTelegramClient({
+      dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [] }],
+    });
+    const textsSentToTelegram: string[] = [];
+    const telegramClient = {
+      ...scriptedTelegram,
+      sendText: async (chatId: string, text: string) => {
+        textsSentToTelegram.push(text);
+        return scriptedTelegram.sendText(chatId, text);
+      },
+    };
+    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+
+    const response = await postJson(app, '/chat-sends', {
+      channel: 'whatsapp',
+      chatId: '7001',
+      text: 'Thursday works, same time',
+    });
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(response.status).toBe(400);
+    expect(textsSentToTelegram).toEqual([]);
+    expect(messages).toEqual([]);
+  });
 });
