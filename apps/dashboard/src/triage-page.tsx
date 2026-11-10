@@ -778,6 +778,7 @@ function ChatCard({ item }: { item: ChatTriageItem }) {
       tabIndex={0}
       onKeyDown={(event) => {
         if (event.key === 'i') void postJson('/chat-verdicts', { channel, chatId, messageId, decision: 'ignore' });
+        if (event.key === 't') void postJson('/chat-verdicts', { channel, chatId, messageId, decision: 'task' });
       }}
     >
       <div className="card-head">
