@@ -62,7 +62,7 @@ describe('PeoplePage', () => {
       },
     ];
     for (const { list, name, organization, at, time } of expectations) {
-      const rows = within(await screen.findByRole('list', { name: list })).getAllByRole('listitem');
+      const rows = await within(await screen.findByRole('list', { name: list })).findAllByRole('listitem');
       expect(rows).toHaveLength(1);
       const [row] = rows as [HTMLElement];
       expect(row).toHaveTextContent(name);
