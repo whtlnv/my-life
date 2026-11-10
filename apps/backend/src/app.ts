@@ -197,6 +197,7 @@ function countMatchingWords(text: string | undefined, query: string): number {
 
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
 type DecidedProposal = Parameters<typeof filterCandidates>[0][number];
+type SlackMessageReference = Pick<SlackMessage, 'workspaceTeamId' | 'conversationId' | 'timestamp'>;
 
 function categoryQuestionChoices(
   category: Proposal['category'],
@@ -950,7 +951,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     return context.body(null, 200);
   });
-  const slackMessageKey = (message: { workspaceTeamId: string; conversationId: string; timestamp: string }) =>
+  const slackMessageKey = (message: SlackMessageReference) =>
     `${message.workspaceTeamId}/${message.conversationId}/${message.timestamp}`;
   app.post('/slack-verdicts', async (context) => {
     const verdict = await context.req.json<SlackVerdict>();
@@ -971,7 +972,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.body(null, 200);
   });
-  function slackMessagePermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }) {
+  function slackMessagePermalink(message: SlackMessageReference) {
     const workspaceUrl = slackWorkspacePollFor(message.workspaceTeamId)?.url;
     if (workspaceUrl === undefined) {
       return slackClientLink(message);
@@ -2064,7 +2065,7 @@ function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string;
   return `slack:${workspaceTeamId}/${userId}`;
 }
 
-function slackClientLink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }): string {
+function slackClientLink(message: SlackMessageReference): string {
   return `https://app.slack.com/client/${message.workspaceTeamId}/${message.conversationId}/p${message.timestamp.replace('.', '')}`;
 }
 
