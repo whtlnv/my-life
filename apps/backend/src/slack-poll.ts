@@ -41,10 +41,15 @@ interface SlackMessage {
   ts: string;
 }
 
-async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string): Promise<Match[]> {
+async function searchSlackMessages<Match>(
+  input: PollSlackWorkspaceInput,
+  query: string,
+  page = 1,
+): Promise<Match[]> {
+  const pageParameter = page === 1 ? '' : `&page=${page}`;
   const { messages } = await callSlack<{ messages: { matches: Match[] } }>(
     input,
-    `/search.messages?query=${encodeURIComponent(query)}&sort=timestamp&sort_dir=desc`,
+    `/search.messages?query=${encodeURIComponent(query)}&sort=timestamp&sort_dir=desc${pageParameter}`,
   );
   return messages.matches;
 }
@@ -98,7 +103,16 @@ async function searchedDirectMessageChannels(
   clock: { now: () => Date },
 ): Promise<{ id: string }[]> {
   const afterDate = new Date(clock.now().getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
-  const matches = await searchSlackMessages<{ channel: { id: string } }>(input, `is:dm after:${afterDate}`);
+  const query = `is:dm after:${afterDate}`;
+  const matches = await searchSlackMessages<{ ts: string; channel: { id: string } }>(input, query);
+  const newestStoredTimestamp = input.store
+    .listMessages()
+    .map((message) => message.timestamp)
+    .sort()
+    .at(-1);
+  if (newestStoredTimestamp !== undefined && matches.every((match) => match.ts > newestStoredTimestamp)) {
+    matches.push(...(await searchSlackMessages<{ ts: string; channel: { id: string } }>(input, query, 2)));
+  }
   return matches.map((match) => match.channel);
 }
 

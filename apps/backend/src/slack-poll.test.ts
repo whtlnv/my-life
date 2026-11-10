@@ -156,6 +156,48 @@ describe('pollSlackWorkspace', () => {
     expect(slack.requests.map((url) => url.pathname)).not.toContain('/conversations.list');
   });
 
+  it('requests the next search.messages page when every match on the current page is newer than the newest stored message', async () => {
+    const store = openSlackMessageStore(':memory:');
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Name of U0001',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+      sentByUser: false,
+    });
+    const slack = scriptedSlack({
+      '/search.messages': (url) =>
+        url.searchParams.get('query')?.startsWith('is:dm') === true && url.searchParams.get('page') !== '2'
+          ? {
+              ok: true,
+              messages: {
+                matches: [
+                  { user: 'U0002', text: 'Ping', ts: '1762780000.000200', channel: { id: 'D0002' } },
+                  { user: 'U0003', text: 'Hello', ts: '1762770000.000100', channel: { id: 'D0003' } },
+                ],
+                paging: { page: 1, pages: 2 },
+              },
+            }
+          : { ok: true, messages: { matches: [], paging: { page: 2, pages: 2 } } },
+      '/conversations.history': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      workspace,
+      store,
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    });
+
+    const directMessageSearchPages = slack.requests
+      .filter((url) => url.pathname === '/search.messages' && url.searchParams.get('query')?.startsWith('is:dm'))
+      .map((url) => url.searchParams.get('page'));
+    expect(directMessageSearchPages).toContain('2');
+  });
+
   it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
     const slack = scriptedSlack({
       '/conversations.list': () => ({ ok: true, channels: [{ id: 'D0001' }] }),
