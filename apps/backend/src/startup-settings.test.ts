@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { contactUrgency } from '@my-life/domain';
@@ -248,5 +251,30 @@ describe('startup settings', () => {
     const settings = readStartupSettings({ MY_LIFE_SLACK_API_URL: 'http://localhost:4100/api' }, '/Users/ana');
 
     expect(settings.slackApiUrl).toBe('http://localhost:4100/api');
+  });
+
+  it('turns Telegram on when the API id, the API hash and a session file are all present', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'my-life-'));
+    const sessionPath = join(folder, 'telegram-session');
+    writeFileSync(sessionPath, 'saved-session');
+    try {
+      const settings = readStartupSettings(
+        {
+          MY_LIFE_TELEGRAM_API_ID: '12345',
+          MY_LIFE_TELEGRAM_API_HASH: 'abcdef0123456789',
+          MY_LIFE_TELEGRAM_SESSION_PATH: sessionPath,
+        },
+        '/Users/ana',
+      );
+
+      expect(settings.telegram).toEqual({
+        enabled: true,
+        apiId: 12345,
+        apiHash: 'abcdef0123456789',
+        sessionPath,
+      });
+    } finally {
+      rmSync(folder, { recursive: true, force: true });
+    }
   });
 });

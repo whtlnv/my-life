@@ -24,6 +24,14 @@ export interface StartupSettings {
   slackWorkspaces: SlackWorkspaceSettings[];
   slackPollingIntervalInMilliseconds: number;
   slackApiUrl: string;
+  telegram: TelegramSettings;
+}
+
+export interface TelegramSettings {
+  enabled: true;
+  apiId: number;
+  apiHash: string | undefined;
+  sessionPath: string | undefined;
 }
 
 export interface SlackWorkspaceSettings {
@@ -86,6 +94,12 @@ export function readStartupSettings(
       parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, defaultSlackPollingIntervalInSeconds),
     ),
     slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? defaultSlackApiUrl,
+    telegram: {
+      enabled: true,
+      apiId: Number(environment.MY_LIFE_TELEGRAM_API_ID),
+      apiHash: environment.MY_LIFE_TELEGRAM_API_HASH,
+      sessionPath: environment.MY_LIFE_TELEGRAM_SESSION_PATH,
+    },
   };
 }
 
