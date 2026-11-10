@@ -197,4 +197,36 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+
+  it('leaves out of GET /triage-queue a Telegram chat whose newest message is the user\'s', async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openChatMessageStore(databasePath);
+    store.saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '41',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T15:00:00.000Z',
+      sentByUser: false,
+    });
+    store.saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '9000',
+      senderName: 'Francisco',
+      text: 'Thursday works.',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { chatItems } = await getJson<{ chatItems: unknown[] }>(app, '/triage-queue');
+
+    expect(chatItems).toEqual([]);
+  });
 });

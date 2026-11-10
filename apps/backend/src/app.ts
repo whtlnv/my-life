@@ -1068,7 +1068,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));
-    return [...newestMessageByChat.values()].map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
+    return [...newestMessageByChat.values()]
+      .filter((message) => !message.sentByUser)
+      .map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
       channel,
       chatId,
       messageId,
