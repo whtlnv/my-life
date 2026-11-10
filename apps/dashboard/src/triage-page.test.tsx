@@ -2389,4 +2389,78 @@ describe('TriagePage', () => {
     expect(replyBox).toHaveValue('tiro');
     expect(vi.mocked(fetch).mock.calls.filter(([input]) => input === '/chat-verdicts')).toEqual([]);
   });
+
+  it('keeps the Telegram composer open with the Telegram error shown when Telegram refuses the reply sent from it', async () => {
+    const queue = {
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          input === '/triage-queue'
+            ? new Response(JSON.stringify(queue), { headers: { 'content-type': 'application/json' } })
+            : input === '/chat-sends'
+              ? new Response(JSON.stringify({ error: 'CHAT_WRITE_FORBIDDEN' }), {
+                  status: 502,
+                  headers: { 'content-type': 'application/json' },
+                })
+              : new Response(null, { status: 404 }),
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(within(card).getByRole('button', { name: /^Reply/ }));
+    await user.type(within(card).getByRole('textbox'), 'Llego a las ocho');
+    await user.click(within(card).getByRole('button', { name: 'Send' }));
+
+    expect(await within(card).findByText(/CHAT_WRITE_FORBIDDEN/)).toBeInTheDocument();
+    expect(within(card).getByRole('textbox')).toHaveValue('Llego a las ocho');
+    expect(within(card).getByRole('button', { name: 'Send' })).toBeInTheDocument();
+  });
+
+  it("keeps a Telegram card composer's Send disabled while the reply text is empty", async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          text: '¿Vienes a cenar el sábado?',
+          time: '2026-11-09T16:00:00.000Z',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const card = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
+    await user.click(within(card).getByRole('button', { name: /^Reply/ }));
+
+    expect(within(card).getByRole('button', { name: 'Send' })).toBeDisabled();
+  });
 });

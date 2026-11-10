@@ -93,7 +93,7 @@
 - [x] A Telegram card's Task button does what `t` does
 - [x] A Telegram card's Reply button does what `r` does
 - [x] A Telegram card leaves the queue once its verdict is accepted or its reply is sent
-- [ ] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty
+- [x] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty
 - [ ] Telegram cards sit under a "Telegram" section heading, each with an "Open in Telegram" link to its chat
 - [ ] A private-chat Telegram card names the person once; a group card names the group and the sender
 - [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab

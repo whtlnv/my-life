@@ -790,6 +790,20 @@ function postChatSend(item: ChatTriageItem, text: string) {
 function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () => void }) {
   const [composing, setComposing] = useState(false);
   const [reply, setReply] = useState('');
+  const [sendError, setSendError] = useState<string>();
+
+  function sendReply() {
+    void postChatSend(item, reply).then((response) => {
+      if (response.ok) onAccepted();
+      else
+        void response.json().then(
+          ({ error }: { error: string }) => {
+            setSendError(error);
+          },
+          () => undefined,
+        );
+    });
+  }
 
   function act(key: string) {
     if (key === 'r') {
@@ -824,13 +838,13 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
               setReply(event.target.value);
             }}
           />
+          {sendError !== undefined && <p className="slack-composer-error">{sendError}</p>}
           <span className="hint">{sendPromise}</span>
           <button
             type="button"
             className="button button-primary"
-            onClick={() => {
-              whenAccepted(postChatSend(item, reply), onAccepted);
-            }}
+            disabled={reply === ''}
+            onClick={sendReply}
           >
             Send
           </button>
