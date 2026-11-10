@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 23:03 · `apps/backend/src/telegram-login.test.ts::runTelegramLogin > does not ask for a 2FA password when the account has none`
+- Behavior: The login flow does not ask for a 2FA password when the account has none
+- Predicted: passes on first run (stated up front): the password prompt is a callback that only asks when called, so the behavior arrived with the previous item
+- Actual: passes (1 passed, 2 skipped)
+- Type: passed unexpectedly
+- Resolution: The "asks for the 2FA password" green step made the prompt lazy, and that already covers this behavior; no test that keeps to the behavior can fail, so the test stays as a regression pin rather than a red. The item needs no green step.
+
 ## 2026-11-09 22:33 · `apps/backend/src/startup-settings.test.ts::keeps the Telegram session at MY_LIFE_TELEGRAM_SESSION_PATH when it is set`
 - Behavior: The Telegram session path follows `MY_LIFE_TELEGRAM_SESSION_PATH` when it is set
 - Predicted: passes on first run (the env value is already read with a `??` fallback in `readTelegramSettings`)

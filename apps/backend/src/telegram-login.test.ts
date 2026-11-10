@@ -58,4 +58,27 @@ describe('runTelegramLogin', () => {
       expect(readFileSync(sessionPath, 'utf8')).toBe('saved-session-string');
     });
   });
+
+  it('does not ask for a 2FA password when the account has none', async () => {
+    await withSessionPath(async (sessionPath) => {
+      const answer = scriptedAsk(['+5215512345678', '24680']);
+      const questions: string[] = [];
+      const ask = (question: string) => {
+        questions.push(question);
+        return answer();
+      };
+      const client = {
+        signIn: async (prompts: TelegramLoginPrompts) => {
+          await prompts.phoneNumber();
+          await prompts.phoneCode();
+          return 'saved-session-string';
+        },
+      };
+
+      await runTelegramLogin({ client, ask, sessionPath });
+
+      expect(questions).toHaveLength(2);
+      expect(readFileSync(sessionPath, 'utf8')).toBe('saved-session-string');
+    });
+  });
 });
