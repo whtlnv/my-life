@@ -126,7 +126,7 @@ describe('Telegram message mapping', () => {
 
     expect(mapTelegramMessage({ message, chat: group, sender: luis })).toEqual({
       channel: 'telegram',
-      chatId: '909090',
+      chatId: '-909090',
       chatTitle: 'Erlia socios',
       messageId: '2001',
       senderId: '424242',

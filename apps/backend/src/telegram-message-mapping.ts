@@ -1,4 +1,4 @@
-import type { Api } from 'telegram';
+import { utils, type Api } from 'telegram';
 
 import type { ChatMessage } from './chat-message-store';
 
@@ -23,7 +23,7 @@ export function mapTelegramMessage({ message, chat, sender }: TelegramMessageCon
   }
   return {
     channel: 'telegram',
-    chatId: chat.id.toString(),
+    chatId: utils.getPeerId(chat),
     chatTitle: 'title' in chat ? chat.title : userName(chat),
     messageId: String(message.id),
     senderId: sender.id.toString(),
