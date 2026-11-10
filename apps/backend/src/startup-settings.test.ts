@@ -333,4 +333,10 @@ describe('startup settings', () => {
       rmSync(folder, { recursive: true, force: true });
     }
   });
+
+  it('keeps the Telegram session at ~/Library/Application Support/my-life/telegram-session when MY_LIFE_TELEGRAM_SESSION_PATH is unset', () => {
+    const settings = readStartupSettings({}, '/Users/ana');
+
+    expect(settings.telegram.sessionPath).toBe('/Users/ana/Library/Application Support/my-life/telegram-session');
+  });
 });

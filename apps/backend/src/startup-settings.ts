@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { UrgencySettings } from '@my-life/domain';
@@ -95,12 +96,17 @@ export function readStartupSettings(
       parseNumberOrDefault(environment.MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS, defaultSlackPollingIntervalInSeconds),
     ),
     slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? defaultSlackApiUrl,
-    telegram: readTelegramSettings(environment),
+    telegram: readTelegramSettings(environment, homeDirectory),
   };
 }
 
-function readTelegramSettings(environment: Record<string, string | undefined>): TelegramSettings {
-  const sessionPath = environment.MY_LIFE_TELEGRAM_SESSION_PATH;
+function readTelegramSettings(
+  environment: Record<string, string | undefined>,
+  homeDirectory: string,
+): TelegramSettings {
+  const sessionPath =
+    environment.MY_LIFE_TELEGRAM_SESSION_PATH ??
+    join(homeDirectory, 'Library', 'Application Support', 'my-life', 'telegram-session');
   const apiHash = environment.MY_LIFE_TELEGRAM_API_HASH;
   const apiId = environment.MY_LIFE_TELEGRAM_API_ID;
   return {
