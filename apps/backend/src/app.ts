@@ -2029,9 +2029,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         displayName: message.senderName,
         waitingSince: slackTimestampAsIso(message.timestamp),
       }));
-    const telegramPeople = chatMessageStore
-      .listMessages()
-      .filter((message) => message.sentByUser !== true)
+    const chatMessages = chatMessageStore.listMessages();
+    const userRepliedLaterInChat = (message: (typeof chatMessages)[number]): boolean =>
+      chatMessages.some(
+        (reply) =>
+          reply.sentByUser === true &&
+          reply.channel === message.channel &&
+          reply.chatId === message.chatId &&
+          reply.time > message.time,
+      );
+    const telegramPeople = chatMessages
+      .filter((message) => message.sentByUser !== true && !userRepliedLaterInChat(message))
       .map((message) => ({ channel: 'telegram', displayName: message.senderName, waitingSince: message.time }));
     return context.json({
       people: [...people, ...slackPeople, ...telegramPeople].toSorted((first, second) =>

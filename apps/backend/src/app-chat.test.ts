@@ -478,4 +478,25 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+
+  it('leaves out of GET /waiting-on a Telegram chat whose newest message is the user\'s', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T15:00:00.000Z');
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '43',
+      senderId: '9000',
+      senderName: 'Francisco',
+      text: 'Thursday works.',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([]);
+  });
 });
