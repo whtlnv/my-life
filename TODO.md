@@ -74,7 +74,7 @@
 - [x] The gramjs-backed adapter sends to a chat by its marked peer id as a number entity (a big integer), never as a string gramjs would read as a username
   - predicted-contradiction: `apps/backend/src/gramjs-telegram-client.test.ts::createGramjsTelegramClient sends text to a chat and returns the id of the message gramjs reports sent` — asserts: gramjs `sendMessage` receives the chat id as the string entity `'42'` — retired-by: "as a number entity (a big integer), never as a string gramjs would read as a username"
 - [x] The gramjs-backed adapter's own account with no last name is named by the first name alone, with no "undefined"
-- [ ] The gramjs-backed adapter reads at most 20 recent messages per dialog (gramjs's `limit`), and only for dialogs with unread messages
+- [x] The gramjs-backed adapter reads at most 20 recent messages per dialog (gramjs's `limit`), and only for dialogs with unread messages
 - [ ] The gramjs-backed adapter registers its new-message handler with gramjs's `NewMessage` event builder, and takes the chat and sender from `getChat()` and `getSender()` when the message does not carry them
 - [ ] `GET /now` reports Telegram as not logged in when Telegram is off, and as connected with the time of the last start or message when it is on, so the header chip shows in the shipped app
 - [ ] `GET /now` reports Telegram as stale when the client has been disconnected for more than twice the 60 s check interval

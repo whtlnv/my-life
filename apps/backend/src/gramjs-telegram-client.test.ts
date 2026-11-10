@@ -1,4 +1,5 @@
 import { Api } from 'telegram';
+import { NewMessage } from 'telegram/events';
 import { returnBigInt } from 'telegram/Helpers';
 import { describe, expect, it } from 'vitest';
 
@@ -152,5 +153,19 @@ describe('createGramjsTelegramClient', () => {
     }
 
     expect(handled).toEqual([mapTelegramMessage({ message: textMessage, chat: luis, sender: luis })]);
+  });
+
+  it("registers its new-message handler with gramjs's NewMessage event builder, so gramjs hands it messages and not raw updates", () => {
+    const eventBuilders: unknown[] = [];
+    const gramjsClient = stubGramjsClient({
+      addEventHandler: (_callback, eventBuilder) => {
+        eventBuilders.push(eventBuilder);
+      },
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+
+    client.onMessage(() => undefined);
+
+    expect(eventBuilders).toEqual([expect.any(NewMessage)]);
   });
 });

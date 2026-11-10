@@ -1,4 +1,5 @@
 import type { Api } from 'telegram';
+import { NewMessage } from 'telegram/events';
 import { returnBigInt } from 'telegram/Helpers';
 
 import type { ChatMessage } from './chat-message-store';
@@ -13,7 +14,7 @@ interface GramjsClient {
   getMe: () => Promise<Api.User>;
   getDialogs: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
   getMessages: (entity: TelegramChat, parameters: { limit: number }) => Promise<Api.Message[]>;
-  addEventHandler: (callback: (event: { message: Api.Message }) => unknown) => void;
+  addEventHandler: (callback: (event: { message: Api.Message }) => unknown, eventBuilder: NewMessage) => void;
 }
 
 interface GramjsTelegramClient {
@@ -56,7 +57,7 @@ export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTe
           sender: message.sender as Api.User,
         });
         if (mapped) handler(mapped);
-      });
+      }, new NewMessage({}));
     },
   };
 }
