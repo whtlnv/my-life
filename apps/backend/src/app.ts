@@ -1948,7 +1948,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       message.listId === undefined && !isDigestedCategory(latestProposalFor(proposals, message.id)?.category);
     const writesInPerson = (contact: { messageIds: string[] }) =>
       reportedMessages.some((message) => contact.messageIds.includes(message.id) && isWrittenInPerson(message));
-    const contacts = contactsByEmail(reportedSenders(), proposals).filter(writesInPerson);
+    const isOwnAccount = (contact: { emails: string[] }) => contact.emails.some(isAllowed);
+    const contacts = contactsByEmail(reportedSenders(), proposals).filter(
+      (contact) => writesInPerson(contact) && !isOwnAccount(contact),
+    );
     const alwaysMattersLineOfAccount = (accountEmail: string) => {
       const accountProfile = profileOfAccount(accountEmail);
       return accountProfile === undefined ? '' : alwaysMattersLine(accountProfile);

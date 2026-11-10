@@ -113,6 +113,16 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(everyoneElse.map(({ emails }) => emails)).toEqual([['marta@acme.com'], ['luis@example.com']]);
   });
 
+  it("leaves out of GET /people a sender who is one of the user's own accounts, and keeps the others", async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com', 'marta@acme.com'], clock: clockAtTenPastThree });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+
+    const response = await app.request('/people');
+
+    const { everyoneElse } = (await response.json()) as { everyoneElse: { emails: string[] }[] };
+    expect(everyoneElse.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+  });
+
   it('leaves out of GET /people a sender whose only message carries a List-Id, and keeps a sender writing in person', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
     const luisMessage = budgetReviewReport.messages[0];
