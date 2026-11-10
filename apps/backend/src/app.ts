@@ -1121,13 +1121,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdicts.some((verdict) => verdict.chatId === message.chatId && verdict.messageId === message.messageId);
     return [...newestMessageByChat.values()]
       .filter((message) => !message.sentByUser && !hasVerdict(message))
-      .map(({ channel, chatId, messageId, chatTitle, senderName, time }) => ({
+      .map(({ channel, chatId, messageId, chatTitle, senderName, text, time }) => ({
         channel,
         chatId,
         messageId,
         chatTitle,
         senderName,
+        text,
         time,
+        link: `https://web.telegram.org/k/#${chatId}`,
       }));
   }
   app.get('/triage-queue', (context) => {

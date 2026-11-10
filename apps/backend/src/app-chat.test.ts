@@ -256,6 +256,21 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('lists at GET /triage-queue a Telegram chat item with its newest message text and a link that opens the chat in Telegram', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { chatItems } = await getJson<{ chatItems: unknown[] }>(app, '/triage-queue');
+
+    expect(chatItems).toEqual([
+      expect.objectContaining({
+        text: 'Can we move our call to Thursday?',
+        link: 'https://web.telegram.org/k/#7001',
+      }),
+    ]);
+  });
+
   it("leaves out of GET /triage-queue a Telegram chat whose newest message is the user's", async () => {
     const databasePath = temporaryDatabasePath();
     const store = openChatMessageStore(databasePath);

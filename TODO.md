@@ -86,7 +86,7 @@
 - [x] `connectTelegram` builds gramjs's `TelegramClient` from the session file, the API id and the API hash, and gramjs's real `TelegramClient` type-checks as the adapter's gramjs client (a type-level test)
 - [x] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
 - [x] The shipped `main.ts` connects Telegram and passes the gramjs-backed client to `createApp` when Telegram is on, and logs "telegram not logged in" and starts without it when it is off; the shipped backend without a session reports Telegram not logged in at `GET /now`
-- [ ] `GET /triage-queue` Telegram chat items carry the message text and a link that opens the chat in Telegram
+- [x] `GET /triage-queue` Telegram chat items carry the message text and a link that opens the chat in Telegram
 - [ ] Typing `i`, `t` or `r` in a Telegram card's reply box stays text and posts no verdict
 - [ ] A Telegram card shows the message text
 - [ ] A Telegram card's Ignore, Task and Reply buttons do what `i`, `t` and `r` do
