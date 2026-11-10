@@ -1,3 +1,5 @@
+import { openDatabase } from './open-database';
+
 export type ChatMessage = {
   channel: string;
   chatId: string;
@@ -10,20 +12,42 @@ export type ChatMessage = {
   sentByUser: boolean;
 };
 
-export function openChatMessageStore(_databasePath: string) {
-  const messages: ChatMessage[] = [];
+type ChatMessageRow = Omit<ChatMessage, 'sentByUser'> & { sentByUser: number };
+
+export function openChatMessageStore(databasePath: string) {
+  const database = openDatabase(databasePath);
+  database.exec(
+    `CREATE TABLE IF NOT EXISTS chat_messages (
+      channel TEXT NOT NULL, chat_id TEXT NOT NULL, chat_title TEXT NOT NULL, message_id TEXT NOT NULL,
+      sender_id TEXT NOT NULL, sender_name TEXT NOT NULL, text TEXT NOT NULL, time TEXT NOT NULL,
+      sent_by_user INTEGER NOT NULL, PRIMARY KEY (channel, chat_id, message_id))`,
+  );
+  const insertMessage = database.prepare(
+    `INSERT OR IGNORE INTO chat_messages
+      (channel, chat_id, chat_title, message_id, sender_id, sender_name, text, time, sent_by_user)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const selectMessages = database.prepare<[], ChatMessageRow>(
+    `SELECT channel, chat_id AS chatId, chat_title AS chatTitle, message_id AS messageId,
+      sender_id AS senderId, sender_name AS senderName, text, time, sent_by_user AS sentByUser
+      FROM chat_messages ORDER BY rowid`,
+  );
   return {
     saveMessage(message: ChatMessage): void {
-      const alreadySaved = messages.some(
-        (saved) =>
-          saved.channel === message.channel &&
-          saved.chatId === message.chatId &&
-          saved.messageId === message.messageId,
+      insertMessage.run(
+        message.channel,
+        message.chatId,
+        message.chatTitle,
+        message.messageId,
+        message.senderId,
+        message.senderName,
+        message.text,
+        message.time,
+        message.sentByUser ? 1 : 0,
       );
-      if (!alreadySaved) messages.push(message);
     },
     listMessages(): ChatMessage[] {
-      return messages;
+      return selectMessages.all().map((row) => ({ ...row, sentByUser: row.sentByUser === 1 }));
     },
   };
 }

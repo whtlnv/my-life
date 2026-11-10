@@ -78,4 +78,28 @@ describe('chat message store', () => {
       rmSync(dirname(databasePath), { recursive: true, force: true });
     }
   });
+
+  it('lists chat messages saved before the store is reopened on the same database', () => {
+    const databasePath = temporaryDatabasePath();
+    try {
+      const message = {
+        channel: 'telegram',
+        chatId: '424242',
+        chatTitle: 'Luis Ortega',
+        messageId: '1017',
+        senderId: '424242',
+        senderName: 'Luis Ortega',
+        text: '¿Nos vemos el jueves?',
+        time: '2026-11-09T16:30:00.000Z',
+        sentByUser: false,
+      };
+      openChatMessageStore(databasePath).saveMessage(message);
+
+      const reopened = openChatMessageStore(databasePath);
+
+      expect(reopened.listMessages()).toEqual([message]);
+    } finally {
+      rmSync(dirname(databasePath), { recursive: true, force: true });
+    }
+  });
 });
