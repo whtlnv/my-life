@@ -349,6 +349,27 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+  it('gives a Telegram contact at GET /people the time of their last message as lastMessageAt, so the row can show "last message …"', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([
+      expect.objectContaining({ telegramHandles: [{ userId: '7001' }], lastMessageAt: '2026-11-09T16:00:00.000Z' }),
+    ]);
+  });
   it('leaves out of GET /people a Telegram message the user sent, so the user is not listed as their own contact', async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);

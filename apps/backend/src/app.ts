@@ -1990,6 +1990,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       channel: 'telegram',
       displayName: message.senderName,
       telegramHandles: [{ userId: message.senderId }],
+      lastMessageAt: message.time,
     });
     const urgentChatSender = <Contact extends object>(sender: {
       threadId: string;

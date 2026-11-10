@@ -96,7 +96,7 @@
 - [x] A Telegram reply Telegram refuses shows Telegram's error on the card; Send is disabled while the reply is empty
 - [x] Telegram cards sit under a "Telegram" section heading, each with an "Open in Telegram" link to its chat
 - [x] A private-chat Telegram card names the person once; a group card names the group and the sender
-- [ ] `GET /people` Telegram rows carry the time of the contact's last message, so the row shows "last message …"
+- [x] `GET /people` Telegram rows carry the time of the contact's last message, so the row shows "last message …"
 - [ ] `DELETE /telegram-contacts/:userId/marks/vip` and `DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip` remove the VIP mark
 - [ ] Clicking a Telegram contact on the People tab shows their Telegram timeline, each message with its text, time and an "Open in Telegram" link
 - [ ] Mark VIP and Remove VIP on a Telegram row mark and unmark that Telegram contact
