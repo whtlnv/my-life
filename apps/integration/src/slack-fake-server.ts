@@ -146,6 +146,17 @@ export async function startSlackFakeServer(
         response.end(JSON.stringify({ ok: false, error: 'invalid_search' }));
         return;
       }
+      if (scenario === 'direct-message' && query.includes('is:dm')) {
+        response.end(
+          JSON.stringify({
+            ok: true,
+            messages: {
+              matches: [{ text: directMessageText, user: 'U0001', channel: { id: 'D0001', is_im: true } }],
+            },
+          }),
+        );
+        return;
+      }
       if (scenario === 'mention' && query.startsWith('from:')) {
         response.end(JSON.stringify(noSearchMatches));
         return;

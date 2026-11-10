@@ -292,6 +292,27 @@ describe('Slack fake server', () => {
     }
   });
 
+  it('in the direct-message scenario answers an is:dm search that has after: with its DM message, naming its conversation', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const search = (await (
+        await fetch(`${slack.url}/search.messages?query=${encodeURIComponent('is:dm after:2025-11-01')}`, {
+          headers: { Authorization: `Bearer ${slack.token}` },
+        })
+      ).json()) as {
+        ok: boolean;
+        messages: { matches: { text: string; user: string; channel: { id: string; is_im: boolean } }[] };
+      };
+
+      expect(search.ok).toBe(true);
+      expect(search.messages.matches).toEqual([
+        expect.objectContaining({ text: directMessageText, user: 'U0001', channel: { id: 'D0001', is_im: true } }),
+      ]);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('polling the direct-message scenario stores its DM message with its workspace, conversation, sender, text and timestamp', async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {
