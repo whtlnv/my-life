@@ -6,11 +6,22 @@ import { describe, expect, it } from 'vitest';
 
 import { runTelegramLogin, type TelegramLoginPrompts } from './telegram-login';
 
+async function withSessionPath(run: (sessionPath: string) => Promise<void>): Promise<void> {
+  const directory = mkdtempSync(join(tmpdir(), 'my-life-'));
+  try {
+    await run(join(directory, 'telegram-session'));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function scriptedAsk(answers: string[]): () => Promise<string> {
+  return () => Promise.resolve(answers.shift() ?? '');
+}
+
 describe('runTelegramLogin', () => {
   it('asks for the phone number, then the code Telegram sent, and writes the session file', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'my-life-'));
-    try {
-      const sessionPath = join(directory, 'telegram-session');
+    await withSessionPath(async (sessionPath) => {
       const answers = ['+5215512345678', '24680'];
       const received: string[] = [];
       const client = {
@@ -21,19 +32,15 @@ describe('runTelegramLogin', () => {
         },
       };
 
-      await runTelegramLogin({ client, ask: () => Promise.resolve(answers.shift() ?? ''), sessionPath });
+      await runTelegramLogin({ client, ask: scriptedAsk(answers), sessionPath });
 
       expect(received).toEqual(['+5215512345678', '24680']);
       expect(readFileSync(sessionPath, 'utf8')).toBe('saved-session-string');
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
+    });
   });
 
   it('asks for the 2FA password before writing the session file when the account has one', async () => {
-    const directory = mkdtempSync(join(tmpdir(), 'my-life-'));
-    try {
-      const sessionPath = join(directory, 'telegram-session');
+    await withSessionPath(async (sessionPath) => {
       const answers = ['+5215512345678', '24680', 'correct horse battery staple'];
       const received: string[] = [];
       const client = {
@@ -45,12 +52,10 @@ describe('runTelegramLogin', () => {
         },
       };
 
-      await runTelegramLogin({ client, ask: () => Promise.resolve(answers.shift() ?? ''), sessionPath });
+      await runTelegramLogin({ client, ask: scriptedAsk(answers), sessionPath });
 
       expect(received).toEqual(['+5215512345678', '24680', 'correct horse battery staple']);
       expect(readFileSync(sessionPath, 'utf8')).toBe('saved-session-string');
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
+    });
   });
 });
