@@ -904,6 +904,23 @@ function Legend() {
   );
 }
 
+function ChatSection({ items, onAccepted }: { items: ChatTriageItem[]; onAccepted: (item: ChatTriageItem) => void }) {
+  return (
+    <section aria-label={channelLabels.telegram} className="section">
+      <h2 className="section-title">{channelLabels.telegram}</h2>
+      {items.map((item) => (
+        <ChatCard
+          key={`${item.chatId}:${item.messageId}`}
+          item={item}
+          onAccepted={() => {
+            onAccepted(item);
+          }}
+        />
+      ))}
+    </section>
+  );
+}
+
 export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
 
@@ -1005,20 +1022,7 @@ export function TriagePage() {
         ))}
       </section>
       {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
-      {queue.chatItems !== undefined && (
-        <section aria-label={channelLabels.telegram} className="section">
-          <h2 className="section-title">{channelLabels.telegram}</h2>
-          {queue.chatItems.map((item) => (
-            <ChatCard
-              key={`${item.chatId}:${item.messageId}`}
-              item={item}
-              onAccepted={() => {
-                removeChatItem(item);
-              }}
-            />
-          ))}
-        </section>
-      )}
+      {queue.chatItems !== undefined && <ChatSection items={queue.chatItems} onAccepted={removeChatItem} />}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
