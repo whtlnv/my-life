@@ -166,6 +166,22 @@ const TimelineRow = ({ href, title, side }: { href: string; title: string; side:
   </li>
 );
 
+const TelegramTimelineRow = ({ message }: { message: TelegramTimelineMessage }) => (
+  <li className="row">
+    <div className="row-main">
+      <p className="row-title">{message.text}</p>
+      <p className="row-detail">
+        <time dateTime={message.time}>{weekdayAndTimeInBusinessZone(message.time)}</time>
+      </p>
+    </div>
+    <div className="row-side">
+      <a href={message.link} target="_blank" rel="noreferrer">
+        Open in {channelLabels[message.channel]} ↗
+      </a>
+    </div>
+  </li>
+);
+
 const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
   <section className="section">
     <h2 className="section-title">{timeline.displayName}</h2>
@@ -173,19 +189,7 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
       <ul aria-label={`Timeline of ${timeline.displayName}`} className="rows">
         {timeline.messages.map((message) =>
           'channel' in message ? (
-            <li key={message.messageId} className="row">
-              <div className="row-main">
-                <p className="row-title">{message.text}</p>
-                <p className="row-detail">
-                  <time dateTime={message.time}>{weekdayAndTimeInBusinessZone(message.time)}</time>
-                </p>
-              </div>
-              <div className="row-side">
-                <a href={message.link} target="_blank" rel="noreferrer">
-                  Open in {channelLabels[message.channel]} ↗
-                </a>
-              </div>
-            </li>
+            <TelegramTimelineRow key={message.messageId} message={message} />
           ) : 'permalink' in message ? (
             <TimelineRow
               key={message.timestamp}
