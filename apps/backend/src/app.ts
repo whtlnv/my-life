@@ -2066,20 +2066,26 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     );
     const isFromMarkedTelegramSender = (message: { senderId: string }): boolean =>
       markedContactKeys.has(telegramContactKey(message.senderId));
+    const isFromMarkedSlackSender = (message: SlackMessage): boolean =>
+      markedContactKeys.has(slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId }));
     return {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
         ...chatMessageStore.listMessages().filter(isFromMarkedTelegramSender).map(telegramSenderAsContact),
+        ...slackMessageStore.listMessages().filter(isFromMarkedSlackSender).map(slackSenderAsContact),
       ],
       everyoneElse: [
         ...contacts
           .filter((contact) => !isVip(contact) && !isUrgent(contact))
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
-        ...newestSlackMessagePerSender(slackMessageStore.listMessages().filter(isFromSomeoneElse)).map(
-          slackSenderAsContact,
-        ),
+        ...newestSlackMessagePerSender(
+          slackMessageStore
+            .listMessages()
+            .filter(isFromSomeoneElse)
+            .filter((message) => !isFromMarkedSlackSender(message)),
+        ).map(slackSenderAsContact),
         ...newestMessagePerSender(
           chatMessageStore
             .listMessages()

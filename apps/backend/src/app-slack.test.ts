@@ -441,6 +441,14 @@ describe('createApp Slack messages', () => {
 
     expect(urgent).toEqual([]);
   });
+  it('leaves out of Everyone else at GET /people a Slack contact marked vip through PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip, listing it under VIP only', async () => {
+    const app = await appWithVipSlackDirectMessageSentAt('1793804400.000100');
+
+    const { vip, everyoneElse } = await getJson<{ vip: unknown[]; everyoneElse: unknown[] }>(app, '/people');
+
+    expect(vip).toEqual([expect.objectContaining({ slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }] })]);
+    expect(everyoneElse).toEqual([]);
+  });
   it('leaves out of Urgent at GET /people a Slack contact whose vip mark the user removed through DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip, even though their DM has waited more than 1 business day', async () => {
     const app = await appWithVipSlackDirectMessageSentAt('1793631600.000100');
     await app.request('/slack-contacts/T0001/U0001/marks/vip', { method: 'DELETE' });

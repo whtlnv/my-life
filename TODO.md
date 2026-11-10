@@ -106,6 +106,6 @@
 - [x] A Telegram contact with several messages is listed once on the People tab, with the time of their newest message
 - [x] A Slack contact with several messages is listed once on the People tab, with the time of their newest message
 - [x] A Telegram or Slack contact is listed once under Urgent however many of their messages wait, with every reason that applies
-- [ ] A Slack contact marked VIP is listed under VIP and not under Everyone else
+- [x] A Slack contact marked VIP is listed under VIP and not under Everyone else
 - [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
 - [ ] Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
