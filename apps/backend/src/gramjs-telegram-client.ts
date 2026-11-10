@@ -3,6 +3,7 @@ import { NewMessage } from 'telegram/events';
 import { returnBigInt } from 'telegram/Helpers';
 
 import type { ChatMessage } from './chat-message-store';
+import type { TelegramLoginPrompts } from './telegram-login';
 import { mapTelegramMessage, userName } from './telegram-message-mapping';
 
 type TelegramChat = Api.User | Api.Chat | Api.Channel;
@@ -37,18 +38,12 @@ interface GramjsClient {
   session: { save: () => unknown };
 }
 
-export interface TelegramSignInPrompts {
-  phoneNumber: () => Promise<string>;
-  phoneCode: () => Promise<string>;
-  password: () => Promise<string>;
-}
-
 interface GramjsTelegramClient {
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
   getOwnAccount: () => Promise<{ id: string; name: string }>;
   listDialogs: () => Promise<{ unreadCount: number; messages: ChatMessage[] }[]>;
   onMessage: (handler: (message: ChatMessage) => void) => void;
-  signIn: (prompts: TelegramSignInPrompts) => Promise<string>;
+  signIn: (prompts: TelegramLoginPrompts) => Promise<string>;
 }
 
 export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTelegramClient {
