@@ -42,6 +42,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/app.ts:629] Three separate `auth.test` readers** (added: 2026-11-09)
+  `fetchSlackWorkspaceIdentity` and `fetchOwnSlackUserId` in `app.ts` and `fetchOwnSlackUserId` in `slack-poll.ts` each
+  call `auth.test` and pick fields out of its answer, so a change to how the identity is read has to be made three times.
+  Deferred because unifying them sends the app's calls through `callSlack`, which retries on 429 and throws on
+  `invalid_auth`. That changes what `POST /slack-poll` and `POST /slack-sends` do when Slack fails.
 - **[apps/backend/src/app.ts:985] A task made from a Slack item stores the workspace team id as its `accountEmail`** (added: 2026-11-09)
   `POST /slack-verdicts` saves `accountEmail: verdict.workspaceTeamId`, so a field every reader takes for an email address
   holds `T0001` for Slack tasks. Deferred because the field is stored in the task event log and returned by `GET /tasks`,
