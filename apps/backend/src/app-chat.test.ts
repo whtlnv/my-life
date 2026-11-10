@@ -5,6 +5,24 @@ import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
 import { openChatMessageStore } from './chat-message-store';
 import { createScriptedTelegramClient } from './scripted-telegram-client';
 
+function recordingTelegramClient() {
+  const scriptedTelegram = createScriptedTelegramClient({
+    dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [] }],
+  });
+  const textsSentToTelegram: string[] = [];
+  const idsTelegramReturned: string[] = [];
+  const telegramClient = {
+    ...scriptedTelegram,
+    sendText: async (chatId: string, text: string) => {
+      textsSentToTelegram.push(text);
+      const sent = await scriptedTelegram.sendText(chatId, text);
+      idsTelegramReturned.push(sent.messageId);
+      return sent;
+    },
+  };
+  return { telegramClient, textsSentToTelegram, idsTelegramReturned };
+}
+
 describe('createApp chat messages', () => {
   it('lists at GET /chat-messages the chat messages stored in the chat store', async () => {
     const databasePath = temporaryDatabasePath();
@@ -67,18 +85,7 @@ describe('createApp chat messages', () => {
   });
   it('sends text at POST /chat-sends through the Telegram session and lists it as sent by the user under the id Telegram returned', async () => {
     const databasePath = temporaryDatabasePath();
-    const scriptedTelegram = createScriptedTelegramClient({
-      dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [] }],
-    });
-    const idsTelegramReturned: string[] = [];
-    const telegramClient = {
-      ...scriptedTelegram,
-      sendText: async (chatId: string, text: string) => {
-        const sent = await scriptedTelegram.sendText(chatId, text);
-        idsTelegramReturned.push(sent.messageId);
-        return sent;
-      },
-    };
+    const { telegramClient, idsTelegramReturned } = recordingTelegramClient();
     const app = createApp({ allowedEmails: [], databasePath, telegramClient });
 
     const response = await postJson(app, '/chat-sends', {
@@ -103,17 +110,7 @@ describe('createApp chat messages', () => {
 
   it('refuses at POST /chat-sends, with 400, a send with empty text, and sends and stores nothing', async () => {
     const databasePath = temporaryDatabasePath();
-    const scriptedTelegram = createScriptedTelegramClient({
-      dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [] }],
-    });
-    const textsSentToTelegram: string[] = [];
-    const telegramClient = {
-      ...scriptedTelegram,
-      sendText: async (chatId: string, text: string) => {
-        textsSentToTelegram.push(text);
-        return scriptedTelegram.sendText(chatId, text);
-      },
-    };
+    const { telegramClient, textsSentToTelegram } = recordingTelegramClient();
     const app = createApp({ allowedEmails: [], databasePath, telegramClient });
 
     const response = await postJson(app, '/chat-sends', { channel: 'telegram', chatId: '7001', text: '' });
@@ -126,17 +123,7 @@ describe('createApp chat messages', () => {
 
   it('refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing', async () => {
     const databasePath = temporaryDatabasePath();
-    const scriptedTelegram = createScriptedTelegramClient({
-      dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [] }],
-    });
-    const textsSentToTelegram: string[] = [];
-    const telegramClient = {
-      ...scriptedTelegram,
-      sendText: async (chatId: string, text: string) => {
-        textsSentToTelegram.push(text);
-        return scriptedTelegram.sendText(chatId, text);
-      },
-    };
+    const { telegramClient, textsSentToTelegram } = recordingTelegramClient();
     const app = createApp({ allowedEmails: [], databasePath, telegramClient });
 
     const response = await postJson(app, '/chat-sends', {
