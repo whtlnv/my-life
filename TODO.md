@@ -1,2 +1,72 @@
 # TODO.md — working set
 
+
+## Phase 6a.1 — fixes from the real-account trial
+
+- [ ] The Slack fake refuses an `is:dm` search that has no `after:`, answering an error
+- [ ] The Slack fake answers an `is:dm` search that has `after:` with its DM matches
+- [ ] The Slack fake serves `is:dm` matches across pages, with `paging` naming the page and the page count
+- [ ] A poll stores the messages of a DM conversation that an `is:dm` search match names, though `conversations.list` does not list it
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::asks every search for the newest messages first, not the most relevant` — asserts: a poll makes exactly 2 `search.messages` requests — retired-by: "Each poll searches `search.messages?query=is:dm after:<date>&sort=timestamp&sort_dir=desc`"
+- [ ] A poll does not read the history of a DM conversation that no `is:dm` match names
+- [ ] A poll never calls `conversations.list`
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores each DM message with its workspace, conversation, sender, the sender's display name, text and timestamp` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a DM message the user sent as sent by the user` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::asks conversations.history on a second poll only for messages newer than the newest stored in that conversation` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a message's sender name as the sender's user id when their Slack profile has no display name` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a message's sender name as the sender's real name when Slack answers an empty display name` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::waits as long as Retry-After says when Slack answers 429, then retries and stores the message` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::polls every workspace, skips one whose token Slack rejects, and names the workspaces that succeeded` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/integration/src/slack-fake-server.test.ts::a poll lists both direct and group direct message conversations, asking conversations.list for types im and mpim` — asserts: a poll calls `conversations.list` once with types `im,mpim` — retired-by: "A poll never calls `conversations.list`"
+- [ ] A poll requests the next `search.messages` page when every match on the current page is newer than the newest stored message
+- [ ] A poll requests no further page once a page holds a match older than the newest stored message
+- [ ] A conversation with stored messages is read from its newest stored message (`oldest=` that timestamp)
+- [ ] A conversation with nothing stored is read from 7 days before now (`oldest=` now minus the lookback)
+- [ ] With `MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS=3` a conversation with nothing stored is read from 3 days before now
+- [ ] The `is:dm` search carries `after:` the lookback date
+- [ ] The mention search carries `after:` the lookback date
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::finds mentions by searching for the user's own Slack id and stores each match under its channel` — asserts: the scripted Slack answers the mention only to a query exactly `<@UOWN>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a mention match the user sent themselves as sent by the user` — asserts: the scripted Slack answers the mention only to a query exactly `<@UOWN>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
+  - predicted-contradiction: `apps/integration/src/slack-fake-server.test.ts::a poll finds mentions by searching Slack for <@id> with the user id the workspace's auth.test names` — asserts: the recorded queries contain exactly `<@U0999>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
+- [ ] The own-message search carries `after:` the lookback date
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::fetches replies only for threads the user wrote in, and stores each reply with its thread, marking the user's own as sent by them` — asserts: the scripted Slack answers the thread match only to a query exactly `from:<@UOWN>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::asks conversations.replies on a second poll only for replies newer than the thread's newest stored one` — asserts: the scripted Slack answers the thread match only to a query exactly `from:<@UOWN>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
+  - predicted-contradiction: `apps/integration/src/slack-fake-server.test.ts::a poll searches Slack for the messages written by the user id that the workspace's auth.test names` — asserts: the recorded queries contain exactly `from:<@U0000>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
+  - predicted-contradiction: `apps/integration/src/slack-fake-server.test.ts::when the Slack fake is started with another own Slack user id, the poll searches for the messages written by that id` — asserts: the recorded queries contain exactly `from:<@U0999>` — retired-by: "the same lookback bounds the mention and own-message searches with `after:`"
+- [ ] Two messages from the same user in one poll cause one `users.info` call (backlog: apps/backend/src/slack-poll.ts:44 The Slack poll asks `users.info` for every message on every poll)
+- [ ] Messages from two different users in one poll cause one `users.info` call each
+- [ ] A second poll in the same backend asks `users.info` about no user the first poll already named
+- [ ] A workspace poll calls `auth.test` once (backlog: apps/backend/src/slack-poll.ts:44 … and `auth.test` three times)
+- [ ] A Slack conversation with three messages from someone else shows one triage card, carrying the newest of them
+- [ ] Two Slack conversations with messages from someone else show one triage card each
+- [ ] A Slack conversation whose newest message the user wrote shows no triage card
+- [ ] A thread reply and a top-level message in the same channel show as two triage cards, the thread being its own conversation
+- [ ] A verdict on a Slack card's message clears the card
+- [ ] A Slack message newer than the card's verdict brings the conversation's card back, carrying the newer message
+- [ ] A failed Slack workspace poll logs the workspace's team id and the error (backlog: apps/backend/src/slack-poll.ts:150 A failed Slack poll is swallowed with no log)
+- [ ] A successful Slack workspace poll logs no error
+- [ ] After a failed poll the Slack source chip shows the failure's reason
+- [ ] After a failed poll is followed by a successful one the Slack source chip shows no failure reason
+- [ ] After a restart the Slack workspaces show their names and links before the first polling interval has passed (backlog: apps/backend/src/app.ts:723 Each Slack workspace's name, URL and last poll live only in memory)
+- [ ] A Telegram message from a chat with a bot user is stored with the chat marked as a bot
+- [ ] A Telegram message from a chat with a person is stored with the chat not marked as a bot
+- [ ] A Telegram bot chat shows no triage card
+- [ ] A Telegram bot chat's sender is not a contact on the People tab
+- [ ] A Telegram bot chat makes no waiting-on entry
+- [ ] A Telegram bot chat with unconfirmed messages is a digest in the triage queue with the bot's name as title, channel `telegram` and the count of unconfirmed messages
+- [ ] A Telegram bot chat whose messages are all confirmed is not a digest
+- [ ] The triage run writes a Telegram bot digest's summary lines from its messages' text, with the call's spend logged
+- [ ] The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
+- [ ] Confirming a Telegram bot digest marks its messages handled, so the digest leaves the triage queue
+- [ ] A bot message arriving after a confirm opens a fresh digest counting only the new message
+- [ ] A Telegram message with a photo and no text is stored with text `[photo]`
+  - predicted-contradiction: `apps/backend/src/telegram-message-mapping.test.ts::drops a message with no text, such as a photo sent alone, so the mapping returns nothing for it` — asserts: a message with empty text and `MessageMediaPhoto` maps to nothing — retired-by: "a message with no text but a photo … is stored with text `[photo]`"
+- [ ] A Telegram message with a video and no text is stored with text `[video]`
+- [ ] A Telegram message with a voice note and no text is stored with text `[voice note]`
+- [ ] A Telegram message with an audio file that is not a voice note and no text is stored with text `[audio]`
+- [ ] A Telegram message with a document and no text is stored with text `[document]`
+- [ ] A Telegram message with a sticker and no text is stored with text `[sticker]`
+- [ ] A Telegram photo with a caption is stored with text `[photo] <caption>`
+- [ ] A Telegram message with neither text nor media is still not stored
+- [ ] The backend started by `main.ts` (as `scripts/demo.sh` runs it) with a scripted Slack whose `is:dm` matches span two pages and a scripted Telegram with a bot chat shows one card per Slack conversation, a Telegram bot digest and a `[photo]` placeholder; a screenshot of the Triage tab is taken against `scripts/demo.sh`
+- [ ] Check on the real accounts as in the 2026-11-10 trial (a copy of the store, the read-only capping Slack proxy, the capped Telegram wrapper), then restart the backend with `MY_LIFE_SLACK_POLLING` removed from `.env`

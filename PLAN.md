@@ -25,7 +25,7 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 Read `CLAUDE.md` first. **Phases 2b through 6a are delivered** (`DONE.md`). Phase 6a added Telegram: `chat-message-store.ts` (one store for every chat channel, keyed by channel, chat id and message id; verdicts append-only), `telegram-message-mapping.ts` (gramjs messages to chat messages; chat ids are marked peer ids), `gramjs-telegram-client.ts` (the port over gramjs, whose real `TelegramClient` type-checks against it in `telegram-connection.ts`), `start-telegram.ts` (unread dialogs, then live messages, started by `createApp` when given a client), `/chat-messages`, `/chat-verdicts`, `/chat-sends`, Telegram in `/now`, `/people`, `/waiting-on` and the triage queue, and the scripted client in `scripted-telegram-client.ts` that tests and `scripts/demo.sh` use.
 
-**Next:** Phase 6b (WhatsApp, below). Also open: the user's one-time Telegram login and `docs/phase-6a-walkthrough.md`; the Phase 5 walk-through against the real Slack workspaces (the user approves reading them first); the dated entries in `BACKLOG.md`.
+**Next:** Phase 6a.1 (the trial fixes, below), then Phase 6b (WhatsApp). Also open: the user's one-time Telegram login and `docs/phase-6a-walkthrough.md`; the Phase 5 walk-through against the real Slack workspaces (the user approves reading them first); the dated entries in `BACKLOG.md`.
 
 **Waiting on the user**, not built:
 
@@ -51,6 +51,18 @@ What the supervision showed in Phases 3 to 6a — check these every cycle:
 - **Restart items get greened on the narrowest case:** the task restart passed with one confirmed proposal while done, snooze and waiting-on were not stored.
 - **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
 - **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
+
+## Phase 6a.1 — fixes from the real-account trial (2026-11-10)
+
+Outcome: the Slack poll sees the user's active DMs in both workspaces within Slack's rate limits and makes one triage card per conversation; Telegram bot chats are summarized instead of carded; Telegram media shows as a placeholder. Found by the controlled trial on the real accounts (user decisions 2026-11-10).
+
+- **Slack DMs found through search, not by walking every DM.** PS Mutuus lists 275 DMs over 2 pages of `conversations.list` and the poll read page 1 only; none of the 18 DMs active that week were on it. Each poll searches `search.messages?query=is:dm after:<date>&sort=timestamp&sort_dir=desc` (verified read-only on the real workspaces 2026-11-10: every match is in an `im` or `mpim` channel), following `paging` pages until a page's matches are older than the newest stored message, and calls `conversations.history` only for the conversations those matches name, from the newest stored message in each (`oldest=`). `conversations.list` is no longer called by the poll. The fake refuses `is:dm` searches without `after:` and serves matches across pages.
+- **First poll looks back 7 days** (config, `MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS`): with nothing stored for a conversation, `conversations.history` gets `oldest=` now minus the lookback, so the first poll does not read years of history; the same lookback bounds the mention and own-message searches with `after:`.
+- **`users.info` is called once per user per workspace,** not once per message: names are cached for the life of the backend.
+- **One Slack triage card per conversation** (as Telegram does per chat): the card shows the conversation's newest message from someone else, and no card shows when the user wrote the conversation's newest message (a thread counts as its own conversation). Ignore, task and reply act on that newest message; a verdict clears the card until a newer message arrives.
+- **Telegram bots are summarized, not carded** (user, 2026-11-10: "bots still provide information… I would expect to receive a summary"). Messages from a chat with a bot user (gramjs `Api.User.bot`) are stored with the chat marked as a bot; bot chats make no triage card, no contact on the People tab and no waiting-on entry. Each bot chat with messages the user has not confirmed is a digest in the triage queue's `digests` (title the bot's name, channel `telegram`, count), whose summary lines the triage run writes with the existing digest summarizer (`prompts/digest-summary-v1.md`, Haiku, spend logged, within the ceiling) from the messages' text; confirm marks those messages handled.
+- **Telegram media shows as a placeholder** (user, 2026-11-10: "show them"): a message with no text but a photo, video, voice note, audio, document or sticker is stored with text `[photo]`, `[video]`, `[voice note]`, `[audio]`, `[document]` or `[sticker]`; a captioned one keeps its caption after the placeholder (`[photo] caption`).
+- **Check on the real accounts** before the phase closes, as in the 2026-11-10 trial: a copy of the store, the read-only capping Slack proxy, the capped Telegram wrapper; then restart the backend with `MY_LIFE_SLACK_POLLING` removed from `.env`.
 
 ## Phase 6b — WhatsApp
 
