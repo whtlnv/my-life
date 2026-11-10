@@ -691,6 +691,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       stale: !isAccountFresh({ email: poll.teamId, lastReportedAt, pollingIntervalInMilliseconds }, clock),
     };
   };
+  const describeTelegramConnection = () => {
+    if (options.telegramClient === undefined) {
+      return { loggedIn: false };
+    }
+    const lastMessage = chatMessageStore.listMessages().at(-1);
+    return lastMessage === undefined
+      ? { loggedIn: true, lastStartedAt: startedAt }
+      : { loggedIn: true, lastMessageAt: lastMessage.time };
+  };
   const fetchSlackWorkspaceIdentity = async (userToken: string): Promise<{ name: string; url: string | undefined }> => {
     const slackResponse = await fetchSlack('/auth.test', userToken);
     const { team, url } = (await slackResponse.json()) as { team: string; url?: string };
@@ -2154,15 +2163,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         overdueOpenTasks().length,
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
       slackWorkspaces: slackWorkspacePolls?.map(describeSlackWorkspaceFreshness),
-      telegram:
-        options.telegramClient === undefined
-          ? { loggedIn: false }
-          : {
-              loggedIn: true,
-              ...(chatMessageStore.listMessages().length === 0
-                ? { lastStartedAt: startedAt }
-                : { lastMessageAt: chatMessageStore.listMessages().at(-1)?.time }),
-            },
+      telegram: describeTelegramConnection(),
     });
   });
   const dashboardDirectory = options.dashboardDirectory;
