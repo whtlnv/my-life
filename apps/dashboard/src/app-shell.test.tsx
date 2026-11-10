@@ -164,4 +164,15 @@ describe('AppShell', () => {
     expect(item).toHaveClass('is-stale');
     expect(item).toHaveTextContent(/stale/i);
   });
+
+  it('shows a Telegram source chip saying telegram not logged in when there is no session', async () => {
+    answerGetNowWith({ ...nowWithNoAccountsAndNothingToTriage, telegram: { loggedIn: false } });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText(/telegram not logged in/i)).closest('li');
+    expect(item).not.toBeNull();
+    expect(item).toHaveClass('chip-source');
+  });
 });

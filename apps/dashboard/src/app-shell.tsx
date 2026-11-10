@@ -20,6 +20,7 @@ interface ShellStatus {
   accounts: AccountReport[];
   sources: SourceStatus[];
   slackWorkspaces?: SlackWorkspaceStatus[];
+  telegram?: { loggedIn: boolean };
 }
 
 interface SlackWorkspaceStatus {
@@ -190,6 +191,11 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
             {(status.slackWorkspaces ?? []).map((workspace) => (
               <SlackWorkspaceChip key={workspace.teamId} workspace={workspace} />
             ))}
+            {status.telegram?.loggedIn === false && (
+              <li className="chip chip-source">
+                <span className="chip-account">telegram not logged in</span>
+              </li>
+            )}
           </ul>
         </div>
       </header>

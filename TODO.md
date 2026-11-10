@@ -62,7 +62,7 @@
 - [x] Everyone else keeps a sender with at least one message that is not automated mail (backlog: apps/backend/src/app.ts:1839 The People lists ignore the extraction's organization name and include automated senders)
 - [x] Slack sends made before the backend restarts are listed by `GET /slack-sends` after it (backlog: apps/backend/src/app.ts:659 Slack sends are listed from memory)
 - [x] A VIP Telegram contact is listed under VIP and not under Everyone else
-- [ ] The header's Telegram chip says "telegram not logged in" when there is no session
+- [x] The header's Telegram chip says "telegram not logged in" when there is no session
 - [ ] The header's Telegram chip shows connected with the time of the last message received
 - [ ] The header's Telegram chip shows connected with the time of the last successful start when no message has arrived since
 - [ ] The header's Telegram chip shows stale when the client has not been connected for more than twice its expected interval
