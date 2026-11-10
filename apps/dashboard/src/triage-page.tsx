@@ -770,15 +770,22 @@ function SlackSection({
   );
 }
 
-function ChatCard({ item }: { item: ChatTriageItem }) {
+const chatDecisionKeys: Record<string, string> = { i: 'ignore', t: 'task' };
+
+function postChatVerdict(item: ChatTriageItem, key: string) {
+  const decision = chatDecisionKeys[key];
+  if (decision === undefined) return;
   const { channel, chatId, messageId } = item;
+  return postJson('/chat-verdicts', { channel, chatId, messageId, decision });
+}
+
+function ChatCard({ item }: { item: ChatTriageItem }) {
   return (
     <article
       className="card"
       tabIndex={0}
       onKeyDown={(event) => {
-        if (event.key === 'i') void postJson('/chat-verdicts', { channel, chatId, messageId, decision: 'ignore' });
-        if (event.key === 't') void postJson('/chat-verdicts', { channel, chatId, messageId, decision: 'task' });
+        void postChatVerdict(item, event.key);
       }}
     >
       <div className="card-head">
