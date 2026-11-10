@@ -533,4 +533,37 @@ describe('createApp chat messages', () => {
       { displayName: 'Luis', waitingSince: '2026-11-02T15:00:00.000Z' },
     ]);
   });
+
+  it('reports Telegram at GET /now as not logged in when the app runs with Telegram off', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+
+    const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
+
+    expect(telegram).toEqual({ loggedIn: false });
+  });
+
+  it('reports Telegram at GET /now as connected with the time of the last message received when Telegram is on', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const { telegramClient } = recordingTelegramClient();
+    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+
+    const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
+
+    expect(telegram).toEqual({ loggedIn: true, lastMessageAt: '2026-11-09T16:00:00.000Z' });
+  });
+
+  it('reports Telegram at GET /now as connected with the time of the last start when Telegram is on and no Telegram message has arrived yet', async () => {
+    const { telegramClient } = recordingTelegramClient();
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      telegramClient,
+      clock: { now: () => new Date('2026-11-10T06:15:00.000Z') },
+    });
+
+    const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
+
+    expect(telegram).toEqual({ loggedIn: true, lastStartedAt: '2026-11-10T06:15:00.000Z' });
+  });
 });

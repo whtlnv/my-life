@@ -429,6 +429,7 @@ function listImportedContacts(imports: ImportedContactRecord[]): ListedContact[]
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
+  const startedAt = clock.now().toISOString();
   const configuredPollingIntervalsInMilliseconds = {
     ...pollingIntervalsInMilliseconds,
     mail: options.gmailPollingIntervalInMilliseconds ?? pollingIntervalsInMilliseconds.mail,
@@ -2153,6 +2154,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         overdueOpenTasks().length,
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
       slackWorkspaces: slackWorkspacePolls?.map(describeSlackWorkspaceFreshness),
+      telegram:
+        options.telegramClient === undefined
+          ? { loggedIn: false }
+          : {
+              loggedIn: true,
+              ...(chatMessageStore.listMessages().length === 0
+                ? { lastStartedAt: startedAt }
+                : { lastMessageAt: chatMessageStore.listMessages().at(-1)?.time }),
+            },
     });
   });
   const dashboardDirectory = options.dashboardDirectory;
