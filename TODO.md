@@ -72,6 +72,7 @@
 - [x] The gramjs-backed adapter hands each new message gramjs delivers to the `onMessage` handler, mapped, and drops what the mapping drops
 - [x] The Telegram mapping's chat id is Telegram's marked peer id (`utils.getPeerId`): a user's id, a basic group's negative id, a supergroup's `-100…` id — built from real gramjs `Api.User`, `Api.Chat` and `Api.Channel` objects
 - [ ] The gramjs-backed adapter sends to a chat by its marked peer id as a number entity (a big integer), never as a string gramjs would read as a username
+  - predicted-contradiction: `apps/backend/src/gramjs-telegram-client.test.ts::createGramjsTelegramClient sends text to a chat and returns the id of the message gramjs reports sent` — asserts: gramjs `sendMessage` receives the chat id as the string entity `'42'` — retired-by: "as a number entity (a big integer), never as a string gramjs would read as a username"
 - [ ] The gramjs-backed adapter's own account with no last name is named by the first name alone, with no "undefined"
 - [ ] The gramjs-backed adapter reads at most 20 recent messages per dialog (gramjs's `limit`), and only for dialogs with unread messages
 - [ ] The gramjs-backed adapter registers its new-message handler with gramjs's `NewMessage` event builder, and takes the chat and sender from `getChat()` and `getSender()` when the message does not carry them
