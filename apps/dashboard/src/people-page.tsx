@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { businessTimeZone } from './app-shell';
+import { channelLabels } from './triage-page';
 
 interface SlackHandle {
   workspaceTeamId: string;
@@ -15,6 +16,7 @@ interface PersonRow {
   reasons?: string[];
   channel?: string;
   slackHandles?: SlackHandle[];
+  telegramHandles?: { userId: string }[];
 }
 
 interface PeopleLists {
@@ -38,8 +40,16 @@ interface SlackTimelineMessage {
   permalink: string;
 }
 
+interface TelegramTimelineMessage {
+  channel: 'telegram';
+  messageId: string;
+  text: string;
+  time: string;
+  link: string;
+}
+
 interface Timeline {
-  messages: (TimelineMessage | SlackTimelineMessage)[];
+  messages: (TimelineMessage | SlackTimelineMessage | TelegramTimelineMessage)[];
 }
 
 interface SelectedTimeline extends Timeline {
@@ -162,7 +172,21 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
     <div className="card">
       <ul aria-label={`Timeline of ${timeline.displayName}`} className="rows">
         {timeline.messages.map((message) =>
-          'permalink' in message ? (
+          'channel' in message ? (
+            <li key={message.messageId} className="row">
+              <div className="row-main">
+                <p className="row-title">{message.text}</p>
+                <p className="row-detail">
+                  <time dateTime={message.time}>{weekdayAndTimeInBusinessZone(message.time)}</time>
+                </p>
+              </div>
+              <div className="row-side">
+                <a href={message.link} target="_blank" rel="noreferrer">
+                  Open in {channelLabels[message.channel]} ↗
+                </a>
+              </div>
+            </li>
+          ) : 'permalink' in message ? (
             <TimelineRow
               key={message.timestamp}
               href={message.permalink}
@@ -215,6 +239,11 @@ export const PeoplePage = () => {
   };
 
   const showTimeline = (person: PersonRow) => {
+    const [telegramHandle] = person.telegramHandles ?? [];
+    if (telegramHandle) {
+      loadTimeline(`/telegram-contacts/${telegramHandle.userId}/timeline`, person.displayName);
+      return;
+    }
     const [slackHandle] = person.slackHandles ?? [];
     if (slackHandle) {
       loadTimeline(`/slack-contacts/${slackHandle.workspaceTeamId}/${slackHandle.userId}/timeline`, person.displayName);

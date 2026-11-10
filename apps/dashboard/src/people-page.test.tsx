@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { routes } from './app-shell';
 import { answerGetsWith } from './fetch-stub.test-support';
 import { PeoplePage } from './people-page';
+import { channelLabels } from './triage-page';
 
 const answerGetPeopleWith = (body: unknown) => {
   answerGetsWith({ '/people': body });
@@ -344,5 +345,49 @@ describe('PeoplePage', () => {
     const row = within(await screen.findByRole('list', { name: 'Timeline of Ana' })).getByRole('listitem');
     expect(row).toHaveTextContent('Acme Studio');
     expect(row).not.toHaveTextContent('T0001');
+  });
+
+  it("opens a Telegram contact's timeline from GET /telegram-contacts/:userId/timeline, each message with its text, time and an Open in Telegram link to its chat", async () => {
+    const message = {
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Valeria Núñez',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Valeria Núñez',
+      text: '¿Revisaste la propuesta?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+      link: 'https://web.telegram.org/k/#7001',
+    };
+    answerGetsWith({
+      '/people': {
+        vip: [],
+        urgent: [],
+        everyoneElse: [
+          {
+            channel: 'telegram',
+            displayName: 'Valeria Núñez',
+            telegramHandles: [{ userId: '7001' }],
+            lastMessageAt: message.time,
+          },
+        ],
+      },
+      '/telegram-contacts/7001/timeline': { messages: [message] },
+    });
+
+    render(<PeoplePage />);
+
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    await userEvent.click(await within(everyoneElseList).findByRole('button', { name: 'Valeria Núñez' }));
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Valeria Núñez' });
+    const row = within(timelineList).getByRole('listitem');
+    expect(row).toHaveTextContent(message.text);
+    expect(row.querySelector('time')).toHaveAttribute('datetime', message.time);
+    expect(row).toHaveTextContent('Mon 10:00');
+    expect(within(row).getByRole('link', { name: new RegExp(`Open in ${channelLabels.telegram}`) })).toHaveAttribute(
+      'href',
+      message.link,
+    );
   });
 });

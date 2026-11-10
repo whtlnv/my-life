@@ -98,7 +98,7 @@
 - [x] A private-chat Telegram card names the person once; a group card names the group and the sender
 - [x] `GET /people` Telegram rows carry the time of the contact's last message, so the row shows "last message …"
 - [x] `DELETE /telegram-contacts/:userId/marks/vip` and `DELETE /slack-contacts/:workspaceTeamId/:userId/marks/vip` remove the VIP mark
-- [ ] Clicking a Telegram contact on the People tab shows their Telegram timeline, each message with its text, time and an "Open in Telegram" link
+- [x] Clicking a Telegram contact on the People tab shows their Telegram timeline, each message with its text, time and an "Open in Telegram" link
 - [ ] Mark VIP and Remove VIP on a Telegram row mark and unmark that Telegram contact
 - [ ] Mark VIP and Remove VIP on a Slack row mark and unmark that Slack contact
 - [ ] A VIP contact listed under Urgent offers Remove VIP, not Mark VIP
