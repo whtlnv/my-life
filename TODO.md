@@ -31,7 +31,7 @@
 - [x] Messages from two different users in one poll cause one `users.info` call each
   - already delivered by 26e1929 (the name cache is keyed by user id); passed on first run, see MISMATCHES.md (supervisor, 2026-11-10)
 - [x] A second poll in the same backend asks `users.info` about no user the first poll already named
-- [ ] A workspace poll calls `auth.test` once (backlog: apps/backend/src/slack-poll.ts:44 … and `auth.test` three times)
+- [x] A workspace poll calls `auth.test` once (backlog: apps/backend/src/slack-poll.ts:44 … and `auth.test` three times)
 - [ ] A Slack conversation with three messages from someone else shows one triage card, carrying the newest of them
 - [ ] Two Slack conversations with messages from someone else show one triage card each
 - [ ] A Slack conversation whose newest message the user wrote shows no triage card

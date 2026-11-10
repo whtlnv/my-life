@@ -161,8 +161,7 @@ async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Pr
   return matches.map((match) => match.channel);
 }
 
-async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
-  const ownSlackUserId = await fetchOwnSlackUserId(input);
+async function pollDirectMessages(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const directMessageChannels = await searchedDirectMessageChannels(input);
   const firstPollLookbackStart = String(firstPollLookbackStartInMilliseconds(input) / 1000);
   for (const channel of directMessageChannels) {
@@ -179,8 +178,7 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void>
   }
 }
 
-async function pollMentions(input: PollSlackWorkspaceInput): Promise<void> {
-  const ownSlackUserId = await fetchOwnSlackUserId(input);
+async function pollMentions(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const mentionsQuery = `<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
   const matches = await searchSlackMessages<SlackMessage & { channel: { id: string } }>(input, mentionsQuery);
   for (const match of matches) {
@@ -193,8 +191,7 @@ function threadTimestampOf(match: { permalink?: string }): string | null {
   return match.permalink === undefined ? null : new URL(match.permalink).searchParams.get('thread_ts');
 }
 
-async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promise<void> {
-  const ownSlackUserId = await fetchOwnSlackUserId(input);
+async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const ownMessagesQuery = `from:<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
   const matches = await searchSlackMessages<{ permalink?: string; channel: { id: string } }>(input, ownMessagesQuery);
   for (const match of matches) {
@@ -216,9 +213,10 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
 
 export async function pollSlackWorkspace(pollInput: PollSlackWorkspaceInput): Promise<void> {
   const input = { ...pollInput, displayNamesByUserId: pollInput.displayNamesByUserId ?? new Map<string, string>() };
-  await pollDirectMessages(input);
-  await pollMentions(input);
-  await pollThreadsTheUserWroteIn(input);
+  const ownSlackUserId = await fetchOwnSlackUserId(input);
+  await pollDirectMessages(input, ownSlackUserId);
+  await pollMentions(input, ownSlackUserId);
+  await pollThreadsTheUserWroteIn(input, ownSlackUserId);
 }
 
 type PollSlackWorkspacesInput = Omit<PollSlackWorkspaceInput, 'workspace'> & { workspaces: SlackWorkspace[] };

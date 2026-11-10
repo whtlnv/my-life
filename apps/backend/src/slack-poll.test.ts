@@ -393,6 +393,14 @@ describe('pollSlackWorkspace', () => {
     expect(usersInfoRequests.map((url) => url.searchParams.get('user'))).toEqual(['U0001']);
   });
 
+  it('asks auth.test once per workspace poll', async () => {
+    const slack = scriptedSlack();
+
+    await pollWith(slack);
+
+    expect(slack.requests.filter((url) => url.pathname === '/auth.test')).toHaveLength(1);
+  });
+
   it("finds mentions by searching for the user's own Slack id and stores each match under its channel", async () => {
     const mention = {
       user: 'U0002',
