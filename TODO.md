@@ -27,7 +27,7 @@
 - [x] When Telegram starts, a dialog with no unread messages is not read
 - [x] A Telegram message that arrives after start is stored when it arrives
 - [x] The login flow asks for the phone number, then the code Telegram sent, and writes the session file
-- [ ] The login flow asks for the 2FA password before writing the session file when the account has one
+- [x] The login flow asks for the 2FA password before writing the session file when the account has one
 - [ ] The login flow does not ask for a 2FA password when the account has none
 - [ ] `GET /chat-messages` lists the stored chat messages
 - [ ] `POST /chat-verdicts` with ignore stores the verdict on that chat message

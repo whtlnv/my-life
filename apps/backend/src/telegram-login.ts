@@ -3,6 +3,7 @@ import { writeFileSync } from 'node:fs';
 export interface TelegramLoginPrompts {
   phoneNumber: () => Promise<string>;
   phoneCode: () => Promise<string>;
+  password: () => Promise<string>;
 }
 
 interface TelegramLoginClient {
@@ -17,6 +18,7 @@ export async function runTelegramLogin(options: {
   const session = await options.client.signIn({
     phoneNumber: () => options.ask('Phone number: '),
     phoneCode: () => options.ask('Code Telegram sent: '),
+    password: () => options.ask('Two-step verification password: '),
   });
   writeFileSync(options.sessionPath, session);
 }
