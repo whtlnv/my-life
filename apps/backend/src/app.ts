@@ -974,7 +974,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   function slackMessagePermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }) {
     const workspaceUrl = slackWorkspacePollFor(message.workspaceTeamId)?.url;
     if (workspaceUrl === undefined) {
-      return slackPermalink(message);
+      return slackClientLink(message);
     }
     return `${workspaceUrl}archives/${message.conversationId}/p${message.timestamp.replace('.', '')}`;
   }
@@ -2064,7 +2064,7 @@ function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string;
   return `slack:${workspaceTeamId}/${userId}`;
 }
 
-function slackPermalink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }): string {
+function slackClientLink(message: { workspaceTeamId: string; conversationId: string; timestamp: string }): string {
   return `https://app.slack.com/client/${message.workspaceTeamId}/${message.conversationId}/p${message.timestamp.replace('.', '')}`;
 }
 
