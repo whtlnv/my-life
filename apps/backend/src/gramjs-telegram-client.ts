@@ -1,4 +1,5 @@
 import type { Api } from 'telegram';
+import { returnBigInt } from 'telegram/Helpers';
 
 import type { ChatMessage } from './chat-message-store';
 import { mapTelegramMessage } from './telegram-message-mapping';
@@ -6,7 +7,7 @@ import { mapTelegramMessage } from './telegram-message-mapping';
 type TelegramChat = Api.User | Api.Chat | Api.Channel;
 
 interface GramjsClient {
-  sendMessage: (entity: string, parameters: { message: string }) => Promise<{ id: number }>;
+  sendMessage: (entity: ReturnType<typeof returnBigInt>, parameters: { message: string }) => Promise<{ id: number }>;
   getMe: () => Promise<{ id: { toString: () => string }; firstName: string; lastName: string }>;
   getDialogs: () => Promise<{ entity: TelegramChat; unreadCount: number }[]>;
   getMessages: (entity: TelegramChat) => Promise<Api.Message[]>;
@@ -23,7 +24,7 @@ interface GramjsTelegramClient {
 export function createGramjsTelegramClient(gramjsClient: GramjsClient): GramjsTelegramClient {
   return {
     sendText: async (chatId, text) => {
-      const sent = await gramjsClient.sendMessage(chatId, { message: text });
+      const sent = await gramjsClient.sendMessage(returnBigInt(chatId), { message: text });
       return { messageId: String(sent.id) };
     },
     getOwnAccount: async () => {

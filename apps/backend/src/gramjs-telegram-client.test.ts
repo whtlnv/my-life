@@ -17,7 +17,7 @@ function stubGramjsClient(overrides: Partial<Parameters<typeof createGramjsTeleg
 }
 
 describe('createGramjsTelegramClient', () => {
-  it('sends text to a chat and returns the id of the message gramjs reports sent', async () => {
+  it('sends text to a chat by its marked peer id as a big-integer entity and returns the id of the message gramjs reports sent', async () => {
     const sentMessages: { entity: unknown; message: unknown }[] = [];
     const gramjsClient = stubGramjsClient({
       sendMessage: (entity, { message }) => {
@@ -27,9 +27,9 @@ describe('createGramjsTelegramClient', () => {
     });
     const client = createGramjsTelegramClient(gramjsClient);
 
-    const sent = await client.sendText('42', 'Sending it now');
+    const sent = await client.sendText('-100707070', 'Sending it now');
 
-    expect(sentMessages).toEqual([{ entity: '42', message: 'Sending it now' }]);
+    expect(sentMessages).toEqual([{ entity: returnBigInt('-100707070'), message: 'Sending it now' }]);
     expect(sent).toEqual({ messageId: '314' });
   });
 
