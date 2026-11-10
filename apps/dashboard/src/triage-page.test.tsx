@@ -2012,6 +2012,37 @@ describe('TriagePage', () => {
     expect(within(telegramCard).getByText(channelLabels.telegram)).toHaveClass('pill');
   });
 
+  it('puts Telegram cards under a Telegram section heading, each with an Open in Telegram link to its chat', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        {
+          channel: 'telegram',
+          chatId: '7001',
+          messageId: '42',
+          chatTitle: 'Familia Romero',
+          senderName: 'Lucía Romero',
+          text: '¿Vienes a cenar el sábado?',
+          time: '2026-11-09T16:00:00.000Z',
+          link: 'https://web.telegram.org/k/#7001',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const telegramSection = await screen.findByRole('region', { name: channelLabels.telegram });
+    expect(within(telegramSection).getByRole('heading', { name: channelLabels.telegram })).toBeInTheDocument();
+    const card = within(telegramSection).getByRole('article');
+    expect(within(card).getByRole('link', { name: new RegExp(`Open in ${channelLabels.telegram}`) })).toHaveAttribute(
+      'href',
+      'https://web.telegram.org/k/#7001',
+    );
+  });
+
   it('shows the message text on a Telegram triage card', async () => {
     answerGetTriageQueueWith({
       action: [],
@@ -2202,7 +2233,7 @@ describe('TriagePage', () => {
     ]);
   });
 
-  it("opens a composer when the reply key `r` is pressed on a Telegram card, saying the same send promise as the Slack composer", async () => {
+  it('opens a composer when the reply key `r` is pressed on a Telegram card, saying the same send promise as the Slack composer', async () => {
     answerGetTriageQueueWith({
       action: [],
       groups: [],
@@ -2239,7 +2270,8 @@ describe('TriagePage', () => {
     const slackCard = within(slackSection).getByRole('article');
     await user.click(slackCard);
     await user.keyboard('r');
-    const slackSendPromise = within(slackCard).getByRole('button', { name: 'Send' }).previousElementSibling?.textContent;
+    const slackSendPromise = within(slackCard).getByRole('button', { name: 'Send' }).previousElementSibling
+      ?.textContent;
 
     const telegramCard = (await screen.findByText('Familia Romero')).closest('article') as HTMLElement;
     await user.click(telegramCard);

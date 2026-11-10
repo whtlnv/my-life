@@ -78,6 +78,7 @@ interface ChatTriageItem {
   senderName: string;
   text: string;
   time: string;
+  link: string;
 }
 
 interface TriageQueueResponse {
@@ -841,6 +842,9 @@ function ChatCard({ item, onAccepted }: { item: ChatTriageItem; onAccepted: () =
         </div>
       )}
       <div className="card-foot">
+        <a href={item.link} target="_blank" rel="noreferrer">
+          Open in {channelLabels[item.channel]} ↗
+        </a>
         <span className="spacer" />
         <button
           type="button"
@@ -1001,15 +1005,20 @@ export function TriagePage() {
         ))}
       </section>
       {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
-      {queue.chatItems?.map((item) => (
-        <ChatCard
-          key={`${item.chatId}:${item.messageId}`}
-          item={item}
-          onAccepted={() => {
-            removeChatItem(item);
-          }}
-        />
-      ))}
+      {queue.chatItems !== undefined && (
+        <section aria-label={channelLabels.telegram} className="section">
+          <h2 className="section-title">{channelLabels.telegram}</h2>
+          {queue.chatItems.map((item) => (
+            <ChatCard
+              key={`${item.chatId}:${item.messageId}`}
+              item={item}
+              onAccepted={() => {
+                removeChatItem(item);
+              }}
+            />
+          ))}
+        </section>
+      )}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
