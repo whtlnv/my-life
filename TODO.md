@@ -82,7 +82,9 @@
 - [x] `GET /now` does not report Telegram as stale while the client has been disconnected for less than twice the 60 s check interval since it was last seen connected
 - [x] The Telegram chip's last-message time is the newest Telegram message someone else sent, not a reply the user sent or a message from another channel
 - [ ] The gramjs-backed adapter's sign-in passes the phone number, code and 2FA prompts to gramjs and returns the saved session string
+- [ ] `createApp` given a Telegram client starts it: the recent messages of its dialogs with unread messages and every new message it delivers are stored and listed at `GET /chat-messages` (scripted client)
+- [ ] `connectTelegram` builds gramjs's `TelegramClient` from the session file, the API id and the API hash, and gramjs's real `TelegramClient` type-checks as the adapter's gramjs client (a type-level test)
 - [ ] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
-- [ ] The shipped backend started with the Telegram API id, hash and a session file creates the gramjs-backed client and serves its stored messages at `GET /chat-messages`
+- [ ] The shipped `main.ts` connects Telegram and passes the gramjs-backed client to `createApp` when Telegram is on, and logs "telegram not logged in" and starts without it when it is off; the shipped backend without a session reports Telegram not logged in at `GET /now`
 - [ ] `scripts/demo.sh` starts the backend with a scripted Telegram client carrying a private chat from a VIP and a group with a question to the user, and the shipped dashboard shows both on the Triage tab
 - [ ] Screenshots of the Telegram triage cards, the People tab with a Telegram contact and the open composer over `scripts/demo.sh` are saved to `docs/screenshots/`
