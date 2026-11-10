@@ -143,6 +143,31 @@ describe('pollSlackWorkspace', () => {
     ]);
   });
 
+  it('stores a mention match the user sent themselves as sent by the user', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': (url) =>
+        url.searchParams.get('query') === `<@${ownSlackUserId}>`
+          ? {
+              ok: true,
+              messages: {
+                matches: [
+                  {
+                    user: ownSlackUserId,
+                    text: `Note to self <@${ownSlackUserId}>`,
+                    ts: '1762700100.000200',
+                    channel: { id: 'C0001' },
+                  },
+                ],
+              },
+            }
+          : { ok: true, messages: { matches: [] } },
+    });
+
+    const store = await pollWith(slack);
+
+    expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: ownSlackUserId, sentByUser: true })]);
+  });
+
   it("fetches replies only for threads the user wrote in, and stores each reply with its thread, marking the user's own as sent by them", async () => {
     const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
     const slack = scriptedSlack({
