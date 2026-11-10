@@ -26,4 +26,12 @@ describe('createScriptedTelegramClient', () => {
     expect(sent.messageId).toEqual(expect.any(String));
     expect(sent.messageId).not.toBe(questionFromAna.messageId);
   });
+
+  it('refuses a send to a chat it does not know', async () => {
+    const client = createScriptedTelegramClient({
+      dialogs: [{ chatId: '42', chatTitle: 'Ana López', unreadCount: 1, messages: [questionFromAna] }],
+    });
+
+    await expect(client.sendText('99', 'Hello?')).rejects.toThrow();
+  });
 });

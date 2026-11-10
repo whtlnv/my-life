@@ -16,7 +16,7 @@
 - [x] A Telegram service message (a member joined, a title changed) is dropped by the mapping
 - [x] A Telegram message with no text (a photo or sticker alone) is dropped by the mapping
 - [x] The scripted Telegram client accepts a send to a chat it knows and returns a new message id
-- [ ] The scripted Telegram client refuses a send to a chat it does not know
+- [x] The scripted Telegram client refuses a send to a chat it does not know
 - [ ] The scripted Telegram client refuses a send with empty text
 - [ ] Telegram is on when the API id, the API hash and a session file are all present
 - [ ] Telegram is off when the session file is missing, even with the API id and hash set

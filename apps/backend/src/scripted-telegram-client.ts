@@ -15,8 +15,13 @@ interface ScriptedTelegramClient {
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
 }
 
-export function createScriptedTelegramClient(_script: TelegramScript): ScriptedTelegramClient {
+export function createScriptedTelegramClient(script: TelegramScript): ScriptedTelegramClient {
   return {
-    sendText: () => Promise.resolve({ messageId: 'sent-1' }),
+    sendText: (chatId) => {
+      if (!script.dialogs.some((dialog) => dialog.chatId === chatId)) {
+        return Promise.reject(new Error(`Unknown Telegram chat ${chatId}`));
+      }
+      return Promise.resolve({ messageId: 'sent-1' });
+    },
   };
 }
