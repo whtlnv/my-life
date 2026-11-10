@@ -1863,13 +1863,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const peopleGroups = () => {
     const markedContactKeys = contactDetailsStore.markedEmails();
+    const isWrittenInPerson = (message: (typeof reportedMessages)[number]) =>
+      message.listId === undefined && !isDigestedCategory(latestProposalFor(proposals, message.id)?.category);
     const writesInPerson = (contact: { messageIds: string[] }) =>
-      reportedMessages.some(
-        (message) =>
-          contact.messageIds.includes(message.id) &&
-          message.listId === undefined &&
-          !isDigestedCategory(latestProposalFor(proposals, message.id)?.category),
-      );
+      reportedMessages.some((message) => contact.messageIds.includes(message.id) && isWrittenInPerson(message));
     const contacts = contactsByEmail(reportedSenders(), proposals).filter(writesInPerson);
     const alwaysMattersLineOfAccount = (accountEmail: string) => {
       const accountProfile = profileOfAccount(accountEmail);
