@@ -15,25 +15,22 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
-- **[apps/backend/src/app.ts:1761] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09)
+- **[apps/backend/src/app.ts:1997] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09)
   Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
   scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
   agent (Phase 4) needs ranking.
 
-- **[apps/backend/src/app.ts:243] _Handled for you_ lists automatic `keep` proposals, where nothing was done** (added: 2026-11-08)
+- **[apps/backend/src/app.ts:325] _Handled for you_ lists automatic `keep` proposals, where nothing was done** (added: 2026-11-08; location corrected 2026-11-09)
   `describeHandledForYou` keeps every `madeAutomatic` proposal made today, so an automatic category's `keep` shows in the
   strip and its Undo queues an `undo-automatic` command for a message that was never labeled or archived. List only the
   proposals that produced an archive command or a task. A digest's listed message ids are also overwritten by every
   `GET /triage-queue`, so a second open tab widens what the first tab's confirm reaches.
 
-- **[packages/domain/src/contact-urgency.ts:58] Urgency counts deadlines in messages that only mention a contact, and stops at the first reason** (added: 2026-11-08)
-  A contact's messages include every message that names them, so a deadline in Luis's message makes Sofía, merely
-  mentioned there, urgent for "deadline"; and `contactUrgency` returns one reason, so her own four-day-old unanswered
-  ask never shows. Count deadlines only from messages the contact sent or was asked in, and return every reason.
-- **[apps/backend/src/app.ts] The People lists show domains, not organization names, and include automated senders** (added: 2026-11-08)
-  `GET /people` gives a sender's domain (`psmutuus.com`) where the import or extraction has a name (Mutuus), and
-  Everyone else lists Sentry, AWS and newsletters beside people. Prefer the stored organization name, and leave out
-  senders whose messages are all automated mail, as `GET /waiting-on` does.
+- **[apps/backend/src/app.ts:1839] The People lists ignore the extraction's organization name and include automated senders** (added: 2026-11-08; rescoped 2026-11-09)
+  `GET /people` now prefers a stored contact's organization (the Google Contacts import) but still falls back to the sender's
+  domain (`psmutuus.com`) where only the extraction has a name (Mutuus), and Everyone else lists Sentry, AWS and newsletters
+  beside people. Fall back to the extraction's organization before the domain, and leave out senders whose messages are all
+  automated mail, as `GET /waiting-on` does.
 
 - **[apps/backend/src/main.ts:134] The agent's tools go to Claude with `strict: false`** (added: 2026-11-09)
   The agent tool schemas (`stringInputs` in `app.ts`) do not set `additionalProperties: false`, which strict tool use requires,
@@ -69,7 +66,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip` saves a `slack:<team>/<user>` key through `saveMark`, so
   `markedEmails()` returns keys that are not emails; the local in `GET /people` is renamed `markedContactKeys`, the store is
   not. Deferred because `contact-details-store.ts` sits outside 96c4939..HEAD.
-- **[apps/integration/src/slack-fake-server.test.ts:23] One 1285-line file of 53 tests mixes three subjects** (added: 2026-11-09)
+- **[apps/integration/src/slack-fake-server.test.ts:23] One 1284-line file of 52 tests mixes three subjects** (added: 2026-11-09; location corrected 2026-11-09)
   The fake's own answers, `pollSlackWorkspace` against the fake and the backend's Slack routes against the fake share one
   `describe`, so a reader of a failing route test scrolls past the fake's self-tests. Deferred because the split needs test
   files with no sibling source in `apps/integration`, against the project's co-location rule; decide the layout first.
@@ -88,7 +85,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `recordingAction` in `apps/backend/src/app.ts` reads only `record.outcome` and runs the tool itself, so `effects` looks
   like the list of actions to perform while nothing performs it. Deferred because `agent-action.test.ts` asserts the field
   in two tests, so dropping it changes the function's tested output; it is a `/test-quality` matter first.
-- **[apps/backend/src/app.ts:1628] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09)
+- **[apps/backend/src/app.ts:1813] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09)
   `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
   reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
   for them would look live and do nothing. Deferred because honoring them changes what `createApp` does with its options.
@@ -129,8 +126,8 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:426] `createApp` is one 1366-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09)
-  The file is 1877 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:422] `createApp` is one 1606-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09)
+  The file is 2126 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
@@ -143,7 +140,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Nothing in `apps/*` imports it (the backend tests stub `propose` inline), so it reads as a live Triage adapter while being dead.
   Deferred because deleting it deletes `scripted-triage.test.ts`, and a refactor pass never deletes a test; it is a
   `/test-quality` matter.
-- **[apps/backend/src/app.ts:348] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08)
+- **[apps/backend/src/app.ts:453] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09)
   `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
   the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
   same message id (the map keeps the last account, the store's `INSERT OR IGNORE` the first), so dropping either changes behavior.
