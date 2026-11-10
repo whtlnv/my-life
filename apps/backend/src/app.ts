@@ -765,6 +765,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { team, url } = (await slackResponse.json()) as { team: string; url?: string };
     return { name: team, url };
   };
+  const slackDisplayNamesByUserId = new Map<string, string>();
   app.post('/slack-poll', async (context) => {
     const succeededTeamIds = await pollSlackWorkspaces({
       fetch,
@@ -772,6 +773,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       workspaces: configuredSlackWorkspaces,
       store: slackMessageStore,
       clock,
+      displayNamesByUserId: slackDisplayNamesByUserId,
     });
     slackWorkspacePolls = await Promise.all(
       configuredSlackWorkspaces.map(async ({ teamId, userToken }) =>

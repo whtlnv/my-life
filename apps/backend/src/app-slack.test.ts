@@ -633,3 +633,64 @@ describe('createApp Slack sends', () => {
     ]);
   });
 });
+
+describe('createApp Slack polls', () => {
+  it('asks users.info on a second POST /slack-poll about no user the first poll already named', async () => {
+    const usersInfoRequests: string[] = [];
+    let historyRequestCount = 0;
+    const server: Server = createServer((request, response) => {
+      request.resume();
+      request.on('end', () => {
+        const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+        const answers: Record<string, () => unknown> = {
+          '/auth.test': () => ({ ok: true, user_id: 'UOWN', team: 'PS Mutuus' }),
+          '/search.messages': () =>
+            url.searchParams.get('query')?.startsWith('is:dm') === true
+              ? { ok: true, messages: { matches: [{ ts: '1762700000.000100', channel: { id: 'D0001' } }] } }
+              : { ok: true, messages: { matches: [] } },
+          '/conversations.history': () => {
+            historyRequestCount += 1;
+            return {
+              ok: true,
+              messages: [
+                {
+                  user: 'U0001',
+                  text: `Message ${String(historyRequestCount)}`,
+                  ts: `176270000${String(historyRequestCount)}.000100`,
+                },
+              ],
+            };
+          },
+          '/users.info': () => {
+            usersInfoRequests.push(String(url.searchParams.get('user')));
+            return { ok: true, user: { profile: { display_name: 'Ana' } } };
+          },
+        };
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(JSON.stringify(answers[url.pathname]?.() ?? { ok: false, error: 'unknown_method' }));
+      });
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    onTestFinished(
+      () =>
+        new Promise<void>((resolve) =>
+          server.close(() => {
+            resolve();
+          }),
+        ),
+    );
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      slackApiUrl: `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    });
+
+    await app.request('/slack-poll', { method: 'POST' });
+    await app.request('/slack-poll', { method: 'POST' });
+
+    expect(historyRequestCount).toBe(2);
+    expect(usersInfoRequests).toEqual(['U0001']);
+  });
+});

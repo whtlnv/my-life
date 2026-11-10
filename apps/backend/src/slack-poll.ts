@@ -215,7 +215,7 @@ async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput): Promis
 }
 
 export async function pollSlackWorkspace(pollInput: PollSlackWorkspaceInput): Promise<void> {
-  const input = { ...pollInput, displayNamesByUserId: new Map<string, string>() };
+  const input = { ...pollInput, displayNamesByUserId: pollInput.displayNamesByUserId ?? new Map<string, string>() };
   await pollDirectMessages(input);
   await pollMentions(input);
   await pollThreadsTheUserWroteIn(input);
