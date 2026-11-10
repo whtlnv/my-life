@@ -41,11 +41,7 @@ interface SlackMessage {
   ts: string;
 }
 
-async function searchSlackMessages<Match>(
-  input: PollSlackWorkspaceInput,
-  query: string,
-  page = 1,
-): Promise<Match[]> {
+async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string, page = 1): Promise<Match[]> {
   const pageParameter = page === 1 ? '' : `&page=${page}`;
   const { messages } = await callSlack<{ messages: { matches: Match[] } }>(
     input,
@@ -83,13 +79,19 @@ async function saveSlackMessage(
   });
 }
 
-function newestStoredTimestampIn(store: SlackMessageStore, conversationId: string): string | undefined {
-  return store
-    .listMessages()
-    .filter((message) => message.conversationId === conversationId)
+function newestTimestampOf(messages: { timestamp: string }[]): string | undefined {
+  return messages
     .map((message) => message.timestamp)
     .sort()
     .at(-1);
+}
+
+function newestStoredTimestampIn(store: SlackMessageStore, conversationId: string): string | undefined {
+  return newestTimestampOf(store.listMessages().filter((message) => message.conversationId === conversationId));
+}
+
+function newestStoredTimestampOverall(store: SlackMessageStore): string | undefined {
+  return newestTimestampOf(store.listMessages());
 }
 
 function oldestParameterAfter(newestStoredTimestamp: string | undefined): string {
@@ -98,35 +100,48 @@ function oldestParameterAfter(newestStoredTimestamp: string | undefined): string
 
 const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1000;
 
-async function searchedDirectMessageChannels(
-  input: PollSlackWorkspaceInput,
-  clock: { now: () => Date },
-): Promise<{ id: string }[]> {
-  const afterDate = new Date(clock.now().getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
-  const query = `is:dm after:${afterDate}`;
-  const matches = await searchSlackMessages<{ ts: string; channel: { id: string } }>(input, query);
-  const newestStoredTimestamp = input.store
-    .listMessages()
-    .map((message) => message.timestamp)
-    .sort()
-    .at(-1);
-  let page = 1;
-  let pageMatches = matches;
-  while (
+function isEntirelyNewerThan(pageMatches: { ts: string }[], newestStoredTimestamp: string | undefined): boolean {
+  return (
     newestStoredTimestamp !== undefined &&
     pageMatches.length > 0 &&
     pageMatches.every((match) => match.ts > newestStoredTimestamp)
-  ) {
+  );
+}
+
+interface DirectMessageMatch {
+  ts: string;
+  channel: { id: string };
+}
+
+async function searchPagesUntilCaughtUp(
+  input: PollSlackWorkspaceInput,
+  query: string,
+  newestStoredTimestamp: string | undefined,
+): Promise<DirectMessageMatch[]> {
+  const matches = await searchSlackMessages<DirectMessageMatch>(input, query);
+  let page = 1;
+  let pageMatches = matches;
+  while (isEntirelyNewerThan(pageMatches, newestStoredTimestamp)) {
     page += 1;
-    pageMatches = await searchSlackMessages<{ ts: string; channel: { id: string } }>(input, query, page);
+    pageMatches = await searchSlackMessages<DirectMessageMatch>(input, query, page);
     matches.push(...pageMatches);
   }
+  return matches;
+}
+
+function dateSevenDaysBefore(now: Date): string {
+  return new Date(now.getTime() - sevenDaysInMilliseconds).toISOString().slice(0, 10);
+}
+
+async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
+  const query = `is:dm after:${dateSevenDaysBefore(input.clock.now())}`;
+  const matches = await searchPagesUntilCaughtUp(input, query, newestStoredTimestampOverall(input.store));
   return matches.map((match) => match.channel);
 }
 
 async function pollDirectMessages(input: PollSlackWorkspaceInput): Promise<void> {
   const ownSlackUserId = await fetchOwnSlackUserId(input);
-  const directMessageChannels = await searchedDirectMessageChannels(input, input.clock);
+  const directMessageChannels = await searchedDirectMessageChannels(input);
   for (const channel of directMessageChannels) {
     const oldestParameter = oldestParameterAfter(newestStoredTimestampIn(input.store, channel.id));
     const { messages } = await callSlack<{ messages: SlackMessage[] }>(
