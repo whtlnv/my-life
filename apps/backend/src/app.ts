@@ -2035,38 +2035,63 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       telegramHandles: [{ userId: message.senderId }],
       lastMessageAt: message.time,
     });
+    // A contact's own messages plus the user's replies in the same chats, so a reply the user sent clears the wait.
     const urgentChatSender = <Contact extends object>(sender: {
-      threadId: string;
-      receivedAt: string;
-      sentByUser: boolean;
+      messages: { threadId: string; receivedAt: string; sentByUser: boolean }[];
       contactKey: string;
       contact: Contact;
     }): Array<Contact & { reasons: ReturnType<typeof contactUrgency>['reasons'] }> => {
       const { urgent, reasons } = contactUrgency({
-        messages: [{ threadId: sender.threadId, receivedAt: sender.receivedAt, sentByUser: sender.sentByUser }],
+        messages: sender.messages,
         vip: markedContactKeys.has(sender.contactKey),
         now: clock.now().toISOString(),
         settings: urgencySettings,
       });
       return urgent ? [{ ...sender.contact, reasons }] : [];
     };
-    const urgentSlackSenders = slackMessageStore.listMessages().flatMap((message) =>
-      urgentChatSender({
-        threadId: message.conversationId,
-        receivedAt: slackTimestampAsIso(message.timestamp),
-        sentByUser: message.sentByUser === true,
-        contactKey: slackSenderContactKey(message),
-        contact: slackSenderAsContact(message),
-      }),
+    const slackMessages = slackMessageStore.listMessages();
+    const urgentSlackSenders = newestSlackMessagePerSender(slackMessages.filter(isFromSomeoneElse)).flatMap(
+      (newest) => {
+        const contactKey = slackSenderContactKey(newest);
+        const conversationIds = new Set(
+          slackMessages
+            .filter((message) => slackSenderContactKey(message) === contactKey)
+            .map((message) => message.conversationId),
+        );
+        return urgentChatSender({
+          messages: slackMessages
+            .filter(
+              (message) =>
+                message.workspaceTeamId === newest.workspaceTeamId &&
+                conversationIds.has(message.conversationId) &&
+                (message.sentByUser === true || slackSenderContactKey(message) === contactKey),
+            )
+            .map((message) => ({
+              threadId: message.conversationId,
+              receivedAt: slackTimestampAsIso(message.timestamp),
+              sentByUser: message.sentByUser === true,
+            })),
+          contactKey,
+          contact: slackSenderAsContact(newest),
+        });
+      },
     );
-    const urgentTelegramSenders = newestMessagePerSender(chatMessageStore.listMessages()).flatMap((message) =>
-      urgentChatSender({
-        threadId: message.chatId,
-        receivedAt: message.time,
-        sentByUser: message.sentByUser === true,
-        contactKey: telegramContactKey(message.senderId),
-        contact: telegramSenderAsContact(message),
-      }),
+    const telegramMessages = chatMessageStore.listMessages();
+    const urgentTelegramSenders = newestMessagePerSender(telegramMessages.filter(isFromSomeoneElse)).flatMap(
+      (newest) => {
+        const chatIds = new Set(
+          telegramMessages.filter((message) => message.senderId === newest.senderId).map((message) => message.chatId),
+        );
+        return urgentChatSender({
+          messages: telegramMessages
+            .filter(
+              (message) => chatIds.has(message.chatId) && (message.sentByUser || message.senderId === newest.senderId),
+            )
+            .map((message) => ({ threadId: message.chatId, receivedAt: message.time, sentByUser: message.sentByUser })),
+          contactKey: telegramContactKey(newest.senderId),
+          contact: telegramSenderAsContact(newest),
+        });
+      },
     );
     const isFromMarkedTelegramSender = (message: { senderId: string }): boolean =>
       markedContactKeys.has(telegramContactKey(message.senderId));

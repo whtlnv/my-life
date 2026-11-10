@@ -591,6 +591,31 @@ describe('createApp chat messages', () => {
       expect.objectContaining({ telegramHandles: [{ userId: '7001' }], lastMessageAt: '2026-11-09T18:00:00.000Z' }),
     ]);
   });
+  it('leaves out of Urgent at GET /people a VIP Telegram contact the user has replied to in their chat since their message', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-02T17:00:00.000Z');
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '45',
+      senderId: '5550000',
+      senderName: 'Francisco Catalá',
+      text: 'Thursday works, see you then.',
+      time: '2026-11-02T18:00:00.000Z',
+      sentByUser: true,
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      clock: { now: () => new Date('2026-11-04T17:00:00.000Z') },
+    });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+
+    const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
+
+    expect(urgent).toEqual([]);
+  });
   it('leaves out of Urgent at GET /people a Telegram contact marked vip whose message has waited less than 1 business day for a reply', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-04T15:00:00.000Z');
