@@ -119,4 +119,20 @@ describe('chat message store', () => {
       rmSync(dirname(databasePath), { recursive: true, force: true });
     }
   });
+
+  it('lists a second verdict on the same chat message beside the first, not in its place', () => {
+    const databasePath = temporaryDatabasePath();
+    try {
+      const firstVerdict = { channel: 'telegram', chatId: '424242', messageId: '1017', decision: 'ignore' };
+      const secondVerdict = { channel: 'telegram', chatId: '424242', messageId: '1017', decision: 'task' };
+      const store = openChatMessageStore(databasePath);
+
+      store.saveVerdict(firstVerdict);
+      store.saveVerdict(secondVerdict);
+
+      expect(store.listVerdicts()).toEqual([firstVerdict, secondVerdict]);
+    } finally {
+      rmSync(dirname(databasePath), { recursive: true, force: true });
+    }
+  });
 });

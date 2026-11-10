@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-09 21:20 · `apps/backend/src/chat-message-store.test.ts::lists a second verdict on the same chat message beside the first, not in its place`
+- Behavior: A second verdict on the same chat message is listed beside the first, not in its place
+- Predicted: passes (read before running: `chat_message_verdicts` has no unique key and saves with a plain INSERT ordered by rowid)
+- Actual: passes
+- Type: passed unexpectedly
+- Resolution: The previous item's green step already made verdicts append-only; any rewrite that fails would test some other behavior, so the test stays as a pin on append-only verdicts and the item needs no green code.
+
 ## 2026-11-09 21:13 · `apps/backend/src/chat-message-store.test.ts::lists two messages with the same chat id and message id but different channels both`
 - Behavior: Two messages with the same chat id and message id but different channels are both listed
 - Predicted: pass. Commit 86c1e95 already made `saveMessage` skip a duplicate only when channel, chat id and message id all match
