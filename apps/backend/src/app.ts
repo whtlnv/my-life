@@ -710,7 +710,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     } else {
       telegramLastSeenConnectedAt = clock.now().toISOString();
     }
-    const lastMessage = chatMessageStore.listMessages().at(-1);
+    const lastMessage = chatMessageStore
+      .listMessages()
+      .filter((message) => message.channel === 'telegram' && !message.sentByUser)
+      .at(-1);
     return lastMessage === undefined
       ? { loggedIn: true, lastStartedAt: startedAt }
       : { loggedIn: true, lastMessageAt: lastMessage.time };

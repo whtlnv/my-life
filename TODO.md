@@ -80,7 +80,7 @@
 - [x] `GET /now` reports Telegram as stale when the client has been disconnected for more than twice the 60 s check interval
 - [x] The Telegram chip's tooltip says "last start" when its time is the last start and "last message" when it is the last message
 - [x] `GET /now` does not report Telegram as stale while the client has been disconnected for less than twice the 60 s check interval since it was last seen connected
-- [ ] The Telegram chip's last-message time is the newest Telegram message someone else sent, not a reply the user sent or a message from another channel
+- [x] The Telegram chip's last-message time is the newest Telegram message someone else sent, not a reply the user sent or a message from another channel
 - [ ] The gramjs-backed adapter's sign-in passes the phone number, code and 2FA prompts to gramjs and returns the saved session string
 - [ ] `scripts/telegram-login.sh` runs the login flow with the gramjs-backed adapter, asking on the terminal and writing the session file at the configured session path
 - [ ] The shipped backend started with the Telegram API id, hash and a session file creates the gramjs-backed client and serves its stored messages at `GET /chat-messages`

@@ -553,6 +553,40 @@ describe('createApp chat messages', () => {
     expect(telegram).toEqual({ loggedIn: true, lastMessageAt: '2026-11-09T16:00:00.000Z' });
   });
 
+  it('reports at GET /now the time of the newest Telegram message someone else sent, not a later reply the user sent or a later message from another channel', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const chatMessageStore = openChatMessageStore(databasePath);
+    chatMessageStore.saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '43',
+      senderId: '9000',
+      senderName: 'Francisco',
+      text: 'Thursday works.',
+      time: '2026-11-09T16:30:00.000Z',
+      sentByUser: true,
+    });
+    chatMessageStore.saveMessage({
+      channel: 'whatsapp',
+      chatId: '5215500000000',
+      chatTitle: 'Marta',
+      messageId: 'wa-1',
+      senderId: '5215500000000',
+      senderName: 'Marta',
+      text: 'Are you around?',
+      time: '2026-11-09T17:00:00.000Z',
+      sentByUser: false,
+    });
+    const { telegramClient } = recordingTelegramClient();
+    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+
+    const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
+
+    expect(telegram).toEqual({ loggedIn: true, lastMessageAt: '2026-11-09T16:00:00.000Z' });
+  });
+
   it('reports Telegram at GET /now as connected with the time of the last start when Telegram is on and no Telegram message has arrived yet', async () => {
     const { telegramClient } = recordingTelegramClient();
     const app = createApp({
