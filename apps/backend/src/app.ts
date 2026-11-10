@@ -961,7 +961,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         proposal: {
           title: String(message?.text),
           accountEmail: verdict.workspaceTeamId,
-          link: slackPermalink(verdict),
+          link: slackTriagePermalink(verdict),
         },
       });
     }

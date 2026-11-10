@@ -845,6 +845,35 @@ describe('Slack fake server', () => {
     }
   });
 
+  it("after a POST /slack-poll, the task that confirming act on a Slack item creates links to the message's permalink under the workspace URL its auth.test gives", async () => {
+    const slack = await startSlackFakeServer('direct-message', { workspaceUrl: 'https://acme-studio.slack.com/' });
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-09T16:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+      });
+      await backend.request('/slack-poll', { method: 'POST' });
+
+      await backend.request('/slack-verdicts', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          workspaceTeamId: 'T0001',
+          conversationId: 'D0001',
+          timestamp: '1762700000.000100',
+          decision: 'act',
+        }),
+      });
+      const { tasks } = (await (await backend.request('/tasks')).json()) as { tasks: { link: string }[] };
+
+      expect(tasks.map((task) => task.link)).toEqual(['https://acme-studio.slack.com/archives/D0001/p1762700000000100']);
+    } finally {
+      await slack.close();
+    }
+  });
+
   it('after a POST /slack-poll, a Slack triage item links to the workspace URL its auth.test gives followed by archives/<conversation>/p<timestamp without the dot>', async () => {
     const slack = await startSlackFakeServer('direct-message', { workspaceUrl: 'https://acme-studio.slack.com/' });
     try {
