@@ -437,6 +437,17 @@ function newestMessagePerSender(messages: ChatMessage[]): ChatMessage[] {
   return [...newestBySender.values()];
 }
 
+function newestSlackMessagePerSender(messages: SlackMessage[]): SlackMessage[] {
+  const newestBySender = new Map<string, SlackMessage>();
+  for (const message of messages) {
+    const senderKey = slackContactKey({ workspaceTeamId: message.workspaceTeamId, userId: message.senderUserId });
+    const newest = newestBySender.get(senderKey);
+    if (newest === undefined || Number(message.timestamp) > Number(newest.timestamp))
+      newestBySender.set(senderKey, message);
+  }
+  return [...newestBySender.values()];
+}
+
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
@@ -2056,7 +2067,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .filter((contact) => !isVip(contact) && !isUrgent(contact))
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
-        ...slackMessageStore.listMessages().filter(isFromSomeoneElse).map(slackSenderAsContact),
+        ...newestSlackMessagePerSender(slackMessageStore.listMessages().filter(isFromSomeoneElse)).map(slackSenderAsContact),
         ...newestMessagePerSender(
           chatMessageStore
             .listMessages()

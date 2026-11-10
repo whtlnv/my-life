@@ -322,6 +322,32 @@ describe('createApp Slack messages', () => {
       }),
     ]);
   });
+  it('lists a Slack contact with several messages once at GET /people, with the time of their newest message as lastMessageAt', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackMessageStore = openSlackMessageStore(databasePath);
+    const fromAna = {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+    } as const;
+    slackMessageStore.saveMessage({ ...fromAna, text: 'Signed it, thanks.', timestamp: '1762707200.000100' });
+    slackMessageStore.saveMessage({
+      ...fromAna,
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([
+      expect.objectContaining({
+        slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }],
+        lastMessageAt: '2025-11-09T16:53:20.000Z',
+      }),
+    ]);
+  });
   it("leaves out of GET /people the user's own Slack identity, whose sent messages are stored", async () => {
     const databasePath = temporaryDatabasePath();
     const slackMessageStore = openSlackMessageStore(databasePath);
