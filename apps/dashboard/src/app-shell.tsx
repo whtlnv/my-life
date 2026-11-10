@@ -20,7 +20,8 @@ interface ShellStatus {
   accounts: AccountReport[];
   sources: SourceStatus[];
   slackWorkspaces?: SlackWorkspaceStatus[];
-  telegram?: { loggedIn: false } | { loggedIn: true; lastMessageAt: string };
+  telegram?:
+    { loggedIn: false } | { loggedIn: true; lastMessageAt: string } | { loggedIn: true; lastStartedAt: string };
 }
 
 interface SlackWorkspaceStatus {
@@ -132,7 +133,9 @@ function TelegramConnectedChip({ lastMessageAt }: { lastMessageAt: string }) {
 
 function TelegramChip({ telegram }: { telegram: NonNullable<ShellStatus['telegram']> }) {
   return telegram.loggedIn ? (
-    <TelegramConnectedChip lastMessageAt={telegram.lastMessageAt} />
+    <TelegramConnectedChip
+      lastMessageAt={'lastMessageAt' in telegram ? telegram.lastMessageAt : telegram.lastStartedAt}
+    />
   ) : (
     <TelegramNotLoggedInChip />
   );

@@ -189,4 +189,18 @@ describe('AppShell', () => {
     expect(item).toHaveAttribute('title', expect.stringContaining(timeInBusinessZone(lastMessageAt)));
     expect(item).not.toHaveTextContent(/not logged in|stale/i);
   });
+
+  it('shows a connected Telegram source chip with the time of the last successful start when no message has arrived since', async () => {
+    const lastStartedAt = '2026-11-10T06:15:00.000Z';
+    answerGetNowWith({ ...nowWithNoAccountsAndNothingToTriage, telegram: { loggedIn: true, lastStartedAt } });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText(/telegram/i)).closest('li');
+    expect(item).not.toBeNull();
+    expect(item).toHaveClass('is-fresh');
+    expect(item).toHaveAttribute('title', expect.stringContaining(timeInBusinessZone(lastStartedAt)));
+    expect(item).not.toHaveTextContent(/not logged in|stale/i);
+  });
 });

@@ -64,7 +64,7 @@
 - [x] A VIP Telegram contact is listed under VIP and not under Everyone else
 - [x] The header's Telegram chip says "telegram not logged in" when there is no session
 - [x] The header's Telegram chip shows connected with the time of the last message received
-- [ ] The header's Telegram chip shows connected with the time of the last successful start when no message has arrived since
+- [x] The header's Telegram chip shows connected with the time of the last successful start when no message has arrived since
 - [ ] The header's Telegram chip shows stale when the client has not been connected for more than twice its expected interval
 - [ ] The gramjs-backed Telegram adapter sends text to a chat and returns the id of the message gramjs reports sent (tested over a stub of the gramjs client's methods, never the network)
 - [ ] The gramjs-backed adapter's own account is the id and full name gramjs's `getMe` reports
