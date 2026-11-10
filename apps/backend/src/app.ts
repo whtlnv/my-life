@@ -66,6 +66,7 @@ import { openSlackMessageStore, type SlackMessage, type SlackVerdict } from './s
 import { pollSlackWorkspaces } from './slack-poll';
 import { openSlackSendStore } from './slack-send-store';
 import { openSpendStore } from './spend-store';
+import { startTelegram, type TelegramStartClient } from './start-telegram';
 import { openTaskEventStore } from './task-event-store';
 import {
   businessTimeZone,
@@ -128,7 +129,7 @@ type TriageRequest = ReportedMessage & {
   threadState?: string | undefined;
 };
 
-interface TelegramSender {
+interface TelegramSender extends Partial<TelegramStartClient> {
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
   getOwnAccount?: () => Promise<{ id: string; name: string }>;
   isConnected?: () => boolean;
@@ -458,6 +459,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const taskEventStore = openTaskEventStore(databasePath);
   const slackMessageStore = openSlackMessageStore(databasePath);
   const chatMessageStore = openChatMessageStore(databasePath);
+  const { listDialogs, onMessage } = options.telegramClient ?? {};
+  if (listDialogs !== undefined && onMessage !== undefined) {
+    startTelegram({ client: { listDialogs, onMessage }, store: chatMessageStore }).catch((error: unknown) => {
+      console.error('telegram start failed', error);
+    });
+  }
   // Messages reported before this process started are reloaded, so a restart never strands a message untriaged.
   const storedMessages = reportedMessageStore.loadReportedMessages();
   const reportedMessages: ReportedMessage[] = storedMessages;
@@ -2021,10 +2028,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
-        ...chatMessageStore
-          .listMessages()
-          .filter(isFromMarkedTelegramSender)
-          .map(telegramSenderAsContact),
+        ...chatMessageStore.listMessages().filter(isFromMarkedTelegramSender).map(telegramSenderAsContact),
       ],
       everyoneElse: [
         ...contacts

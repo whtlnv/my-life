@@ -5,11 +5,13 @@ interface TelegramDialog {
   messages: ChatMessage[];
 }
 
+export interface TelegramStartClient {
+  listDialogs: () => Promise<TelegramDialog[]>;
+  onMessage: (handler: (message: ChatMessage) => void) => void;
+}
+
 interface StartTelegramDependencies {
-  client: {
-    listDialogs: () => Promise<TelegramDialog[]>;
-    onMessage: (handler: (message: ChatMessage) => void) => void;
-  };
+  client: TelegramStartClient;
   store: { saveMessage: (message: ChatMessage) => void };
 }
 

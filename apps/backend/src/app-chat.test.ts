@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from './app';
 import { budgetReviewReport, getJson, postJson, temporaryDatabasePath } from './app.test-support';
@@ -123,7 +123,7 @@ describe('createApp chat messages', () => {
     ]);
   });
 
-  it('stores a reply sent at POST /chat-sends with the chat title of the chat\'s stored messages and the user\'s own Telegram id and name', async () => {
+  it("stores a reply sent at POST /chat-sends with the chat title of the chat's stored messages and the user's own Telegram id and name", async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({
       channel: 'telegram',
@@ -256,7 +256,7 @@ describe('createApp chat messages', () => {
     ]);
   });
 
-  it('leaves out of GET /triage-queue a Telegram chat whose newest message is the user\'s', async () => {
+  it("leaves out of GET /triage-queue a Telegram chat whose newest message is the user's", async () => {
     const databasePath = temporaryDatabasePath();
     const store = openChatMessageStore(databasePath);
     store.saveMessage({
@@ -475,7 +475,7 @@ describe('createApp chat messages', () => {
 
     expect(urgent).toEqual([]);
   });
-  it('lists at GET /waiting-on, on channel telegram and waiting since its time, the sender of a Telegram chat whose newest message is not the user\'s', async () => {
+  it("lists at GET /waiting-on, on channel telegram and waiting since its time, the sender of a Telegram chat whose newest message is not the user's", async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
     const app = createApp({ allowedEmails: [], databasePath });
@@ -491,7 +491,7 @@ describe('createApp chat messages', () => {
     ]);
   });
 
-  it('leaves out of GET /waiting-on a Telegram chat whose newest message is the user\'s', async () => {
+  it("leaves out of GET /waiting-on a Telegram chat whose newest message is the user's", async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T15:00:00.000Z');
     openChatMessageStore(databasePath).saveMessage({
@@ -634,5 +634,40 @@ describe('createApp chat messages', () => {
     const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
 
     expect(telegram).toEqual({ loggedIn: true, lastStartedAt: '2026-11-10T06:15:00.000Z' });
+  });
+});
+
+describe('createApp Telegram start', () => {
+  it('starts a Telegram client it is given: the recent messages of its unread dialogs, then every new message, are listed at GET /chat-messages', async () => {
+    const unreadMessage = {
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Can we move our call to Thursday?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+    };
+    const newMessage = {
+      ...unreadMessage,
+      messageId: '43',
+      text: 'Or Friday morning?',
+      time: '2026-11-09T16:05:00.000Z',
+    };
+    const telegramClient = createScriptedTelegramClient({
+      dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [unreadMessage] }],
+    });
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath(), telegramClient });
+
+    await vi.waitFor(async () => {
+      const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+      expect(messages).toEqual([unreadMessage]);
+    });
+    telegramClient.receive(newMessage);
+
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+    expect(messages).toEqual([unreadMessage, newMessage]);
   });
 });
