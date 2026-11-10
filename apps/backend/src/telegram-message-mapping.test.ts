@@ -136,4 +136,24 @@ describe('Telegram message mapping', () => {
       sentByUser: false,
     });
   });
+
+  it('drops a post in a broadcast channel, so the mapping returns nothing for it', () => {
+    const channel = new Api.Channel({
+      id: returnBigInt(808080),
+      title: 'Noticias fintech',
+      photo: new Api.ChatPhotoEmpty(),
+      date: Date.parse('2026-01-01T00:00:00.000Z') / 1000,
+      broadcast: true,
+    });
+    const message = new Api.Message({
+      id: 3001,
+      peerId: new Api.PeerChannel({ channelId: returnBigInt(808080) }),
+      date: Date.parse('2026-11-09T20:00:00.000Z') / 1000,
+      message: 'Nueva regulación de la CNBV',
+      out: false,
+      post: true,
+    });
+
+    expect(mapTelegramMessage({ message, chat: channel, sender: luis })).toBeUndefined();
+  });
 });
