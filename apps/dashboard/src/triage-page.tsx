@@ -770,6 +770,19 @@ function SlackSection({
   );
 }
 
+function ChatCard({ item }: { item: ChatTriageItem }) {
+  return (
+    <article className="card">
+      <div className="card-head">
+        <span className="card-who">{item.chatTitle}</span>
+        <span>{item.senderName}</span>
+        <span className="pill pill-muted">{timeInBusinessZone(item.time)}</span>
+        <span className="pill">{channelLabels[item.channel]}</span>
+      </div>
+    </article>
+  );
+}
+
 function Legend() {
   return (
     <p className="legend" aria-label="Keys">
@@ -892,14 +905,7 @@ export function TriagePage() {
       </section>
       {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
       {queue.chatItems?.map((item) => (
-        <article key={`${item.chatId}:${item.messageId}`} className="card">
-          <div className="card-head">
-            <span className="card-who">{item.chatTitle}</span>
-            <span>{item.senderName}</span>
-            <span className="pill pill-muted">{timeInBusinessZone(item.time)}</span>
-            <span className="pill">{channelLabels[item.channel]}</span>
-          </div>
-        </article>
+        <ChatCard key={`${item.chatId}:${item.messageId}`} item={item} />
       ))}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
