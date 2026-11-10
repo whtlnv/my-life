@@ -428,6 +428,15 @@ function listImportedContacts(imports: ImportedContactRecord[]): ListedContact[]
   }, []);
 }
 
+function newestMessagePerSender(messages: ChatMessage[]): ChatMessage[] {
+  const newestBySender = new Map<string, ChatMessage>();
+  for (const message of messages) {
+    const newest = newestBySender.get(message.senderId);
+    if (newest === undefined || message.time > newest.time) newestBySender.set(message.senderId, message);
+  }
+  return [...newestBySender.values()];
+}
+
 // The HTTP app, built without a port so tests call it directly through `app.request`.
 export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const clock = options.clock ?? systemClock;
@@ -2048,18 +2057,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           .sort((first, second) => mostRecentMessageTime(second) - mostRecentMessageTime(first))
           .map(withOrganizationAndLastMessage),
         ...slackMessageStore.listMessages().filter(isFromSomeoneElse).map(slackSenderAsContact),
-        ...[
-          ...chatMessageStore
+        ...newestMessagePerSender(
+          chatMessageStore
             .listMessages()
             .filter(isFromSomeoneElse)
-            .filter((message) => !isFromMarkedTelegramSender(message))
-            .reduce((newestBySender, message) => {
-              const newest = newestBySender.get(message.senderId);
-              if (newest === undefined || message.time > newest.time) newestBySender.set(message.senderId, message);
-              return newestBySender;
-            }, new Map<string, ChatMessage>())
-            .values(),
-        ].map(telegramSenderAsContact),
+            .filter((message) => !isFromMarkedTelegramSender(message)),
+        ).map(telegramSenderAsContact),
       ],
     };
   };
