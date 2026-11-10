@@ -64,7 +64,7 @@ describe('Telegram message mapping', () => {
 
     const mapped = mapTelegramMessage({ message, chat: marta, sender: marta });
 
-    expect({ chatTitle: mapped.chatTitle, senderName: mapped.senderName }).toEqual({
+    expect({ chatTitle: mapped?.chatTitle, senderName: mapped?.senderName }).toEqual({
       chatTitle: 'Marta',
       senderName: 'Marta',
     });
@@ -82,7 +82,7 @@ describe('Telegram message mapping', () => {
 
     const mapped = mapTelegramMessage({ message, chat: ghost, sender: ghost });
 
-    expect({ chatTitle: mapped.chatTitle, senderName: mapped.senderName }).toEqual({
+    expect({ chatTitle: mapped?.chatTitle, senderName: mapped?.senderName }).toEqual({
       chatTitle: 'ghost_courier',
       senderName: 'ghost_courier',
     });
@@ -100,7 +100,7 @@ describe('Telegram message mapping', () => {
 
     const mapped = mapTelegramMessage({ message, chat: nameless, sender: nameless });
 
-    expect({ chatTitle: mapped.chatTitle, senderName: mapped.senderName }).toEqual({
+    expect({ chatTitle: mapped?.chatTitle, senderName: mapped?.senderName }).toEqual({
       chatTitle: '717171',
       senderName: '717171',
     });

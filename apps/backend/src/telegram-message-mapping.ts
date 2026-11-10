@@ -11,19 +11,13 @@ function isBroadcastChannel(chat: Api.User | Api.Chat | Api.Channel): boolean {
   return 'broadcast' in chat && Boolean(chat.broadcast);
 }
 
-type TelegramMessageContext<TChat, TMessage = Api.Message> = { message: TMessage; chat: TChat; sender: Api.User };
+type TelegramMessageContext = {
+  message: Api.Message | Api.MessageService;
+  chat: Api.User | Api.Chat | Api.Channel;
+  sender: Api.User;
+};
 
-export function mapTelegramMessage(context: TelegramMessageContext<Api.User | Api.Chat>): ChatMessage;
-export function mapTelegramMessage(context: TelegramMessageContext<Api.Channel>): ChatMessage | undefined;
-export function mapTelegramMessage(
-  context: TelegramMessageContext<Api.User | Api.Chat | Api.Channel, Api.MessageService>,
-): undefined;
-export function mapTelegramMessage({
-  message,
-  chat,
-  sender,
-}: TelegramMessageContext<Api.User | Api.Chat | Api.Channel, Api.Message | Api.MessageService>):
-  ChatMessage | undefined {
+export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {
   if (message.className === 'MessageService' || isBroadcastChannel(chat) || !message.message) {
     return undefined;
   }
