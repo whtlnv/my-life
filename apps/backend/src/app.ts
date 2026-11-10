@@ -592,6 +592,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
   const slackApiUrl = options.slackApiUrl ?? '';
+  const fetchSlack = (path: string, userToken: string, jsonBody?: unknown) => {
+    const authorization = { Authorization: `Bearer ${userToken}` };
+    return fetch(
+      `${slackApiUrl}${path}`,
+      jsonBody === undefined
+        ? { headers: authorization }
+        : {
+            method: 'POST',
+            headers: { ...authorization, 'Content-Type': 'application/json' },
+            body: JSON.stringify(jsonBody),
+          },
+    );
+  };
   interface SlackWorkspacePoll {
     teamId: string;
     name?: string;
@@ -613,9 +626,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     };
   };
   const fetchSlackWorkspaceIdentity = async (userToken: string): Promise<{ name: string; url: string | undefined }> => {
-    const slackResponse = await fetch(`${slackApiUrl}/auth.test`, {
-      headers: { Authorization: `Bearer ${userToken}` },
-    });
+    const slackResponse = await fetchSlack('/auth.test', userToken);
     const { team, url } = (await slackResponse.json()) as { team: string; url?: string };
     return { name: team, url };
   };
@@ -655,20 +666,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const slackUserTokenFor = (workspaceTeamId: string): string =>
     configuredSlackWorkspaces.find(({ teamId }) => teamId === workspaceTeamId)?.userToken ?? '';
   const postSlackMessage = async (send: SlackSendRequest): Promise<SlackPostMessageResult> => {
-    const slackResponse = await fetch(`${slackApiUrl}/chat.postMessage`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${slackUserTokenFor(send.workspaceTeamId)}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ channel: send.conversationId, thread_ts: send.threadTimestamp, text: send.text }),
+    const slackResponse = await fetchSlack('/chat.postMessage', slackUserTokenFor(send.workspaceTeamId), {
+      channel: send.conversationId,
+      thread_ts: send.threadTimestamp,
+      text: send.text,
     });
     return (await slackResponse.json()) as SlackPostMessageResult;
   };
   const fetchOwnSlackUserId = async (workspaceTeamId: string): Promise<string> => {
-    const slackResponse = await fetch(`${slackApiUrl}/auth.test`, {
-      headers: { Authorization: `Bearer ${slackUserTokenFor(workspaceTeamId)}` },
-    });
+    const slackResponse = await fetchSlack('/auth.test', slackUserTokenFor(workspaceTeamId));
     const { user_id: ownSlackUserId } = (await slackResponse.json()) as { user_id: string };
     return ownSlackUserId;
   };
