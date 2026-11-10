@@ -1137,23 +1137,27 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   function displaySlackMentions(text: string, slackUserNames: Map<string, string | null | undefined>) {
     return text.replace(/<@(\w+)>/g, (_mention, userId: string) => `@${slackUserNames.get(userId) ?? userId}`);
   }
+  function newestMessagePerSlackConversation<
+    Message extends { workspaceTeamId: string; conversationId: string; timestamp: string },
+  >(messages: Message[]): Message[] {
+    const newestByConversation = new Map<string, Message>();
+    for (const message of messages) {
+      const conversationKey = `${message.workspaceTeamId}/${message.conversationId}`;
+      const newest = newestByConversation.get(conversationKey);
+      if (newest === undefined || message.timestamp > newest.timestamp)
+        newestByConversation.set(conversationKey, message);
+    }
+    return [...newestByConversation.values()];
+  }
   function describeSlackItems() {
     const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));
     const messages = slackMessageStore.listMessages();
     const slackUserNames = new Map(messages.map((message) => [message.senderUserId, message.senderName]));
-    return [
-      ...messages
+    return newestMessagePerSlackConversation(
+      messages
         .filter((message) => message.sentByUser !== true)
-        .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message)))
-        .reduce((newestByConversation, message) => {
-          const conversationKey = `${message.workspaceTeamId}/${message.conversationId}`;
-          const newest = newestByConversation.get(conversationKey);
-          if (newest === undefined || message.timestamp > newest.timestamp)
-            newestByConversation.set(conversationKey, message);
-          return newestByConversation;
-        }, new Map<string, (typeof messages)[number]>())
-        .values(),
-    ].map((message) => ({
+        .filter((message) => !decidedSlackMessageKeys.has(slackMessageKey(message))),
+    ).map((message) => ({
       ...message,
       text: displaySlackMentions(message.text, slackUserNames),
       workspaceName: slackWorkspacePollFor(message.workspaceTeamId)?.name,
