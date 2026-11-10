@@ -537,6 +537,37 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+  it('lists once under Urgent at GET /people, with the reason "VIP waiting" once, a Telegram contact marked vip with two messages waiting more than 1 business day in two chats', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-02T17:00:00.000Z');
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '-9001',
+      chatTitle: 'Board',
+      messageId: '43',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: 'Francisco, can you share the deck here?',
+      time: '2026-11-02T18:00:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      clock: { now: () => new Date('2026-11-04T19:00:00.000Z') },
+    });
+    await app.request('/telegram-contacts/7001/marks/vip', { method: 'PUT' });
+
+    const { urgent } = await getJson<{ urgent: unknown[] }>(app, '/people');
+
+    expect(urgent).toEqual([
+      expect.objectContaining({
+        channel: 'telegram',
+        telegramHandles: [{ userId: '7001' }],
+        reasons: ['VIP waiting'],
+      }),
+    ]);
+  });
   it('leaves out of Urgent at GET /people a Telegram contact marked vip whose message has waited less than 1 business day for a reply', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-04T15:00:00.000Z');

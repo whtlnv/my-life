@@ -2055,7 +2055,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         contact: slackSenderAsContact(message),
       }),
     );
-    const urgentTelegramSenders = chatMessageStore.listMessages().flatMap((message) =>
+    const urgentTelegramSenders = newestMessagePerSender(chatMessageStore.listMessages()).flatMap((message) =>
       urgentChatSender({
         threadId: message.chatId,
         receivedAt: message.time,
