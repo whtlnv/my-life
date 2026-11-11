@@ -461,6 +461,15 @@ describe('pollSlackWorkspace', () => {
     }
   });
 
+  it('asks every search for 100 matches a page, the most Slack gives, so a busy week of DMs takes few requests', async () => {
+    const slack = scriptedSlack();
+
+    await pollWith(slack);
+
+    const searchRequests = slack.requests.filter((url) => url.pathname === '/search.messages');
+    expect(searchRequests.map((url) => url.searchParams.get('count'))).toEqual(searchRequests.map(() => '100'));
+  });
+
   it('stores a mention match the user sent themselves as sent by the user', async () => {
     const slack = scriptedSlack({
       '/search.messages': (url) =>
