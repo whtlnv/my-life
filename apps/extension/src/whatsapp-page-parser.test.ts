@@ -29,4 +29,20 @@ describe('parseWhatsappChatList', () => {
       ].map(([title, lastMessageAt]) => ({ title, unreadCount: 0, lastMessageAt })),
     );
   });
+
+  it("reads a row's unread count from the number its unread badge's label starts with, and 0 for a row with no badge", () => {
+    const row = (title: string, badge: string): string =>
+      `<div role="row"><div data-testid="cell-frame-title"><span title="${title}"></span></div>` +
+      `<div data-testid="chat-list-timestamp">9:41 am</div>` +
+      `<div data-testid="cell-frame-secondary"><div role="gridcell" aria-colindex="1"><span>${badge}</span></div></div></div>`;
+    const document = new DOMParser().parseFromString(
+      `<div id="pane-side">${row('Ana', '<span aria-label="12 unread messages"><span>12</span></span>')}${row('Luis', '')}</div>`,
+      'text/html',
+    );
+
+    expect(parseWhatsappChatList(document).map(({ title, unreadCount }) => ({ title, unreadCount }))).toEqual([
+      { title: 'Ana', unreadCount: 12 },
+      { title: 'Luis', unreadCount: 0 },
+    ]);
+  });
 });
