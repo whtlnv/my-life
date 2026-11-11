@@ -786,7 +786,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const { name } = context.req.param();
     const messages = chatMessageStore
       .listMessages()
-      .filter((message) => message.channel === 'whatsapp' && message.senderId === name);
+      .filter((message) => message.channel === 'whatsapp' && message.senderId === name)
+      .sort((first, second) => second.time.localeCompare(first.time))
+      .map((message) => ({ ...message, link: chatLink(message.channel, message.chatId) }));
     return context.json({ messages });
   });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];

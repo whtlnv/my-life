@@ -1174,6 +1174,35 @@ describe('createApp chat messages', () => {
       expect.objectContaining({ channel: 'whatsapp', text: 'Can we move the call to tomorrow?' }),
     ]);
   });
+  it('lists a WhatsApp contact timeline at GET /whatsapp-contacts/:name/timeline newest first, each message with a link to WhatsApp', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    const fromAna = (id: string, sentAt: string, text: string) => ({
+      id,
+      sender: 'Ana',
+      sentAt,
+      text,
+      sentByUser: false,
+    });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '9:45 am' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          fromAna('3EB0A1B2C3D4E5F8', '2026-11-10T09:41:00-06:00', 'Hola'),
+          fromAna('3EB0A1B2C3D4E5F9', '2026-11-10T09:45:00-06:00', '¿Mañana?'),
+        ],
+      },
+    });
+
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/whatsapp-contacts/Ana/timeline');
+
+    expect(messages).toEqual([
+      expect.objectContaining({ text: '¿Mañana?', link: 'https://web.whatsapp.com/' }),
+      expect.objectContaining({ text: 'Hola', link: 'https://web.whatsapp.com/' }),
+    ]);
+  });
+
   it('stores a WhatsApp message time in UTC, as every other chat message is, so times from different channels order correctly', async () => {
     const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
     await postJson(app, '/chat-messages', {
