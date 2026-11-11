@@ -225,50 +225,39 @@ describe('createApp chat messages', () => {
     });
   });
 
-  it('reports WhatsApp at GET /now as not stale when the last report arrived one second ago', async () => {
+  it.each([
+    {
+      reportedTo: 'not stale when the last report arrived one second ago',
+      nowAfterReport: '2026-11-10T15:10:01.000Z',
+      reportInterval: undefined,
+      stale: false,
+    },
+    {
+      reportedTo: 'stale when the last report arrived an hour ago',
+      nowAfterReport: '2026-11-10T16:10:00.000Z',
+      reportInterval: undefined,
+      stale: true,
+    },
+    {
+      reportedTo: 'fresh an hour after the last report when the configured report interval is an hour',
+      nowAfterReport: '2026-11-10T16:10:00.000Z',
+      reportInterval: 3_600_000,
+      stale: false,
+    },
+  ])('reports WhatsApp at GET /now as $reportedTo', async ({ nowAfterReport, reportInterval, stale }) => {
     let currentTime = new Date('2026-11-10T15:10:00.000Z');
     const app = createApp({
       allowedEmails: [],
       databasePath: temporaryDatabasePath(),
       clock: { now: () => currentTime },
+      ...(reportInterval === undefined ? {} : { whatsappReportIntervalInMilliseconds: reportInterval }),
     });
     await postJson(app, '/chat-messages', goodWhatsappReport);
-    currentTime = new Date('2026-11-10T15:10:01.000Z');
+    currentTime = new Date(nowAfterReport);
 
     const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
 
-    expect(whatsapp).toMatchObject({ lastReportedAt: '2026-11-10T15:10:00.000Z', stale: false });
-  });
-
-  it('reports WhatsApp at GET /now as stale when the last report arrived an hour ago', async () => {
-    let currentTime = new Date('2026-11-10T15:10:00.000Z');
-    const app = createApp({
-      allowedEmails: [],
-      databasePath: temporaryDatabasePath(),
-      clock: { now: () => currentTime },
-    });
-    await postJson(app, '/chat-messages', goodWhatsappReport);
-    currentTime = new Date('2026-11-10T16:10:00.000Z');
-
-    const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
-
-    expect(whatsapp).toMatchObject({ lastReportedAt: '2026-11-10T15:10:00.000Z', stale: true });
-  });
-
-  it('reports WhatsApp at GET /now as fresh an hour after the last report when the configured report interval is an hour', async () => {
-    let currentTime = new Date('2026-11-10T15:10:00.000Z');
-    const app = createApp({
-      allowedEmails: [],
-      databasePath: temporaryDatabasePath(),
-      clock: { now: () => currentTime },
-      whatsappReportIntervalInMilliseconds: 3_600_000,
-    });
-    await postJson(app, '/chat-messages', goodWhatsappReport);
-    currentTime = new Date('2026-11-10T16:10:00.000Z');
-
-    const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
-
-    expect(whatsapp).toMatchObject({ lastReportedAt: '2026-11-10T15:10:00.000Z', stale: false });
+    expect(whatsapp).toMatchObject({ lastReportedAt: '2026-11-10T15:10:00.000Z', stale });
   });
 
   it('stores an ignore verdict on that chat message at POST /chat-verdicts', async () => {
