@@ -2175,7 +2175,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       lastMessageAt: slackTimestampAsIso(message.timestamp),
     });
     const isFromSomeoneElse = (message: { sentByUser?: boolean }): boolean => message.sentByUser !== true;
-    const telegramSenderAsContact = (message: ChatMessage) =>
+    const chatSenderAsContact = (message: ChatMessage) =>
       message.channel === 'whatsapp'
         ? {
             channel: 'whatsapp',
@@ -2243,7 +2243,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
             )
             .map((message) => ({ threadId: message.chatId, receivedAt: message.time, sentByUser: message.sentByUser })),
           contactKey: telegramContactKey(newest.senderId),
-          contact: telegramSenderAsContact(newest),
+          contact: chatSenderAsContact(newest),
         });
       },
     );
@@ -2255,7 +2255,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
-        ...newestMessagePerSender(telegramMessages.filter(isFromMarkedTelegramSender)).map(telegramSenderAsContact),
+        ...newestMessagePerSender(telegramMessages.filter(isFromMarkedTelegramSender)).map(chatSenderAsContact),
         ...newestSlackMessagePerSender(slackMessages.filter(isFromMarkedSlackSender)).map(slackSenderAsContact),
       ],
       everyoneElse: [
@@ -2270,7 +2270,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           telegramMessages
             .filter(isFromSomeoneElse)
             .filter((message) => !message.chatIsBot && !isFromMarkedTelegramSender(message)),
-        ).map(telegramSenderAsContact),
+        ).map(chatSenderAsContact),
       ],
     };
   };
