@@ -1,3 +1,62 @@
+- [x] 2026-11-11 · A WhatsApp report (channel `whatsapp`, a chat list with title, unread count and last message time, and the open chat's messages with id, sender, time, text and sent-by-user) passes the shared contract schema
+- [x] 2026-11-11 · A WhatsApp report whose message has no id fails the shared contract schema
+- [x] 2026-11-11 · The chat-list and open-chat fixtures in `apps/extension/src/` are trimmed from the user's masked WhatsApp Web structure (captured 2026-11-10 to `/private/tmp/claude/claude-501/-Users-whtlnv-Developer-my-life/cb52751b-a334-4beb-a785-46665f75178f/scratchpad/whatsapp-skeleton-1.html` and `-2.html`, every text, name and number masked; message ids replaced by made-up ones; keep the masked `a`/`0` text or replace it with invented text, never real): a one-to-one chat and a group with the user's own messages
+- [x] 2026-11-11 · Parsing the saved chat-list fixture yields each chat's title (`[data-testid="cell-frame-title"] span[title]`), unread count and last message time (`[data-testid="chat-list-timestamp"]`)
+- [x] 2026-11-11 · A chat-list row's unread count is the number in its unread badge (a span in `cell-frame-secondary` whose `aria-label` starts with that number); a row with no badge parses with an unread count of 0
+- [x] 2026-11-11 · Parsing the saved open-chat fixture yields each message's id (the row's `data-id`, a bare hex id on the real page) and text (`[data-testid="selectable-text"]`); rows WhatsApp has not rendered (no `msg-container`) are skipped
+- [x] 2026-11-11 · A message row whose `msg-meta` holds a delivery-status icon (a labelled span, the ✓✓) parses as sent by the user; on the real page `data-id` no longer starts with `true_`/`false_`
+- [x] 2026-11-11 · A message row whose `msg-meta` has no delivery-status icon parses as not sent by the user
+- [x] 2026-11-11 · A message's sender name and time are read from its `data-pre-plain-text` attribute (`[9:41 pm, 30/9/2026] Name: `: 12-hour time, day/month/year as on the user's page; an unsaved group member's name is their phone number)
+- [x] 2026-11-11 · Two messages in the open-chat fixture dated on different days parse to their own dates
+- [x] 2026-11-11 · When no chat is open (no chat pane), the parse succeeds with the chat list and no messages
+- [x] 2026-11-11 · When the chat pane is present but the message-row selector matches nothing, the parse reports a failure naming that selector instead of an empty message list
+- [x] 2026-11-11 · When the chat-list selector matches nothing, the parse reports a failure naming that selector
+- [x] 2026-11-11 · A rendered sticker row (no `data-pre-plain-text`, no text, a `sticker-container`) parses with text `[sticker]`
+- [x] 2026-11-11 · A rendered photo row (no text, an `image-thumb`) parses with text `[photo]`
+- [x] 2026-11-11 · A rendered row with no `data-pre-plain-text` takes its time from its `msg-meta`
+- [x] 2026-11-11 · The parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it; a chat where some rows lack it (photos, stickers) parses without a failure
+- [x] 2026-11-11 · The report built from the fixture document passes the shared contract schema before it is posted
+- [x] 2026-11-11 · `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
+- [x] 2026-11-11 · `POST /chat-messages` with a body that fails the contract schema answers 400 and stores nothing
+- [x] 2026-11-11 · `POST /chat-messages` with a parser failure makes `GET /now` report WhatsApp as parser broken
+- [x] 2026-11-11 · A good WhatsApp report after a parser failure makes `GET /now` report WhatsApp as healthy with the report's time
+- [x] 2026-11-11 · `GET /now` reports WhatsApp as fresh when the last report is within the staleness threshold
+- [x] 2026-11-11 · `GET /now` reports WhatsApp as stale when the last report is older than the staleness threshold
+- [x] 2026-11-11 · The WhatsApp staleness threshold follows its startup setting instead of the default
+- [x] 2026-11-11 · An unanswered incoming WhatsApp message appears in the triage queue's chat items with channel `whatsapp`
+- [x] 2026-11-11 · A WhatsApp message with a stored verdict is no longer in the triage queue
+- [x] 2026-11-11 · A WhatsApp sender whose last message the user has not answered appears in waiting-on with channel `whatsapp`
+- [x] 2026-11-11 · A WhatsApp chat whose last message was sent by the user does not appear in waiting-on
+- [x] 2026-11-11 · A WhatsApp sender appears on the People tab as a contact with their WhatsApp messages in the timeline
+- [x] 2026-11-11 · The user's own WhatsApp messages do not list the user as a WhatsApp contact
+- [x] 2026-11-11 · A task made from a WhatsApp triage item links to the WhatsApp chat
+- [x] 2026-11-11 · A task made from a Telegram triage item still links to the Telegram chat
+  - already covered by `apps/backend/src/app-chat.test.ts:227`, which still passes after 67e7255 (supervisor)
+- [x] 2026-11-11 · `POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp
+  - predicted-contradiction: `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing` — asserts: a `POST /chat-sends` with channel `whatsapp` and text answers 400 — retired-by: "`POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command"
+- [x] 2026-11-11 · `POST /chat-sends` for channel `whatsapp` with empty text answers 400 and queues no command
+- [x] 2026-11-11 · An acknowledged `send-whatsapp` command is no longer listed by `GET /commands`
+- [x] 2026-11-11 · A WhatsApp triage card shows its reply as pending while the `send-whatsapp` command is unacknowledged
+- [x] 2026-11-11 · A WhatsApp triage card no longer shows the reply as pending once the command is acknowledged
+- [x] 2026-11-11 · Given a `send-whatsapp` command and the fixture document, the content script selects the chat with that title, types the text into the composer, presses send and acknowledges the command
+- [x] 2026-11-11 · Given a `send-whatsapp` command whose chat title is not in the chat list, the content script types nothing and does not acknowledge the command
+- [x] 2026-11-11 · Several DOM mutations within 10 s make the content script post one report, 10 s after the last mutation
+- [x] 2026-11-11 · Two DOM mutations more than 10 s apart make the content script post two reports
+- [x] 2026-11-11 · When the parse fails, the content script posts the parser failure instead of a report
+- [x] 2026-11-11 · The triage page shows WhatsApp items in their own WhatsApp section, with the reply composer naming WhatsApp
+- [x] 2026-11-11 · The header shows a WhatsApp chip with the time of the last report
+- [x] 2026-11-11 · The header's WhatsApp chip shows as stale when `GET /now` reports WhatsApp stale
+- [x] 2026-11-11 · The header's WhatsApp chip says "whatsapp parser broken" when `GET /now` reports the parser broken
+- [x] 2026-11-11 · The background service worker answers a `backend-fetch` runtime message (path, method, body) by fetching that path from the backend and replying with the status and the JSON body; the content script cannot fetch `localhost` from the `web.whatsapp.com` page itself (cross-origin and private-network rules), so every WhatsApp request goes through this relay (supervisor, 2026-11-11)
+- [x] 2026-11-11 · The built extension's manifest registers a `whatsapp.content.ts` content script for `https://web.whatsapp.com/*` that starts the page watch (`watchWhatsappPage`) and carries out `send-whatsapp` commands every few seconds (`carryOutWhatsappSends`), both with a fetch that relays through the background's `backend-fetch` and the profile's account email from the background (keystone: today the watch and the sends run only in tests)
+  - written by the supervisor as `chrome.*` glue (locked decision 16: thin, manual checklist), after the cycle asked for a split: `relayedFetch` and the relay's WhatsApp-route allow-list are unit-tested; the built manifest registers `content-scripts/whatsapp.js` for `https://web.whatsapp.com/*`; the composer typing moved to a beforeinput insertText event (WhatsApp's Lexical editor ignores a direct text change). Real sending is unverified until the walk-through
+- [x] 2026-11-11 · The shipped backend (`main.ts`) accepts a WhatsApp report on `POST /chat-messages` and lists it in the triage queue
+- [x] 2026-11-11 · Parsing the chat-list fixture yields each chat's last-message preview: the `title` of its `[data-testid="last-msg-status"]` without the bidi marks (U+202A, U+202C) WhatsApp wraps it in (supervisor, 2026-11-11: only the open chat's messages reached the backend, so an unread chat the user had not opened made no card)
+- [x] 2026-11-11 · A WhatsApp report's chat may carry a `lastMessagePreview` string, and the report built from the fixture document carries each chat's preview
+- [x] 2026-11-11 · `POST /chat-messages` stores a reported chat that has unread messages and a preview, and is not the open chat, as one incoming message (id `preview:<lastMessageAt>`, sender and chat the chat title, text the preview, time when the backend first received it: the chat list's `lastMessageAt` is WhatsApp's display text such as `9:41 pm` or `Yesterday`, not a date; the same preview reported again keeps its first time), so it shows in the triage queue and waiting-on
+- [x] 2026-11-11 · `POST /chat-messages` stores nothing from a reported chat with no unread messages
+- [x] 2026-11-11 · `scripts/demo.sh` posts WhatsApp chats; screenshots of the WhatsApp triage section, People timeline and header chip are taken over the demo, and `docs/decisions/` records the hand-written-fixture fidelity gap
+  - screenshots `docs/screenshots/2026-11-11-phase-6b-{triage-whatsapp,whatsapp-composer,people-whatsapp}.jpg`, record `docs/decisions/2026-11-11-whatsapp-web-structure.md` (supervisor). The demo found: the WhatsApp chip had no dot and a parser failure with no report time would crash the header; WhatsApp times stored with an offset sorted wrongly against UTC chat times; the People tab could not open a WhatsApp timeline (no `whatsappHandles` in the dashboard, no link or order in the route) nor mark one VIP; all fixed test-first
 - [x] 2026-11-10 · The Slack fake refuses an `is:dm` search that has no `after:`, answering an error
 - [x] 2026-11-10 · The Slack fake answers an `is:dm` search that has `after:` with its DM matches
 - [x] 2026-11-10 · The Slack fake serves `is:dm` matches across pages, with `paging` naming the page and the page count
