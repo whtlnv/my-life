@@ -7,7 +7,7 @@ const whatsappChat = z.object({
 });
 
 const whatsappMessage = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   sender: z.string(),
   sentAt: z.string(),
   text: z.string(),

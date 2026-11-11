@@ -23,4 +23,25 @@ describe('whatsappReport', () => {
 
     expect(whatsappReport.parse(report)).toEqual(report);
   });
+
+  it('rejects a report whose message has no id', () => {
+    const report = {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+        ],
+      },
+    };
+
+    expect(whatsappReport.safeParse(report).success).toBe(false);
+  });
 });
