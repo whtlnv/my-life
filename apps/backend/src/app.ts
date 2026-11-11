@@ -120,6 +120,10 @@ interface TriageResult {
   promptVersion: string;
 }
 
+type WhatsappStatus =
+  | { parserBroken: true; missingSelector: string }
+  | { parserBroken: false; lastReportedAt: string };
+
 // What the triage port learns about the sender: the display name from the From header plus the record the user and
 // the contacts import keep on that email.
 type TriageContact = { displayName: string; marks: string[] } & ContactDetails;
@@ -633,10 +637,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
-  let whatsappStatus:
-    | { parserBroken: true; missingSelector: string }
-    | { parserBroken: false; lastReportedAt: string }
-    | undefined;
+  let whatsappStatus: WhatsappStatus | undefined;
   app.post('/chat-messages', async (context) => {
     const body = await context.req.json<{ ok?: boolean; missingSelector: string }>();
     if (body.ok === false) {
