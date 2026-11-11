@@ -24,15 +24,19 @@ const mediaPlaceholders: Partial<Record<string, string>> = {
   MessageMediaDocument: '[video]',
 };
 
+function isAudioDocument(media: Api.TypeMessageMedia): boolean {
+  return (
+    media instanceof Api.MessageMediaDocument &&
+    media.document instanceof Api.Document &&
+    media.document.attributes.some((attribute) => attribute instanceof Api.DocumentAttributeAudio)
+  );
+}
+
 function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
   if (media instanceof Api.MessageMediaDocument && media.voice) {
     return '[voice note]';
   }
-  if (
-    media instanceof Api.MessageMediaDocument &&
-    media.document instanceof Api.Document &&
-    media.document.attributes.some((attribute) => attribute instanceof Api.DocumentAttributeAudio)
-  ) {
+  if (isAudioDocument(media)) {
     return '[audio]';
   }
   return mediaPlaceholders[media.className];
