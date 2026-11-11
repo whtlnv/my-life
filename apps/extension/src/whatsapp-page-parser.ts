@@ -42,10 +42,15 @@ const senderAndTimeOf = (row: Element): { sender: string; sentAt: string } => {
   };
 };
 
-const textOf = (row: Element): string =>
-  row.querySelector('[data-testid="sticker-container"]') !== null
-    ? '[sticker]'
-    : (row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '');
+const textOf = (row: Element): string => {
+  if (row.querySelector('[data-testid="sticker-container"]') !== null) {
+    return '[sticker]';
+  }
+  if (row.querySelector('[data-testid="image-thumb"]') !== null) {
+    return '[photo]';
+  }
+  return row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '';
+};
 
 const chatPaneSelector = '#main';
 const messageRowSelector = `${chatPaneSelector} [data-id]`;

@@ -122,6 +122,12 @@ describe('parseWhatsappOpenChat', () => {
 
     expect(messages.find(({ id }) => id === '3EB0F00000011667A1B2C3')?.text).toBe('[sticker]');
   });
+
+  it('gives a rendered photo row, which has no caption and no text, only an image thumbnail, the text [photo]', () => {
+    const messages = parseWhatsappOpenChat(fixtureDocument('whatsapp-group-chat.fixture.html'));
+
+    expect(messages.find(({ id }) => id === '3EB0F00000009AABA1B2C3')?.text).toBe('[photo]');
+  });
 });
 
 describe('parseWhatsappPage', () => {
