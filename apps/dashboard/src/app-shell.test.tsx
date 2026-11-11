@@ -277,4 +277,18 @@ describe('AppShell', () => {
     const item = (await within(status).findByText(/whatsapp parser broken/i)).closest('li');
     expect(item).not.toBeNull();
   });
+
+  it('shows the WhatsApp parser-broken chip, in the stale colour, for a failure the backend reports before any good report (no time at all)', async () => {
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      whatsapp: { parserBroken: true, missingSelector: '[data-pre-plain-text]' },
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText(/whatsapp parser broken/i)).closest('li');
+    expect(item).toHaveClass('is-stale');
+    expect(item).toHaveAttribute('title', 'WhatsApp · parser broken: [data-pre-plain-text] not found');
+  });
 });

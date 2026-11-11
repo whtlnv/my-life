@@ -24,7 +24,10 @@ interface ShellStatus {
     | { loggedIn: false }
     | { loggedIn: true; lastMessageAt: string; stale?: boolean }
     | { loggedIn: true; lastStartedAt: string; stale?: boolean };
-  whatsapp?: { parserBroken: boolean; lastReportedAt: string; stale: boolean };
+  // As GET /now sends it: a parser failure names the missing selector and may have no report time yet.
+  whatsapp?:
+    | { parserBroken: false; lastReportedAt: string; stale: boolean }
+    | { parserBroken: true; missingSelector?: string; lastReportedAt?: string; stale?: boolean };
 }
 
 interface SlackWorkspaceStatus {
@@ -147,17 +150,20 @@ function TelegramConnectedChip({
   );
 }
 
+function whatsappChipTitle(whatsapp: NonNullable<ShellStatus['whatsapp']>): string {
+  if (whatsapp.parserBroken) return `WhatsApp · parser broken: ${whatsapp.missingSelector ?? 'a selector'} not found`;
+  return `WhatsApp · last report ${timeInBusinessZone(whatsapp.lastReportedAt)}`;
+}
+
 function WhatsappChip({ whatsapp }: { whatsapp: NonNullable<ShellStatus['whatsapp']> }) {
   return (
     <li
-      className={sourceChipClassName(whatsapp.stale || whatsapp.parserBroken)}
-      title={`WhatsApp · last report ${timeInBusinessZone(whatsapp.lastReportedAt)}`}
+      className={sourceChipClassName(whatsapp.stale === true || whatsapp.parserBroken)}
+      title={whatsappChipTitle(whatsapp)}
     >
       <span className="dot" aria-hidden="true" />
-      <span className="chip-account">
-        {whatsapp.parserBroken ? 'whatsapp parser broken' : 'whatsapp'}
-      </span>
-      {whatsapp.stale && <span className="chip-detail is-stale">stale</span>}
+      <span className="chip-account">{whatsapp.parserBroken ? 'whatsapp parser broken' : 'whatsapp'}</span>
+      {whatsapp.stale === true && <span className="chip-detail is-stale">stale</span>}
     </li>
   );
 }
