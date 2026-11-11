@@ -42,7 +42,8 @@ const senderAndTimeOf = (row: Element): { sender: string; sentAt: string } => {
   };
 };
 
-const messageRowSelector = '#main [data-id]';
+const chatPaneSelector = '#main';
+const messageRowSelector = `${chatPaneSelector} [data-id]`;
 
 export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessage[] =>
   [...document.querySelectorAll(messageRowSelector)]
@@ -65,9 +66,12 @@ export interface WhatsappPageFailure {
   missingSelector: string;
 }
 
-export const parseWhatsappPage = (document: Document): WhatsappPage | WhatsappPageFailure =>
-  document.querySelector(chatRowSelector) === null
-    ? { ok: false, missingSelector: chatRowSelector }
-    : document.querySelector('#main') !== null && document.querySelector(messageRowSelector) === null
-      ? { ok: false, missingSelector: messageRowSelector }
-      : { ok: true, chats: parseWhatsappChatList(document), messages: parseWhatsappOpenChat(document) };
+export const parseWhatsappPage = (document: Document): WhatsappPage | WhatsappPageFailure => {
+  if (document.querySelector(chatRowSelector) === null) {
+    return { ok: false, missingSelector: chatRowSelector };
+  }
+  if (document.querySelector(chatPaneSelector) !== null && document.querySelector(messageRowSelector) === null) {
+    return { ok: false, missingSelector: messageRowSelector };
+  }
+  return { ok: true, chats: parseWhatsappChatList(document), messages: parseWhatsappOpenChat(document) };
+};
