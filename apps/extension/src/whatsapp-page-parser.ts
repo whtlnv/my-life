@@ -42,6 +42,11 @@ const senderAndTimeOf = (row: Element): { sender: string; sentAt: string } => {
   };
 };
 
+const textOf = (row: Element): string =>
+  row.querySelector('[data-testid="sticker-container"]') !== null
+    ? '[sticker]'
+    : (row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '');
+
 const chatPaneSelector = '#main';
 const messageRowSelector = `${chatPaneSelector} [data-id]`;
 
@@ -50,7 +55,7 @@ export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessa
     .filter((row) => row.querySelector('[data-testid="msg-container"]'))
     .map((row) => ({
       id: row.getAttribute('data-id') ?? '',
-      text: row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '',
+      text: textOf(row),
       sentByUser: row.querySelector('[data-testid="msg-meta"] span[aria-label]') !== null,
       ...senderAndTimeOf(row),
     }));

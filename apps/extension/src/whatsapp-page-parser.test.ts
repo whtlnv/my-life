@@ -116,6 +116,12 @@ describe('parseWhatsappOpenChat', () => {
       '2026-09-30T19:16:00-06:00',
     ]);
   });
+
+  it('gives a rendered sticker row, which has no pre-plain-text label and no text, the text [sticker]', () => {
+    const messages = parseWhatsappOpenChat(fixtureDocument('whatsapp-one-to-one-chat.fixture.html'));
+
+    expect(messages.find(({ id }) => id === '3EB0F00000011667A1B2C3')?.text).toBe('[sticker]');
+  });
 });
 
 describe('parseWhatsappPage', () => {
