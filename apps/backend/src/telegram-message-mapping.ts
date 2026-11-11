@@ -24,19 +24,14 @@ const mediaPlaceholders: Partial<Record<string, string>> = {
   MessageMediaDocument: '[document]',
 };
 
-function isVideoDocument(media: Api.TypeMessageMedia): boolean {
+function hasDocumentAttribute(
+  media: Api.TypeMessageMedia,
+  attributeType: typeof Api.DocumentAttributeVideo | typeof Api.DocumentAttributeAudio,
+): boolean {
   return (
     media instanceof Api.MessageMediaDocument &&
     media.document instanceof Api.Document &&
-    media.document.attributes.some((attribute) => attribute instanceof Api.DocumentAttributeVideo)
-  );
-}
-
-function isAudioDocument(media: Api.TypeMessageMedia): boolean {
-  return (
-    media instanceof Api.MessageMediaDocument &&
-    media.document instanceof Api.Document &&
-    media.document.attributes.some((attribute) => attribute instanceof Api.DocumentAttributeAudio)
+    media.document.attributes.some((attribute) => attribute instanceof attributeType)
   );
 }
 
@@ -44,10 +39,10 @@ function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
   if (media instanceof Api.MessageMediaDocument && media.voice) {
     return '[voice note]';
   }
-  if (isAudioDocument(media)) {
+  if (hasDocumentAttribute(media, Api.DocumentAttributeAudio)) {
     return '[audio]';
   }
-  if (isVideoDocument(media)) {
+  if (hasDocumentAttribute(media, Api.DocumentAttributeVideo)) {
     return '[video]';
   }
   return mediaPlaceholders[media.className];
