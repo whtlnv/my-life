@@ -42,7 +42,7 @@
 - [x] `POST /chat-sends` for channel `whatsapp` with empty text answers 400 and queues no command
 - [x] An acknowledged `send-whatsapp` command is no longer listed by `GET /commands`
 - [x] A WhatsApp triage card shows its reply as pending while the `send-whatsapp` command is unacknowledged
-- [ ] A WhatsApp triage card no longer shows the reply as pending once the command is acknowledged
+- [x] A WhatsApp triage card no longer shows the reply as pending once the command is acknowledged
 - [ ] Given a `send-whatsapp` command and the fixture document, the content script selects the chat with that title, types the text into the composer, presses send and acknowledges the command
 - [ ] Given a `send-whatsapp` command whose chat title is not in the chat list, the content script types nothing and does not acknowledge the command
 - [ ] Several DOM mutations within 10 s make the content script post one report, 10 s after the last mutation
