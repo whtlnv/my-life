@@ -22,6 +22,13 @@ export interface ChatMessageVerdict {
 
 type ChatMessageRow = Omit<ChatMessage, 'sentByUser' | 'chatIsBot'> & { sentByUser: number; chatIsBot: number };
 
+// A database created before chats were marked as bots has the chat_messages table without its chat_is_bot column.
+function addChatIsBotColumnIfMissing(database: ReturnType<typeof openDatabase>): void {
+  const columns = database.pragma('table_info(chat_messages)') as { name: string }[];
+  if (columns.some((column) => column.name === 'chat_is_bot')) return;
+  database.exec('ALTER TABLE chat_messages ADD COLUMN chat_is_bot INTEGER NOT NULL DEFAULT 0');
+}
+
 export function openChatMessageStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec(
@@ -30,6 +37,7 @@ export function openChatMessageStore(databasePath: string) {
       sender_id TEXT NOT NULL, sender_name TEXT NOT NULL, text TEXT NOT NULL, time TEXT NOT NULL,
       sent_by_user INTEGER NOT NULL, chat_is_bot INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (channel, chat_id, message_id))`,
   );
+  addChatIsBotColumnIfMissing(database);
   database.exec(
     `CREATE TABLE IF NOT EXISTS chat_message_verdicts (
       channel TEXT NOT NULL, chat_id TEXT NOT NULL, message_id TEXT NOT NULL, decision TEXT NOT NULL)`,

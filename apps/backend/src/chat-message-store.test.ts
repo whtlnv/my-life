@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import Database from 'better-sqlite3';
 import { describe, expect, it } from 'vitest';
 
 import { openChatMessageStore } from './chat-message-store';
@@ -111,6 +112,24 @@ describe('chat message store', () => {
       store.saveVerdict(secondVerdict);
 
       expect(store.listVerdicts()).toEqual([firstVerdict, secondVerdict]);
+    });
+  });
+  it('saves and lists a bot chat message on a database whose chat_messages table was created before chats were marked as bots', () => {
+    withTemporaryDatabase((databasePath) => {
+      const before = new Database(databasePath);
+      before.exec(
+        `CREATE TABLE chat_messages (
+          channel TEXT NOT NULL, chat_id TEXT NOT NULL, chat_title TEXT NOT NULL, message_id TEXT NOT NULL,
+          sender_id TEXT NOT NULL, sender_name TEXT NOT NULL, text TEXT NOT NULL, time TEXT NOT NULL,
+          sent_by_user INTEGER NOT NULL, PRIMARY KEY (channel, chat_id, message_id))`,
+      );
+      before.close();
+      const store = openChatMessageStore(databasePath);
+      const botMessage = { ...telegramMessageFromLuis, chatIsBot: true };
+
+      store.saveMessage(botMessage);
+
+      expect(store.listMessages()).toEqual([botMessage]);
     });
   });
 });
