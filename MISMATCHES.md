@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 18:42 · `apps/backend/src/telegram-message-mapping.test.ts::stores a message from a chat with a person with the chat not marked as a bot`
+- Behavior: A Telegram message from a chat with a person is stored with the chat not marked as a bot
+- Predicted: passes on first run — the previous green step sets `chatIsBot` only when `chat.bot` is true, and the store adds it back only when the column is 1
+- Actual: passed (1 passed, 11 skipped)
+- Type: passed unexpectedly
+- Resolution: the behavior shipped with the bot-chat item (`b64bd06`); the first mapping test's exact `toEqual` for Luis already pins it at the mapping level. No failing version exists without contriving one, so the test stays as a store round-trip guard and the item is already delivered.
+
 ## 2026-11-10 18:28 · `apps/backend/src/app-slack.test.ts::reports on GET /now no failure reason for a workspace whose failed POST /slack-poll was followed by a successful one`
 - Behavior: After a failed poll is followed by a successful one the Slack source chip shows no failure reason
 - Predicted: passes on first run (read before writing: `POST /slack-poll` builds a new failure map per request and replaces `slackWorkspacePolls` wholesale)

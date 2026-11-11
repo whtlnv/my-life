@@ -223,4 +223,25 @@ describe('Telegram message mapping', () => {
       rmSync(directory, { recursive: true, force: true });
     }
   });
+
+  it('stores a message from a chat with a person with the chat not marked as a bot', () => {
+    const message = new Api.Message({
+      id: 5002,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-10T09:05:00.000Z') / 1000,
+      message: '¿Nos vemos el jueves?',
+      out: false,
+    });
+    const directory = mkdtempSync(join(tmpdir(), 'my-life-'));
+    try {
+      const store = openChatMessageStore(join(directory, 'my-life.sqlite'));
+      const mapped = mapTelegramMessage({ message, chat: luis, sender: luis });
+      if (mapped) store.saveMessage(mapped);
+
+      expect(store.listMessages()).toEqual([expect.objectContaining({ chatId: '424242' })]);
+      expect(store.listMessages()[0]).not.toHaveProperty('chatIsBot');
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
 });
