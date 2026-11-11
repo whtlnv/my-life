@@ -250,6 +250,28 @@ describe('pollSlackWorkspace', () => {
     expect(historyRequests.map((url) => url.searchParams.get('channel'))).toEqual([]);
   });
 
+  it('reads the history of a DM conversation once though several is:dm matches name it', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': (url) =>
+        url.searchParams.get('query')?.startsWith('is:dm') === true
+          ? {
+              ok: true,
+              messages: {
+                matches: [
+                  { user: 'U0002', text: 'Ping', ts: '1762780000.000200', channel: { id: 'D0002' } },
+                  { user: 'U0002', text: 'Hello?', ts: '1762770000.000100', channel: { id: 'D0002' } },
+                ],
+              },
+            }
+          : { ok: true, messages: { matches: [] } },
+      '/conversations.history': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollWith(slack);
+
+    expect(slack.requests.filter((url) => url.pathname === '/conversations.history')).toHaveLength(1);
+  });
+
   it('never calls conversations.list', async () => {
     const slack = scriptedSlack();
 
