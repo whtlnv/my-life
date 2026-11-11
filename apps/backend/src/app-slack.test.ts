@@ -864,7 +864,7 @@ describe('createApp Slack polls', () => {
     expect(usersInfoRequests).toEqual(['U0001']);
   });
 
-  it("writes to the backend log, on POST /slack-poll, a failed workspace's team id and the error", async () => {
+  async function appWithRevokedSlackToken() {
     const slackApiUrl = await localSlackAnsweringEveryRequest({ ok: false, error: 'invalid_auth' });
     const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     onTestFinished(() => {
@@ -876,6 +876,11 @@ describe('createApp Slack polls', () => {
       slackApiUrl,
       slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-revoked' }],
     });
+    return { app, backendLog };
+  }
+
+  it("writes to the backend log, on POST /slack-poll, a failed workspace's team id and the error", async () => {
+    const { app, backendLog } = await appWithRevokedSlackToken();
 
     await app.request('/slack-poll', { method: 'POST' });
 
@@ -885,17 +890,7 @@ describe('createApp Slack polls', () => {
   });
 
   it("reports on GET /now, after a failed POST /slack-poll, the workspace's failure reason", async () => {
-    const slackApiUrl = await localSlackAnsweringEveryRequest({ ok: false, error: 'invalid_auth' });
-    const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    onTestFinished(() => {
-      backendLog.mockRestore();
-    });
-    const app = createApp({
-      allowedEmails: [],
-      databasePath: temporaryDatabasePath(),
-      slackApiUrl,
-      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-revoked' }],
-    });
+    const { app } = await appWithRevokedSlackToken();
 
     await app.request('/slack-poll', { method: 'POST' });
     const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: unknown };
