@@ -564,6 +564,30 @@ describe('pollSlackWorkspace', () => {
     expect(store.newestTimestampInThread('C0002', '1762700200.000300')).toBe('1762700300.000400');
   });
 
+  it("reads the replies of a thread once though several of the user's messages in it match the own-message search", async () => {
+    const threadPermalink = (ts: string) =>
+      `https://example.slack.com/archives/C0001/p${ts.replace('.', '')}?thread_ts=1762700000.000100`;
+    const slack = scriptedSlack({
+      '/search.messages': (url) =>
+        url.searchParams.get('query')?.startsWith(`from:<@${ownSlackUserId}>`) === true
+          ? {
+              ok: true,
+              messages: {
+                matches: [
+                  { permalink: threadPermalink('1762700300.000300'), channel: { id: 'C0001' } },
+                  { permalink: threadPermalink('1762700200.000200'), channel: { id: 'C0001' } },
+                ],
+              },
+            }
+          : { ok: true, messages: { matches: [] } },
+      '/conversations.replies': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollWith(slack);
+
+    expect(slack.requests.filter((url) => url.pathname === '/conversations.replies')).toHaveLength(1);
+  });
+
   it("asks conversations.replies on a second poll only for replies newer than the thread's newest stored one", async () => {
     const slack = scriptedSlack({
       '/search.messages': (url) =>

@@ -208,11 +208,15 @@ function threadTimestampOf(match: { permalink?: string }): string | null {
 async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const ownMessagesQuery = `from:<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
   const matches = await searchSlackMessages(input, ownMessagesQuery);
+  // Several of the user's messages in one thread name it several times; each thread's replies are read once.
+  const readThreads = new Set<string>();
   for (const match of matches) {
     const threadTimestamp = threadTimestampOf(match);
-    if (threadTimestamp === null) {
+    const threadKey = `${match.channel.id}/${String(threadTimestamp)}`;
+    if (threadTimestamp === null || readThreads.has(threadKey)) {
       continue;
     }
+    readThreads.add(threadKey);
     const newestStoredReplyTimestamp = input.store.newestTimestampInThread(match.channel.id, threadTimestamp);
     const oldestParameter = oldestParameterAfter(newestStoredReplyTimestamp);
     const { messages: replies } = await callSlack<{ messages: SlackMessage[] }>(
