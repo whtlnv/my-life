@@ -56,4 +56,3 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 - [x] **Which profile keeps WhatsApp open:** the `catala.francisco@gmail.com` profile (user, 2026-11-10).
 - [ ] **Date order check:** on the first real report, Claude confirms WhatsApp writes dates day/month/year on your page (assumed from the capture; a message from a day after the 12th settles it).
 - [ ] **After Phase 6b is delivered:** reload the my-life extension in that profile (`chrome://extensions` → reload), then keep the WhatsApp tab open; Claude checks the first real report with you before any send.
-
