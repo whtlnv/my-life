@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -639,7 +640,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
   let whatsappStatus: WhatsappStatus | undefined;
   let whatsappAccountEmail: string | undefined;
-  const whatsappSends: { chatTitle: string; text: string }[] = [];
+  const whatsappSends: { id: string; chatTitle: string; text: string }[] = [];
   const whatsappReportIntervalInMilliseconds = options.whatsappReportIntervalInMilliseconds ?? 60_000;
   const describeWhatsappFreshness = () => {
     if (whatsappStatus === undefined || whatsappStatus.parserBroken) {
@@ -706,7 +707,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, 400);
     }
     if (send.channel === 'whatsapp') {
-      whatsappSends.push({ chatTitle: send.chatId, text: send.text });
+      whatsappSends.push({ id: `send-whatsapp-${randomUUID()}`, chatTitle: send.chatId, text: send.text });
       return context.json({ ok: true });
     }
     const telegramClient = options.telegramClient;
@@ -1549,8 +1550,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map((action) => createDraftCommand(action, reportedMessageWithId(reportedMessages, action.target)));
     const reportsWhatsapp = accountEmail === whatsappAccountEmail;
     const sendWhatsappCommands = reportsWhatsapp
-      ? whatsappSends.map(({ chatTitle, text }, index) => ({
-          id: `send-whatsapp-${index}`,
+      ? whatsappSends.map(({ id, chatTitle, text }) => ({
+          id,
           type: 'send-whatsapp',
           chatTitle,
           text,

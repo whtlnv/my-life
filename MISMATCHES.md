@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-11 01:19 · `apps/backend/src/app-chat.test.ts::lists at GET /commands, after a restart, a new send-whatsapp command queued once an earlier one was acknowledged`
+- Behavior: An acknowledged `send-whatsapp` command is no longer listed by `GET /commands` (and only that command)
+- Predicted: the plain "acknowledged command disappears" test passes on first run, since `GET /commands` already filters every command id through the acknowledgement store
+- Actual: passed unexpectedly, as predicted; rewritten around the real gap, it fails with AssertionError: expected [] to contain the new send
+- Type: passed unexpectedly
+- Resolution: WhatsApp sends live in memory with index ids (`send-whatsapp-0`) while acknowledgements persist in SQLite, so after a restart a new send reuses an acknowledged id and is hidden; the test now drives unique, restart-safe command ids (the WhatsApp profile is re-reported after restart, because `whatsappAccountEmail` is also in-memory).
+
 ## 2026-11-11 00:59 · `apps/backend/src/app-chat.test.ts::leaves out of GET /people a WhatsApp message the user sent, so the user is not listed as their own WhatsApp contact`
 - Behavior: The user's own WhatsApp messages do not list the user as a WhatsApp contact
 - Predicted: passes on first run (not a right-reason failure) — every `/people` group filters chat messages through `isFromSomeoneElse` regardless of channel

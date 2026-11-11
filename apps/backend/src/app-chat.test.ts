@@ -5,6 +5,8 @@ import {
   budgetReviewReport,
   clockAtTenPastThree,
   getJson,
+  pendingCommandsOf,
+  postAcknowledgement,
   postJson,
   postTriageRun,
   temporaryDatabasePath,
@@ -368,6 +370,23 @@ describe('createApp chat messages', () => {
 
     expect(commands).toEqual([
       expect.objectContaining({ type: 'send-whatsapp', chatTitle: 'Ana', text: 'Tomorrow at ten works' }),
+    ]);
+  });
+
+  it('lists at GET /commands, after a restart, a new send-whatsapp command queued once an earlier one was acknowledged', async () => {
+    const databasePath = temporaryDatabasePath();
+    const appBeforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(appBeforeRestart, '/chat-messages', { ...goodWhatsappReport, accountEmail: 'ana@example.com' });
+    await postJson(appBeforeRestart, '/chat-sends', { channel: 'whatsapp', chatId: 'Ana', text: 'Tomorrow at ten works' });
+    const [acknowledged] = await pendingCommandsOf<{ id: string }>(appBeforeRestart, 'ana@example.com');
+    await postAcknowledgement(appBeforeRestart, String(acknowledged?.id));
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(app, '/chat-messages', { ...goodWhatsappReport, accountEmail: 'ana@example.com' });
+
+    await postJson(app, '/chat-sends', { channel: 'whatsapp', chatId: 'Ana', text: 'See you there' });
+
+    expect(await pendingCommandsOf(app, 'ana@example.com')).toEqual([
+      expect.objectContaining({ type: 'send-whatsapp', chatTitle: 'Ana', text: 'See you there' }),
     ]);
   });
 
