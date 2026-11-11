@@ -1,5 +1,6 @@
 import { defineBackground } from 'wxt/utils/define-background';
 
+import { answerBackendFetch, type BackendFetchMessage } from '../backend-fetch-relay';
 import { backendUrl } from '../backend-url';
 import { startExtension } from '../extension-start';
 
@@ -21,9 +22,40 @@ const accessToken = async (): Promise<string> => {
   return token;
 };
 
+const isBackendFetchMessage = (message: unknown): message is BackendFetchMessage =>
+  typeof message === 'object' && message !== null && (message as { type?: unknown }).type === 'backend-fetch';
+
+const isAccountEmailMessage = (message: unknown): boolean =>
+  typeof message === 'object' && message !== null && (message as { type?: unknown }).type === 'account-email';
+
 export default defineBackground(() => {
   chrome.action.onClicked.addListener(() => {
     void chrome.tabs.create({ url: backend });
+  });
+  // The WhatsApp content script's requests: the relay to the backend (WhatsApp routes only) and this profile's
+  // account email. Returning true keeps the channel open for the asynchronous answer.
+  chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+    if (isBackendFetchMessage(message)) {
+      answerBackendFetch({ fetch: (input, init) => fetch(input, init), backendUrl: backend }, message).then(
+        sendResponse,
+        (error: unknown) => {
+          sendResponse({ status: 502, body: { error: String(error) } });
+        },
+      );
+      return true;
+    }
+    if (isAccountEmailMessage(message)) {
+      profileAccountEmail().then(
+        (email) => {
+          sendResponse({ email });
+        },
+        (error: unknown) => {
+          sendResponse({ email: '', error: String(error) });
+        },
+      );
+      return true;
+    }
+    return false;
   });
   startExtension({
     fetch: (input, init) => fetch(input, init),
