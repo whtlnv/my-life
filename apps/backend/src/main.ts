@@ -169,6 +169,7 @@ const app = createApp({
     userToken: userToken ?? '',
   })),
   slackPollingIntervalInMilliseconds: settings.slackPollingIntervalInMilliseconds,
+  slackFirstPollLookbackDays: settings.slackFirstPollLookbackDays,
   ...(triage === undefined ? {} : { triage }),
   ...(filter === undefined ? {} : { filter }),
   ...(summary === undefined ? {} : { summary }),

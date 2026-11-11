@@ -149,6 +149,8 @@ export interface AppOptions {
   slackWorkspaces?: { teamId: string; userToken: string }[];
   telegramClient?: TelegramAppClient;
   slackPollingIntervalInMilliseconds?: number;
+  // How many days a first Slack poll reads back for a conversation with nothing stored (default 7).
+  slackFirstPollLookbackDays?: number;
   urgency?: { unansweredAskBusinessDays: number };
   triage?: {
     propose: (message: TriageRequest, examples?: unknown[]) => Promise<TriageResult>;
@@ -778,6 +780,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       store: slackMessageStore,
       clock,
       displayNamesByUserId: slackDisplayNamesByUserId,
+      ...(options.slackFirstPollLookbackDays === undefined
+        ? {}
+        : { firstPollLookbackDays: options.slackFirstPollLookbackDays }),
       logPollFailure: (teamId, error) => {
         console.error(`Slack poll failed for workspace ${teamId}:`, error);
         pollFailuresByTeamId.set(teamId, String(error));

@@ -795,6 +795,24 @@ describe('Slack fake server', () => {
       await slack.close();
     }
   });
+  it('POST /slack-poll on a backend given a 3-day first-poll lookback searches is:dm after the date 3 days before now', async () => {
+    const slack = await startSlackFakeServer('direct-message');
+    try {
+      const backend = createApp({
+        allowedEmails: [],
+        clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+        slackApiUrl: slack.url,
+        slackWorkspaces: [{ teamId: 'T0001', userToken: slack.token }],
+        slackFirstPollLookbackDays: 3,
+      });
+
+      await backend.request('/slack-poll', { method: 'POST' });
+
+      expect(slack.searchQueries()).toContain('is:dm after:2026-11-07');
+    } finally {
+      await slack.close();
+    }
+  });
   it('after a successful POST /slack-poll, GET /now lists each configured Slack workspace with the time of its last successful poll', async () => {
     const slack = await startSlackFakeServer('direct-message');
     try {
