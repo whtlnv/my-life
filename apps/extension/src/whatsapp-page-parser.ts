@@ -105,15 +105,20 @@ export interface WhatsappPageFailure {
   missingSelector: string;
 }
 
+// Each selector must match once the selector it depends on matches; the first one that does not names the failure.
+const requiredSelectors: ReadonlyArray<{ selector: string; whenPresent?: string }> = [
+  { selector: chatRowSelector },
+  { selector: messageRowSelector, whenPresent: chatPaneSelector },
+  { selector: prePlainTextSelector, whenPresent: messageRowSelector },
+];
+
 export const parseWhatsappPage = (document: Document): WhatsappPage | WhatsappPageFailure => {
-  if (document.querySelector(chatRowSelector) === null) {
-    return { ok: false, missingSelector: chatRowSelector };
-  }
-  if (document.querySelector(chatPaneSelector) !== null && document.querySelector(messageRowSelector) === null) {
-    return { ok: false, missingSelector: messageRowSelector };
-  }
-  if (document.querySelector(messageRowSelector) !== null && document.querySelector(prePlainTextSelector) === null) {
-    return { ok: false, missingSelector: prePlainTextSelector };
+  const present = (selector: string): boolean => document.querySelector(selector) !== null;
+  const missing = requiredSelectors.find(
+    ({ selector, whenPresent }) => (whenPresent === undefined || present(whenPresent)) && !present(selector),
+  );
+  if (missing !== undefined) {
+    return { ok: false, missingSelector: missing.selector };
   }
   return { ok: true, chats: parseWhatsappChatList(document), messages: parseWhatsappOpenChat(document) };
 };
