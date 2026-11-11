@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 20:29 · `apps/backend/src/demo.test.ts::lists at GET /triage-queue a Telegram bot digest from its scripted Telegram session`
+- Behavior: the demo backend (demo.ts, as scripts/demo.sh runs it) lists a Telegram bot digest in the triage queue
+- Predicted: AssertionError — the demo starts, but its digests hold none on channel `telegram` (its scripted Telegram has no bot chat)
+- Actual: Error "the demo backend never answered /health" — the demo hangs in seed() at `POST /slack-poll` and never serves
+- Type: right-reason mismatch
+- Resolution: `searchPagesUntilCaughtUp` (slack-poll.ts) asks for the next `is:dm` page while every match is newer than the newest stored Slack message (across workspaces); the demo's scripted Slack ignores `page` and answers the same matches on every page, so the second workspace's poll never stops. The demo has been unable to start since the paging item landed; green must make the scripted Slack serve `is:dm` across pages (with `paging`) before the bot digest assertion can be reached. Test kept as is.
+
 ## 2026-11-10 19:16 · `apps/backend/src/app-chat.test.ts::writes no Telegram bot digest summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines`
 - Behavior: The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
 - Predicted: pass (stated before running) — the bot-digest path from b6395cb already goes through `summarizeWithinTheSpendCeiling`, which returns early at the ceiling

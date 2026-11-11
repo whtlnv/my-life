@@ -730,7 +730,7 @@ function answerSlack(path: string, query: URLSearchParams, workspace: DemoSlackW
       const searchQuery = query.get('query') ?? '';
       const ownMessagesQuery = `from:<@${workspace.ownUserId}>`;
       const matchesBySearch = (): typeof workspace.mentions => {
-        if (searchQuery.startsWith('is:dm')) return workspace.directMessages;
+        if (searchQuery.startsWith('is:dm')) return query.get('page') === null ? workspace.directMessages : [];
         if (searchQuery.startsWith(ownMessagesQuery)) return workspace.ownThreadMessages;
         return workspace.mentions;
       };
@@ -838,6 +838,25 @@ const demoTelegramScript = createScriptedTelegramClient({
           text: 'Francisco, ¿confirmas que firmamos con el nuevo proveedor de nómina este mes?',
           minutesAgo: 75,
         }),
+      ],
+    },
+    {
+      chatId: '8001',
+      chatTitle: 'BBVA Alertas',
+      unreadCount: 1,
+      messages: [
+        {
+          ...demoTelegramMessage({
+            chatId: '8001',
+            chatTitle: 'BBVA Alertas',
+            messageId: '501',
+            senderId: '8001',
+            senderName: 'BBVA Alertas',
+            text: 'Cargo por $1,250.00 MXN en tu tarjeta terminación 4821.',
+            minutesAgo: 50,
+          }),
+          chatIsBot: true,
+        },
       ],
     },
   ],
