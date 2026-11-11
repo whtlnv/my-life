@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { computeCostInUsd, type ClaudePricing } from './claude-triage';
@@ -114,8 +114,9 @@ export function createClaudeAgent({
     }) => {
       const turnTools = [...offeredTools, citeSourcesTool];
       const prompt = readFileSync(promptPath, 'utf8');
-      const profile = readFileSync(join(profileDirectory, 'accounts.md'), 'utf8');
-      const system = `${prompt}\n\n${profile}`;
+      // The profile is the user's own, gitignored file: without one the agent works from its prompt alone.
+      const profilePath = join(profileDirectory, 'accounts.md');
+      const system = existsSync(profilePath) ? `${prompt}\n\n${readFileSync(profilePath, 'utf8')}` : prompt;
       const messages: ClaudeAgentRequest['messages'] = turns.map(({ role, text }) => ({ role, content: text }));
       const toolDefinitions = turnTools.map(toToolDefinition);
       let costInUsd = 0;

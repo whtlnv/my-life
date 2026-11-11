@@ -45,6 +45,26 @@ describe('Claude agent', () => {
     expect(system).toContain('Ana has two accounts: Acme for sales, Gmail for family.');
   });
 
+  it('sends the agent prompt alone and still answers when the profile directory has no accounts.md (the profile is gitignored)', async () => {
+    const sentRequests: SentRequest[] = [];
+    const agent = createClaudeAgent({
+      ...fixedAgentSetup(),
+      profileDirectory: profileDirectoryWith({}),
+      createMessage: (request: SentRequest) => {
+        sentRequests.push(request);
+        return Promise.resolve({
+          content: [{ type: 'text', text: 'Nothing is due today.' }],
+          usage: { input_tokens: 0, output_tokens: 0 },
+        });
+      },
+    });
+
+    const reply = await agent.respond({ turns: [{ role: 'user', text: 'What is on my plate today?' }] });
+
+    expect(reply.text).toBe('Nothing is due today.');
+    expect(sentRequests[0]?.system).toContain('You are the operator of Ana’s working life.');
+  });
+
   it("sends a requested tool's result back to the model and returns the model's following text as the reply", async () => {
     const sentRequests: SentRequest[] = [];
     const responses = [

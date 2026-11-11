@@ -139,6 +139,8 @@ describe('the shipped backend (main.ts)', () => {
         MY_LIFE_TRIAGE_ESCALATION_MODEL: 'none',
         // Never the user's real Telegram session, even when their shell exports the Telegram API id and hash.
         MY_LIFE_TELEGRAM_SESSION_PATH: join(dirname(temporaryDatabasePath()), 'no-telegram-session'),
+        // Never the user's gitignored profile/ either: a test that passes on it here fails in CI, which has none.
+        MY_LIFE_PROFILE_DIRECTORY: profileDirectoryWith({}),
         ...environment,
       },
       stdio: 'ignore',
