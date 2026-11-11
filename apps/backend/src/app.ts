@@ -1189,12 +1189,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }));
   }
   const chatMessageKey = (message: { chatId: string; messageId: string }) => `${message.chatId}/${message.messageId}`;
+  // The messages each bot digest's stored summary covers, so a triage run summarizes a bot chat only when they change.
+  const summarizedMessageKeysByBotDigest = new Map<string, string>();
   async function rewriteBotChatDigestSummaryLines() {
     for (const [chatId, messages] of unconfirmedBotMessagesByChat()) {
       const digestId = identifyBotChatDigest(chatId);
-      if (digestSummaryStore.load(digestId) !== undefined) continue;
+      const messageKeys = messages.map(chatMessageKey).join(' ');
+      if (summarizedMessageKeysByBotDigest.get(digestId) === messageKeys) continue;
       const summary = await summarizeWithinTheSpendCeiling(messages.map(({ text }) => ({ summary: text })));
       digestSummaryStore.save(digestId, summary?.lines);
+      if (summary) summarizedMessageKeysByBotDigest.set(digestId, messageKeys);
     }
   }
   const identifyBotChatDigest = (chatId: string) => JSON.stringify(['bot-chat', chatId]);

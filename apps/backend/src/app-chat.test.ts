@@ -536,6 +536,44 @@ describe('createApp chat messages', () => {
     expect(summaryCalls).toBe(1);
   });
 
+  it('summarizes a Telegram bot digest again at POST /triage-run, with every unconfirmed message, once a new bot message arrives after its last summary', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:00:00.000Z',
+    });
+    const itemsSentToSummary: { summary: string }[][] = [];
+    const summary = {
+      summarize: (request: { items: { summary: string }[] }) => {
+        itemsSentToSummary.push(request.items);
+        return Promise.resolve({
+          lines: [`BBVA Alertas: ${String(request.items.length)} card charges`],
+          costInUsd: 0.25,
+        });
+      },
+    };
+    const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath, summary });
+    await postTriageRun(app);
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '78',
+      text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:30:00.000Z',
+    });
+
+    await postTriageRun(app);
+
+    expect(itemsSentToSummary.at(-1)).toEqual([
+      { summary: 'Cargo de $1,250.00 en tu tarjeta terminación 4321' },
+      { summary: 'Cargo de $310.50 en tu tarjeta terminación 4321' },
+    ]);
+    const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+    expect(digests).toEqual([expect.objectContaining({ summaryLines: ['BBVA Alertas: 2 card charges'] })]);
+  });
+
   it("writes no Telegram bot digest summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines", async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({
