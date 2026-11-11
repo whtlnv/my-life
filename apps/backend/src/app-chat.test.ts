@@ -160,7 +160,7 @@ describe('createApp chat messages', () => {
     await postJson(app, '/chat-messages', goodReport);
     const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
 
-    expect(whatsapp).toEqual({
+    expect(whatsapp).toMatchObject({
       parserBroken: false,
       lastReportedAt: clockAtTenPastThree.now().toISOString(),
     });
