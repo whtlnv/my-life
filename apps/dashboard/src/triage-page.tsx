@@ -1001,6 +1001,8 @@ export function TriagePage() {
   }
 
   const groups = queue.groups.filter((group) => group.category !== 'unknown');
+  const telegramItems = queue.chatItems?.filter((item) => item.channel === 'telegram');
+  const whatsappItems = queue.chatItems?.filter((item) => item.channel === 'whatsapp');
   return (
     <main>
       <header className="page-header">
@@ -1043,19 +1045,11 @@ export function TriagePage() {
         ))}
       </section>
       {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
-      {queue.chatItems !== undefined && (
-        <ChatSection
-          channel="telegram"
-          items={queue.chatItems.filter((item) => item.channel === 'telegram')}
-          onAccepted={removeChatItem}
-        />
+      {telegramItems !== undefined && (
+        <ChatSection channel="telegram" items={telegramItems} onAccepted={removeChatItem} />
       )}
-      {queue.chatItems?.some((item) => item.channel === 'whatsapp') && (
-        <ChatSection
-          channel="whatsapp"
-          items={queue.chatItems.filter((item) => item.channel === 'whatsapp')}
-          onAccepted={removeChatItem}
-        />
+      {whatsappItems !== undefined && whatsappItems.length > 0 && (
+        <ChatSection channel="whatsapp" items={whatsappItems} onAccepted={removeChatItem} />
       )}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
