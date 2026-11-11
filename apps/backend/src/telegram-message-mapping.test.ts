@@ -180,18 +180,112 @@ describe('Telegram message mapping', () => {
     expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toBeUndefined();
   });
 
-  it('maps a photo sent with no text to a chat message whose text is [photo]', () => {
+  it.each([
+    {
+      media: 'a photo',
+      text: '[photo]',
+      content: new Api.MessageMediaPhoto({ photo: new Api.PhotoEmpty({ id: returnBigInt(5550002) }) }),
+    },
+    {
+      media: 'a video',
+      text: '[video]',
+      content: new Api.MessageMediaDocument({
+        document: new Api.Document({
+          id: returnBigInt(5560001),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
+          mimeType: 'video/mp4',
+          size: returnBigInt(204800),
+          dcId: 1,
+          attributes: [new Api.DocumentAttributeVideo({ duration: 12, w: 1280, h: 720 })],
+        }),
+      }),
+    },
+    {
+      media: 'a voice note',
+      text: '[voice note]',
+      content: new Api.MessageMediaDocument({
+        voice: true,
+        document: new Api.Document({
+          id: returnBigInt(5570001),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
+          mimeType: 'audio/ogg',
+          size: returnBigInt(40960),
+          dcId: 1,
+          attributes: [new Api.DocumentAttributeAudio({ duration: 7, voice: true })],
+        }),
+      }),
+    },
+    {
+      media: 'an audio file that is not a voice note',
+      text: '[audio]',
+      content: new Api.MessageMediaDocument({
+        document: new Api.Document({
+          id: returnBigInt(5580001),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
+          mimeType: 'audio/mpeg',
+          size: returnBigInt(3145728),
+          dcId: 1,
+          attributes: [
+            new Api.DocumentAttributeAudio({ duration: 184, title: 'Demo mix', performer: 'Luis Ortega' }),
+            new Api.DocumentAttributeFilename({ fileName: 'demo-mix.mp3' }),
+          ],
+        }),
+      }),
+    },
+    {
+      media: 'a document',
+      text: '[document]',
+      content: new Api.MessageMediaDocument({
+        document: new Api.Document({
+          id: returnBigInt(5590001),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
+          mimeType: 'application/pdf',
+          size: returnBigInt(524288),
+          dcId: 1,
+          attributes: [new Api.DocumentAttributeFilename({ fileName: 'contract.pdf' })],
+        }),
+      }),
+    },
+    {
+      media: 'a sticker',
+      text: '[sticker]',
+      content: new Api.MessageMediaDocument({
+        document: new Api.Document({
+          id: returnBigInt(5590002),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
+          mimeType: 'image/webp',
+          size: returnBigInt(24576),
+          dcId: 1,
+          attributes: [
+            new Api.DocumentAttributeImageSize({ w: 512, h: 512 }),
+            new Api.DocumentAttributeSticker({ alt: '👍', stickerset: new Api.InputStickerSetEmpty() }),
+            new Api.DocumentAttributeFilename({ fileName: 'sticker.webp' }),
+          ],
+        }),
+      }),
+    },
+  ])('maps $media sent with no text to a chat message whose text is $text', ({ content, text }) => {
     const message = new Api.Message({
       id: 1023,
       peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
       date: Date.parse('2026-11-09T19:12:00.000Z') / 1000,
       message: '',
-      media: new Api.MessageMediaPhoto({ photo: new Api.PhotoEmpty({ id: returnBigInt(5550002) }) }),
+      media: content,
       out: false,
     });
 
     expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
-      expect.objectContaining({ messageId: '1023', text: '[photo]' }),
+      expect.objectContaining({ messageId: '1023', text }),
     );
   });
 
@@ -207,144 +301,6 @@ describe('Telegram message mapping', () => {
 
     expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
       expect.objectContaining({ messageId: '1029', text: '[photo] Así quedó la terraza' }),
-    );
-  });
-
-  it('maps a video sent with no text to a chat message whose text is [video]', () => {
-    const message = new Api.Message({
-      id: 1024,
-      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
-      date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
-      message: '',
-      media: new Api.MessageMediaDocument({
-        document: new Api.Document({
-          id: returnBigInt(5560001),
-          accessHash: returnBigInt(0),
-          fileReference: Buffer.from(''),
-          date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
-          mimeType: 'video/mp4',
-          size: returnBigInt(204800),
-          dcId: 1,
-          attributes: [new Api.DocumentAttributeVideo({ duration: 12, w: 1280, h: 720 })],
-        }),
-      }),
-      out: false,
-    });
-
-    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
-      expect.objectContaining({ messageId: '1024', text: '[video]' }),
-    );
-  });
-
-  it('maps a voice note sent with no text to a chat message whose text is [voice note]', () => {
-    const message = new Api.Message({
-      id: 1025,
-      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
-      date: Date.parse('2026-11-09T19:20:00.000Z') / 1000,
-      message: '',
-      media: new Api.MessageMediaDocument({
-        voice: true,
-        document: new Api.Document({
-          id: returnBigInt(5570001),
-          accessHash: returnBigInt(0),
-          fileReference: Buffer.from(''),
-          date: Date.parse('2026-11-09T19:20:00.000Z') / 1000,
-          mimeType: 'audio/ogg',
-          size: returnBigInt(40960),
-          dcId: 1,
-          attributes: [new Api.DocumentAttributeAudio({ duration: 7, voice: true })],
-        }),
-      }),
-      out: false,
-    });
-
-    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
-      expect.objectContaining({ messageId: '1025', text: '[voice note]' }),
-    );
-  });
-
-  it('maps an audio file that is not a voice note, sent with no text, to a chat message whose text is [audio]', () => {
-    const message = new Api.Message({
-      id: 1026,
-      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
-      date: Date.parse('2026-11-09T19:25:00.000Z') / 1000,
-      message: '',
-      media: new Api.MessageMediaDocument({
-        document: new Api.Document({
-          id: returnBigInt(5580001),
-          accessHash: returnBigInt(0),
-          fileReference: Buffer.from(''),
-          date: Date.parse('2026-11-09T19:25:00.000Z') / 1000,
-          mimeType: 'audio/mpeg',
-          size: returnBigInt(3145728),
-          dcId: 1,
-          attributes: [
-            new Api.DocumentAttributeAudio({ duration: 184, title: 'Demo mix', performer: 'Luis Ortega' }),
-            new Api.DocumentAttributeFilename({ fileName: 'demo-mix.mp3' }),
-          ],
-        }),
-      }),
-      out: false,
-    });
-
-    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
-      expect.objectContaining({ messageId: '1026', text: '[audio]' }),
-    );
-  });
-
-  it('maps a document sent with no text to a chat message whose text is [document]', () => {
-    const message = new Api.Message({
-      id: 1027,
-      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
-      date: Date.parse('2026-11-09T19:30:00.000Z') / 1000,
-      message: '',
-      media: new Api.MessageMediaDocument({
-        document: new Api.Document({
-          id: returnBigInt(5590001),
-          accessHash: returnBigInt(0),
-          fileReference: Buffer.from(''),
-          date: Date.parse('2026-11-09T19:30:00.000Z') / 1000,
-          mimeType: 'application/pdf',
-          size: returnBigInt(524288),
-          dcId: 1,
-          attributes: [new Api.DocumentAttributeFilename({ fileName: 'contract.pdf' })],
-        }),
-      }),
-      out: false,
-    });
-
-    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
-      expect.objectContaining({ messageId: '1027', text: '[document]' }),
-    );
-  });
-
-  it('maps a sticker sent with no text to a chat message whose text is [sticker]', () => {
-    const message = new Api.Message({
-      id: 1028,
-      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
-      date: Date.parse('2026-11-09T19:45:00.000Z') / 1000,
-      message: '',
-      media: new Api.MessageMediaDocument({
-        document: new Api.Document({
-          id: returnBigInt(5590002),
-          accessHash: returnBigInt(0),
-          fileReference: Buffer.from(''),
-          date: Date.parse('2026-11-09T19:45:00.000Z') / 1000,
-          mimeType: 'image/webp',
-          size: returnBigInt(24576),
-          dcId: 1,
-          attributes: [
-            new Api.DocumentAttributeImageSize({ w: 512, h: 512 }),
-            new Api.DocumentAttributeSticker({ alt: '👍', stickerset: new Api.InputStickerSetEmpty() }),
-            new Api.DocumentAttributeFilename({ fileName: 'sticker.webp' }),
-          ],
-        }),
-      }),
-      out: false,
-    });
-
-    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
-      expect.objectContaining({ messageId: '1028', text: '[sticker]' }),
     );
   });
 
