@@ -121,8 +121,7 @@ interface TriageResult {
 }
 
 type WhatsappStatus =
-  | { parserBroken: true; missingSelector: string }
-  | { parserBroken: false; lastReportedAt: string; stale: boolean };
+  { parserBroken: true; missingSelector: string } | { parserBroken: false; lastReportedAt: string; stale: boolean };
 
 // What the triage port learns about the sender: the display name from the From header plus the record the user and
 // the contacts import keep on that email.
@@ -746,6 +745,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .filter((message) => message.senderId === userId)
       .sort((first, second) => second.time.localeCompare(first.time))
       .map((message) => ({ ...message, link: telegramChatLink(message.chatId) }));
+    return context.json({ messages });
+  });
+  app.get('/whatsapp-contacts/:name/timeline', (context) => {
+    const { name } = context.req.param();
+    const messages = chatMessageStore
+      .listMessages()
+      .filter((message) => message.channel === 'whatsapp' && message.senderId === name);
     return context.json({ messages });
   });
   const configuredSlackWorkspaces = options.slackWorkspaces ?? [];
@@ -2169,12 +2175,20 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       lastMessageAt: slackTimestampAsIso(message.timestamp),
     });
     const isFromSomeoneElse = (message: { sentByUser?: boolean }): boolean => message.sentByUser !== true;
-    const telegramSenderAsContact = (message: ChatMessage) => ({
-      channel: 'telegram',
-      displayName: message.senderName,
-      telegramHandles: [{ userId: message.senderId }],
-      lastMessageAt: message.time,
-    });
+    const telegramSenderAsContact = (message: ChatMessage) =>
+      message.channel === 'whatsapp'
+        ? {
+            channel: 'whatsapp',
+            displayName: message.senderName,
+            whatsappHandles: [{ name: message.senderId }],
+            lastMessageAt: message.time,
+          }
+        : {
+            channel: 'telegram',
+            displayName: message.senderName,
+            telegramHandles: [{ userId: message.senderId }],
+            lastMessageAt: message.time,
+          };
     // A contact's own messages plus the user's replies in the same chats, so a reply the user sent clears the wait.
     const urgentChatSender = <Contact extends object>(sender: {
       messages: { threadId: string; receivedAt: string; sentByUser: boolean }[];

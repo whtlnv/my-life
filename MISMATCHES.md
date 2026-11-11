@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-11 00:53 · `apps/backend/src/app-chat.test.ts::lists at GET /people, under Everyone else on channel whatsapp, the sender of a WhatsApp message, and lists that message at GET /whatsapp-contacts/:name/timeline`
+- Behavior: A WhatsApp sender appears on the People tab as a contact with their WhatsApp messages in the timeline
+- Predicted: AssertionError — `/people` lists Ana with channel `telegram` and `telegramHandles`, since every chat message goes through `telegramSenderAsContact`
+- Actual: SyntaxError from `getJson` — the timeline request ran before the `/people` assertion, and the missing `/whatsapp-contacts/:name/timeline` route answers a plain-text 404
+- Type: wrong-reason
+- Resolution: moved the timeline request after the `/people` assertion; the test now fails with the predicted assertion (channel `telegram`, `telegramHandles: [{ userId: 'Ana' }]`)
+
 ## 2026-11-11 00:36 · `apps/backend/src/app-chat.test.ts::keeps at GET /triage-queue a WhatsApp message whose only stored verdict with its chat id and message id is on Telegram, since a verdict hides only its own channel's message`
 - Behavior: A WhatsApp message with a stored verdict is no longer in the triage queue
 - Predicted: first draft (WhatsApp verdict hides the WhatsApp message) passes vacuously
