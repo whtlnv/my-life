@@ -864,12 +864,17 @@ describe('createApp Slack polls', () => {
     expect(usersInfoRequests).toEqual(['U0001']);
   });
 
-  async function appWithRevokedSlackToken() {
-    const slackApiUrl = await localSlackAnsweringEveryRequest({ ok: false, error: 'invalid_auth' });
+  function silencedBackendLog() {
     const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     onTestFinished(() => {
       backendLog.mockRestore();
     });
+    return backendLog;
+  }
+
+  async function appWithRevokedSlackToken() {
+    const slackApiUrl = await localSlackAnsweringEveryRequest({ ok: false, error: 'invalid_auth' });
+    const backendLog = silencedBackendLog();
     const app = createApp({
       allowedEmails: [],
       databasePath: temporaryDatabasePath(),
@@ -910,10 +915,7 @@ describe('createApp Slack polls', () => {
         ? { ok: true, user_id: 'UOWN', team: 'PS Mutuus' }
         : { ok: true, messages: { matches: [] } };
     });
-    const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    onTestFinished(() => {
-      backendLog.mockRestore();
-    });
+    silencedBackendLog();
     const app = createApp({
       allowedEmails: [],
       databasePath: temporaryDatabasePath(),
