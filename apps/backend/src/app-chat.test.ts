@@ -376,6 +376,39 @@ describe('createApp chat messages', () => {
     expect(digests).toEqual([expect.objectContaining({ title: 'BBVA Alertas', channel: 'telegram', count: 2 })]);
   });
 
+  it('lists at GET /triage-queue no digest for a Telegram chat with a bot whose messages are all confirmed', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    const botMessage = {
+      channel: 'telegram',
+      chatId: '8001',
+      chatTitle: 'BBVA Alertas',
+      senderId: '8001',
+      senderName: 'BBVA Alertas',
+      sentByUser: false,
+      chatIsBot: true,
+    };
+    chatMessageStore.saveMessage({
+      ...botMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-09T16:00:00.000Z',
+    });
+    chatMessageStore.saveMessage({
+      ...botMessage,
+      messageId: '78',
+      text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
+      time: '2026-11-09T17:00:00.000Z',
+    });
+    chatMessageStore.saveVerdict({ channel: 'telegram', chatId: '8001', messageId: '77', decision: 'confirmed' });
+    chatMessageStore.saveVerdict({ channel: 'telegram', chatId: '8001', messageId: '78', decision: 'confirmed' });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+
+    expect(digests).toEqual([]);
+  });
+
   it('lists at GET /people, under Everyone else on channel telegram, the sender of a Telegram message as a contact with a Telegram handle of their user id and their display name', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');

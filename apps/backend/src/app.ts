@@ -1181,8 +1181,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }));
   }
   function describeBotChatDigests() {
+    const confirmedMessageIds = new Set(
+      chatMessageStore
+        .listVerdicts()
+        .filter((verdict) => verdict.decision === 'confirmed')
+        .map((verdict) => `${verdict.chatId}/${verdict.messageId}`),
+    );
     const botMessagesByChat = new Map<string, ChatMessage[]>();
-    for (const message of chatMessageStore.listMessages().filter((message) => message.chatIsBot))
+    for (const message of chatMessageStore
+      .listMessages()
+      .filter((message) => message.chatIsBot && !confirmedMessageIds.has(`${message.chatId}/${message.messageId}`)))
       botMessagesByChat.set(message.chatId, [...(botMessagesByChat.get(message.chatId) ?? []), message]);
     return [...botMessagesByChat.values()].map((messages) => ({
       title: messages[0]?.chatTitle,
