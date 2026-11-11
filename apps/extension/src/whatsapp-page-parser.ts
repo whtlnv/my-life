@@ -42,12 +42,17 @@ const senderAndTimeOf = (row: Element): { sender: string; sentAt: string } => {
   };
 };
 
+const mediaPlaceholders: ReadonlyArray<{ testId: string; placeholder: string }> = [
+  { testId: 'sticker-container', placeholder: '[sticker]' },
+  { testId: 'image-thumb', placeholder: '[photo]' },
+];
+
 const textOf = (row: Element): string => {
-  if (row.querySelector('[data-testid="sticker-container"]') !== null) {
-    return '[sticker]';
-  }
-  if (row.querySelector('[data-testid="image-thumb"]') !== null) {
-    return '[photo]';
+  const media = mediaPlaceholders.find(
+    ({ testId }) => row.querySelector(`[data-testid="${testId}"]`) !== null,
+  );
+  if (media !== undefined) {
+    return media.placeholder;
   }
   return row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '';
 };
