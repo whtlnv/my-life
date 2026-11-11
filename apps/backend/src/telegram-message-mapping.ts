@@ -24,7 +24,11 @@ function messageText(message: Api.Message): string {
 }
 
 export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {
-  if (message.className === 'MessageService' || isBroadcastChannel(chat) || !messageText(message)) {
+  if (message.className === 'MessageService' || isBroadcastChannel(chat)) {
+    return undefined;
+  }
+  const text = messageText(message);
+  if (!text) {
     return undefined;
   }
   return {
@@ -34,7 +38,7 @@ export function mapTelegramMessage({ message, chat, sender }: TelegramMessageCon
     messageId: String(message.id),
     senderId: sender.id.toString(),
     senderName: userName(sender),
-    text: messageText(message),
+    text,
     time: new Date(message.date * 1000).toISOString(),
     sentByUser: Boolean(message.out),
     ...('bot' in chat && chat.bot && { chatIsBot: true }),
