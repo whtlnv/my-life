@@ -34,7 +34,7 @@
 - [x] A WhatsApp chat whose last message was sent by the user does not appear in waiting-on
 - [x] A WhatsApp sender appears on the People tab as a contact with their WhatsApp messages in the timeline
 - [x] The user's own WhatsApp messages do not list the user as a WhatsApp contact
-- [ ] A task made from a WhatsApp triage item links to the WhatsApp chat
+- [x] A task made from a WhatsApp triage item links to the WhatsApp chat
 - [ ] A task made from a Telegram triage item still links to the Telegram chat
 - [ ] `POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp
   - predicted-contradiction: `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing` — asserts: a `POST /chat-sends` with channel `whatsapp` and text answers 400 — retired-by: "`POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command"

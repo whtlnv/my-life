@@ -691,7 +691,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         proposal: {
           title: String(message?.text),
           accountEmail: verdict.channel,
-          link: telegramChatLink(verdict.chatId),
+          link: chatLink(verdict.channel, verdict.chatId),
         },
       });
     }

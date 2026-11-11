@@ -251,6 +251,48 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+
+  it('lists at GET /tasks a task linked to the WhatsApp chat, on account whatsapp, once the user picks task on a WhatsApp triage item at POST /chat-verdicts', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 1, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F6',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+        ],
+      },
+    });
+    const {
+      chatItems: [item],
+    } = await getJson<{ chatItems: { channel: string; chatId: string; messageId: string; link: string }[] }>(
+      app,
+      '/triage-queue',
+    );
+
+    await postJson(app, '/chat-verdicts', {
+      channel: item?.channel,
+      chatId: item?.chatId,
+      messageId: item?.messageId,
+      decision: 'task',
+    });
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+
+    expect(tasks).toEqual([
+      expect.objectContaining({
+        title: 'Can we move the call to tomorrow?',
+        link: item?.link,
+        accountEmail: 'whatsapp',
+      }),
+    ]);
+  });
   it('sends text at POST /chat-sends through the Telegram session and lists it as sent by the user under the id Telegram returned', async () => {
     const databasePath = temporaryDatabasePath();
     const { telegramClient, idsTelegramReturned } = recordingTelegramClient();
