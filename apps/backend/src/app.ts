@@ -1544,9 +1544,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .loadAll()
       .filter(({ tool, target, outcome }) => tool === 'write_draft' && !outcome && isMessageOfAccount(target))
       .map((action) => createDraftCommand(action, reportedMessageWithId(reportedMessages, action.target)));
-    const sendWhatsappCommands = whatsappSends
-      .filter(() => accountEmail === whatsappAccountEmail)
-      .map(({ chatTitle, text }, index) => ({ id: `send-whatsapp-${index}`, type: 'send-whatsapp', chatTitle, text }));
+    const reportsWhatsapp = accountEmail === whatsappAccountEmail;
+    const sendWhatsappCommands = reportsWhatsapp
+      ? whatsappSends.map(({ chatTitle, text }, index) => ({
+          id: `send-whatsapp-${index}`,
+          type: 'send-whatsapp',
+          chatTitle,
+          text,
+        }))
+      : [];
     const pendingCommands = [
       ...archiveCommands,
       ...filterCommands,
