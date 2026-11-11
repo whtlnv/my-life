@@ -13,7 +13,6 @@ function scriptedSlack(routes: Record<string, SlackRoute> = {}) {
   const requests: URL[] = [];
   const defaults: Record<string, SlackRoute> = {
     '/auth.test': () => ({ ok: true, user_id: ownSlackUserId }),
-    '/conversations.list': () => ({ ok: true, channels: [] }),
     '/search.messages': () => ({ ok: true, messages: { matches: [] } }),
     '/users.info': (url) => ({
       ok: true,
