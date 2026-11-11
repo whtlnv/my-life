@@ -40,8 +40,10 @@ const senderAndTimeOf = (row: Element): { sender: string; sentAt: string } => {
   };
 };
 
+const messageRowSelector = '#main [data-id]';
+
 export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessage[] =>
-  [...document.querySelectorAll('#main [data-id]')]
+  [...document.querySelectorAll(messageRowSelector)]
     .filter((row) => row.querySelector('[data-testid="msg-container"]'))
     .map((row) => ({
       id: row.getAttribute('data-id') ?? '',
@@ -60,8 +62,6 @@ export interface WhatsappPageFailure {
   ok: false;
   missingSelector: string;
 }
-
-const messageRowSelector = '#main [data-id]';
 
 export const parseWhatsappPage = (document: Document): WhatsappPage | WhatsappPageFailure =>
   document.querySelector('#main') !== null && document.querySelector(messageRowSelector) === null
