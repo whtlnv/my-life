@@ -103,4 +103,14 @@ describe('parseWhatsappOpenChat', () => {
       { sender: '+52 55 1234 0001', sentAt: '2026-10-01T08:05:00-06:00' },
     ]);
   });
+
+  it('dates each message in the saved group chat on its own day, across the change from one day to the next', () => {
+    const messages = parseWhatsappOpenChat(fixtureDocument('whatsapp-group-chat.fixture.html'));
+    const sentAtOf = (id: string): string | undefined => messages.find((message) => message.id === id)?.sentAt;
+
+    expect([sentAtOf('3EB0F0000000B99AA1B2C3'), sentAtOf('3EB0F0000000D889A1B2C3')]).toEqual([
+      '2026-09-29T18:15:00-06:00',
+      '2026-09-30T19:16:00-06:00',
+    ]);
+  });
 });

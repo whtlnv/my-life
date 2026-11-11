@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 22:52 · `apps/extension/src/whatsapp-page-parser.test.ts::dates each message in the saved group chat on its own day, across the change from one day to the next`
+- Behavior: Two messages in the open-chat fixture dated on different days parse to their own dates
+- Predicted: passes on first run (behavior already delivered by the `data-pre-plain-text` item, a6ef124, which parses each row's own date)
+- Actual: passes on first run (29/9 6:15 pm → 2026-09-29T18:15:00-06:00; 30/9 7:16 pm → 2026-09-30T19:16:00-06:00)
+- Type: passed unexpectedly
+- Resolution: no missing behavior to drive — the previous item's per-row label parsing already covers cross-day dates (its hand-built test even spans 30/9 → 1/10); kept the fixture-based test as a characterization pin rather than invent a failure. Side finding: the group fixture's `3EB0F00000009AABA1B2C3` and the one-to-one fixture's first two rows have no label and parse to `sentAt: "-00-00T00::00-06:00"`, which is the later placeholder item's concern.
+
 ## 2026-11-10 22:41 · `apps/extension/src/whatsapp-page-parser.test.ts::marks as not sent by the user a message whose meta holds only its time and no delivery-status icon`
 - Behavior: a message row whose `msg-meta` has no delivery-status icon parses as not sent by the user
 - Predicted: passes on first run — the previous item's green (`sentByUser: querySelector('[data-testid="msg-meta"] span[aria-label]') !== null`) already yields false, and its "exactly these ids" assertion already pins the negative case on the group fixture
