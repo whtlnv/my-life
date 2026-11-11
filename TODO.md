@@ -18,7 +18,7 @@
 - [x] When the chat-list selector matches nothing, the parse reports a failure naming that selector
 - [x] A rendered sticker row (no `data-pre-plain-text`, no text, a `sticker-container`) parses with text `[sticker]`
 - [x] A rendered photo row (no text, an `image-thumb`) parses with text `[photo]`
-- [ ] A rendered row with no `data-pre-plain-text` takes its time from its `msg-meta`
+- [x] A rendered row with no `data-pre-plain-text` takes its time from its `msg-meta`
 - [ ] The parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it; a chat where some rows lack it (photos, stickers) parses without a failure
 - [ ] The report built from the fixture document passes the shared contract schema before it is posted
 - [ ] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`

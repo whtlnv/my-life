@@ -60,15 +60,36 @@ const textOf = (row: Element): string => {
 const chatPaneSelector = '#main';
 const messageRowSelector = `${chatPaneSelector} [data-id]`;
 
-export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessage[] =>
-  [...document.querySelectorAll(messageRowSelector)]
-    .filter((row) => row.querySelector('[data-testid="msg-container"]'))
-    .map((row) => ({
+const metaTimePattern = /^(\d+):(\d+) (am|pm)$/;
+
+// A row without a pre-plain-text label (a sticker, a photo) shows only a time; its day is the previous message's.
+const metaTimeOn = (row: Element, previousSentAt: string): string => {
+  const [, hour = '', minute = '', meridiem = ''] =
+    metaTimePattern.exec(row.querySelector('[data-testid="msg-meta"]')?.textContent ?? '') ?? [];
+  const hour24 = (Number(hour) % 12) + (meridiem === 'pm' ? 12 : 0);
+  return `${previousSentAt.slice(0, 10)}T${twoDigits(hour24)}:${minute}:00-06:00`;
+};
+
+export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessage[] => {
+  const messages: WhatsappOpenChatMessage[] = [];
+  for (const row of document.querySelectorAll(messageRowSelector)) {
+    if (!row.querySelector('[data-testid="msg-container"]')) {
+      continue;
+    }
+    const senderAndTime = senderAndTimeOf(row);
+    const previous = messages.at(-1);
+    if (row.querySelector('[data-pre-plain-text]') === null && previous !== undefined) {
+      senderAndTime.sentAt = metaTimeOn(row, previous.sentAt);
+    }
+    messages.push({
       id: row.getAttribute('data-id') ?? '',
       text: textOf(row),
       sentByUser: row.querySelector('[data-testid="msg-meta"] span[aria-label]') !== null,
-      ...senderAndTimeOf(row),
-    }));
+      ...senderAndTime,
+    });
+  }
+  return messages;
+};
 
 export interface WhatsappPage {
   ok: true;

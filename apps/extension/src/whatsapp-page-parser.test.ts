@@ -128,6 +128,24 @@ describe('parseWhatsappOpenChat', () => {
 
     expect(messages.find(({ id }) => id === '3EB0F00000009AABA1B2C3')?.text).toBe('[photo]');
   });
+
+  it('times a rendered row with no pre-plain-text label by the time in its meta, on the day of the message before it', () => {
+    const document = new DOMParser().parseFromString(
+      '<div id="main">' +
+        '<div data-id="3EB0F000000000AAA1B2C3"><div data-testid="msg-container">' +
+        '<div data-pre-plain-text="[9:41 pm, 30/9/2026] Sam Rivera: "><span data-testid="selectable-text">Hola</span></div>' +
+        '<div data-testid="msg-meta"><span dir="auto"><span>9:41 pm</span></span></div></div></div>' +
+        '<div data-id="3EB0F000000000BBB1B2C3"><div data-testid="msg-container">' +
+        '<div data-testid="sticker-container"></div>' +
+        '<div data-testid="msg-meta"><span dir="auto"><span>9:55 pm</span></span></div></div></div>' +
+        '</div>',
+      'text/html',
+    );
+
+    expect(parseWhatsappOpenChat(document).find(({ id }) => id === '3EB0F000000000BBB1B2C3')?.sentAt).toBe(
+      '2026-09-30T21:55:00-06:00',
+    );
+  });
 });
 
 describe('parseWhatsappPage', () => {
