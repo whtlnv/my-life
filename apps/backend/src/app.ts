@@ -2047,11 +2047,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.body(null, 200);
   });
   app.put('/whatsapp-contacts/:name/marks/vip', (context) => {
-    contactDetailsStore.saveMark(`whatsapp:${context.req.param('name')}`, 'vip');
+    contactDetailsStore.saveMark(whatsappContactKey(context.req.param('name')), 'vip');
     return context.body(null, 200);
   });
   app.delete('/whatsapp-contacts/:name/marks/vip', (context) => {
-    contactDetailsStore.removeMark(`whatsapp:${context.req.param('name')}`, 'vip');
+    contactDetailsStore.removeMark(whatsappContactKey(context.req.param('name')), 'vip');
     return context.body(null, 200);
   });
   app.delete('/telegram-contacts/:userId/marks/vip', (context) => {
@@ -2550,11 +2550,15 @@ function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string;
 
 // A chat sender's contact key: Telegram senders by user id (as stored since Phase 6a), WhatsApp senders by name.
 function chatContactKey(message: { channel: string; senderId: string }): string {
-  return message.channel === 'whatsapp' ? `whatsapp:${message.senderId}` : telegramContactKey(message.senderId);
+  return message.channel === 'whatsapp' ? whatsappContactKey(message.senderId) : telegramContactKey(message.senderId);
 }
 
 function telegramContactKey(userId: string): string {
   return `telegram:${userId}`;
+}
+
+function whatsappContactKey(name: string): string {
+  return `whatsapp:${name}`;
 }
 
 function telegramChatLink(chatId: string): string {
