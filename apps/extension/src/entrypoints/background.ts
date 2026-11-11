@@ -1,5 +1,6 @@
 import { defineBackground } from 'wxt/utils/define-background';
 
+import type { AccountEmailAnswer, AccountEmailMessage } from '../account-email-message';
 import { answerBackendFetch, type BackendFetchMessage } from '../backend-fetch-relay';
 import { backendUrl } from '../backend-url';
 import { startExtension } from '../extension-start';
@@ -25,8 +26,8 @@ const accessToken = async (): Promise<string> => {
 const isBackendFetchMessage = (message: unknown): message is BackendFetchMessage =>
   typeof message === 'object' && message !== null && (message as { type?: unknown }).type === 'backend-fetch';
 
-const isAccountEmailMessage = (message: unknown): boolean =>
-  typeof message === 'object' && message !== null && (message as { type?: unknown }).type === 'account-email';
+const isAccountEmailMessage = (message: unknown): message is AccountEmailMessage =>
+  typeof message === 'object' && message !== null && (message as Partial<AccountEmailMessage>).type === 'account-email';
 
 export default defineBackground(() => {
   chrome.action.onClicked.addListener(() => {
@@ -47,10 +48,10 @@ export default defineBackground(() => {
     if (isAccountEmailMessage(message)) {
       profileAccountEmail().then(
         (email) => {
-          sendResponse({ email });
+          sendResponse({ email } satisfies AccountEmailAnswer);
         },
         (error: unknown) => {
-          sendResponse({ email: '', error: String(error) });
+          sendResponse({ email: '', error: String(error) } satisfies AccountEmailAnswer);
         },
       );
       return true;

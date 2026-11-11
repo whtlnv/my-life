@@ -1,5 +1,6 @@
 import { defineContentScript } from 'wxt/utils/define-content-script';
 
+import type { AccountEmailAnswer, AccountEmailMessage } from '../account-email-message';
 import { relayedFetch, type BackendFetchAnswer, type BackendFetchMessage } from '../backend-fetch-relay';
 import { watchWhatsappPage } from '../whatsapp-report-watch';
 import { carryOutWhatsappSends } from '../whatsapp-send';
@@ -14,7 +15,9 @@ const sendToBackground = (message: BackendFetchMessage): Promise<BackendFetchAns
   chrome.runtime.sendMessage(message);
 
 const profileAccountEmail = async (): Promise<string> => {
-  const { email } = await chrome.runtime.sendMessage<{ type: string }, { email: string }>({ type: 'account-email' });
+  const { email } = await chrome.runtime.sendMessage<AccountEmailMessage, AccountEmailAnswer>({
+    type: 'account-email',
+  });
   return email;
 };
 
