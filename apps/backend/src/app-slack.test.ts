@@ -121,10 +121,7 @@ describe('createApp Slack messages', () => {
     }
     const app = createApp({ allowedEmails: [], databasePath });
 
-    const { slackItems } = await getJson<{ slackItems: { timestamp: string; text: string }[] }>(
-      app,
-      '/triage-queue',
-    );
+    const { slackItems } = await getJson<{ slackItems: { timestamp: string; text: string }[] }>(app, '/triage-queue');
 
     expect(slackItems.map(({ timestamp, text }) => ({ timestamp, text }))).toEqual([
       { timestamp: '1762700000.000300', text: 'Can you look at the contract today?' },
@@ -155,9 +152,7 @@ describe('createApp Slack messages', () => {
       slackItems: { conversationId: string; timestamp: string; text: string }[];
     }>(app, '/triage-queue');
 
-    expect(
-      slackItems.map(({ conversationId, timestamp, text }) => ({ conversationId, timestamp, text })),
-    ).toEqual(
+    expect(slackItems.map(({ conversationId, timestamp, text }) => ({ conversationId, timestamp, text }))).toEqual(
       expect.arrayContaining([
         { conversationId: 'D0001', timestamp: '1762700000.000300', text: 'Can you look at the contract today?' },
         { conversationId: 'D0002', timestamp: '1762700000.000200', text: 'Is the invoice ready?' },
@@ -316,10 +311,7 @@ describe('createApp Slack messages', () => {
     });
 
     store.saveMessage({ ...message, text: 'Can you look at the contract today?', timestamp: '1762700000.000200' });
-    const { slackItems } = await getJson<{ slackItems: { timestamp: string; text: string }[] }>(
-      app,
-      '/triage-queue',
-    );
+    const { slackItems } = await getJson<{ slackItems: { timestamp: string; text: string }[] }>(app, '/triage-queue');
 
     expect(slackItems.map(({ timestamp, text }) => ({ timestamp, text }))).toEqual([
       { timestamp: '1762700000.000200', text: 'Can you look at the contract today?' },
@@ -693,14 +685,13 @@ describe('createApp Slack messages', () => {
   });
 });
 
-// A local Slack that answers auth.test with the user's own id and chat.postMessage with the given answer.
-async function localSlackAnsweringPostMessage(answer: unknown): Promise<string> {
+// A local Slack that answers each request with the body the given function returns for its path.
+async function localSlackAnswering(bodyForPath: (path: string | undefined) => unknown): Promise<string> {
   const server: Server = createServer((request, response) => {
     request.resume();
     request.on('end', () => {
-      const body = request.url === '/auth.test' ? { ok: true, user_id: 'UOWN' } : answer;
       response.writeHead(200, { 'content-type': 'application/json' });
-      response.end(JSON.stringify(body));
+      response.end(JSON.stringify(bodyForPath(request.url)));
     });
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -713,6 +704,16 @@ async function localSlackAnsweringPostMessage(answer: unknown): Promise<string> 
       ),
   );
   return `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`;
+}
+
+// A local Slack that answers auth.test with the user's own id and chat.postMessage with the given answer.
+function localSlackAnsweringPostMessage(answer: unknown): Promise<string> {
+  return localSlackAnswering((path) => (path === '/auth.test' ? { ok: true, user_id: 'UOWN' } : answer));
+}
+
+// A local Slack that answers every request with the given body.
+function localSlackAnsweringEveryRequest(body: unknown): Promise<string> {
+  return localSlackAnswering(() => body);
 }
 
 describe('createApp Slack sends', () => {
@@ -820,51 +821,38 @@ describe('createApp Slack polls', () => {
   it('asks users.info on a second POST /slack-poll about no user the first poll already named', async () => {
     const usersInfoRequests: string[] = [];
     let historyRequestCount = 0;
-    const server: Server = createServer((request, response) => {
-      request.resume();
-      request.on('end', () => {
-        const url = new URL(request.url ?? '/', 'http://127.0.0.1');
-        const answers: Record<string, () => unknown> = {
-          '/auth.test': () => ({ ok: true, user_id: 'UOWN', team: 'PS Mutuus' }),
-          '/search.messages': () =>
-            url.searchParams.get('query')?.startsWith('is:dm') === true
-              ? { ok: true, messages: { matches: [{ ts: '1762700000.000100', channel: { id: 'D0001' } }] } }
-              : { ok: true, messages: { matches: [] } },
-          '/conversations.history': () => {
-            historyRequestCount += 1;
-            return {
-              ok: true,
-              messages: [
-                {
-                  user: 'U0001',
-                  text: `Message ${String(historyRequestCount)}`,
-                  ts: `176270000${String(historyRequestCount)}.000100`,
-                },
-              ],
-            };
-          },
-          '/users.info': () => {
-            usersInfoRequests.push(String(url.searchParams.get('user')));
-            return { ok: true, user: { profile: { display_name: 'Ana' } } };
-          },
-        };
-        response.writeHead(200, { 'content-type': 'application/json' });
-        response.end(JSON.stringify(answers[url.pathname]?.() ?? { ok: false, error: 'unknown_method' }));
-      });
+    const slackApiUrl = await localSlackAnswering((path) => {
+      const url = new URL(path ?? '/', 'http://127.0.0.1');
+      const answers: Record<string, () => unknown> = {
+        '/auth.test': () => ({ ok: true, user_id: 'UOWN', team: 'PS Mutuus' }),
+        '/search.messages': () =>
+          url.searchParams.get('query')?.startsWith('is:dm') === true
+            ? { ok: true, messages: { matches: [{ ts: '1762700000.000100', channel: { id: 'D0001' } }] } }
+            : { ok: true, messages: { matches: [] } },
+        '/conversations.history': () => {
+          historyRequestCount += 1;
+          return {
+            ok: true,
+            messages: [
+              {
+                user: 'U0001',
+                text: `Message ${String(historyRequestCount)}`,
+                ts: `176270000${String(historyRequestCount)}.000100`,
+              },
+            ],
+          };
+        },
+        '/users.info': () => {
+          usersInfoRequests.push(String(url.searchParams.get('user')));
+          return { ok: true, user: { profile: { display_name: 'Ana' } } };
+        },
+      };
+      return answers[url.pathname]?.() ?? { ok: false, error: 'unknown_method' };
     });
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    onTestFinished(
-      () =>
-        new Promise<void>((resolve) =>
-          server.close(() => {
-            resolve();
-          }),
-        ),
-    );
     const app = createApp({
       allowedEmails: [],
       databasePath: temporaryDatabasePath(),
-      slackApiUrl: `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`,
+      slackApiUrl,
       slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
       clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
     });
@@ -877,22 +865,7 @@ describe('createApp Slack polls', () => {
   });
 
   it("writes to the backend log, on POST /slack-poll, a failed workspace's team id and the error", async () => {
-    const server: Server = createServer((request, response) => {
-      request.resume();
-      request.on('end', () => {
-        response.writeHead(200, { 'content-type': 'application/json' });
-        response.end(JSON.stringify({ ok: false, error: 'invalid_auth' }));
-      });
-    });
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    onTestFinished(
-      () =>
-        new Promise<void>((resolve) =>
-          server.close(() => {
-            resolve();
-          }),
-        ),
-    );
+    const slackApiUrl = await localSlackAnsweringEveryRequest({ ok: false, error: 'invalid_auth' });
     const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     onTestFinished(() => {
       backendLog.mockRestore();
@@ -900,7 +873,7 @@ describe('createApp Slack polls', () => {
     const app = createApp({
       allowedEmails: [],
       databasePath: temporaryDatabasePath(),
-      slackApiUrl: `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`,
+      slackApiUrl,
       slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-revoked' }],
     });
 
