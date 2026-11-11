@@ -6,13 +6,29 @@ interface SendWhatsappCommand {
   text: string;
 }
 
+// WhatsApp's composer is a Lexical editor, which ignores a direct text change: the text goes in as a beforeinput
+// insertText event, which the editor handles and cancels. Where nothing handles it (jsdom in tests), the text is set.
+function typeInto(composer: HTMLElement, text: string): void {
+  composer.focus();
+  const insertText = new InputEvent('beforeinput', {
+    inputType: 'insertText',
+    data: text,
+    bubbles: true,
+    cancelable: true,
+  });
+  const handledByTheEditor = !composer.dispatchEvent(insertText);
+  if (!handledByTheEditor) composer.textContent = text;
+}
+
 function sendInChat(document: Document, command: SendWhatsappCommand): boolean {
-  const chatRow = document.querySelector<HTMLElement>(`[data-testid="cell-frame-title"] span[title="${command.chatTitle}"]`);
+  const chatRow = document.querySelector<HTMLElement>(
+    `[data-testid="cell-frame-title"] span[title="${command.chatTitle}"]`,
+  );
   if (chatRow === null) return false;
   chatRow.click();
-  const composer = document.querySelector('[data-testid="conversation-compose-box-input"]');
+  const composer = document.querySelector<HTMLElement>('[data-testid="conversation-compose-box-input"]');
   if (composer === null) return false;
-  composer.textContent = command.text;
+  typeInto(composer, command.text);
   composer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
   return true;
 }

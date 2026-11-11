@@ -74,4 +74,32 @@ describe('carryOutWhatsappSends', () => {
 
     expect(actions).toEqual([]);
   });
+
+  it("types the text as a beforeinput insertText event after focusing the composer, as WhatsApp's editor ignores a direct text change", async () => {
+    const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
+    const composer = document.querySelector('[data-testid="conversation-compose-box-input"]');
+    // A DOMParser document has no window to move focus in, so the composer's focus() is recorded instead.
+    let composerFocused = false;
+    if (composer instanceof HTMLElement) {
+      composer.focus = () => {
+        composerFocused = true;
+      };
+    }
+    const insertedInto: string[] = [];
+    composer?.addEventListener('beforeinput', (event) => {
+      const { inputType, data } = event as InputEvent;
+      if (inputType === 'insertText') insertedInto.push(`${String(composerFocused)} ${String(data)}`);
+      event.preventDefault();
+    });
+
+    await carryOutWhatsappSends({
+      fetch: fakeBackend([], [onMyWayCommand]),
+      accountEmail: 'francisco@example.com',
+      backendUrl,
+      document,
+    });
+
+    expect(insertedInto).toEqual(['true On my way']);
+    expect(composer?.textContent).not.toContain('On my way');
+  });
 });
