@@ -22,6 +22,18 @@ function recordingBackend(postedReports: unknown[]): FetchFunction {
   };
 }
 
+function watchOneToOneChatFixture() {
+  const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
+  const postedReports: unknown[] = [];
+  watchWhatsappPage({
+    fetch: recordingBackend(postedReports),
+    accountEmail: 'francisco@example.com',
+    backendUrl,
+    document,
+  });
+  return { document, postedReports };
+}
+
 async function mutate(document: Document) {
   document.body.append(document.createElement('div'));
   await Promise.resolve();
@@ -37,14 +49,7 @@ describe('watchWhatsappPage', () => {
   });
 
   it('posts one report, 10 s after the last of several DOM mutations within 10 s', async () => {
-    const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
-    const postedReports: unknown[] = [];
-    watchWhatsappPage({
-      fetch: recordingBackend(postedReports),
-      accountEmail: 'francisco@example.com',
-      backendUrl,
-      document,
-    });
+    const { document, postedReports } = watchOneToOneChatFixture();
 
     await mutate(document);
     await vi.advanceTimersByTimeAsync(4_000);
@@ -62,14 +67,7 @@ describe('watchWhatsappPage', () => {
   });
 
   it('posts two reports for two DOM mutations more than 10 s apart', async () => {
-    const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
-    const postedReports: unknown[] = [];
-    watchWhatsappPage({
-      fetch: recordingBackend(postedReports),
-      accountEmail: 'francisco@example.com',
-      backendUrl,
-      document,
-    });
+    const { document, postedReports } = watchOneToOneChatFixture();
 
     await mutate(document);
     await vi.advanceTimersByTimeAsync(10_001);
