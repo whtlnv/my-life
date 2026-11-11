@@ -17,7 +17,6 @@
 - [x] When the chat pane is present but the message-row selector matches nothing, the parse reports a failure naming that selector instead of an empty message list
 - [x] When the chat-list selector matches nothing, the parse reports a failure naming that selector
 - [ ] A rendered sticker row (no `data-pre-plain-text`, no text, a `sticker-container`) parses with text `[sticker]`
-  - predicted-contradiction: `apps/extension/src/whatsapp-page-parser.test.ts::yields each rendered message's id and text from the saved open chat, skipping rows WhatsApp has not rendered` — asserts: the fixture's sticker and media rows parse with text `''` — retired-by: "parses with text `[sticker]`" (migrate the expectation for those rows; keep the id and skip assertions)
 - [ ] A rendered photo row (no text, an `image-thumb`) parses with text `[photo]`
 - [ ] A rendered row with no `data-pre-plain-text` takes its time from its `msg-meta`
 - [ ] The parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it; a chat where some rows lack it (photos, stickers) parses without a failure
