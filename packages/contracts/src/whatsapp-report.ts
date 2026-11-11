@@ -4,6 +4,7 @@ const whatsappChat = z.object({
   title: z.string(),
   unreadCount: z.number(),
   lastMessageAt: z.string(),
+  lastMessagePreview: z.string().optional(),
 });
 
 const whatsappMessage = z.object({
