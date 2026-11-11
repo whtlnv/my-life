@@ -536,4 +536,46 @@ describe('PeoplePage', () => {
       message.link,
     );
   });
+
+  it("opens a WhatsApp contact's timeline from GET /whatsapp-contacts/:name/timeline, each message with its text and an Open in WhatsApp link", async () => {
+    const message = {
+      channel: 'whatsapp',
+      chatId: 'Jorge Salinas',
+      chatTitle: 'Jorge Salinas',
+      messageId: '3EB0D3M0000000000002',
+      senderId: 'Jorge Salinas',
+      senderName: 'Jorge Salinas',
+      text: '¿Lo firmamos el viernes?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+      link: 'https://web.whatsapp.com/',
+    };
+    answerGetsWith({
+      '/people': {
+        vip: [],
+        urgent: [],
+        everyoneElse: [
+          {
+            channel: 'whatsapp',
+            displayName: 'Jorge Salinas',
+            whatsappHandles: [{ name: 'Jorge Salinas' }],
+            lastMessageAt: message.time,
+          },
+        ],
+      },
+      '/whatsapp-contacts/Jorge%20Salinas/timeline': { messages: [message] },
+    });
+
+    render(<PeoplePage />);
+
+    const everyoneElseList = await screen.findByRole('list', { name: 'Everyone else' });
+    await userEvent.click(await within(everyoneElseList).findByRole('button', { name: 'Jorge Salinas' }));
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Jorge Salinas' });
+    const row = within(timelineList).getByRole('listitem');
+    expect(row).toHaveTextContent(message.text);
+    expect(within(row).getByRole('link', { name: new RegExp(`Open in ${channelLabels.whatsapp}`) })).toHaveAttribute(
+      'href',
+      message.link,
+    );
+  });
 });

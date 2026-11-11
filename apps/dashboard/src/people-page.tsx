@@ -17,6 +17,7 @@ interface PersonRow {
   channel?: string;
   slackHandles?: SlackHandle[];
   telegramHandles?: { userId: string }[];
+  whatsappHandles?: { name: string }[];
 }
 
 interface PeopleLists {
@@ -40,8 +41,9 @@ interface SlackTimelineMessage {
   permalink: string;
 }
 
+// A Telegram or WhatsApp message: both come from the chat store with a link to their chat.
 interface TelegramTimelineMessage {
-  channel: 'telegram';
+  channel: 'telegram' | 'whatsapp';
   messageId: string;
   text: string;
   time: string;
@@ -66,12 +68,14 @@ const weekdayAndTimeInBusinessZone = (isoTime: string) =>
     timeZone: businessTimeZone,
   }).format(new Date(isoTime));
 
-// An email contact can share a display name with a Slack or Telegram contact, so a chat row is keyed by its handle.
+// An email contact can share a display name with a Slack, Telegram or WhatsApp contact, so a chat row is keyed by its handle.
 const personKey = (person: PersonRow): string => {
   const [telegramHandle] = person.telegramHandles ?? [];
   if (telegramHandle !== undefined) return `telegram:${telegramHandle.userId}`;
   const [slackHandle] = person.slackHandles ?? [];
   if (slackHandle !== undefined) return `slack:${slackHandle.workspaceTeamId}:${slackHandle.userId}`;
+  const [whatsappHandle] = person.whatsappHandles ?? [];
+  if (whatsappHandle !== undefined) return `whatsapp:${whatsappHandle.name}`;
   return person.displayName;
 };
 
@@ -219,6 +223,10 @@ const contactPath = (person: PersonRow) => {
   const [telegramHandle] = person.telegramHandles ?? [];
   if (telegramHandle) {
     return `/telegram-contacts/${telegramHandle.userId}`;
+  }
+  const [whatsappHandle] = person.whatsappHandles ?? [];
+  if (whatsappHandle) {
+    return `/whatsapp-contacts/${encodeURIComponent(whatsappHandle.name)}`;
   }
   const [slackHandle] = person.slackHandles ?? [];
   if (slackHandle) {
