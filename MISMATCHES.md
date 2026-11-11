@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 22:41 · `apps/extension/src/whatsapp-page-parser.test.ts::marks as not sent by the user a message whose meta holds only its time and no delivery-status icon`
+- Behavior: a message row whose `msg-meta` has no delivery-status icon parses as not sent by the user
+- Predicted: passes on first run — the previous item's green (`sentByUser: querySelector('[data-testid="msg-meta"] span[aria-label]') !== null`) already yields false, and its "exactly these ids" assertion already pins the negative case on the group fixture
+- Actual: passed (1 passed, 4 skipped)
+- Type: passed unexpectedly
+- Resolution: the item was delivered as a side effect of the previous item; kept the test as a minimal-row pin of the negative case rather than inventing a new behavior to force a failure — /green has nothing to implement.
+
 ## 2026-11-10 20:29 · `apps/backend/src/demo.test.ts::lists at GET /triage-queue a Telegram bot digest from its scripted Telegram session`
 - Behavior: the demo backend (demo.ts, as scripts/demo.sh runs it) lists a Telegram bot digest in the triage queue
 - Predicted: AssertionError — the demo starts, but its digests hold none on channel `telegram` (its scripted Telegram has no bot chat)

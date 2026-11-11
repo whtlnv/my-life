@@ -74,4 +74,17 @@ describe('parseWhatsappOpenChat', () => {
       '3EB0F00000017334A1B2C3',
     ]);
   });
+
+  it('marks as not sent by the user a message whose meta holds only its time and no delivery-status icon', () => {
+    const document = new DOMParser().parseFromString(
+      '<div id="main"><div data-id="3EB0F000000000AAA1B2C3"><div data-testid="msg-container">' +
+        '<span data-testid="selectable-text">Hola</span>' +
+        '<div data-testid="msg-meta"><span dir="auto"><span>9:41 pm</span></span></div></div></div></div>',
+      'text/html',
+    );
+
+    expect(parseWhatsappOpenChat(document).map(({ id, sentByUser }) => ({ id, sentByUser }))).toEqual([
+      { id: '3EB0F000000000AAA1B2C3', sentByUser: false },
+    ]);
+  });
 });
