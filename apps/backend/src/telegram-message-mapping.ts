@@ -19,17 +19,16 @@ interface TelegramMessageContext {
   sender: Api.User;
 }
 
+const mediaPlaceholders: Partial<Record<string, string>> = {
+  MessageMediaPhoto: '[photo]',
+  MessageMediaDocument: '[video]',
+};
+
 function messageText(message: Api.Message): string {
-  if (message.message) {
+  if (message.message || !message.media) {
     return message.message;
   }
-  if (message.media?.className === 'MessageMediaPhoto') {
-    return '[photo]';
-  }
-  if (message.media?.className === 'MessageMediaDocument') {
-    return '[video]';
-  }
-  return message.message;
+  return mediaPlaceholders[message.media.className] ?? message.message;
 }
 
 export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {
