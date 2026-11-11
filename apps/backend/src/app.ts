@@ -680,7 +680,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       });
     }
     for (const chat of report.chats) {
-      if (chat.lastMessagePreview === undefined) {
+      if (chat.lastMessagePreview === undefined || chat.unreadCount === 0) {
         continue;
       }
       chatMessageStore.saveMessage({
