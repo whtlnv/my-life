@@ -39,7 +39,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 - [ ] **Which calendars per account.** Default: every calendar the account can see, except declined events and calendars named _Holidays_ / _Birthdays_.
 - [x] **Triage categories to start with.** Decided 2026-11-06 with the user: `action`, `cc-thread`, `expense`, `system-update`, `sales`, `calendar-drive`, `unknown` (`PLAN.md` Phase 1). All start in `advise`.
 - [ ] **How many confirmed archives from the same sender before a filter is proposed.** Default: 3.
-- [ ] **Which profile keeps `web.whatsapp.com` open.** Default: the first one you install the extension in.
+- [x] **Which profile keeps `web.whatsapp.com` open.** The `catala.francisco@gmail.com` profile (2026-11-10).
 - [ ] **Business time zone.** Default: `America/Mexico_City`.
 
 ## 8. The Mac
@@ -53,7 +53,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 ## 10. WhatsApp (Phase 6b)
 
 - [x] **Masked page structure** (done 2026-11-10: a one-to-one chat and a group): in the Chrome profile with `web.whatsapp.com` open, run Claude's read-only snippet in the DevTools console twice (a one-to-one chat, then a group), saving each with `pbpaste`. Every text, name and number is masked; the parsers' fixtures are built to match it.
-- [ ] **Which profile keeps WhatsApp open** (§ 7 default: the first profile with the extension): name its account.
+- [x] **Which profile keeps WhatsApp open:** the `catala.francisco@gmail.com` profile (user, 2026-11-10).
 - [ ] **Date order check:** on the first real report, Claude confirms WhatsApp writes dates day/month/year on your page (assumed from the capture; a message from a day after the 12th settles it).
 - [ ] **After Phase 6b is delivered:** reload the my-life extension in that profile (`chrome://extensions` → reload), then keep the WhatsApp tab open; Claude checks the first real report with you before any send.
 
