@@ -955,6 +955,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     };
   }
   app.post('/triage-run', async (context) => {
+    await rewriteBotChatDigestSummaryLines();
     const triage = options.triage;
     if (triage === undefined) {
       return context.body(null, 200);
@@ -1181,7 +1182,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }));
   }
   const chatMessageKey = (message: { chatId: string; messageId: string }) => `${message.chatId}/${message.messageId}`;
+  async function rewriteBotChatDigestSummaryLines() {
+    for (const [chatId, messages] of unconfirmedBotMessagesByChat()) {
+      const summary = await summarizeWithinTheSpendCeiling(messages.map(({ text }) => ({ summary: text })));
+      digestSummaryStore.save(identifyBotChatDigest(chatId), summary?.lines);
+    }
+  }
+  const identifyBotChatDigest = (chatId: string) => JSON.stringify(['bot-chat', chatId]);
   function describeBotChatDigests() {
+    return [...unconfirmedBotMessagesByChat()].map(([chatId, messages]) => ({
+      title: messages[0]?.chatTitle,
+      channel: messages[0]?.channel,
+      count: messages.length,
+      summaryLines: digestSummaryStore.load(identifyBotChatDigest(chatId)),
+    }));
+  }
+  function unconfirmedBotMessagesByChat() {
     const confirmedMessageKeys = new Set(
       chatMessageStore
         .listVerdicts()
@@ -1193,11 +1209,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .listMessages()
       .filter((message) => message.chatIsBot && !confirmedMessageKeys.has(chatMessageKey(message))))
       botMessagesByChat.set(message.chatId, [...(botMessagesByChat.get(message.chatId) ?? []), message]);
-    return [...botMessagesByChat.values()].map((messages) => ({
-      title: messages[0]?.chatTitle,
-      channel: messages[0]?.channel,
-      count: messages.length,
-    }));
+    return botMessagesByChat;
   }
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));

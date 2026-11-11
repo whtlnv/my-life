@@ -1,10 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createApp } from './app';
-import { budgetReviewReport, getJson, postJson, temporaryDatabasePath } from './app.test-support';
+import {
+  budgetReviewReport,
+  clockAtTenPastThree,
+  getJson,
+  postJson,
+  postTriageRun,
+  temporaryDatabasePath,
+} from './app.test-support';
 import { openChatMessageStore } from './chat-message-store';
 import { createScriptedTelegramClient } from './scripted-telegram-client';
 import { openSlackMessageStore } from './slack-message-store';
+import { openSpendStore } from './spend-store';
 
 function recordingTelegramClient() {
   const scriptedTelegram = createScriptedTelegramClient({
@@ -407,6 +415,58 @@ describe('createApp chat messages', () => {
     const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
 
     expect(digests).toEqual([]);
+  });
+
+  it("writes at POST /triage-run a Telegram bot digest's summary lines from its messages' text, and logs the call's spend", async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    const botMessage = {
+      channel: 'telegram',
+      chatId: '8001',
+      chatTitle: 'BBVA Alertas',
+      senderId: '8001',
+      senderName: 'BBVA Alertas',
+      sentByUser: false,
+      chatIsBot: true,
+    };
+    chatMessageStore.saveMessage({
+      ...botMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:00:00.000Z',
+    });
+    chatMessageStore.saveMessage({
+      ...botMessage,
+      messageId: '78',
+      text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:30:00.000Z',
+    });
+    const itemsSentToSummary: { summary: string }[][] = [];
+    const summary = {
+      summarize: (request: { items: { summary: string }[] }) => {
+        itemsSentToSummary.push(request.items);
+        return Promise.resolve({ lines: ['BBVA Alertas: 2 card charges'], costInUsd: 0.25 });
+      },
+    };
+    const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath, summary });
+
+    await postTriageRun(app);
+
+    expect(itemsSentToSummary).toEqual([
+      [
+        { summary: 'Cargo de $1,250.00 en tu tarjeta terminación 4321' },
+        { summary: 'Cargo de $310.50 en tu tarjeta terminación 4321' },
+      ],
+    ]);
+    const { digests } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+    expect(digests).toEqual([
+      expect.objectContaining({ title: 'BBVA Alertas', summaryLines: ['BBVA Alertas: 2 card charges'] }),
+    ]);
+    expect(
+      openSpendStore(databasePath)
+        .loadAll()
+        .map(({ spentAt, costInUsd }) => ({ spentAt, costInUsd })),
+    ).toEqual([{ spentAt: '2026-11-02T15:10:00.000Z', costInUsd: 0.25 }]);
   });
 
   it('lists at GET /people, under Everyone else on channel telegram, the sender of a Telegram message as a contact with a Telegram handle of their user id and their display name', async () => {
