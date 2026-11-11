@@ -30,6 +30,25 @@ describe('parseWhatsappChatList', () => {
     );
   });
 
+  it("yields each chat's last-message preview from the title of its last-message status, without the bidi marks WhatsApp wraps it in", () => {
+    const chats = parseWhatsappChatList(fixtureDocument('whatsapp-one-to-one-chat.fixture.html'));
+
+    expect(chats.map(({ lastMessagePreview }) => lastMessagePreview)).toEqual([
+      '0000_aa aa aaaaaaa a aaaaaaaa.aaa • 0 aaaa',
+      'aaa',
+      'aaaa',
+      'aaaa aaaaaaaaa',
+      'aa, aaaaaaa aaaaaaaa aaaa',
+      'aaa aaa aa aaaa aaaaaa aa aaaaaa, aa aaaaaaaaa a aa aa aaaaaaaa aaa a aaaaaa aaaa aa aaaaaaaa',
+      'aaaaa',
+      'aaaaaaa a aa',
+      'aaaaaaa aaaaa ! aaaaaaaa',
+      'aaaaa aaaa',
+      'aaaaa aaaa',
+      'aaaaa aaaa',
+    ]);
+  });
+
   it("reads a row's unread count from the number its unread badge's label starts with, and 0 for a row with no badge", () => {
     const row = (title: string, badge: string): string =>
       `<div role="row"><div data-testid="cell-frame-title"><span title="${title}"></span></div>` +

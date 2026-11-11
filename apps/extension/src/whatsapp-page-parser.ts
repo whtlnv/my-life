@@ -2,12 +2,19 @@ export interface WhatsappChatListEntry {
   title: string;
   unreadCount: number;
   lastMessageAt: string;
+  lastMessagePreview: string;
 }
 
 const unreadCountOf = (row: Element): number =>
   [...row.querySelectorAll('[data-testid="cell-frame-secondary"] [aria-label]')]
     .map((badge) => Number.parseInt(badge.getAttribute('aria-label') ?? '', 10))
     .find((count) => !Number.isNaN(count)) ?? 0;
+
+// WhatsApp wraps the title in left-to-right embedding marks (U+202A … U+202C).
+const bidiMarkPattern = /[\u202a\u202c]/g;
+
+const lastMessagePreviewOf = (row: Element): string =>
+  (row.querySelector('[data-testid="last-msg-status"]')?.getAttribute('title') ?? '').replace(bidiMarkPattern, '');
 
 const chatRowSelector = '#pane-side [role="row"]';
 
@@ -16,6 +23,7 @@ export const parseWhatsappChatList = (document: Document): WhatsappChatListEntry
     title: row.querySelector('[data-testid="cell-frame-title"] span[title]')?.getAttribute('title') ?? '',
     unreadCount: unreadCountOf(row),
     lastMessageAt: row.querySelector('[data-testid="chat-list-timestamp"]')?.textContent ?? '',
+    lastMessagePreview: lastMessagePreviewOf(row),
   }));
 
 export interface WhatsappOpenChatMessage {
