@@ -183,6 +183,21 @@ describe('Telegram message mapping', () => {
     );
   });
 
+  it('maps a photo sent with a caption to a chat message whose text is [photo] followed by the caption', () => {
+    const message = new Api.Message({
+      id: 1029,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:50:00.000Z') / 1000,
+      message: 'Así quedó la terraza',
+      media: new Api.MessageMediaPhoto({ photo: new Api.PhotoEmpty({ id: returnBigInt(5550003) }) }),
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
+      expect.objectContaining({ messageId: '1029', text: '[photo] Así quedó la terraza' }),
+    );
+  });
+
   it('maps a video sent with no text to a chat message whose text is [video]', () => {
     const message = new Api.Message({
       id: 1024,

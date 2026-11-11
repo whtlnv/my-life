@@ -51,10 +51,11 @@ function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
 }
 
 function messageText(message: Api.Message): string {
-  if (message.message || !message.media) {
+  const placeholder = message.media && mediaPlaceholder(message.media);
+  if (!placeholder) {
     return message.message;
   }
-  return mediaPlaceholder(message.media) ?? message.message;
+  return message.message ? `${placeholder} ${message.message}` : placeholder;
 }
 
 export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {

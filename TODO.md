@@ -63,7 +63,7 @@
 - [x] A Telegram message with an audio file that is not a voice note and no text is stored with text `[audio]`
 - [x] A Telegram message with a document and no text is stored with text `[document]`
 - [x] A Telegram message with a sticker and no text is stored with text `[sticker]`
-- [ ] A Telegram photo with a caption is stored with text `[photo] <caption>`
+- [x] A Telegram photo with a caption is stored with text `[photo] <caption>`
 - [ ] A Telegram message with neither text nor media is still not stored
 - [ ] The backend started by `main.ts` (as `scripts/demo.sh` runs it) with a scripted Slack whose `is:dm` matches span two pages and a scripted Telegram with a bot chat shows one card per Slack conversation, a Telegram bot digest and a `[photo]` placeholder; a screenshot of the Triage tab is taken against `scripts/demo.sh`
 - [ ] Check on the real accounts as in the 2026-11-10 trial (a copy of the store, the read-only capping Slack proxy, the capped Telegram wrapper), then restart the backend with `MY_LIFE_SLACK_POLLING` removed from `.env`
