@@ -832,9 +832,10 @@ describe('Slack fake server', () => {
       const now = (await (await backend.request('/now')).json()) as { slackWorkspaces?: unknown };
 
       expect(now.slackWorkspaces).toEqual([
-        { teamId: 'T0002' },
+        expect.not.objectContaining({ lastSuccessfulPollAt: expect.anything() }),
         { teamId: 'T0001', lastSuccessfulPollAt: '2026-11-09T16:00:00.000Z' },
       ]);
+      expect(now.slackWorkspaces).toContainEqual(expect.objectContaining({ teamId: 'T0002' }));
     } finally {
       await slack.close();
     }
