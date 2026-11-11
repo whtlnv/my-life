@@ -1296,7 +1296,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         senderName,
         text,
         time,
-        link: telegramChatLink(chatId),
+        link: channel === 'whatsapp' ? 'https://web.whatsapp.com/' : telegramChatLink(chatId),
       }));
   }
   app.get('/triage-queue', (context) => {

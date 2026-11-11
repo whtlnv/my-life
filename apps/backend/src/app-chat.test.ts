@@ -424,6 +424,38 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('lists at GET /triage-queue an unanswered incoming WhatsApp message as a chat item with channel whatsapp and a link that opens WhatsApp Web', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 1, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F6',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+        ],
+      },
+    });
+
+    const { chatItems } = await getJson<{ chatItems: unknown[] }>(app, '/triage-queue');
+
+    expect(chatItems).toEqual([
+      expect.objectContaining({
+        channel: 'whatsapp',
+        chatTitle: 'Ana',
+        senderName: 'Ana',
+        text: 'Can we move the call to tomorrow?',
+        link: 'https://web.whatsapp.com/',
+      }),
+    ]);
+  });
+
   it("leaves out of GET /triage-queue a Telegram chat whose newest message is the user's", async () => {
     const databasePath = temporaryDatabasePath();
     const store = openChatMessageStore(databasePath);

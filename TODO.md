@@ -28,7 +28,7 @@
 - [x] `GET /now` reports WhatsApp as fresh when the last report is within the staleness threshold
 - [x] `GET /now` reports WhatsApp as stale when the last report is older than the staleness threshold
 - [x] The WhatsApp staleness threshold follows its startup setting instead of the default
-- [ ] An unanswered incoming WhatsApp message appears in the triage queue's chat items with channel `whatsapp`
+- [x] An unanswered incoming WhatsApp message appears in the triage queue's chat items with channel `whatsapp`
 - [ ] A WhatsApp message with a stored verdict is no longer in the triage queue
 - [ ] A WhatsApp sender whose last message the user has not answered appears in waiting-on with channel `whatsapp`
 - [ ] A WhatsApp chat whose last message was sent by the user does not appear in waiting-on
