@@ -21,8 +21,16 @@ interface TelegramMessageContext {
 
 const mediaPlaceholders: Partial<Record<string, string>> = {
   MessageMediaPhoto: '[photo]',
-  MessageMediaDocument: '[video]',
+  MessageMediaDocument: '[document]',
 };
+
+function isVideoDocument(media: Api.TypeMessageMedia): boolean {
+  return (
+    media instanceof Api.MessageMediaDocument &&
+    media.document instanceof Api.Document &&
+    media.document.attributes.some((attribute) => attribute instanceof Api.DocumentAttributeVideo)
+  );
+}
 
 function isAudioDocument(media: Api.TypeMessageMedia): boolean {
   return (
@@ -38,6 +46,9 @@ function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
   }
   if (isAudioDocument(media)) {
     return '[audio]';
+  }
+  if (isVideoDocument(media)) {
+    return '[video]';
   }
   return mediaPlaceholders[media.className];
 }

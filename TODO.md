@@ -61,7 +61,7 @@
 - [x] A Telegram message with a video and no text is stored with text `[video]`
 - [x] A Telegram message with a voice note and no text is stored with text `[voice note]`
 - [x] A Telegram message with an audio file that is not a voice note and no text is stored with text `[audio]`
-- [ ] A Telegram message with a document and no text is stored with text `[document]`
+- [x] A Telegram message with a document and no text is stored with text `[document]`
 - [ ] A Telegram message with a sticker and no text is stored with text `[sticker]`
 - [ ] A Telegram photo with a caption is stored with text `[photo] <caption>`
 - [ ] A Telegram message with neither text nor media is still not stored
