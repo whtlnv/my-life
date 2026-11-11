@@ -21,7 +21,7 @@
 - [x] A rendered row with no `data-pre-plain-text` takes its time from its `msg-meta`
 - [x] The parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it; a chat where some rows lack it (photos, stickers) parses without a failure
 - [x] The report built from the fixture document passes the shared contract schema before it is posted
-- [ ] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
+- [x] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
 - [ ] `POST /chat-messages` with a body that fails the contract schema answers 400 and stores nothing
 - [ ] `POST /chat-messages` with a parser failure makes `GET /now` report WhatsApp as parser broken
 - [ ] A good WhatsApp report after a parser failure makes `GET /now` report WhatsApp as healthy with the report's time

@@ -78,6 +78,40 @@ describe('createApp chat messages', () => {
     expect(messages).toEqual([storedMessage]);
   });
 
+  it('stores at POST /chat-messages the messages of a valid WhatsApp report and lists them at GET /chat-messages with channel whatsapp', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    const report = {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 1, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F6',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+        ],
+      },
+    };
+
+    await postJson(app, '/chat-messages', report);
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(messages).toEqual([
+      expect.objectContaining({
+        channel: 'whatsapp',
+        chatTitle: 'Ana',
+        messageId: '3EB0A1B2C3D4E5F6',
+        senderName: 'Ana',
+        text: 'Can we move the call to tomorrow?',
+        sentByUser: false,
+      }),
+    ]);
+  });
+
   it('stores an ignore verdict on that chat message at POST /chat-verdicts', async () => {
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: [], databasePath });

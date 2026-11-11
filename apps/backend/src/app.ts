@@ -13,6 +13,7 @@ import {
   type TaskRanks,
   triageCategories,
   type HealthResponse,
+  whatsappReport,
 } from '@my-life/contracts';
 import {
   badgeCount,
@@ -632,6 +633,23 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
+  app.post('/chat-messages', async (context) => {
+    const report = whatsappReport.parse(await context.req.json());
+    for (const message of report.openChat.messages) {
+      chatMessageStore.saveMessage({
+        channel: report.channel,
+        chatId: report.openChat.title,
+        chatTitle: report.openChat.title,
+        messageId: message.id,
+        senderId: message.sender,
+        senderName: message.sender,
+        text: message.text,
+        time: message.sentAt,
+        sentByUser: message.sentByUser,
+      });
+    }
+    return context.json({ ok: true });
+  });
   app.post('/chat-verdicts', async (context) => {
     const verdict = await context.req.json<ChatMessageVerdict>();
     chatMessageStore.saveVerdict(verdict);
