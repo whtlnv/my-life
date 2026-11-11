@@ -33,7 +33,7 @@
 - [x] A WhatsApp sender whose last message the user has not answered appears in waiting-on with channel `whatsapp`
 - [x] A WhatsApp chat whose last message was sent by the user does not appear in waiting-on
 - [x] A WhatsApp sender appears on the People tab as a contact with their WhatsApp messages in the timeline
-- [ ] The user's own WhatsApp messages do not list the user as a WhatsApp contact
+- [x] The user's own WhatsApp messages do not list the user as a WhatsApp contact
 - [ ] A task made from a WhatsApp triage item links to the WhatsApp chat
 - [ ] A task made from a Telegram triage item still links to the Telegram chat
 - [ ] `POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp
