@@ -50,9 +50,13 @@ export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessa
       ...senderAndTimeOf(row),
     }));
 
-export const parseWhatsappPage = (
-  document: Document,
-): { ok: true; chats: WhatsappChatListEntry[]; messages: WhatsappOpenChatMessage[] } => ({
+export interface WhatsappPage {
+  ok: true;
+  chats: WhatsappChatListEntry[];
+  messages: WhatsappOpenChatMessage[];
+}
+
+export const parseWhatsappPage = (document: Document): WhatsappPage => ({
   ok: true,
   chats: parseWhatsappChatList(document),
   messages: parseWhatsappOpenChat(document),
