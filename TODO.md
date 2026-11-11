@@ -46,7 +46,7 @@
 - [x] Given a `send-whatsapp` command and the fixture document, the content script selects the chat with that title, types the text into the composer, presses send and acknowledges the command
 - [x] Given a `send-whatsapp` command whose chat title is not in the chat list, the content script types nothing and does not acknowledge the command
 - [x] Several DOM mutations within 10 s make the content script post one report, 10 s after the last mutation
-- [ ] Two DOM mutations more than 10 s apart make the content script post two reports
+- [x] Two DOM mutations more than 10 s apart make the content script post two reports
 - [ ] When the parse fails, the content script posts the parser failure instead of a report
 - [ ] The triage page shows WhatsApp items in their own WhatsApp section, with the reply composer naming WhatsApp
 - [ ] The header shows a WhatsApp chip with the time of the last report

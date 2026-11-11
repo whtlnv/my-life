@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-11 01:54 · `apps/extension/src/whatsapp-report-watch.test.ts::posts two reports for two DOM mutations more than 10 s apart`
+- Behavior: Two DOM mutations more than 10 s apart make the content script post two reports
+- Predicted: passes on first run, since the debounce from 3b3f802 re-arms a fresh 10 s timer on every mutation, including one after the previous timer fired
+- Actual: passed, as predicted
+- Type: passed unexpectedly
+- Resolution: the behavior was already delivered by the previous green step; no failing variant exists without changing behavior, so the test is kept as a characterization pin (it fails if the watcher ever posts only once)
+
 ## 2026-11-11 01:19 · `apps/backend/src/app-chat.test.ts::lists at GET /commands, after a restart, a new send-whatsapp command queued once an earlier one was acknowledged`
 - Behavior: An acknowledged `send-whatsapp` command is no longer listed by `GET /commands` (and only that command)
 - Predicted: the plain "acknowledged command disappears" test passes on first run, since `GET /commands` already filters every command id through the acknowledgement store

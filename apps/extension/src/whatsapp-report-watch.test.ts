@@ -60,4 +60,25 @@ describe('watchWhatsappPage', () => {
       expect.objectContaining({ channel: 'whatsapp', accountEmail: 'francisco@example.com' }),
     ]);
   });
+
+  it('posts two reports for two DOM mutations more than 10 s apart', async () => {
+    const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
+    const postedReports: unknown[] = [];
+    watchWhatsappPage({
+      fetch: recordingBackend(postedReports),
+      accountEmail: 'francisco@example.com',
+      backendUrl,
+      document,
+    });
+
+    await mutate(document);
+    await vi.advanceTimersByTimeAsync(10_001);
+    await mutate(document);
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(postedReports).toEqual([
+      expect.objectContaining({ channel: 'whatsapp', accountEmail: 'francisco@example.com' }),
+      expect.objectContaining({ channel: 'whatsapp', accountEmail: 'francisco@example.com' }),
+    ]);
+  });
 });
