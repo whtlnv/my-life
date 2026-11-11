@@ -334,34 +334,35 @@ describe('pollSlackWorkspace', () => {
     expect(directMessageSearches).toHaveLength(2);
   });
 
-  it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
+  it.each([
+    {
+      when: 'their Slack profile has no display name',
+      usersInfoAnswer: { ok: true, user: { profile: {} } },
+      senderName: 'U0009',
+    },
+    {
+      when: 'users.info cannot find the sender, and keeps polling',
+      usersInfoAnswer: { ok: false, error: 'user_not_found' },
+      senderName: 'U0009',
+    },
+    {
+      when: 'Slack answers an empty display name, as the real name',
+      usersInfoAnswer: { ok: true, user: { profile: { display_name: '', real_name: 'Ana Ruiz' } } },
+      senderName: 'Ana Ruiz',
+    },
+  ])("stores a message's sender name as $senderName when $when", async ({ usersInfoAnswer, senderName }) => {
     const slack = scriptedSlack({
       '/search.messages': directMessageSearchNaming('D0001'),
       '/conversations.history': () => ({
         ok: true,
         messages: [{ user: 'U0009', text: 'Hi', ts: '1762700000.000100' }],
       }),
-      '/users.info': () => ({ ok: true, user: { profile: {} } }),
+      '/users.info': () => usersInfoAnswer,
     });
 
     const store = await pollWith(slack);
 
-    expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0009', senderName: 'U0009' })]);
-  });
-
-  it("stores a message's sender name as the sender's user id when users.info cannot find the sender, and keeps polling", async () => {
-    const slack = scriptedSlack({
-      '/search.messages': directMessageSearchNaming('D0001'),
-      '/conversations.history': () => ({
-        ok: true,
-        messages: [{ user: 'U0404', text: 'Deploy finished.', ts: '1762700000.000100' }],
-      }),
-      '/users.info': () => ({ ok: false, error: 'user_not_found' }),
-    });
-
-    const store = await pollWith(slack);
-
-    expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0404', senderName: 'U0404' })]);
+    expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0009', senderName })]);
   });
 
   it("stores an app's message, which has no user but a bot id and a username, under the bot id and the username", async () => {
@@ -386,21 +387,6 @@ describe('pollSlackWorkspace', () => {
     expect(store.listMessages()).toEqual([
       expect.objectContaining({ senderUserId: 'B0001', senderName: 'Deploy Bot' }),
     ]);
-  });
-
-  it("stores a message's sender name as the sender's real name when Slack answers an empty display name", async () => {
-    const slack = scriptedSlack({
-      '/search.messages': directMessageSearchNaming('D0001'),
-      '/conversations.history': () => ({
-        ok: true,
-        messages: [{ user: 'U0009', text: 'Hi', ts: '1762700000.000100' }],
-      }),
-      '/users.info': () => ({ ok: true, user: { profile: { display_name: '', real_name: 'Ana Ruiz' } } }),
-    });
-
-    const store = await pollWith(slack);
-
-    expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0009', senderName: 'Ana Ruiz' })]);
   });
 
   it('asks users.info once for a sender who wrote two messages in one poll', async () => {
