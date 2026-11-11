@@ -1109,6 +1109,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (botChatMessages) {
       for (const { channel, chatId, messageId } of botChatMessages)
         chatMessageStore.saveVerdict({ channel, chatId, messageId, decision: 'confirmed' });
+      digestSummaryStore.save(digestId, undefined);
       return context.body(null, 200);
     }
     const listedMessageIds = listedDigestStore.load(digestId);

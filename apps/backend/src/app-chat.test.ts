@@ -434,6 +434,42 @@ describe('createApp chat messages', () => {
     expect(after).toEqual([]);
   });
 
+  it('lists at GET /triage-queue a fresh Telegram bot digest counting only a bot message that arrived after the previous digest was confirmed, without the confirmed digest’s summary lines', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:00:00.000Z',
+    });
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '78',
+      text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:30:00.000Z',
+    });
+    const summary = {
+      summarize: () => Promise.resolve({ lines: ['BBVA Alertas: 2 card charges'], costInUsd: 0.25 }),
+    };
+    const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath, summary });
+    await postTriageRun(app);
+    const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+    await app.request(`/digests/${encodeURIComponent(before[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '79',
+      text: 'Cargo de $89.00 en tu tarjeta terminación 4321',
+      time: '2026-11-02T15:05:00.000Z',
+    });
+
+    const { digests: after } = await getJson<{ digests: object[] }>(app, '/triage-queue');
+    expect(after).toHaveLength(1);
+    expect(after[0]).toMatchObject({ title: 'BBVA Alertas', count: 1 });
+    expect(after[0]).not.toHaveProperty('summaryLines');
+  });
+
   it("writes at POST /triage-run a Telegram bot digest's summary lines from its messages' text, and logs the call's spend", async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);
