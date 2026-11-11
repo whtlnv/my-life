@@ -1221,6 +1221,27 @@ describe('createApp chat messages', () => {
     expect(unmarked.vip).toEqual([]);
   });
 
+  it('stores the readable messages of a WhatsApp report and skips one whose time is not a date, instead of failing the report', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    const fromAna = (id: string, sentAt: string) => ({ id, sender: 'Ana', sentAt, text: 'Hola', sentByUser: false });
+
+    const response = await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '9:41 am' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          fromAna('3EB0A1B2C3D4E5FB', '-undefined-NaNTundefined'),
+          fromAna('3EB0A1B2C3D4E5FC', '2026-11-10T09:41:00-06:00'),
+        ],
+      },
+    });
+    const { messages } = await getJson<{ messages: { messageId: string }[] }>(app, '/chat-messages');
+
+    expect(response.status).toBe(200);
+    expect(messages.map(({ messageId }) => messageId)).toEqual(['3EB0A1B2C3D4E5FC']);
+  });
+
   it('stores a WhatsApp message time in UTC, as every other chat message is, so times from different channels order correctly', async () => {
     const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
     await postJson(app, '/chat-messages', {

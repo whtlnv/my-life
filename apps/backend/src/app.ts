@@ -673,7 +673,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     const report = parsed.data;
     whatsappStatus = { parserBroken: false, lastReportedAt: clock.now().toISOString(), stale: false };
-    for (const message of report.openChat.messages) {
+    // A message whose time is not a date (a page format the parser misread) is skipped, never the whole report.
+    const hasReadableTime = (message: { sentAt: string }) => !Number.isNaN(new Date(message.sentAt).getTime());
+    for (const message of report.openChat.messages.filter(hasReadableTime)) {
       chatMessageStore.saveMessage({
         channel: report.channel,
         chatId: report.openChat.title,
