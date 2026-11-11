@@ -15,3 +15,16 @@ export const parseWhatsappChatList = (document: Document): WhatsappChatListEntry
     unreadCount: unreadCountOf(row),
     lastMessageAt: row.querySelector('[data-testid="chat-list-timestamp"]')?.textContent ?? '',
   }));
+
+export interface WhatsappOpenChatMessage {
+  id: string;
+  text: string;
+}
+
+export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessage[] =>
+  [...document.querySelectorAll('#main [data-id]')]
+    .filter((row) => row.querySelector('[data-testid="msg-container"]'))
+    .map((row) => ({
+      id: row.getAttribute('data-id') ?? '',
+      text: row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '',
+    }));
