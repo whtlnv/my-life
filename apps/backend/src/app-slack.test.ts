@@ -932,4 +932,28 @@ describe('createApp Slack polls', () => {
     expect(now.slackWorkspaces).toEqual([expect.objectContaining({ teamId: 'T0001', name: 'PS Mutuus' })]);
     expect(now.slackWorkspaces?.[0]).not.toHaveProperty('lastPollFailure');
   });
+
+  it("reports on GET /now, after a backend restart on the same database file and before any POST /slack-poll, each workspace's name and URL from the last successful poll", async () => {
+    const slackApiUrl = await localSlackAnswering((path) =>
+      path === '/auth.test'
+        ? { ok: true, user_id: 'UOWN', team: 'PS Mutuus', url: 'https://psmutuus.slack.com/' }
+        : { ok: true, messages: { matches: [] } },
+    );
+    const databasePath = temporaryDatabasePath();
+    const appOptions = {
+      allowedEmails: [],
+      databasePath,
+      slackApiUrl,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    };
+    await createApp(appOptions).request('/slack-poll', { method: 'POST' });
+
+    const afterRestart = createApp(appOptions);
+    const now = (await (await afterRestart.request('/now')).json()) as { slackWorkspaces?: unknown };
+
+    expect(now.slackWorkspaces).toEqual([
+      expect.objectContaining({ teamId: 'T0001', name: 'PS Mutuus', url: 'https://psmutuus.slack.com/' }),
+    ]);
+  });
 });

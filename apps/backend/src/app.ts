@@ -65,6 +65,7 @@ import { openReportedMessageStore, type ReportedMessageHeaders } from './reporte
 import { openSlackMessageStore, type SlackMessage, type SlackVerdict } from './slack-message-store';
 import { pollSlackWorkspaces } from './slack-poll';
 import { openSlackSendStore } from './slack-send-store';
+import { openSlackWorkspacePollStore } from './slack-workspace-poll-store';
 import { openSpendStore } from './spend-store';
 import { startTelegram, type TelegramStartClient } from './start-telegram';
 import { openTaskEventStore } from './task-event-store';
@@ -721,7 +722,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     lastSuccessfulPollAt?: string;
     lastPollFailure?: string | undefined;
   }
-  let slackWorkspacePolls: SlackWorkspacePoll[] | undefined;
+  const slackWorkspacePollStore = openSlackWorkspacePollStore<SlackWorkspacePoll[]>(databasePath);
+  let slackWorkspacePolls: SlackWorkspacePoll[] | undefined = slackWorkspacePollStore.loadLatest();
   const slackWorkspacePollFor = (workspaceTeamId: string) =>
     slackWorkspacePolls?.find(({ teamId }) => teamId === workspaceTeamId);
   const describeSlackWorkspaceFreshness = (poll: SlackWorkspacePoll) => {
@@ -792,6 +794,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           : { teamId, lastPollFailure: pollFailuresByTeamId.get(teamId) },
       ),
     );
+    slackWorkspacePollStore.save(slackWorkspacePolls);
     return context.json({});
   });
   interface SlackSendRequest {
