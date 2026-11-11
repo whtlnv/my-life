@@ -121,7 +121,7 @@ interface TriageResult {
   promptVersion: string;
 }
 
-// A parser failure keeps the time of the last good report, if there was one, so the chip can still say when.
+// A parser failure keeps the time of the last good report, if there was one.
 type WhatsappStatus =
   | { parserBroken: true; missingSelector: string; lastReportedAt?: string }
   | { parserBroken: false; lastReportedAt: string; stale: boolean };
