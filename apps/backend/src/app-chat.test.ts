@@ -513,6 +513,29 @@ describe('createApp chat messages', () => {
     ).toEqual([{ spentAt: '2026-11-02T15:10:00.000Z', costInUsd: 0.25 }]);
   });
 
+  it('asks the summarizer at a second POST /triage-run about no Telegram bot digest whose messages are unchanged since the first run summarized it', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:00:00.000Z',
+    });
+    let summaryCalls = 0;
+    const summary = {
+      summarize: () => {
+        summaryCalls += 1;
+        return Promise.resolve({ lines: ['BBVA Alertas: 1 card charge'], costInUsd: 0.25 });
+      },
+    };
+    const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath, summary });
+    await postTriageRun(app);
+
+    await postTriageRun(app);
+
+    expect(summaryCalls).toBe(1);
+  });
+
   it("writes no Telegram bot digest summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines", async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({
