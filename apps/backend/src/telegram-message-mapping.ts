@@ -1,4 +1,4 @@
-import { utils, type Api } from 'telegram';
+import { Api, utils } from 'telegram';
 
 import type { ChatMessage } from './chat-message-store';
 
@@ -27,6 +27,9 @@ const mediaPlaceholders: Partial<Record<string, string>> = {
 function messageText(message: Api.Message): string {
   if (message.message || !message.media) {
     return message.message;
+  }
+  if (message.media instanceof Api.MessageMediaDocument && message.media.voice) {
+    return '[voice note]';
   }
   return mediaPlaceholders[message.media.className] ?? message.message;
 }

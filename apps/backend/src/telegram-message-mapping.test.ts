@@ -209,6 +209,33 @@ describe('Telegram message mapping', () => {
     );
   });
 
+  it('maps a voice note sent with no text to a chat message whose text is [voice note]', () => {
+    const message = new Api.Message({
+      id: 1025,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:20:00.000Z') / 1000,
+      message: '',
+      media: new Api.MessageMediaDocument({
+        voice: true,
+        document: new Api.Document({
+          id: returnBigInt(5570001),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:20:00.000Z') / 1000,
+          mimeType: 'audio/ogg',
+          size: returnBigInt(40960),
+          dcId: 1,
+          attributes: [new Api.DocumentAttributeAudio({ duration: 7, voice: true })],
+        }),
+      }),
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
+      expect.objectContaining({ messageId: '1025', text: '[voice note]' }),
+    );
+  });
+
   it("maps a message in a supergroup to a chat message whose chat id is the supergroup's -100 marked peer id", () => {
     const supergroup = new Api.Channel({
       id: returnBigInt(707070),
