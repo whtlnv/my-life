@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-11 02:34 · `apps/extension/wxt.config.test.ts::registers in the built extension a whatsapp content script for https://web.whatsapp.com/*`
+- Behavior: the built extension's manifest registers a WhatsApp content script for `https://web.whatsapp.com/*`
+- Predicted: AssertionError — the built manifest has no `content_scripts` entry for WhatsApp
+- Actual: `Could not resolve "web-ext" imported by "wxt"` — importing wxt's `build` inside Vitest makes Vite bundle wxt's optional peer dependencies
+- Type: wrong-reason
+- Resolution: the test runs `build({ outDir })` from wxt in a separate Node process into a temp folder it removes; it now fails because `content_scripts` is undefined, as predicted
+
 ## 2026-11-11 01:54 · `apps/extension/src/whatsapp-report-watch.test.ts::posts two reports for two DOM mutations more than 10 s apart`
 - Behavior: Two DOM mutations more than 10 s apart make the content script post two reports
 - Predicted: passes on first run, since the debounce from 3b3f802 re-arms a fresh 10 s timer on every mutation, including one after the previous timer fired

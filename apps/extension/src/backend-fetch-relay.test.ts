@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { answerBackendFetch } from './backend-fetch-relay';
+import { answerBackendFetch, relayedFetch } from './backend-fetch-relay';
 
 describe('answerBackendFetch', () => {
   it('fetches the message path from the backend with its method and body, and answers with the status and the JSON body', async () => {
@@ -23,5 +23,23 @@ describe('answerBackendFetch', () => {
       { url: 'http://127.0.0.1:7777/chat-messages', method: 'POST', body: '{"channel":"whatsapp"}' },
     ]);
     expect(answer).toEqual({ status: 201, body: { stored: 2 } });
+  });
+});
+
+describe('relayedFetch', () => {
+  it('sends a request as a backend-fetch message with its path, method and body, and answers a Response with the relayed status and JSON body', async () => {
+    const messages: unknown[] = [];
+    const fetchThroughBackground = relayedFetch((message) => {
+      messages.push(message);
+      return Promise.resolve({ status: 201, body: { stored: 2 } });
+    });
+
+    const response = await fetchThroughBackground('/chat-messages', { method: 'POST', body: '{"channel":"whatsapp"}' });
+
+    expect(messages).toEqual([
+      { type: 'backend-fetch', path: '/chat-messages', method: 'POST', body: '{"channel":"whatsapp"}' },
+    ]);
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ stored: 2 });
   });
 });
