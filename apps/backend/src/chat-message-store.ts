@@ -50,11 +50,9 @@ export function openChatMessageStore(databasePath: string) {
       FROM chat_message_verdicts ORDER BY rowid`,
   );
   const insertMessage = database.prepare(
-    // A message saved again keeps its row, but gains the bot mark if it now has one (rows stored before the mark).
-    `INSERT INTO chat_messages
+    `INSERT OR IGNORE INTO chat_messages
       (channel, chat_id, chat_title, message_id, sender_id, sender_name, text, time, sent_by_user, chat_is_bot)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT (channel, chat_id, message_id) DO UPDATE SET chat_is_bot = MAX(chat_is_bot, excluded.chat_is_bot)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const markChatAsBot = database.prepare('UPDATE chat_messages SET chat_is_bot = 1 WHERE channel = ? AND chat_id = ?');
   const selectMessages = database.prepare<[], ChatMessageRow>(
@@ -76,7 +74,7 @@ export function openChatMessageStore(databasePath: string) {
         message.sentByUser ? 1 : 0,
         message.chatIsBot ? 1 : 0,
       );
-      // A bot chat is a bot chat for every message in it, including those stored before the mark existed.
+      // A bot chat is a bot chat for every message in it, including this one if it was stored before the mark existed.
       if (message.chatIsBot) markChatAsBot.run(message.channel, message.chatId);
     },
     listMessages(): ChatMessage[] {
