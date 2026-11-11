@@ -1,3 +1,78 @@
+- [x] 2026-11-10 · The Slack fake refuses an `is:dm` search that has no `after:`, answering an error
+- [x] 2026-11-10 · The Slack fake answers an `is:dm` search that has `after:` with its DM matches
+- [x] 2026-11-10 · The Slack fake serves `is:dm` matches across pages, with `paging` naming the page and the page count
+- [x] 2026-11-10 · A poll stores the messages of a DM conversation that an `is:dm after:<date>` search match names (the date 7 days before now, as the Slack fake refuses `is:dm` without `after:`), though `conversations.list` does not list it
+- [x] 2026-11-10 · A poll does not read the history of a DM conversation that no `is:dm` match names
+- [x] 2026-11-10 · A poll never calls `conversations.list`
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores each DM message with its workspace, conversation, sender, the sender's display name, text and timestamp` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a DM message the user sent as sent by the user` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::asks conversations.history on a second poll only for messages newer than the newest stored in that conversation` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a message's sender name as the sender's user id when their Slack profile has no display name` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::stores a message's sender name as the sender's real name when Slack answers an empty display name` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::waits as long as Retry-After says when Slack answers 429, then retries and stores the message` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/backend/src/slack-poll.test.ts::polls every workspace, skips one whose token Slack rejects, and names the workspaces that succeeded` — asserts: a DM conversation found only through a scripted `conversations.list` has its history read and stored — retired-by: "A poll never calls `conversations.list`"
+  - predicted-contradiction: `apps/integration/src/slack-fake-server.test.ts::a poll lists both direct and group direct message conversations, asking conversations.list for types im and mpim` — asserts: a poll calls `conversations.list` once with types `im,mpim` — retired-by: "A poll never calls `conversations.list`"
+- [x] 2026-11-10 · A poll requests the next `search.messages` page when every match on the current page is newer than the newest stored message
+- [x] 2026-11-10 · Keystone: the shipped `POST /slack-poll` passes its clock, so the real poll finds DMs through `is:dm` search; the clock is required and the `conversations.list` path is gone (inserted by the supervisor 2026-11-10: the no-clock path still listed DMs in production)
+- [x] 2026-11-10 · A poll requests no further page once a page holds a match older than the newest stored message
+- [x] 2026-11-10 · A conversation with stored messages is read from its newest stored message (`oldest=` that timestamp)
+  - already delivered by `slack-poll.test.ts::asks conversations.history on a second poll only for messages newer than the newest stored in that conversation` (supervisor, 2026-11-10)
+- [x] 2026-11-10 · A conversation with nothing stored is read from 7 days before now (`oldest=` now minus the lookback)
+- [x] 2026-11-10 · With `MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS=3` a conversation with nothing stored is read from 3 days before now
+- [x] 2026-11-10 · The `is:dm` search carries `after:` the lookback date
+- [x] 2026-11-10 · The mention search carries `after:` the lookback date
+- [x] 2026-11-10 · The own-message search carries `after:` the lookback date
+- [x] 2026-11-10 · Two messages from the same user in one poll cause one `users.info` call (backlog: apps/backend/src/slack-poll.ts:44 The Slack poll asks `users.info` for every message on every poll)
+- [x] 2026-11-10 · Messages from two different users in one poll cause one `users.info` call each
+  - already delivered by 26e1929 (the name cache is keyed by user id); passed on first run, see MISMATCHES.md (supervisor, 2026-11-10)
+- [x] 2026-11-10 · A second poll in the same backend asks `users.info` about no user the first poll already named
+- [x] 2026-11-10 · A workspace poll calls `auth.test` once (backlog: apps/backend/src/slack-poll.ts:44 … and `auth.test` three times)
+- [x] 2026-11-10 · A Slack conversation with three messages from someone else shows one triage card, carrying the newest of them
+- [x] 2026-11-10 · Two Slack conversations with messages from someone else show one triage card each
+- [x] 2026-11-10 · A Slack conversation whose newest message the user wrote shows no triage card
+- [x] 2026-11-10 · A thread reply and a top-level message in the same channel show as two triage cards, the thread being its own conversation
+- [x] 2026-11-10 · A verdict on a Slack card's message clears the card
+- [x] 2026-11-10 · A Slack message newer than the card's verdict brings the conversation's card back, carrying the newer message
+- [x] 2026-11-10 · A failed Slack workspace poll logs the workspace's team id and the error (backlog: apps/backend/src/slack-poll.ts:150 A failed Slack poll is swallowed with no log)
+- [x] 2026-11-10 · A successful Slack workspace poll logs no error
+- [x] 2026-11-10 · The shipped `POST /slack-poll` writes a failed workspace's team id and the error to the backend log (supervisor, 2026-11-10: the app passed no `logPollFailure`, so a real failure was still silent)
+- [x] 2026-11-10 · After a failed poll the Slack source chip shows the failure's reason
+- [x] 2026-11-10 · After a failed poll is followed by a successful one the Slack source chip shows no failure reason
+- [x] 2026-11-10 · After a restart the Slack workspaces show their names and links before the first polling interval has passed (backlog: apps/backend/src/app.ts:723 Each Slack workspace's name, URL and last poll live only in memory)
+- [x] 2026-11-10 · A Telegram message from a chat with a bot user is stored with the chat marked as a bot
+- [x] 2026-11-10 · A Telegram message from a chat with a person is stored with the chat not marked as a bot
+- [x] 2026-11-10 · A database whose `chat_messages` table predates the bot mark gains `chat_is_bot` when the store opens (supervisor, 2026-11-10: the live store has that table, so the restart would have failed every Telegram save)
+- [x] 2026-11-10 · A Telegram bot chat shows no triage card
+- [x] 2026-11-10 · A Telegram bot chat's sender is not a contact on the People tab
+- [x] 2026-11-10 · A Telegram bot chat makes no waiting-on entry
+- [x] 2026-11-10 · A Telegram bot chat with unconfirmed messages is a digest in the triage queue with the bot's name as title, channel `telegram` and the count of unconfirmed messages
+- [x] 2026-11-10 · A Telegram bot chat whose messages are all confirmed is not a digest
+- [x] 2026-11-10 · The triage run writes a Telegram bot digest's summary lines from its messages' text, with the call's spend logged
+- [x] 2026-11-10 · The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
+- [x] 2026-11-10 · Confirming a Telegram bot digest marks its messages handled, so the digest leaves the triage queue
+- [x] 2026-11-10 · A bot message arriving after a confirm opens a fresh digest counting only the new message
+- [x] 2026-11-10 · A Telegram message with a photo and no text is stored with text `[photo]`
+  - predicted-contradiction: `apps/backend/src/telegram-message-mapping.test.ts::drops a message with no text, such as a photo sent alone, so the mapping returns nothing for it` — asserts: a message with empty text and `MessageMediaPhoto` maps to nothing — retired-by: "a message with no text but a photo … is stored with text `[photo]`"
+- [x] 2026-11-10 · A Telegram message with a video and no text is stored with text `[video]`
+- [x] 2026-11-10 · A Telegram message with a voice note and no text is stored with text `[voice note]`
+- [x] 2026-11-10 · A Telegram message with an audio file that is not a voice note and no text is stored with text `[audio]`
+- [x] 2026-11-10 · A Telegram message with a document and no text is stored with text `[document]`
+- [x] 2026-11-10 · A Telegram message with a sticker and no text is stored with text `[sticker]`
+- [x] 2026-11-10 · A Telegram photo with a caption is stored with text `[photo] <caption>`
+- [x] 2026-11-10 · A Telegram message with neither text nor media is still not stored
+- [x] 2026-11-10 · A triage run asks the summarizer about no Telegram bot digest whose messages are unchanged since its last summary (supervisor, 2026-11-10: every 30 s triage run re-summarized every bot chat, one Haiku call per bot chat per run; email digests rewrite only when a proposal or verdict changed)
+- [x] 2026-11-10 · A new bot message after a bot digest's summary makes the next triage run summarize it again with every unconfirmed message (supervisor, 2026-11-10: the minimal green never re-summarized a chat that had a summary)
+- [x] 2026-11-10 · The Triage page shows a Telegram bot digest (title, channel, count, summary) instead of crashing on its missing account and category (supervisor, 2026-11-10: found on the demo screenshot)
+- [x] 2026-11-10 · Waiting-on lists a Telegram sender who wrote twice without an answer once, waiting since the first message (supervisor, 2026-11-10: found on the demo, a Phase 6a gap)
+- [x] 2026-11-10 · The backend started by `main.ts` (as `scripts/demo.sh` runs it) with a scripted Slack whose `is:dm` matches span two pages and a scripted Telegram with a bot chat shows one card per Slack conversation, a Telegram bot digest and a `[photo]` placeholder; a screenshot of the Triage tab is taken against `scripts/demo.sh`
+  - screenshots `docs/screenshots/2026-11-10-phase-6a1-triage-slack-telegram.jpg` and `…-triage-bot-digest.jpg` (supervisor); the demo also needed real-Slack permalinks on its search matches, or thread replies never polled
+- [x] 2026-11-10 · The `is:dm` search pages until the last page Slack names, also when nothing is stored yet, and never past it (supervisor, 2026-11-10: the loop ignored `paging.pages`, and a first poll read only page 1)
+- [x] 2026-11-10 · `MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS` reaches the shipped poll through startup settings, `createApp` and `main.ts` (supervisor, 2026-11-10: only the poll function took it; nothing read the variable)
+- [x] 2026-11-10 · Each DM conversation's history and each thread's replies are read once per poll, however many search matches name them (supervisor, trial)
+- [x] 2026-11-10 · A bot message marks every stored message of its chat as from a bot chat, so messages stored before the mark leave triage and waiting-on (supervisor, trial)
+- [x] 2026-11-10 · A Slack sender `users.info` cannot find, and an app's message with no user, are stored instead of failing or being dropped (supervisor, live restart)
+- [x] 2026-11-10 · Check on the real accounts as in the 2026-11-10 trial (a copy of the store, the read-only capping Slack proxy, the capped Telegram wrapper), then restart the backend with `MY_LIFE_SLACK_POLLING` removed from `.env`
+  - trial 2026-11-10 on a copy of the store (read-only capping Slack proxy, capped Telegram; the live backend stopped so the Telegram session had one client): found history and replies read once per search match (20 calls for 2 conversations), and LastQuake's messages stored before the bot mark still carded; both fixed and re-trialed (2 history calls, LastQuake a 20-message bot digest). The live restart then found an app's sender failing the PS Mutuus poll (users.info answers no user; app messages have no user); fixed. Live 2026-11-10 20:54 CST: both workspaces polled, Needs you 4, Slack 10, Telegram 7, digests 18; `MY_LIFE_SLACK_POLLING` removed from `.env`; backup `my-life.sqlite.before-2026-11-10-phase-6a1`
 - [x] 2026-11-10 · A Telegram message saved to the chat store is listed back with its channel, chat id, chat title, message id, sender id, sender name, text, ISO time and whether the user sent it
 - [x] 2026-11-10 · Saving a message with the same channel, chat id and message id twice lists it once
 - [x] 2026-11-10 · Two messages with the same chat id and message id but different channels are both listed
