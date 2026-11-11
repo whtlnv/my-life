@@ -248,6 +248,12 @@ describe('startup settings', () => {
     expect(settings.slackPollingIntervalInMilliseconds).toBe(60_000);
   });
 
+  it('looks back 3 days on a first Slack poll when MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS is 3', () => {
+    const settings = readStartupSettings({ MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS: '3' }, '/Users/ana');
+
+    expect(settings.slackFirstPollLookbackDays).toBe(3);
+  });
+
   it('polls Slack every 30 seconds when MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS is 30', () => {
     const settings = readStartupSettings({ MY_LIFE_SLACK_POLLING_INTERVAL_SECONDS: '30' }, '/Users/ana');
 
