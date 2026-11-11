@@ -14,6 +14,12 @@ import { createScriptedTelegramClient } from './scripted-telegram-client';
 import { openSlackMessageStore } from './slack-message-store';
 import { openSpendStore } from './spend-store';
 
+const goodWhatsappReport = {
+  channel: 'whatsapp',
+  chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-02T09:00:00-06:00' }],
+  openChat: { title: 'Ana', messages: [] },
+};
+
 function recordingTelegramClient() {
   const scriptedTelegram = createScriptedTelegramClient({
     dialogs: [{ chatId: '7001', chatTitle: 'Lucía Romero', unreadCount: 1, messages: [] }],
@@ -150,14 +156,9 @@ describe('createApp chat messages', () => {
   it('reports WhatsApp at GET /now as healthy, with the time of the report, after a good report follows a parser failure', async () => {
     const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() });
     const parserFailure = { channel: 'whatsapp', ok: false, missingSelector: '[data-pre-plain-text]' };
-    const goodReport = {
-      channel: 'whatsapp',
-      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-02T09:00:00-06:00' }],
-      openChat: { title: 'Ana', messages: [] },
-    };
 
     await postJson(app, '/chat-messages', parserFailure);
-    await postJson(app, '/chat-messages', goodReport);
+    await postJson(app, '/chat-messages', goodWhatsappReport);
     const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
 
     expect(whatsapp).toMatchObject({
@@ -173,12 +174,7 @@ describe('createApp chat messages', () => {
       databasePath: temporaryDatabasePath(),
       clock: { now: () => currentTime },
     });
-    const goodReport = {
-      channel: 'whatsapp',
-      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-02T09:00:00-06:00' }],
-      openChat: { title: 'Ana', messages: [] },
-    };
-    await postJson(app, '/chat-messages', goodReport);
+    await postJson(app, '/chat-messages', goodWhatsappReport);
     currentTime = new Date('2026-11-10T15:10:01.000Z');
 
     const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
@@ -193,12 +189,7 @@ describe('createApp chat messages', () => {
       databasePath: temporaryDatabasePath(),
       clock: { now: () => currentTime },
     });
-    const goodReport = {
-      channel: 'whatsapp',
-      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-02T09:00:00-06:00' }],
-      openChat: { title: 'Ana', messages: [] },
-    };
-    await postJson(app, '/chat-messages', goodReport);
+    await postJson(app, '/chat-messages', goodWhatsappReport);
     currentTime = new Date('2026-11-10T16:10:00.000Z');
 
     const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
@@ -214,12 +205,7 @@ describe('createApp chat messages', () => {
       clock: { now: () => currentTime },
       whatsappReportIntervalInMilliseconds: 3_600_000,
     });
-    const goodReport = {
-      channel: 'whatsapp',
-      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-02T09:00:00-06:00' }],
-      openChat: { title: 'Ana', messages: [] },
-    };
-    await postJson(app, '/chat-messages', goodReport);
+    await postJson(app, '/chat-messages', goodWhatsappReport);
     currentTime = new Date('2026-11-10T16:10:00.000Z');
 
     const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
