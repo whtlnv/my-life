@@ -16,7 +16,11 @@
 - [x] When no chat is open (no chat pane), the parse succeeds with the chat list and no messages
 - [x] When the chat pane is present but the message-row selector matches nothing, the parse reports a failure naming that selector instead of an empty message list
 - [x] When the chat-list selector matches nothing, the parse reports a failure naming that selector
-- [ ] A rendered message row with no `data-pre-plain-text` and no text (a photo or sticker) parses as a placeholder (`[photo]`, `[sticker]`) taking its time from `msg-meta`; the parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it
+- [ ] A rendered sticker row (no `data-pre-plain-text`, no text, a `sticker-container`) parses with text `[sticker]`
+  - predicted-contradiction: `apps/extension/src/whatsapp-page-parser.test.ts::yields each rendered message's id and text from the saved open chat, skipping rows WhatsApp has not rendered` — asserts: the fixture's sticker and media rows parse with text `''` — retired-by: "parses with text `[sticker]`" (migrate the expectation for those rows; keep the id and skip assertions)
+- [ ] A rendered photo row (no text, an `image-thumb`) parses with text `[photo]`
+- [ ] A rendered row with no `data-pre-plain-text` takes its time from its `msg-meta`
+- [ ] The parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it; a chat where some rows lack it (photos, stickers) parses without a failure
 - [ ] The report built from the fixture document passes the shared contract schema before it is posted
 - [ ] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
 - [ ] `POST /chat-messages` with a body that fails the contract schema answers 400 and stores nothing
