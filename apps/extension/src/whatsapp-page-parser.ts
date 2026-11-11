@@ -9,8 +9,10 @@ const unreadCountOf = (row: Element): number =>
     .map((badge) => Number.parseInt(badge.getAttribute('aria-label') ?? '', 10))
     .find((count) => !Number.isNaN(count)) ?? 0;
 
+const chatRowSelector = '#pane-side [role="row"]';
+
 export const parseWhatsappChatList = (document: Document): WhatsappChatListEntry[] =>
-  [...document.querySelectorAll('#pane-side [role="row"]')].map((row) => ({
+  [...document.querySelectorAll(chatRowSelector)].map((row) => ({
     title: row.querySelector('[data-testid="cell-frame-title"] span[title]')?.getAttribute('title') ?? '',
     unreadCount: unreadCountOf(row),
     lastMessageAt: row.querySelector('[data-testid="chat-list-timestamp"]')?.textContent ?? '',
@@ -64,6 +66,8 @@ export interface WhatsappPageFailure {
 }
 
 export const parseWhatsappPage = (document: Document): WhatsappPage | WhatsappPageFailure =>
-  document.querySelector('#main') !== null && document.querySelector(messageRowSelector) === null
-    ? { ok: false, missingSelector: messageRowSelector }
-    : { ok: true, chats: parseWhatsappChatList(document), messages: parseWhatsappOpenChat(document) };
+  document.querySelector(chatRowSelector) === null
+    ? { ok: false, missingSelector: chatRowSelector }
+    : document.querySelector('#main') !== null && document.querySelector(messageRowSelector) === null
+      ? { ok: false, missingSelector: messageRowSelector }
+      : { ok: true, chats: parseWhatsappChatList(document), messages: parseWhatsappOpenChat(document) };

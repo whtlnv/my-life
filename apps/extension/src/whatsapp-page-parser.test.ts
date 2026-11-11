@@ -140,4 +140,13 @@ describe('parseWhatsappPage', () => {
 
     expect(parseWhatsappPage(document)).toEqual({ ok: false, missingSelector: '#main [data-id]' });
   });
+
+  it('fails naming the chat-list selector when the side pane holds no chat rows', () => {
+    const document = new DOMParser().parseFromString(
+      '<div id="pane-side"><div data-testid="chat-list"></div></div>',
+      'text/html',
+    );
+
+    expect(parseWhatsappPage(document)).toEqual({ ok: false, missingSelector: '#pane-side [role="row"]' });
+  });
 });

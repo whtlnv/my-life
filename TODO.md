@@ -15,7 +15,7 @@
 - [x] Two messages in the open-chat fixture dated on different days parse to their own dates
 - [x] When no chat is open (no chat pane), the parse succeeds with the chat list and no messages
 - [x] When the chat pane is present but the message-row selector matches nothing, the parse reports a failure naming that selector instead of an empty message list
-- [ ] When the chat-list selector matches nothing, the parse reports a failure naming that selector
+- [x] When the chat-list selector matches nothing, the parse reports a failure naming that selector
 - [ ] A rendered message row with no `data-pre-plain-text` and no text (a photo or sticker) parses as a placeholder (`[photo]`, `[sticker]`) taking its time from `msg-meta`; the parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it
 - [ ] The report built from the fixture document passes the shared contract schema before it is posted
 - [ ] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
