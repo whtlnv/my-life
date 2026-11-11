@@ -46,6 +46,16 @@ function saveTelegramMessageFromLucia(databasePath: string, time: string) {
   });
 }
 
+const bbvaAlertsBotMessage = {
+  channel: 'telegram',
+  chatId: '8001',
+  chatTitle: 'BBVA Alertas',
+  senderId: '8001',
+  senderName: 'BBVA Alertas',
+  sentByUser: false,
+  chatIsBot: true,
+};
+
 describe('createApp chat messages', () => {
   it('lists at GET /chat-messages the chat messages stored in the chat store', async () => {
     const databasePath = temporaryDatabasePath();
@@ -356,23 +366,14 @@ describe('createApp chat messages', () => {
   it("lists at GET /triage-queue a Telegram chat with a bot as a digest titled with the bot's name, on channel telegram, counting its unconfirmed messages", async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);
-    const botMessage = {
-      channel: 'telegram',
-      chatId: '8001',
-      chatTitle: 'BBVA Alertas',
-      senderId: '8001',
-      senderName: 'BBVA Alertas',
-      sentByUser: false,
-      chatIsBot: true,
-    };
     chatMessageStore.saveMessage({
-      ...botMessage,
+      ...bbvaAlertsBotMessage,
       messageId: '77',
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-09T16:00:00.000Z',
     });
     chatMessageStore.saveMessage({
-      ...botMessage,
+      ...bbvaAlertsBotMessage,
       messageId: '78',
       text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
       time: '2026-11-09T17:00:00.000Z',
@@ -387,23 +388,14 @@ describe('createApp chat messages', () => {
   it('lists at GET /triage-queue no digest for a Telegram chat with a bot whose messages are all confirmed', async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);
-    const botMessage = {
-      channel: 'telegram',
-      chatId: '8001',
-      chatTitle: 'BBVA Alertas',
-      senderId: '8001',
-      senderName: 'BBVA Alertas',
-      sentByUser: false,
-      chatIsBot: true,
-    };
     chatMessageStore.saveMessage({
-      ...botMessage,
+      ...bbvaAlertsBotMessage,
       messageId: '77',
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-09T16:00:00.000Z',
     });
     chatMessageStore.saveMessage({
-      ...botMessage,
+      ...bbvaAlertsBotMessage,
       messageId: '78',
       text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
       time: '2026-11-09T17:00:00.000Z',
@@ -420,23 +412,14 @@ describe('createApp chat messages', () => {
   it("writes at POST /triage-run a Telegram bot digest's summary lines from its messages' text, and logs the call's spend", async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);
-    const botMessage = {
-      channel: 'telegram',
-      chatId: '8001',
-      chatTitle: 'BBVA Alertas',
-      senderId: '8001',
-      senderName: 'BBVA Alertas',
-      sentByUser: false,
-      chatIsBot: true,
-    };
     chatMessageStore.saveMessage({
-      ...botMessage,
+      ...bbvaAlertsBotMessage,
       messageId: '77',
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-02T14:00:00.000Z',
     });
     chatMessageStore.saveMessage({
-      ...botMessage,
+      ...bbvaAlertsBotMessage,
       messageId: '78',
       text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
       time: '2026-11-02T14:30:00.000Z',
@@ -472,13 +455,7 @@ describe('createApp chat messages', () => {
   it("writes no Telegram bot digest summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines", async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '8001',
-      chatTitle: 'BBVA Alertas',
-      senderId: '8001',
-      senderName: 'BBVA Alertas',
-      sentByUser: false,
-      chatIsBot: true,
+      ...bbvaAlertsBotMessage,
       messageId: '77',
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-02T14:00:00.000Z',
