@@ -49,3 +49,10 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 ## 9. People API (Phase 2b)
 
 - [ ] Enable the **People API** in the Google Cloud project (the legacy Contacts API is gone), then add the scopes to the OAuth consent screen by their full URIs: `https://www.googleapis.com/auth/contacts.readonly` and `https://www.googleapis.com/auth/contacts.other.readonly` (the manual box rejects the short names; once the API is enabled they also appear in the scope picker under People API). Each profile then needs one more consent (reload the extension card; revoke the cached token in `chrome://identity-internals` first if the prompt does not appear).
+
+## 10. WhatsApp (Phase 6b)
+
+- [ ] **Masked page structure** (tonight, 2 minutes): in the Chrome profile with `web.whatsapp.com` open, run Claude's read-only snippet in the DevTools console twice (a one-to-one chat, then a group), saving each with `pbpaste`. Every text, name and number is masked; the parsers' fixtures are built to match it.
+- [ ] **Which profile keeps WhatsApp open** (§ 7 default: the first profile with the extension): name its account.
+- [ ] **After Phase 6b is delivered:** reload the my-life extension in that profile (`chrome://extensions` → reload), then keep the WhatsApp tab open; Claude checks the first real report with you before any send.
+
