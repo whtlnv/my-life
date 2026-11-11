@@ -147,6 +147,25 @@ describe('createApp chat messages', () => {
     expect(whatsapp).toEqual(expect.objectContaining({ parserBroken: true, missingSelector: '[data-pre-plain-text]' }));
   });
 
+  it('reports WhatsApp at GET /now as healthy, with the time of the report, after a good report follows a parser failure', async () => {
+    const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() });
+    const parserFailure = { channel: 'whatsapp', ok: false, missingSelector: '[data-pre-plain-text]' };
+    const goodReport = {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-02T09:00:00-06:00' }],
+      openChat: { title: 'Ana', messages: [] },
+    };
+
+    await postJson(app, '/chat-messages', parserFailure);
+    await postJson(app, '/chat-messages', goodReport);
+    const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
+
+    expect(whatsapp).toEqual({
+      parserBroken: false,
+      lastReportedAt: clockAtTenPastThree.now().toISOString(),
+    });
+  });
+
   it('stores an ignore verdict on that chat message at POST /chat-verdicts', async () => {
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: [], databasePath });

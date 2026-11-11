@@ -633,11 +633,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
-  let whatsappParserFailure: { parserBroken: true; missingSelector: string } | undefined;
+  let whatsappStatus:
+    | { parserBroken: true; missingSelector: string }
+    | { parserBroken: false; lastReportedAt: string }
+    | undefined;
   app.post('/chat-messages', async (context) => {
     const body = await context.req.json<{ ok?: boolean; missingSelector: string }>();
     if (body.ok === false) {
-      whatsappParserFailure = { parserBroken: true, missingSelector: body.missingSelector };
+      whatsappStatus = { parserBroken: true, missingSelector: body.missingSelector };
       return context.json({ ok: true });
     }
     const parsed = whatsappReport.safeParse(body);
@@ -645,6 +648,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, 400);
     }
     const report = parsed.data;
+    whatsappStatus = { parserBroken: false, lastReportedAt: clock.now().toISOString() };
     for (const message of report.openChat.messages) {
       chatMessageStore.saveMessage({
         channel: report.channel,
@@ -2389,7 +2393,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
       slackWorkspaces: slackWorkspacePolls?.map(describeSlackWorkspaceFreshness),
       telegram: describeTelegramConnection(),
-      whatsapp: whatsappParserFailure,
+      whatsapp: whatsappStatus,
     });
   });
   const dashboardDirectory = options.dashboardDirectory;
