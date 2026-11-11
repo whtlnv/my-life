@@ -121,8 +121,10 @@ interface TriageResult {
   promptVersion: string;
 }
 
+// A parser failure keeps the time of the last good report, if there was one, so the chip can still say when.
 type WhatsappStatus =
-  { parserBroken: true; missingSelector: string } | { parserBroken: false; lastReportedAt: string; stale: boolean };
+  | { parserBroken: true; missingSelector: string; lastReportedAt?: string }
+  | { parserBroken: false; lastReportedAt: string; stale: boolean };
 
 // What the triage port learns about the sender: the display name from the From header plus the record the user and
 // the contacts import keep on that email.
@@ -657,7 +659,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const body = await context.req.json<{ ok?: boolean; missingSelector: string; accountEmail?: string }>();
     whatsappAccountEmail = body.accountEmail;
     if (body.ok === false) {
-      whatsappStatus = { parserBroken: true, missingSelector: body.missingSelector };
+      const lastReportedAt = whatsappStatus?.lastReportedAt;
+      whatsappStatus = {
+        parserBroken: true,
+        missingSelector: body.missingSelector,
+        ...(lastReportedAt === undefined ? {} : { lastReportedAt }),
+      };
       return context.json({ ok: true });
     }
     const parsed = whatsappReport.safeParse(body);

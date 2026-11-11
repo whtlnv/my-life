@@ -1040,8 +1040,52 @@ async function seed(): Promise<void> {
   await app.request(`/telegram-contacts/${valeriaTelegramId}/marks/vip`, { method: 'PUT' });
 }
 
+// What the WhatsApp content script in the gmail.com profile reports: the chat list (Carmen's unread chat shows only
+// through its preview) and the open chat with Jorge, whose question the user has not answered yet.
+const whatsappReport = () => ({
+  channel: 'whatsapp',
+  accountEmail: accounts.gmail,
+  chats: [
+    { title: 'Jorge Salinas', unreadCount: 0, lastMessageAt: '8:12 pm' },
+    {
+      title: 'Carmen Ibarra',
+      unreadCount: 2,
+      lastMessageAt: '7:40 pm',
+      lastMessagePreview: '¿Me confirmas si mañana pasas por los documentos del notario?',
+    },
+    { title: 'Familia', unreadCount: 0, lastMessageAt: 'Yesterday', lastMessagePreview: 'Mamá: 📷 Photo' },
+  ],
+  openChat: {
+    title: 'Jorge Salinas',
+    messages: [
+      {
+        id: '3EB0D3M0000000000001',
+        sender: 'Francisco Catalá',
+        sentAt: minutesAgoIso(140),
+        text: 'Te paso el contrato revisado en la tarde.',
+        sentByUser: true,
+      },
+      {
+        id: '3EB0D3M0000000000002',
+        sender: 'Jorge Salinas',
+        sentAt: minutesAgoIso(95),
+        text: 'Perfecto. ¿Lo firmamos el viernes o prefieres el lunes?',
+        sentByUser: false,
+      },
+      {
+        id: '3EB0D3M0000000000003',
+        sender: 'Jorge Salinas',
+        sentAt: minutesAgoIso(94),
+        text: '[photo]',
+        sentByUser: false,
+      },
+    ],
+  },
+});
+
 // Keep every source fresh: the real extensions report every minute (mail) and every five (calendar).
 async function report(): Promise<void> {
+  await postJson('/chat-messages', whatsappReport());
   for (const snapshot of calendarSnapshots) await postJson('/calendar-snapshot', snapshot);
   for (const accountEmail of Object.values(accounts)) {
     await postJson('/mail-report', { accountEmail, historyId: '2', messages: [] });
@@ -1050,6 +1094,7 @@ async function report(): Promise<void> {
 }
 
 await seed();
+await postJson('/chat-messages', whatsappReport());
 setInterval(() => {
   report().catch((error: unknown) => {
     console.error('demo report failed', error);

@@ -150,9 +150,10 @@ function TelegramConnectedChip({
 function WhatsappChip({ whatsapp }: { whatsapp: NonNullable<ShellStatus['whatsapp']> }) {
   return (
     <li
-      className={sourceChipClassName(whatsapp.stale)}
+      className={sourceChipClassName(whatsapp.stale || whatsapp.parserBroken)}
       title={`WhatsApp · last report ${timeInBusinessZone(whatsapp.lastReportedAt)}`}
     >
+      <span className="dot" aria-hidden="true" />
       <span className="chip-account">
         {whatsapp.parserBroken ? 'whatsapp parser broken' : 'whatsapp'}
       </span>

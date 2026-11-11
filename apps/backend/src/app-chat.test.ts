@@ -191,6 +191,16 @@ describe('createApp chat messages', () => {
     expect(messages).toEqual([]);
   });
 
+  it('keeps at GET /now the time of the last good WhatsApp report once a parser failure follows it', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath(), clock: clockAtTenPastThree });
+    await postJson(app, '/chat-messages', goodWhatsappReport);
+
+    await postJson(app, '/chat-messages', { channel: 'whatsapp', ok: false, missingSelector: '[data-pre-plain-text]' });
+    const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
+
+    expect(whatsapp).toMatchObject({ parserBroken: true, lastReportedAt: clockAtTenPastThree.now().toISOString() });
+  });
+
   it('reports WhatsApp at GET /now as parser broken, naming the missing selector, after POST /chat-messages with a parser failure', async () => {
     const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
     const parserFailure = { channel: 'whatsapp', ok: false, missingSelector: '[data-pre-plain-text]' };
@@ -423,7 +433,11 @@ describe('createApp chat messages', () => {
     const databasePath = temporaryDatabasePath();
     const appBeforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
     await postJson(appBeforeRestart, '/chat-messages', { ...goodWhatsappReport, accountEmail: 'ana@example.com' });
-    await postJson(appBeforeRestart, '/chat-sends', { channel: 'whatsapp', chatId: 'Ana', text: 'Tomorrow at ten works' });
+    await postJson(appBeforeRestart, '/chat-sends', {
+      channel: 'whatsapp',
+      chatId: 'Ana',
+      text: 'Tomorrow at ten works',
+    });
     const [acknowledged] = await pendingCommandsOf<{ id: string }>(appBeforeRestart, 'ana@example.com');
     await postAcknowledgement(appBeforeRestart, String(acknowledged?.id));
     const app = createApp({ allowedEmails: ['ana@example.com'], databasePath });
@@ -1188,7 +1202,9 @@ describe('createApp chat messages', () => {
 
     const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
 
-    expect(everyoneElse).toEqual([expect.objectContaining({ channel: 'whatsapp', whatsappHandles: [{ name: 'Ana' }] })]);
+    expect(everyoneElse).toEqual([
+      expect.objectContaining({ channel: 'whatsapp', whatsappHandles: [{ name: 'Ana' }] }),
+    ]);
   });
   it('lists at GET /people under VIP, after a backend restart on the same database file, a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip before it', async () => {
     const databasePath = temporaryDatabasePath();
