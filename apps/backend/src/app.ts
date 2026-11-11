@@ -1191,9 +1191,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const chatMessageKey = (message: { chatId: string; messageId: string }) => `${message.chatId}/${message.messageId}`;
   async function rewriteBotChatDigestSummaryLines() {
     for (const [chatId, messages] of unconfirmedBotMessagesByChat()) {
-      if (digestSummaryStore.load(identifyBotChatDigest(chatId)) !== undefined) continue;
+      const digestId = identifyBotChatDigest(chatId);
+      if (digestSummaryStore.load(digestId) !== undefined) continue;
       const summary = await summarizeWithinTheSpendCeiling(messages.map(({ text }) => ({ summary: text })));
-      digestSummaryStore.save(identifyBotChatDigest(chatId), summary?.lines);
+      digestSummaryStore.save(digestId, summary?.lines);
     }
   }
   const identifyBotChatDigest = (chatId: string) => JSON.stringify(['bot-chat', chatId]);
