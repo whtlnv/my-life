@@ -25,7 +25,9 @@ export async function answerBackendFetch(
     method: message.method,
     body: message.body ?? null,
   });
-  return { status: response.status, body: await response.json() };
+  // Some routes answer with no body (a command acknowledgement); that relays as a null body.
+  const text = await response.text();
+  return { status: response.status, body: text === '' ? null : (JSON.parse(text) as unknown) };
 }
 
 // A fetch for the WhatsApp content script: the web.whatsapp.com page cannot reach the local backend itself

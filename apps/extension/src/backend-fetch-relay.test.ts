@@ -24,6 +24,14 @@ describe('answerBackendFetch', () => {
     ]);
     expect(answer).toEqual({ status: 201, body: { stored: 2 } });
   });
+  it('answers a backend reply with no body, as a command acknowledgement gives, with its status and a null body', async () => {
+    const answer = await answerBackendFetch(
+      { fetch: () => Promise.resolve(new Response(null, { status: 200 })), backendUrl: 'http://127.0.0.1:7777' },
+      { type: 'backend-fetch', path: '/commands/command-1/acknowledgement', method: 'POST' },
+    );
+
+    expect(answer).toEqual({ status: 200, body: null });
+  });
 });
 
 describe('relayedFetch', () => {
