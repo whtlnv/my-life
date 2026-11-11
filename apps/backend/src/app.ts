@@ -638,6 +638,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
   let whatsappStatus: WhatsappStatus | undefined;
+  const whatsappReportIntervalInMilliseconds = 60_000;
+  const describeWhatsappFreshness = () => {
+    if (whatsappStatus === undefined || whatsappStatus.parserBroken) {
+      return whatsappStatus;
+    }
+    const lastReportedAt = whatsappStatus.lastReportedAt;
+    const pollingIntervalInMilliseconds = whatsappReportIntervalInMilliseconds;
+    return {
+      ...whatsappStatus,
+      stale: !isAccountFresh({ email: 'whatsapp', lastReportedAt, pollingIntervalInMilliseconds }, clock),
+    };
+  };
   app.post('/chat-messages', async (context) => {
     const body = await context.req.json<{ ok?: boolean; missingSelector: string }>();
     if (body.ok === false) {
@@ -2394,7 +2406,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
       slackWorkspaces: slackWorkspacePolls?.map(describeSlackWorkspaceFreshness),
       telegram: describeTelegramConnection(),
-      whatsapp: whatsappStatus,
+      whatsapp: describeWhatsappFreshness(),
     });
   });
   const dashboardDirectory = options.dashboardDirectory;

@@ -26,7 +26,7 @@
 - [x] `POST /chat-messages` with a parser failure makes `GET /now` report WhatsApp as parser broken
 - [x] A good WhatsApp report after a parser failure makes `GET /now` report WhatsApp as healthy with the report's time
 - [x] `GET /now` reports WhatsApp as fresh when the last report is within the staleness threshold
-- [ ] `GET /now` reports WhatsApp as stale when the last report is older than the staleness threshold
+- [x] `GET /now` reports WhatsApp as stale when the last report is older than the staleness threshold
 - [ ] The WhatsApp staleness threshold follows its startup setting instead of the default
 - [ ] An unanswered incoming WhatsApp message appears in the triage queue's chat items with channel `whatsapp`
 - [ ] A WhatsApp message with a stored verdict is no longer in the triage queue

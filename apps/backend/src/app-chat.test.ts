@@ -186,6 +186,26 @@ describe('createApp chat messages', () => {
     expect(whatsapp).toMatchObject({ lastReportedAt: '2026-11-10T15:10:00.000Z', stale: false });
   });
 
+  it('reports WhatsApp at GET /now as stale when the last report arrived an hour ago', async () => {
+    let currentTime = new Date('2026-11-10T15:10:00.000Z');
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      clock: { now: () => currentTime },
+    });
+    const goodReport = {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-02T09:00:00-06:00' }],
+      openChat: { title: 'Ana', messages: [] },
+    };
+    await postJson(app, '/chat-messages', goodReport);
+    currentTime = new Date('2026-11-10T16:10:00.000Z');
+
+    const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
+
+    expect(whatsapp).toMatchObject({ lastReportedAt: '2026-11-10T15:10:00.000Z', stale: true });
+  });
+
   it('stores an ignore verdict on that chat message at POST /chat-verdicts', async () => {
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: [], databasePath });
