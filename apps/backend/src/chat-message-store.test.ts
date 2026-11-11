@@ -64,6 +64,15 @@ describe('chat message store', () => {
     });
   });
 
+  it('marks a stored message as from a bot chat when it is saved again with the bot mark, as the backend does for messages stored before the mark existed', () => {
+    const store = openChatMessageStore(':memory:');
+    store.saveMessage(telegramMessageFromLuis);
+
+    store.saveMessage({ ...telegramMessageFromLuis, chatIsBot: true });
+
+    expect(store.listMessages()).toEqual([{ ...telegramMessageFromLuis, chatIsBot: true }]);
+  });
+
   it('lists two messages with the same chat id and message id but different channels both', () => {
     withTemporaryDatabase((databasePath) => {
       const store = openChatMessageStore(databasePath);

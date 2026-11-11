@@ -50,9 +50,11 @@ export function openChatMessageStore(databasePath: string) {
       FROM chat_message_verdicts ORDER BY rowid`,
   );
   const insertMessage = database.prepare(
-    `INSERT OR IGNORE INTO chat_messages
+    // A message saved again keeps its row, but gains the bot mark if it now has one (rows stored before the mark).
+    `INSERT INTO chat_messages
       (channel, chat_id, chat_title, message_id, sender_id, sender_name, text, time, sent_by_user, chat_is_bot)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT (channel, chat_id, message_id) DO UPDATE SET chat_is_bot = MAX(chat_is_bot, excluded.chat_is_bot)`,
   );
   const selectMessages = database.prepare<[], ChatMessageRow>(
     `SELECT channel, chat_id AS chatId, chat_title AS chatTitle, message_id AS messageId,
