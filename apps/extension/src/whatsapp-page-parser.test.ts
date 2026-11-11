@@ -63,6 +63,22 @@ describe('parseWhatsappChatList', () => {
 });
 
 describe('parseWhatsappOpenChat', () => {
+  it.each([
+    ['[9:41 PM, 30/9/2026] Ana: ', '2026-09-30T21:41:00-06:00'],
+    ['[9:41 p.m., 30/9/2026] Ana: ', '2026-09-30T21:41:00-06:00'],
+    ['[9:41\u202fAM, 30/9/2026] Ana: ', '2026-09-30T09:41:00-06:00'],
+    ['[21:41, 30/9/2026] Ana: ', '2026-09-30T21:41:00-06:00'],
+  ])('reads the time of a message labelled %j as WhatsApp writes it in other locales', (label, sentAt) => {
+    const document = new DOMParser().parseFromString(
+      `<div id="main"><div data-id="3EB0F0000000000000AA"><div data-testid="msg-container">` +
+        `<div data-pre-plain-text="${label}"><span data-testid="selectable-text">Hola</span></div>` +
+        `<div data-testid="msg-meta">9:41</div></div></div></div>`,
+      'text/html',
+    );
+
+    expect(parseWhatsappOpenChat(document).map((message) => message.sentAt)).toEqual([sentAt]);
+  });
+
   it("yields each rendered message's id and text from the saved open chat, skipping rows WhatsApp has not rendered", () => {
     const messages = parseWhatsappOpenChat(fixtureDocument('whatsapp-one-to-one-chat.fixture.html'));
 
@@ -96,7 +112,7 @@ describe('parseWhatsappOpenChat', () => {
   it('marks as not sent by the user a message whose meta holds only its time and no delivery-status icon', () => {
     const document = new DOMParser().parseFromString(
       '<div id="main"><div data-id="3EB0F000000000AAA1B2C3"><div data-testid="msg-container">' +
-        '<span data-testid="selectable-text">Hola</span>' +
+        '<div data-pre-plain-text="[9:41 pm, 30/9/2026] Ana: "><span data-testid="selectable-text">Hola</span></div>' +
         '<div data-testid="msg-meta"><span dir="auto"><span>9:41 pm</span></span></div></div></div></div>',
       'text/html',
     );
