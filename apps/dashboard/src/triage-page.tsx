@@ -74,7 +74,7 @@ interface SlackTriageItem {
 }
 
 interface ChatTriageItem {
-  channel: 'telegram';
+  channel: 'telegram' | 'whatsapp';
   chatId: string;
   messageId: string;
   chatTitle: string;
@@ -103,7 +103,7 @@ export const sectionTitles = {
   handledForYou: 'Handled for you',
   slack: 'Slack',
 };
-export const channelLabels = { telegram: 'Telegram' };
+export const channelLabels = { telegram: 'Telegram', whatsapp: 'WhatsApp' };
 export const noDueTimeText = 'No due time';
 export const nothingNeedsInputText = 'No questions waiting';
 export const significantFlagText = 'Significant';
@@ -917,10 +917,18 @@ function Legend() {
   );
 }
 
-function ChatSection({ items, onAccepted }: { items: ChatTriageItem[]; onAccepted: (item: ChatTriageItem) => void }) {
+function ChatSection({
+  channel,
+  items,
+  onAccepted,
+}: {
+  channel: ChatTriageItem['channel'];
+  items: ChatTriageItem[];
+  onAccepted: (item: ChatTriageItem) => void;
+}) {
   return (
-    <section aria-label={channelLabels.telegram} className="section">
-      <h2 className="section-title">{channelLabels.telegram}</h2>
+    <section aria-label={channelLabels[channel]} className="section">
+      <h2 className="section-title">{channelLabels[channel]}</h2>
       {items.map((item) => (
         <ChatCard
           key={`${item.chatId}:${item.messageId}`}
@@ -1035,7 +1043,20 @@ export function TriagePage() {
         ))}
       </section>
       {queue.slackItems !== undefined && <SlackSection items={queue.slackItems} onAccepted={removeSlackItem} />}
-      {queue.chatItems !== undefined && <ChatSection items={queue.chatItems} onAccepted={removeChatItem} />}
+      {queue.chatItems !== undefined && (
+        <ChatSection
+          channel="telegram"
+          items={queue.chatItems.filter((item) => item.channel === 'telegram')}
+          onAccepted={removeChatItem}
+        />
+      )}
+      {queue.chatItems?.some((item) => item.channel === 'whatsapp') && (
+        <ChatSection
+          channel="whatsapp"
+          items={queue.chatItems.filter((item) => item.channel === 'whatsapp')}
+          onAccepted={removeChatItem}
+        />
+      )}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (

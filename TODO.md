@@ -48,7 +48,7 @@
 - [x] Several DOM mutations within 10 s make the content script post one report, 10 s after the last mutation
 - [x] Two DOM mutations more than 10 s apart make the content script post two reports
 - [x] When the parse fails, the content script posts the parser failure instead of a report
-- [ ] The triage page shows WhatsApp items in their own WhatsApp section, with the reply composer naming WhatsApp
+- [x] The triage page shows WhatsApp items in their own WhatsApp section, with the reply composer naming WhatsApp
 - [ ] The header shows a WhatsApp chip with the time of the last report
 - [ ] The header's WhatsApp chip shows as stale when `GET /now` reports WhatsApp stale
 - [ ] The header's WhatsApp chip says "whatsapp parser broken" when `GET /now` reports the parser broken

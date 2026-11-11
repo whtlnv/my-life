@@ -2484,4 +2484,40 @@ describe('TriagePage', () => {
 
     expect(within(card).getByRole('button', { name: 'Send' })).toBeDisabled();
   });
+
+  it('puts WhatsApp cards under their own WhatsApp section, apart from Telegram, with a reply composer naming WhatsApp', async () => {
+    const whatsappLabel = channelLabels.whatsapp;
+    expect(whatsappLabel).toEqual(expect.any(String));
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      chatItems: [
+        chatItem('7001', 'Familia Romero', 'Lucía Romero', '¿Vienes a cenar el sábado?'),
+        {
+          channel: 'whatsapp',
+          chatId: 'Equipo Erlia',
+          messageId: '3EB0A1B2C3D4',
+          chatTitle: 'Equipo Erlia',
+          senderName: 'Diego Salas',
+          text: '¿Subes el reporte hoy?',
+          time: '2026-11-10T17:00:00.000Z',
+          link: 'https://web.whatsapp.com/',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const whatsappSection = await screen.findByRole('region', { name: whatsappLabel });
+    expect(within(whatsappSection).getByRole('heading', { name: whatsappLabel })).toBeInTheDocument();
+    const card = within(whatsappSection).getByRole('article');
+    expect(within(card).getByText('Equipo Erlia')).toBeInTheDocument();
+    const telegramSection = screen.getByRole('region', { name: channelLabels.telegram });
+    expect(within(telegramSection).queryByText('Equipo Erlia')).not.toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: /^Reply/ }));
+    expect(within(card).getByRole('textbox')).toHaveAttribute('placeholder', expect.stringContaining(whatsappLabel));
+  });
 });
