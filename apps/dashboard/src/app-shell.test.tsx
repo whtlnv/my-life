@@ -264,4 +264,17 @@ describe('AppShell', () => {
     expect(item).toHaveClass('is-stale');
     expect(item).toHaveTextContent(/stale/i);
   });
+
+  it('shows a WhatsApp source chip saying whatsapp parser broken when GET /now reports the parser broken', async () => {
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      whatsapp: { parserBroken: true, lastReportedAt: '2026-11-10T15:10:00.000Z', stale: false },
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText(/whatsapp parser broken/i)).closest('li');
+    expect(item).not.toBeNull();
+  });
 });

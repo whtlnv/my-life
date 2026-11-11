@@ -153,7 +153,9 @@ function WhatsappChip({ whatsapp }: { whatsapp: NonNullable<ShellStatus['whatsap
       className={sourceChipClassName(whatsapp.stale)}
       title={`WhatsApp · last report ${timeInBusinessZone(whatsapp.lastReportedAt)}`}
     >
-      <span className="chip-account">whatsapp</span>
+      <span className="chip-account">
+        {whatsapp.parserBroken ? 'whatsapp parser broken' : 'whatsapp'}
+      </span>
       {whatsapp.stale && <span className="chip-detail is-stale">stale</span>}
     </li>
   );

@@ -51,6 +51,6 @@
 - [x] The triage page shows WhatsApp items in their own WhatsApp section, with the reply composer naming WhatsApp
 - [x] The header shows a WhatsApp chip with the time of the last report
 - [x] The header's WhatsApp chip shows as stale when `GET /now` reports WhatsApp stale
-- [ ] The header's WhatsApp chip says "whatsapp parser broken" when `GET /now` reports the parser broken
+- [x] The header's WhatsApp chip says "whatsapp parser broken" when `GET /now` reports the parser broken
 - [ ] The built extension's manifest registers the WhatsApp content script for `https://web.whatsapp.com/*`, and the shipped backend (`main.ts`) accepts a WhatsApp report on `POST /chat-messages` and lists it in the triage queue
 - [ ] `scripts/demo.sh` posts WhatsApp chats; screenshots of the WhatsApp triage section, People timeline and header chip are taken over the demo, and `docs/decisions/` records the hand-written-fixture fidelity gap
