@@ -37,7 +37,7 @@ describe('NeedsInputPage', () => {
     render(<NeedsInputPage />);
 
     const list = await screen.findByRole('list', { name: 'Questions' });
-    const [row] = within(list).getAllByRole('listitem');
+    const [row] = await within(list).findAllByRole('listitem');
     if (row === undefined) throw new Error('expected one question row');
     expect(within(row).getByText(question.senderEmail)).toBeInTheDocument();
     const vipAnswer = within(row).getByRole('button', { name: /vip/i });
