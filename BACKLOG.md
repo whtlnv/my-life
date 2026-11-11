@@ -33,6 +33,17 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/dashboard/src/app-shell.tsx:28] The `GET /now` WhatsApp status shape is declared apart from the route that builds it** (added: 2026-11-11)
+  `ShellStatus.whatsapp` here and `WhatsappStatus` / `describeWhatsappFreshness` in `apps/backend/src/app.ts` must change
+  together, and nothing ties them: a renamed field compiles and the chip shows the wrong state. Deferred for the same reason
+  as the Telegram status entry: there is no `/now` contract to share, and adding one is new `packages/contracts` surface
+  delivered test-first.
+- **[apps/backend/src/app.ts:658] The WhatsApp parser-failure body and the `send-whatsapp` command are declared apart from the extension** (added: 2026-11-11)
+  `POST /chat-messages` reads `{ ok, missingSelector, accountEmail }` through a hand-written type while
+  `whatsapp-report-watch.ts` builds it, and `GET /commands` builds `{ id, chatTitle, text, type }` while `whatsapp-send.ts`
+  declares its own `SendWhatsappCommand`; `whatsappReport` in `packages/contracts` covers neither. A renamed field compiles
+  on both sides. Deferred because the shared schemas are new `packages/contracts` surface delivered test-first.
+
 - **[apps/dashboard/src/app-shell.tsx:23] The `GET /now` Telegram status shape is declared apart from the route that builds it** (added: 2026-11-10)
   `ShellStatus.telegram` here (`loggedIn`, `lastMessageAt` / `lastStartedAt`, `stale`) and `describeTelegramConnection` in
   `apps/backend/src/app.ts` must change together, and nothing ties them: a renamed field compiles and the chip shows the
