@@ -3,7 +3,7 @@
 
 ## Phase 6b — WhatsApp
 
-- [ ] A WhatsApp report (channel `whatsapp`, a chat list with title, unread count and last message time, and the open chat's messages with id, sender, time, text and sent-by-user) passes the shared contract schema
+- [x] A WhatsApp report (channel `whatsapp`, a chat list with title, unread count and last message time, and the open chat's messages with id, sender, time, text and sent-by-user) passes the shared contract schema
 - [ ] A WhatsApp report whose message has no id fails the shared contract schema
 - [ ] The chat-list and open-chat fixtures in `apps/extension/src/` are trimmed from the user's masked WhatsApp Web structure (captured 2026-11-10 to `/private/tmp/claude/claude-501/-Users-whtlnv-Developer-my-life/cb52751b-a334-4beb-a785-46665f75178f/scratchpad/whatsapp-skeleton-1.html` and `-2.html`, every text, name and number masked; message ids replaced by made-up ones; keep the masked `a`/`0` text or replace it with invented text, never real): a one-to-one chat and a group with the user's own messages
 - [ ] Parsing the saved chat-list fixture yields each chat's title (`[data-testid="cell-frame-title"] span[title]`), unread count and last message time (`[data-testid="chat-list-timestamp"]`)
