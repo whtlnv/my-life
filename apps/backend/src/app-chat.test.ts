@@ -345,16 +345,10 @@ describe('createApp chat messages', () => {
   it('leaves out of GET /triage-queue a Telegram chat with a bot, though its newest message is from the bot and has no verdict', async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '8001',
-      chatTitle: 'BBVA Alertas',
+      ...bbvaAlertsBotMessage,
       messageId: '77',
-      senderId: '8001',
-      senderName: 'BBVA Alertas',
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-09T16:00:00.000Z',
-      sentByUser: false,
-      chatIsBot: true,
     });
     const app = createApp({ allowedEmails: [], databasePath });
 
@@ -625,16 +619,10 @@ describe('createApp chat messages', () => {
   it('leaves out of GET /people the sender of a Telegram chat with a bot, so a bot is not listed as a contact', async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '8001',
-      chatTitle: 'BBVA Alertas',
+      ...bbvaAlertsBotMessage,
       messageId: '77',
-      senderId: '8001',
-      senderName: 'BBVA Alertas',
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-09T16:00:00.000Z',
-      sentByUser: false,
-      chatIsBot: true,
     });
     const app = createApp({ allowedEmails: [], databasePath });
 
@@ -977,16 +965,10 @@ describe('createApp chat messages', () => {
   it('leaves out of GET /waiting-on a Telegram chat with a bot, though its newest message is from the bot', async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({
-      channel: 'telegram',
-      chatId: '8001',
-      chatTitle: 'BBVA Alertas',
+      ...bbvaAlertsBotMessage,
       messageId: '77',
-      senderId: '8001',
-      senderName: 'BBVA Alertas',
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-09T16:00:00.000Z',
-      sentByUser: false,
-      chatIsBot: true,
     });
     const app = createApp({ allowedEmails: [], databasePath });
 
