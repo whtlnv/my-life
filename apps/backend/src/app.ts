@@ -1180,17 +1180,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         choices: ['ignore', 'act', 'reply'],
       }));
   }
+  const chatMessageKey = (message: { chatId: string; messageId: string }) => `${message.chatId}/${message.messageId}`;
   function describeBotChatDigests() {
-    const confirmedMessageIds = new Set(
+    const confirmedMessageKeys = new Set(
       chatMessageStore
         .listVerdicts()
         .filter((verdict) => verdict.decision === 'confirmed')
-        .map((verdict) => `${verdict.chatId}/${verdict.messageId}`),
+        .map(chatMessageKey),
     );
     const botMessagesByChat = new Map<string, ChatMessage[]>();
     for (const message of chatMessageStore
       .listMessages()
-      .filter((message) => message.chatIsBot && !confirmedMessageIds.has(`${message.chatId}/${message.messageId}`)))
+      .filter((message) => message.chatIsBot && !confirmedMessageKeys.has(chatMessageKey(message))))
       botMessagesByChat.set(message.chatId, [...(botMessagesByChat.get(message.chatId) ?? []), message]);
     return [...botMessagesByChat.values()].map((messages) => ({
       title: messages[0]?.chatTitle,
