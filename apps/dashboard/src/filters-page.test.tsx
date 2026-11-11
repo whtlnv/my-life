@@ -50,7 +50,7 @@ describe('FiltersPage', () => {
     render(<FiltersPage />);
 
     const list = await screen.findByRole('list', { name: 'Filter proposals' });
-    const rows = within(list).getAllByRole('listitem');
+    const rows = await within(list).findAllByRole('listitem');
     expect(rows).toHaveLength(2);
     const [vendorRow, saasRow] = rows;
     if (vendorRow === undefined || saasRow === undefined) throw new Error('expected two proposal rows');
@@ -101,7 +101,7 @@ describe('FiltersPage', () => {
     render(<FiltersPage />);
 
     const list = await screen.findByRole('list', { name: 'Created filters' });
-    const rows = within(list).getAllByRole('listitem');
+    const rows = await within(list).findAllByRole('listitem');
     expect(rows).toHaveLength(1);
     const [shopRow] = rows;
     if (shopRow === undefined) throw new Error('expected one filter row');

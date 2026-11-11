@@ -135,7 +135,7 @@ describe('NeedsInputPage', () => {
     render(<NeedsInputPage />);
 
     const list = await screen.findByRole('list', { name: 'Task proposals' });
-    const [row] = within(list).getAllByRole('listitem');
+    const [row] = await within(list).findAllByRole('listitem');
     if (row === undefined) throw new Error('expected one task proposal row');
     expect(within(row).getByText(proposal.title)).toBeInTheDocument();
     expect(within(row).getByText(proposal.accountEmail)).toBeInTheDocument();
@@ -179,7 +179,7 @@ describe('NeedsInputPage', () => {
     render(<NeedsInputPage />);
 
     const list = await screen.findByRole('list', { name: 'Task proposals' });
-    const [row] = within(list).getAllByRole('listitem');
+    const [row] = await within(list).findAllByRole('listitem');
     if (row === undefined) throw new Error('expected one task proposal row');
     const rejectKey = within(row)
       .getByRole('button', { name: /reject/i })

@@ -28,7 +28,7 @@ describe('CategoriesPage', () => {
     render(<CategoriesPage />);
 
     const list = await screen.findByRole('list', { name: 'Categories' });
-    const rows = within(list).getAllByRole('listitem');
+    const rows = await within(list).findAllByRole('listitem');
     expect(rows).toHaveLength(2);
     const expectations = [
       { rate: 0.25, automatic: 'false' },
