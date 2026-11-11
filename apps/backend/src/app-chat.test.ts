@@ -930,6 +930,29 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('lists at GET /waiting-on a Telegram sender who wrote twice without an answer once, waiting since the first message', async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '43',
+      senderId: '7001',
+      senderName: 'Lucía Romero',
+      text: '[photo]',
+      time: '2026-11-09T16:01:00.000Z',
+      sentByUser: false,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([
+      expect.objectContaining({ displayName: 'Lucía Romero', waitingSince: '2026-11-09T16:00:00.000Z' }),
+    ]);
+  });
+
   it("leaves out of GET /waiting-on a Telegram chat whose newest message is the user's", async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T15:00:00.000Z');

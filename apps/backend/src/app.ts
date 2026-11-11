@@ -2250,9 +2250,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       );
     const awaitsUserReply = (message: (typeof chatMessages)[number]): boolean =>
       !message.sentByUser && !message.chatIsBot && !userRepliedLaterInChat(message);
-    const telegramPeople = chatMessages
-      .filter(awaitsUserReply)
-      .map((message) => ({ channel: 'telegram', displayName: message.senderName, waitingSince: message.time }));
+    // One entry per sender in each chat, waiting since their first unanswered message (the store lists oldest first).
+    const firstUnansweredMessageBySender = new Map<string, (typeof chatMessages)[number]>();
+    for (const message of chatMessages.filter(awaitsUserReply)) {
+      const senderKey = `${message.channel}/${message.chatId}/${message.senderId}`;
+      if (!firstUnansweredMessageBySender.has(senderKey)) firstUnansweredMessageBySender.set(senderKey, message);
+    }
+    const telegramPeople = [...firstUnansweredMessageBySender.values()].map((message) => ({
+      channel: 'telegram',
+      displayName: message.senderName,
+      waitingSince: message.time,
+    }));
     return context.json({
       people: [...people, ...slackPeople, ...telegramPeople].toSorted((first, second) =>
         first.waitingSince.localeCompare(second.waitingSince),
