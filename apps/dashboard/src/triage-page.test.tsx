@@ -1322,6 +1322,35 @@ describe('TriagePage', () => {
     expect(within(card).getByRole('button', { name: /Confirm/ })).toBeInTheDocument();
   });
 
+  it('shows a Telegram bot digest as the backend sends it (title, channel, count and summary, with no account or category) with a Telegram pill, and keeps the page up', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      digests: [
+        {
+          id: JSON.stringify(['bot-chat', '8001']),
+          title: 'BBVA Alertas',
+          channel: 'telegram',
+          count: 2,
+          summaryLines: ['BBVA: two card charges on the card ending 4821'],
+        },
+      ],
+      handledForYou: [],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const digestsSection = await screen.findByRole('region', { name: sectionTitles.digests });
+    const card = within(digestsSection).getByText('BBVA Alertas').closest('article');
+    if (!card) throw new Error('the digest card is not an article');
+    expect(within(card).getByText('2')).toBeInTheDocument();
+    expect(within(card).getByText('Telegram bot')).toBeInTheDocument();
+    expect(within(card).getByText('BBVA: two card charges on the card ending 4821')).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: /Confirm/ })).toBeInTheDocument();
+  });
+
   it('posts the confirm for only the digest whose Confirm button is clicked, and removes that card once accepted', async () => {
     const confirmedDigestId = JSON.stringify(['francisco@psmutuus.com', 'system-update', 'GitHub', 'message-1']);
     const otherDigestId = JSON.stringify(['francisco@psmutuus.com', 'sales', 'sales@initech.com', 'message-2']);

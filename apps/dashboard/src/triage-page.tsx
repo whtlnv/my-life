@@ -49,15 +49,18 @@ interface TriageGroup {
   systems?: SystemGroup[];
 }
 
+// An email digest carries its account and category; a Telegram bot digest carries only a title and its channel.
 interface Digest {
   id: string;
-  accountEmail: string;
-  category: string;
+  accountEmail?: string;
+  category?: string;
   key?: string;
+  title?: string;
+  channel?: string;
   count: number;
-  severityCounts: Record<string, number>;
+  severityCounts?: Record<string, number>;
   summaryLines?: string[];
-  significantItems: { messageId: string; summary: string; accountEmail: string; link: string }[];
+  significantItems?: { messageId: string; summary: string; accountEmail: string; link: string }[];
 }
 
 interface SlackTriageItem {
@@ -520,19 +523,26 @@ const severityPillClasses: Record<string, string> = {
   medium: 'pill pill-warning',
 };
 
+const telegramBotDigestLabel = 'Telegram bot';
+
 function DigestCard({ digest, onAccepted }: { digest: Digest; onAccepted: () => void }) {
   const [headline, ...rest] = digest.summaryLines ?? [];
-  const style = { '--swatch': categorySwatches[digest.category] } as CSSProperties;
+  const { category, accountEmail } = digest;
+  const significantItems = digest.significantItems ?? [];
+  const style = { '--swatch': category === undefined ? undefined : categorySwatches[category] } as CSSProperties;
   return (
     <article className="card digest" style={style}>
       <div className="card-head">
         <span className="group-swatch" aria-hidden="true" />
-        <span className="card-who">{digest.key ?? categoryLabel(digest.category)}</span>
+        <span className="card-who">{digest.title ?? digest.key ?? (category && categoryLabel(category))}</span>
         <span className="count">{digest.count}</span>
-        <span className="pill pill-muted">{categoryLabel(digest.category)}</span>
-        <span className="pill" title={digest.accountEmail}>
-          {accountName(digest.accountEmail)}
-        </span>
+        {category !== undefined && <span className="pill pill-muted">{categoryLabel(category)}</span>}
+        {digest.channel === 'telegram' && <span className="pill pill-muted">{telegramBotDigestLabel}</span>}
+        {accountEmail !== undefined && (
+          <span className="pill" title={accountEmail}>
+            {accountName(accountEmail)}
+          </span>
+        )}
       </div>
       {headline && <p className="card-ask">{headline}</p>}
       {rest.map((line) => (
@@ -540,9 +550,9 @@ function DigestCard({ digest, onAccepted }: { digest: Digest; onAccepted: () => 
           {line}
         </p>
       ))}
-      {digest.significantItems.length > 0 && (
+      {significantItems.length > 0 && (
         <ul className="rows">
-          {digest.significantItems.map((item) => (
+          {significantItems.map((item) => (
             <Row
               as="li"
               key={item.messageId}
@@ -560,7 +570,7 @@ function DigestCard({ digest, onAccepted }: { digest: Digest; onAccepted: () => 
         </ul>
       )}
       <div className="card-foot">
-        {Object.entries(digest.severityCounts).map(([severity, count]) => (
+        {Object.entries(digest.severityCounts ?? {}).map(([severity, count]) => (
           <span key={severity} className={severityPillClasses[severity] ?? 'pill pill-muted'}>
             {severityCountText(severity, count)}
           </span>

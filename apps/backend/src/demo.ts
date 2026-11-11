@@ -564,6 +564,7 @@ const digestHeadings: { when: string; lines: (count: number) => string[] }[] = [
   { when: 'Meetwise', lines: () => ['Meetwise: an AI scheduling assistant pitch'] },
   { when: 'Ledgerly', lines: () => ['Ledgerly: automated month-end close pitch'] },
   { when: 'ShieldOps', lines: () => ['ShieldOps: AWS cost optimisation pitch'] },
+  { when: 'Cargo por', lines: () => ['BBVA: one card charge of $1,250.00 MXN on the card ending 4821'] },
 ];
 
 const proposalByMessageId = new Map(messages.map((message) => [message.id, message.proposal]));
@@ -737,7 +738,16 @@ function answerSlack(path: string, query: URLSearchParams, workspace: DemoSlackW
       const matches = matchesBySearch();
       return {
         ok: true,
-        messages: { matches: matches.map((match) => ({ ...match, channel: { id: match.channel } })) },
+        // As real Slack answers: no thread_ts on a match, the thread named only in its permalink.
+        messages: {
+          matches: matches.map(({ thread_ts: threadTimestamp, ...match }) => ({
+            ...match,
+            channel: { id: match.channel },
+            permalink: `${workspace.url}archives/${match.channel}/p${match.ts.replace('.', '')}${
+              threadTimestamp === undefined ? '' : `?thread_ts=${threadTimestamp}`
+            }`,
+          })),
+        },
       };
     }
     case '/conversations.replies':
@@ -837,6 +847,16 @@ const demoTelegramScript = createScriptedTelegramClient({
           senderName: 'Diego Ferrer',
           text: 'Francisco, ¿confirmas que firmamos con el nuevo proveedor de nómina este mes?',
           minutesAgo: 75,
+        }),
+        // A photo with no caption, as the Telegram mapping stores it.
+        demoTelegramMessage({
+          chatId: '-100424200',
+          chatTitle: 'Erlia socios',
+          messageId: '3121',
+          senderId: '5550202',
+          senderName: 'Diego Ferrer',
+          text: '[photo]',
+          minutesAgo: 74,
         }),
       ],
     },
