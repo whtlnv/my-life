@@ -28,6 +28,13 @@ function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
   if (media instanceof Api.MessageMediaDocument && media.voice) {
     return '[voice note]';
   }
+  if (
+    media instanceof Api.MessageMediaDocument &&
+    media.document instanceof Api.Document &&
+    media.document.attributes.some((attribute) => attribute instanceof Api.DocumentAttributeAudio)
+  ) {
+    return '[audio]';
+  }
   return mediaPlaceholders[media.className];
 }
 
