@@ -1141,6 +1141,37 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('leaves out of GET /waiting-on a WhatsApp chat whose last message, in the same minute, was sent by the user', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F6',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+          {
+            id: '3EB0F6E5D4C3B2A1',
+            sender: 'Francisco',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Sure, same time.',
+            sentByUser: true,
+          },
+        ],
+      },
+    });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([]);
+  });
+
   it('lists at GET /waiting-on a Telegram sender who wrote twice without an answer once, waiting since the first message', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');

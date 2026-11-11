@@ -2298,14 +2298,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         waitingSince: slackTimestampAsIso(message.timestamp),
       }));
     const chatMessages = chatMessageStore.listMessages();
+    // The store lists oldest first, so a reply later in the list came after the message, even within the same minute.
     const userRepliedLaterInChat = (message: (typeof chatMessages)[number]): boolean =>
-      chatMessages.some(
-        (reply) =>
-          reply.sentByUser &&
-          reply.channel === message.channel &&
-          reply.chatId === message.chatId &&
-          reply.time > message.time,
-      );
+      chatMessages
+        .slice(chatMessages.indexOf(message) + 1)
+        .some((reply) => reply.sentByUser && reply.channel === message.channel && reply.chatId === message.chatId);
     const awaitsUserReply = (message: (typeof chatMessages)[number]): boolean =>
       !message.sentByUser && !message.chatIsBot && !userRepliedLaterInChat(message);
     // One entry per sender in each chat, waiting since their first unanswered message (the store lists oldest first).
