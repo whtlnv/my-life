@@ -168,6 +168,18 @@ describe('Telegram message mapping', () => {
     expect(mapTelegramMessage({ message, chat: group, sender: luis })).toBeUndefined();
   });
 
+  it('drops a message with neither text nor media, so the mapping returns nothing for it', () => {
+    const message = new Api.Message({
+      id: 1030,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:55:00.000Z') / 1000,
+      message: '',
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toBeUndefined();
+  });
+
   it('maps a photo sent with no text to a chat message whose text is [photo]', () => {
     const message = new Api.Message({
       id: 1023,
