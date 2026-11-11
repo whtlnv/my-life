@@ -2284,32 +2284,30 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         });
       },
     );
-    const telegramMessages = chatMessageStore.listMessages();
-    const urgentTelegramSenders = newestMessagePerSender(telegramMessages.filter(isFromSomeoneElse)).flatMap(
-      (newest) => {
-        const chatIds = new Set(
-          telegramMessages.filter((message) => message.senderId === newest.senderId).map((message) => message.chatId),
-        );
-        return urgentChatSender({
-          messages: telegramMessages
-            .filter(
-              (message) => chatIds.has(message.chatId) && (message.sentByUser || message.senderId === newest.senderId),
-            )
-            .map((message) => ({ threadId: message.chatId, receivedAt: message.time, sentByUser: message.sentByUser })),
-          contactKey: chatContactKey(newest),
-          contact: chatSenderAsContact(newest),
-        });
-      },
-    );
-    const isFromMarkedTelegramSender = (message: { channel: string; senderId: string }): boolean =>
+    const chatMessages = chatMessageStore.listMessages();
+    const urgentChatContacts = newestMessagePerSender(chatMessages.filter(isFromSomeoneElse)).flatMap((newest) => {
+      const chatIds = new Set(
+        chatMessages.filter((message) => message.senderId === newest.senderId).map((message) => message.chatId),
+      );
+      return urgentChatSender({
+        messages: chatMessages
+          .filter(
+            (message) => chatIds.has(message.chatId) && (message.sentByUser || message.senderId === newest.senderId),
+          )
+          .map((message) => ({ threadId: message.chatId, receivedAt: message.time, sentByUser: message.sentByUser })),
+        contactKey: chatContactKey(newest),
+        contact: chatSenderAsContact(newest),
+      });
+    });
+    const isFromMarkedChatSender = (message: { channel: string; senderId: string }): boolean =>
       markedContactKeys.has(chatContactKey(message));
     const isFromMarkedSlackSender = (message: SlackMessage): boolean =>
       markedContactKeys.has(slackSenderContactKey(message));
     return {
-      urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentTelegramSenders],
+      urgent: [...urgentContacts.map(withOrganizationAndLastMessage), ...urgentSlackSenders, ...urgentChatContacts],
       vip: [
         ...contacts.filter(isVip).map(withOrganizationAndLastMessage),
-        ...newestMessagePerSender(telegramMessages.filter(isFromMarkedTelegramSender)).map(chatSenderAsContact),
+        ...newestMessagePerSender(chatMessages.filter(isFromMarkedChatSender)).map(chatSenderAsContact),
         ...newestSlackMessagePerSender(slackMessages.filter(isFromMarkedSlackSender)).map(slackSenderAsContact),
       ],
       everyoneElse: [
@@ -2321,9 +2319,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           slackMessages.filter(isFromSomeoneElse).filter((message) => !isFromMarkedSlackSender(message)),
         ).map(slackSenderAsContact),
         ...newestMessagePerSender(
-          telegramMessages
+          chatMessages
             .filter(isFromSomeoneElse)
-            .filter((message) => !message.chatIsBot && !isFromMarkedTelegramSender(message)),
+            .filter((message) => !message.chatIsBot && !isFromMarkedChatSender(message)),
         ).map(chatSenderAsContact),
       ],
     };
