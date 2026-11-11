@@ -24,6 +24,7 @@ interface ShellStatus {
     | { loggedIn: false }
     | { loggedIn: true; lastMessageAt: string; stale?: boolean }
     | { loggedIn: true; lastStartedAt: string; stale?: boolean };
+  whatsapp?: { parserBroken: boolean; lastReportedAt: string; stale: boolean };
 }
 
 interface SlackWorkspaceStatus {
@@ -234,6 +235,14 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
               <SlackWorkspaceChip key={workspace.teamId} workspace={workspace} />
             ))}
             {status.telegram && <TelegramChip telegram={status.telegram} />}
+            {status.whatsapp && (
+              <li
+                className="chip chip-source is-fresh"
+                title={`WhatsApp · last report ${timeInBusinessZone(status.whatsapp.lastReportedAt)}`}
+              >
+                <span className="chip-account">whatsapp</span>
+              </li>
+            )}
           </ul>
         </div>
       </header>
