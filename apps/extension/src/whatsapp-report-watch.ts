@@ -4,6 +4,11 @@ import { buildWhatsappReport } from './whatsapp-report';
 
 const quietPeriodMilliseconds = 10_000;
 
+const reportOrParserFailure = (document: Document) => {
+  const page = parseWhatsappPage(document);
+  return page.ok ? buildWhatsappReport(document) : { ...page, channel: 'whatsapp' };
+};
+
 export interface WhatsappPageWatchOptions {
   fetch: FetchFunction;
   accountEmail: string;
@@ -13,14 +18,11 @@ export interface WhatsappPageWatchOptions {
 
 export function watchWhatsappPage({ fetch, accountEmail, backendUrl, document }: WhatsappPageWatchOptions) {
   let pendingReport: ReturnType<typeof setTimeout> | undefined;
-  const postReport = () => {
-    const page = parseWhatsappPage(document);
-    const report = page.ok ? buildWhatsappReport(document) : { ...page, channel: 'whatsapp' };
-    return fetch(`${backendUrl}/chat-messages`, {
+  const postReport = () =>
+    fetch(`${backendUrl}/chat-messages`, {
       method: 'POST',
-      body: JSON.stringify({ ...report, accountEmail }),
+      body: JSON.stringify({ ...reportOrParserFailure(document), accountEmail }),
     });
-  };
   const observer = new MutationObserver(() => {
     clearTimeout(pendingReport);
     pendingReport = setTimeout(postReport, quietPeriodMilliseconds);
