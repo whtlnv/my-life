@@ -24,13 +24,9 @@ const mediaPlaceholders: Partial<Record<string, string>> = {
   MessageMediaDocument: '[document]',
 };
 
-function hasDocumentAttribute(
-  media: Api.TypeMessageMedia,
-  attributeType:
-    | typeof Api.DocumentAttributeVideo
-    | typeof Api.DocumentAttributeAudio
-    | typeof Api.DocumentAttributeSticker,
-): boolean {
+type DocumentAttributeType = abstract new (...args: never[]) => Api.TypeDocumentAttribute;
+
+function hasDocumentAttribute(media: Api.TypeMessageMedia, attributeType: DocumentAttributeType): boolean {
   return (
     media instanceof Api.MessageMediaDocument &&
     media.document instanceof Api.Document &&
@@ -38,20 +34,20 @@ function hasDocumentAttribute(
   );
 }
 
+const documentAttributePlaceholders: [DocumentAttributeType, string][] = [
+  [Api.DocumentAttributeSticker, '[sticker]'],
+  [Api.DocumentAttributeAudio, '[audio]'],
+  [Api.DocumentAttributeVideo, '[video]'],
+];
+
 function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
   if (media instanceof Api.MessageMediaDocument && media.voice) {
     return '[voice note]';
   }
-  if (hasDocumentAttribute(media, Api.DocumentAttributeSticker)) {
-    return '[sticker]';
-  }
-  if (hasDocumentAttribute(media, Api.DocumentAttributeAudio)) {
-    return '[audio]';
-  }
-  if (hasDocumentAttribute(media, Api.DocumentAttributeVideo)) {
-    return '[video]';
-  }
-  return mediaPlaceholders[media.className];
+  const documentPlaceholder = documentAttributePlaceholders.find(([attributeType]) =>
+    hasDocumentAttribute(media, attributeType),
+  );
+  return documentPlaceholder?.[1] ?? mediaPlaceholders[media.className];
 }
 
 function messageText(message: Api.Message): string {
