@@ -149,10 +149,11 @@ function TelegramConnectedChip({
 function WhatsappChip({ whatsapp }: { whatsapp: NonNullable<ShellStatus['whatsapp']> }) {
   return (
     <li
-      className="chip chip-source is-fresh"
+      className={whatsapp.stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
       title={`WhatsApp · last report ${timeInBusinessZone(whatsapp.lastReportedAt)}`}
     >
       <span className="chip-account">whatsapp</span>
+      {whatsapp.stale && <span className="chip-detail is-stale">stale</span>}
     </li>
   );
 }

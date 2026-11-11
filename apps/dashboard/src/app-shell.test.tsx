@@ -248,4 +248,20 @@ describe('AppShell', () => {
     expect(item).toHaveAttribute('title', expect.stringContaining(timeInBusinessZone(lastReportedAt)));
     expect(item).not.toHaveTextContent(/stale|broken/i);
   });
+
+  it('shows a stale WhatsApp source chip when GET /now reports WhatsApp stale', async () => {
+    const lastReportedAt = '2026-11-10T15:10:00.000Z';
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      whatsapp: { parserBroken: false, lastReportedAt, stale: true },
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText(/^whatsapp$/i)).closest('li');
+    expect(item).not.toBeNull();
+    expect(item).toHaveClass('is-stale');
+    expect(item).toHaveTextContent(/stale/i);
+  });
 });
