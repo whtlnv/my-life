@@ -1,4 +1,5 @@
 import type { SlackMessageStore } from './slack-message-store';
+import { defaultSlackFirstPollLookbackDays } from './startup-settings';
 
 interface SlackWorkspace {
   teamId: string;
@@ -160,10 +161,8 @@ async function searchPagesUntilCaughtUp(
 
 const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
 
-const defaultFirstPollLookbackDays = 7;
-
 function firstPollLookbackDays(input: PollSlackWorkspaceInput): number {
-  return input.firstPollLookbackDays ?? defaultFirstPollLookbackDays;
+  return input.firstPollLookbackDays ?? defaultSlackFirstPollLookbackDays;
 }
 
 function firstPollLookbackStartInMilliseconds(input: PollSlackWorkspaceInput): number {
