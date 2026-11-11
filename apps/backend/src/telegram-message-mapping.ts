@@ -20,7 +20,16 @@ interface TelegramMessageContext {
 }
 
 function messageText(message: Api.Message): string {
-  return message.media?.className === 'MessageMediaPhoto' && !message.message ? '[photo]' : message.message;
+  if (message.message) {
+    return message.message;
+  }
+  if (message.media?.className === 'MessageMediaPhoto') {
+    return '[photo]';
+  }
+  if (message.media?.className === 'MessageMediaDocument') {
+    return '[video]';
+  }
+  return message.message;
 }
 
 export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {

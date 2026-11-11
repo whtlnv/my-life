@@ -183,6 +183,32 @@ describe('Telegram message mapping', () => {
     );
   });
 
+  it('maps a video sent with no text to a chat message whose text is [video]', () => {
+    const message = new Api.Message({
+      id: 1024,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
+      message: '',
+      media: new Api.MessageMediaDocument({
+        document: new Api.Document({
+          id: returnBigInt(5560001),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:14:00.000Z') / 1000,
+          mimeType: 'video/mp4',
+          size: returnBigInt(204800),
+          dcId: 1,
+          attributes: [new Api.DocumentAttributeVideo({ duration: 12, w: 1280, h: 720 })],
+        }),
+      }),
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
+      expect.objectContaining({ messageId: '1024', text: '[video]' }),
+    );
+  });
+
   it("maps a message in a supergroup to a chat message whose chat id is the supergroup's -100 marked peer id", () => {
     const supergroup = new Api.Channel({
       id: returnBigInt(707070),
