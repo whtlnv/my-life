@@ -39,7 +39,7 @@
   - already covered by `apps/backend/src/app-chat.test.ts:227`, which still passes after 67e7255 (supervisor)
 - [x] `POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp
   - predicted-contradiction: `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing` — asserts: a `POST /chat-sends` with channel `whatsapp` and text answers 400 — retired-by: "`POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command"
-- [ ] `POST /chat-sends` for channel `whatsapp` with empty text answers 400 and queues no command
+- [x] `POST /chat-sends` for channel `whatsapp` with empty text answers 400 and queues no command
 - [ ] An acknowledged `send-whatsapp` command is no longer listed by `GET /commands`
 - [ ] A WhatsApp triage card shows its reply as pending while the `send-whatsapp` command is unacknowledged
 - [ ] A WhatsApp triage card no longer shows the reply as pending once the command is acknowledged

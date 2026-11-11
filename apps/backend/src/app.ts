@@ -702,12 +702,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/chat-sends', async (context) => {
     const send = await context.req.json<{ channel: string; chatId: string; text: string }>();
+    if (send.text === '') {
+      return context.body(null, 400);
+    }
     if (send.channel === 'whatsapp') {
       whatsappSends.push({ chatTitle: send.chatId, text: send.text });
       return context.json({ ok: true });
     }
     const telegramClient = options.telegramClient;
-    if (send.text === '' || send.channel !== 'telegram' || telegramClient === undefined) {
+    if (send.channel !== 'telegram' || telegramClient === undefined) {
       return context.body(null, 400);
     }
     let sent;

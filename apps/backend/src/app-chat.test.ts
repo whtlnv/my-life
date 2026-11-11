@@ -371,6 +371,17 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('refuses at POST /chat-sends, with 400, a WhatsApp send with empty text, and queues no command', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', { ...goodWhatsappReport, accountEmail: 'ana@example.com' });
+
+    const response = await postJson(app, '/chat-sends', { channel: 'whatsapp', chatId: 'Ana', text: '' });
+    const { commands } = await getJson<{ commands: unknown[] }>(app, '/commands?accountEmail=ana%40example.com');
+
+    expect(response.status).toBe(400);
+    expect(commands).toEqual([]);
+  });
+
   it('answers POST /chat-sends with 502 and the Telegram error when Telegram refuses the send, and stores nothing', async () => {
     const databasePath = temporaryDatabasePath();
     const telegramClient = {
