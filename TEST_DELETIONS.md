@@ -14,3 +14,9 @@
 
 - reason: Phase 6a.1 retired `conversations.list` from the poll (the real PS Mutuus workspace lists 275 DMs over 2 pages and none of the 18 active ones on page 1); the poll finds DMs through an `is:dm after:` search, and the fake's direct-message scenario no longer lists its DM, as on the real workspace
 - coverage kept by: `apps/backend/src/slack-poll.test.ts::never calls conversations.list`, `::stores the messages of a DM conversation that an is:dm search after the date 7 days before now names, though conversations.list does not list it`, and `apps/integration/src/slack-fake-server.test.ts::polling the direct-message scenario stores its DM message …` (now found through the search)
+
+## 2026-11-10 · `apps/backend/src/telegram-message-mapping.test.ts::drops a message with no text, such as a photo sent alone, so the mapping returns nothing for it`
+
+- Asserted: a Telegram message with empty text and a `MessageMediaPhoto` maps to nothing (not stored)
+- Retired by: "A Telegram message with a photo and no text is stored with text `[photo]`"
+- Confirmed: failed with `AssertionError: expected { channel: 'telegram', …(8) } to be undefined` after the new behavior landed

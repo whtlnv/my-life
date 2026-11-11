@@ -56,7 +56,7 @@
 - [x] The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
 - [x] Confirming a Telegram bot digest marks its messages handled, so the digest leaves the triage queue
 - [x] A bot message arriving after a confirm opens a fresh digest counting only the new message
-- [ ] A Telegram message with a photo and no text is stored with text `[photo]`
+- [x] A Telegram message with a photo and no text is stored with text `[photo]`
   - predicted-contradiction: `apps/backend/src/telegram-message-mapping.test.ts::drops a message with no text, such as a photo sent alone, so the mapping returns nothing for it` — asserts: a message with empty text and `MessageMediaPhoto` maps to nothing — retired-by: "a message with no text but a photo … is stored with text `[photo]`"
 - [ ] A Telegram message with a video and no text is stored with text `[video]`
 - [ ] A Telegram message with a voice note and no text is stored with text `[voice note]`

@@ -19,8 +19,12 @@ interface TelegramMessageContext {
   sender: Api.User;
 }
 
+function messageText(message: Api.Message): string {
+  return message.media?.className === 'MessageMediaPhoto' && !message.message ? '[photo]' : message.message;
+}
+
 export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {
-  if (message.className === 'MessageService' || isBroadcastChannel(chat) || !message.message) {
+  if (message.className === 'MessageService' || isBroadcastChannel(chat) || !messageText(message)) {
     return undefined;
   }
   return {
@@ -30,7 +34,7 @@ export function mapTelegramMessage({ message, chat, sender }: TelegramMessageCon
     messageId: String(message.id),
     senderId: sender.id.toString(),
     senderName: userName(sender),
-    text: message.message,
+    text: messageText(message),
     time: new Date(message.date * 1000).toISOString(),
     sentByUser: Boolean(message.out),
     ...('bot' in chat && chat.bot && { chatIsBot: true }),
