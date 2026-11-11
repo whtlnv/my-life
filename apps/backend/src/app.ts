@@ -1180,6 +1180,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         choices: ['ignore', 'act', 'reply'],
       }));
   }
+  function describeBotChatDigests() {
+    const botMessagesByChat = new Map<string, ChatMessage[]>();
+    for (const message of chatMessageStore.listMessages().filter((message) => message.chatIsBot))
+      botMessagesByChat.set(message.chatId, [...(botMessagesByChat.get(message.chatId) ?? []), message]);
+    return [...botMessagesByChat.values()].map((messages) => ({
+      title: messages[0]?.chatTitle,
+      channel: messages[0]?.channel,
+      count: messages.length,
+    }));
+  }
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));
     const verdicts = chatMessageStore.listVerdicts();
@@ -1203,7 +1213,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const undoneMessageIds = undoAutomaticStore.loadAll();
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
-      digests: recordAndDescribeListedDigests(verdicts),
+      digests: [...recordAndDescribeListedDigests(verdicts), ...describeBotChatDigests()],
       slackItems: describeSlackItems(),
       chatItems: describeChatItems(),
       handledForYou: describeHandledForYou(proposals, clock).filter(

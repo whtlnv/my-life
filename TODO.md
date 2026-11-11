@@ -50,7 +50,7 @@
 - [x] A Telegram bot chat shows no triage card
 - [x] A Telegram bot chat's sender is not a contact on the People tab
 - [x] A Telegram bot chat makes no waiting-on entry
-- [ ] A Telegram bot chat with unconfirmed messages is a digest in the triage queue with the bot's name as title, channel `telegram` and the count of unconfirmed messages
+- [x] A Telegram bot chat with unconfirmed messages is a digest in the triage queue with the bot's name as title, channel `telegram` and the count of unconfirmed messages
 - [ ] A Telegram bot chat whose messages are all confirmed is not a digest
 - [ ] The triage run writes a Telegram bot digest's summary lines from its messages' text, with the call's spend logged
 - [ ] The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
