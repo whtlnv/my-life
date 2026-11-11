@@ -1301,6 +1301,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));
     const verdicts = chatMessageStore.listVerdicts();
+    const acknowledgedCommandIds = acknowledgementStore.loadAll();
     const hasVerdict = (message: { channel: string; chatId: string; messageId: string }) =>
       verdicts.some(
         (verdict) =>
@@ -1320,7 +1321,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         time,
         link: chatLink(channel, chatId),
         pendingReply: whatsappSends.find(
-          (send) => send.chatTitle === chatId && !acknowledgementStore.loadAll().includes(send.id),
+          (send) => send.chatTitle === chatId && !acknowledgedCommandIds.includes(send.id),
         )?.text,
       }));
   }
