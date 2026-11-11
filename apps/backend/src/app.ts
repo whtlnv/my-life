@@ -1186,7 +1186,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const hasVerdict = (message: { chatId: string; messageId: string }) =>
       verdicts.some((verdict) => verdict.chatId === message.chatId && verdict.messageId === message.messageId);
     return [...newestMessageByChat.values()]
-      .filter((message) => !message.sentByUser && !hasVerdict(message))
+      .filter((message) => !message.sentByUser && !message.chatIsBot && !hasVerdict(message))
       .map(({ channel, chatId, messageId, chatTitle, senderName, text, time }) => ({
         channel,
         chatId,
