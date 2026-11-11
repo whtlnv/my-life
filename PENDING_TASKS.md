@@ -52,7 +52,8 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 
 ## 10. WhatsApp (Phase 6b)
 
-- [ ] **Masked page structure** (tonight, 2 minutes): in the Chrome profile with `web.whatsapp.com` open, run Claude's read-only snippet in the DevTools console twice (a one-to-one chat, then a group), saving each with `pbpaste`. Every text, name and number is masked; the parsers' fixtures are built to match it.
+- [x] **Masked page structure** (done 2026-11-10: a one-to-one chat and a group): in the Chrome profile with `web.whatsapp.com` open, run Claude's read-only snippet in the DevTools console twice (a one-to-one chat, then a group), saving each with `pbpaste`. Every text, name and number is masked; the parsers' fixtures are built to match it.
 - [ ] **Which profile keeps WhatsApp open** (§ 7 default: the first profile with the extension): name its account.
+- [ ] **Date order check:** on the first real report, Claude confirms WhatsApp writes dates day/month/year on your page (assumed from the capture; a message from a day after the 12th settles it).
 - [ ] **After Phase 6b is delivered:** reload the my-life extension in that profile (`chrome://extensions` → reload), then keep the WhatsApp tab open; Claude checks the first real report with you before any send.
 
