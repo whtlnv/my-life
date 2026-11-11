@@ -2315,7 +2315,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (!firstUnansweredMessageBySender.has(senderKey)) firstUnansweredMessageBySender.set(senderKey, message);
     }
     const telegramPeople = [...firstUnansweredMessageBySender.values()].map((message) => ({
-      channel: 'telegram',
+      channel: message.channel,
       displayName: message.senderName,
       waitingSince: message.time,
     }));

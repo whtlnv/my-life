@@ -1115,6 +1115,32 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('lists at GET /waiting-on, on channel whatsapp, the sender of a WhatsApp message the user has not answered', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 1, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F6',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+        ],
+      },
+    });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([
+      expect.objectContaining({ channel: 'whatsapp', displayName: 'Ana', waitingSince: '2026-11-10T09:41:00-06:00' }),
+    ]);
+  });
+
   it('lists at GET /waiting-on a Telegram sender who wrote twice without an answer once, waiting since the first message', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');

@@ -30,7 +30,7 @@
 - [x] The WhatsApp staleness threshold follows its startup setting instead of the default
 - [x] An unanswered incoming WhatsApp message appears in the triage queue's chat items with channel `whatsapp`
 - [x] A WhatsApp message with a stored verdict is no longer in the triage queue
-- [ ] A WhatsApp sender whose last message the user has not answered appears in waiting-on with channel `whatsapp`
+- [x] A WhatsApp sender whose last message the user has not answered appears in waiting-on with channel `whatsapp`
 - [ ] A WhatsApp chat whose last message was sent by the user does not appear in waiting-on
 - [ ] A WhatsApp sender appears on the People tab as a contact with their WhatsApp messages in the timeline
 - [ ] The user's own WhatsApp messages do not list the user as a WhatsApp contact
