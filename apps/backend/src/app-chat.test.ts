@@ -688,6 +688,27 @@ describe('createApp chat messages', () => {
 
     expect(people).toEqual([]);
   });
+
+  it('leaves out of GET /waiting-on a Telegram chat with a bot, though its newest message is from the bot', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '8001',
+      chatTitle: 'BBVA Alertas',
+      messageId: '77',
+      senderId: '8001',
+      senderName: 'BBVA Alertas',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+      chatIsBot: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([]);
+  });
   it('orders Telegram, email and Slack people together at GET /waiting-on, the one who has waited longest first', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-02T12:00:00.000Z');

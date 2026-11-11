@@ -2201,7 +2201,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           reply.time > message.time,
       );
     const telegramPeople = chatMessages
-      .filter((message) => !message.sentByUser && !userRepliedLaterInChat(message))
+      .filter((message) => !message.sentByUser && !message.chatIsBot && !userRepliedLaterInChat(message))
       .map((message) => ({ channel: 'telegram', displayName: message.senderName, waitingSince: message.time }));
     return context.json({
       people: [...people, ...slackPeople, ...telegramPeople].toSorted((first, second) =>
