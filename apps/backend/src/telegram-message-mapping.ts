@@ -52,10 +52,7 @@ function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
 
 function messageText(message: Api.Message): string {
   const placeholder = message.media && mediaPlaceholder(message.media);
-  if (!placeholder) {
-    return message.message;
-  }
-  return message.message ? `${placeholder} ${message.message}` : placeholder;
+  return [placeholder, message.message].filter(Boolean).join(' ');
 }
 
 export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {
