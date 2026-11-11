@@ -308,6 +308,38 @@ describe('the shipped backend (main.ts)', () => {
     expect(offeredTools.filter(({ description }) => !description?.trim()).map(({ name }) => name)).toEqual([]);
   }, 30_000);
 
+  it('accepts a WhatsApp report at POST /chat-messages and lists its unanswered message in the triage queue', async () => {
+    fakeAnthropic = await startFakeAnthropic([]);
+    const baseUrl = await startShippedBackend(fakeAnthropic, {});
+
+    await fetch(`${baseUrl}/chat-messages`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        channel: 'whatsapp',
+        accountEmail: 'ana@example.com',
+        chats: [{ title: 'Ana', unreadCount: 1, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+        openChat: {
+          title: 'Ana',
+          messages: [
+            {
+              id: '3EB0A1B2C3D4E5F6',
+              sender: 'Ana',
+              sentAt: '2026-11-10T09:41:00-06:00',
+              text: 'Can we move the call to tomorrow?',
+              sentByUser: false,
+            },
+          ],
+        },
+      }),
+    });
+
+    const { chatItems } = await getJson<{ chatItems: unknown[] }>(`${baseUrl}/triage-queue`);
+    expect(chatItems).toEqual([
+      expect.objectContaining({ channel: 'whatsapp', chatId: 'Ana', text: 'Can we move the call to tomorrow?' }),
+    ]);
+  }, 30_000);
+
   it('starts without Telegram and reports it not logged in at GET /now when the API id and hash are set but no session file exists', async () => {
     fakeAnthropic = await startFakeAnthropic([]);
     const baseUrl = await startShippedBackend(fakeAnthropic, {

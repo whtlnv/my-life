@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-11 02:42 · `apps/backend/src/main.test.ts::accepts a WhatsApp report at POST /chat-messages and lists its unanswered message in the triage queue`
+- Behavior: The shipped backend (`main.ts`) accepts a WhatsApp report on `POST /chat-messages` and lists it in the triage queue
+- Predicted: passes on first run (no right-reason failure available: `createApp` registers `/chat-messages` and `chatItems` unconditionally, and `main.ts` composes `createApp`)
+- Actual: passed; a sanity flip of the expected text failed with the real WhatsApp item received, so the pass is not vacuous
+- Type: passed unexpectedly
+- Resolution: the item is already satisfied by the existing wiring; the test is kept as a process-level pin of the main.ts composition, and no production change is needed
+
 ## 2026-11-11 02:34 · `apps/extension/wxt.config.test.ts::registers in the built extension a whatsapp content script for https://web.whatsapp.com/*`
 - Behavior: the built extension's manifest registers a WhatsApp content script for `https://web.whatsapp.com/*`
 - Predicted: AssertionError — the built manifest has no `content_scripts` entry for WhatsApp
