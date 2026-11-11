@@ -12,7 +12,7 @@ describe('parseWhatsappChatList', () => {
   it('yields each chat in the saved chat list with its title, unread count and last message time', () => {
     const chats = parseWhatsappChatList(fixtureDocument('whatsapp-one-to-one-chat.fixture.html'));
 
-    expect(chats).toEqual(
+    expect(chats.map(({ title, unreadCount, lastMessageAt }) => ({ title, unreadCount, lastMessageAt }))).toEqual(
       [
         ['aaaaaa aaaaaaa', '0:00 aa'],
         ['a', '0:00 aa'],
