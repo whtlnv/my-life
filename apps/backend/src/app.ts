@@ -2314,13 +2314,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const senderKey = `${message.channel}/${message.chatId}/${message.senderId}`;
       if (!firstUnansweredMessageBySender.has(senderKey)) firstUnansweredMessageBySender.set(senderKey, message);
     }
-    const telegramPeople = [...firstUnansweredMessageBySender.values()].map((message) => ({
+    const chatPeople = [...firstUnansweredMessageBySender.values()].map((message) => ({
       channel: message.channel,
       displayName: message.senderName,
       waitingSince: message.time,
     }));
     return context.json({
-      people: [...people, ...slackPeople, ...telegramPeople].toSorted((first, second) =>
+      people: [...people, ...slackPeople, ...chatPeople].toSorted((first, second) =>
         first.waitingSince.localeCompare(second.waitingSince),
       ),
     });
