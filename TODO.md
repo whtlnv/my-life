@@ -42,7 +42,7 @@
 - [x] A successful Slack workspace poll logs no error
 - [x] The shipped `POST /slack-poll` writes a failed workspace's team id and the error to the backend log (supervisor, 2026-11-10: the app passed no `logPollFailure`, so a real failure was still silent)
 - [x] After a failed poll the Slack source chip shows the failure's reason
-- [ ] After a failed poll is followed by a successful one the Slack source chip shows no failure reason
+- [x] After a failed poll is followed by a successful one the Slack source chip shows no failure reason
 - [ ] After a restart the Slack workspaces show their names and links before the first polling interval has passed (backlog: apps/backend/src/app.ts:723 Each Slack workspace's name, URL and last poll live only in memory)
 - [ ] A Telegram message from a chat with a bot user is stored with the chat marked as a bot
 - [ ] A Telegram message from a chat with a person is stored with the chat not marked as a bot

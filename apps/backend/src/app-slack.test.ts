@@ -899,4 +899,35 @@ describe('createApp Slack polls', () => {
       expect.objectContaining({ teamId: 'T0001', lastPollFailure: expect.stringContaining('invalid_auth') }),
     ]);
   });
+
+  it('reports on GET /now no failure reason for a workspace whose failed POST /slack-poll was followed by a successful one', async () => {
+    let tokenRevoked = true;
+    const slackApiUrl = await localSlackAnswering((path) => {
+      if (tokenRevoked) {
+        return { ok: false, error: 'invalid_auth' };
+      }
+      return path === '/auth.test'
+        ? { ok: true, user_id: 'UOWN', team: 'PS Mutuus' }
+        : { ok: true, messages: { matches: [] } };
+    });
+    const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    onTestFinished(() => {
+      backendLog.mockRestore();
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      slackApiUrl,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    });
+
+    await app.request('/slack-poll', { method: 'POST' });
+    tokenRevoked = false;
+    await app.request('/slack-poll', { method: 'POST' });
+    const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: Record<string, unknown>[] };
+
+    expect(now.slackWorkspaces).toEqual([expect.objectContaining({ teamId: 'T0001', name: 'PS Mutuus' })]);
+    expect(now.slackWorkspaces?.[0]).not.toHaveProperty('lastPollFailure');
+  });
 });

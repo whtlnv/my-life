@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 18:28 · `apps/backend/src/app-slack.test.ts::reports on GET /now no failure reason for a workspace whose failed POST /slack-poll was followed by a successful one`
+- Behavior: After a failed poll is followed by a successful one the Slack source chip shows no failure reason
+- Predicted: passes on first run (read before writing: `POST /slack-poll` builds a new failure map per request and replaces `slackWorkspacePolls` wholesale)
+- Actual: passed on first run
+- Type: passed unexpectedly (anticipated; no right-reason failure exists)
+- Resolution: The behavior was already delivered by 1067c5f. The test is not vacuous (the second poll's workspace name `PS Mutuus` shows it succeeded), so it stays as a regression pin; nothing for /green to implement.
+
 ## 2026-11-10 18:01 · `apps/backend/src/slack-poll.test.ts::logs no failure when every workspace polls successfully`
 - Behavior: A successful Slack workspace poll logs no error
 - Predicted: passes on first run, since `pollSlackWorkspaces` calls `logPollFailure` only inside its `catch` (shipped by the previous item, ab5de77)
