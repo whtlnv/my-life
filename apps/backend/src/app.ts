@@ -1171,7 +1171,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (newest === undefined || message.timestamp > newest.timestamp)
         newestByConversation.set(conversationKey, message);
     }
-    return [...newestByConversation.values()];
+    return [...newestByConversation.values()].toSorted(
+      (first, second) => Number(first.timestamp) - Number(second.timestamp),
+    );
   }
   function describeSlackItems() {
     const decidedSlackMessageKeys = new Set(slackMessageStore.listVerdicts().map(slackMessageKey));

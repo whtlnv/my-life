@@ -161,6 +161,29 @@ describe('createApp Slack messages', () => {
     expect(slackItems).toHaveLength(2);
   });
 
+  it("lists the Slack items at GET /triage-queue oldest first by each card's message, as the Telegram cards are", async () => {
+    const databasePath = temporaryDatabasePath();
+    const store = openSlackMessageStore(databasePath);
+    const saveFrom = (conversationId: string, senderUserId: string, timestamp: string) => {
+      store.saveMessage({
+        workspaceTeamId: 'T0001',
+        conversationId,
+        senderUserId,
+        senderName: senderUserId,
+        text: `Message at ${timestamp}`,
+        timestamp,
+      });
+    };
+    saveFrom('D0001', 'U0001', '1762700000.000100');
+    saveFrom('D0002', 'U0002', '1762700000.000200');
+    saveFrom('D0001', 'U0001', '1762700000.000300');
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { slackItems } = await getJson<{ slackItems: { conversationId: string }[] }>(app, '/triage-queue');
+
+    expect(slackItems.map(({ conversationId }) => conversationId)).toEqual(['D0002', 'D0001']);
+  });
+
   it('lists at GET /triage-queue no Slack item for a conversation whose newest message the user wrote', async () => {
     const databasePath = temporaryDatabasePath();
     const store = openSlackMessageStore(databasePath);
