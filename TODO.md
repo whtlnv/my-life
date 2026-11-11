@@ -25,7 +25,7 @@
 - [x] `POST /chat-messages` with a body that fails the contract schema answers 400 and stores nothing
 - [x] `POST /chat-messages` with a parser failure makes `GET /now` report WhatsApp as parser broken
 - [x] A good WhatsApp report after a parser failure makes `GET /now` report WhatsApp as healthy with the report's time
-- [ ] `GET /now` reports WhatsApp as fresh when the last report is within the staleness threshold
+- [x] `GET /now` reports WhatsApp as fresh when the last report is within the staleness threshold
 - [ ] `GET /now` reports WhatsApp as stale when the last report is older than the staleness threshold
 - [ ] The WhatsApp staleness threshold follows its startup setting instead of the default
 - [ ] An unanswered incoming WhatsApp message appears in the triage queue's chat items with channel `whatsapp`
