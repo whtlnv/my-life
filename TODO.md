@@ -37,7 +37,7 @@
 - [x] A task made from a WhatsApp triage item links to the WhatsApp chat
 - [x] A task made from a Telegram triage item still links to the Telegram chat
   - already covered by `apps/backend/src/app-chat.test.ts:227`, which still passes after 67e7255 (supervisor)
-- [ ] `POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp
+- [x] `POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp
   - predicted-contradiction: `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing` — asserts: a `POST /chat-sends` with channel `whatsapp` and text answers 400 — retired-by: "`POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command"
 - [ ] `POST /chat-sends` for channel `whatsapp` with empty text answers 400 and queues no command
 - [ ] An acknowledged `send-whatsapp` command is no longer listed by `GET /commands`

@@ -359,21 +359,16 @@ describe('createApp chat messages', () => {
     expect(messages).toEqual([]);
   });
 
-  it('refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing', async () => {
-    const databasePath = temporaryDatabasePath();
-    const { telegramClient, textsSentToTelegram } = recordingTelegramClient();
-    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+  it('queues at POST /chat-sends a send-whatsapp command with the chat title and text, listed at GET /commands for the profile that reports WhatsApp', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', { ...goodWhatsappReport, accountEmail: 'ana@example.com' });
 
-    const response = await postJson(app, '/chat-sends', {
-      channel: 'whatsapp',
-      chatId: '7001',
-      text: 'Thursday works, same time',
-    });
-    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+    await postJson(app, '/chat-sends', { channel: 'whatsapp', chatId: 'Ana', text: 'Tomorrow at ten works' });
+    const { commands } = await getJson<{ commands: unknown[] }>(app, '/commands?accountEmail=ana%40example.com');
 
-    expect(response.status).toBe(400);
-    expect(textsSentToTelegram).toEqual([]);
-    expect(messages).toEqual([]);
+    expect(commands).toEqual([
+      expect.objectContaining({ type: 'send-whatsapp', chatTitle: 'Ana', text: 'Tomorrow at ten works' }),
+    ]);
   });
 
   it('answers POST /chat-sends with 502 and the Telegram error when Telegram refuses the send, and stores nothing', async () => {

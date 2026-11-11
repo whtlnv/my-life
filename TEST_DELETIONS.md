@@ -1,5 +1,11 @@
 # Test Deletion Audit
 
+## 2026-11-11 · `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing`
+
+- Asserted: a `POST /chat-sends` with channel `whatsapp` and text answers 400 and sends and stores nothing
+- Retired by: "`POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp"
+- Confirmed: failed with `AssertionError: expected 200 to be 400` after the new behavior landed
+
 ## 2026-11-07 · `apps/backend/src/app.test.ts::carries in each GET /triage-queue group its items, and in a system-update group its sending-system sub-groups with their items` (second copy)
 
 - reason: exact duplicate of the earlier test of the same name in the same file (same report, same triage answers, same assertions; only an inlined `proposalsInOrder` variable differed)

@@ -638,6 +638,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
   let whatsappStatus: WhatsappStatus | undefined;
+  let whatsappAccountEmail: string | undefined;
+  const whatsappSends: { chatTitle: string; text: string }[] = [];
   const whatsappReportIntervalInMilliseconds = options.whatsappReportIntervalInMilliseconds ?? 60_000;
   const describeWhatsappFreshness = () => {
     if (whatsappStatus === undefined || whatsappStatus.parserBroken) {
@@ -651,7 +653,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return { ...whatsappStatus, stale: !isAccountFresh(freshnessSubject, clock) };
   };
   app.post('/chat-messages', async (context) => {
-    const body = await context.req.json<{ ok?: boolean; missingSelector: string }>();
+    const body = await context.req.json<{ ok?: boolean; missingSelector: string; accountEmail?: string }>();
+    whatsappAccountEmail = body.accountEmail;
     if (body.ok === false) {
       whatsappStatus = { parserBroken: true, missingSelector: body.missingSelector };
       return context.json({ ok: true });
@@ -699,6 +702,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/chat-sends', async (context) => {
     const send = await context.req.json<{ channel: string; chatId: string; text: string }>();
+    if (send.channel === 'whatsapp') {
+      whatsappSends.push({ chatTitle: send.chatId, text: send.text });
+      return context.json({ ok: true });
+    }
     const telegramClient = options.telegramClient;
     if (send.text === '' || send.channel !== 'telegram' || telegramClient === undefined) {
       return context.body(null, 400);
@@ -1537,6 +1544,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .loadAll()
       .filter(({ tool, target, outcome }) => tool === 'write_draft' && !outcome && isMessageOfAccount(target))
       .map((action) => createDraftCommand(action, reportedMessageWithId(reportedMessages, action.target)));
+    const sendWhatsappCommands = whatsappSends
+      .filter(() => accountEmail === whatsappAccountEmail)
+      .map(({ chatTitle, text }, index) => ({ id: `send-whatsapp-${index}`, type: 'send-whatsapp', chatTitle, text }));
     const pendingCommands = [
       ...archiveCommands,
       ...filterCommands,
@@ -1546,6 +1556,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...labelCommands,
       ...removeLabelCommands,
       ...draftCommands,
+      ...sendWhatsappCommands,
     ].filter((command) => !acknowledgedCommandIds.includes(command.id));
     return context.json({ commands: pendingCommands });
   });
