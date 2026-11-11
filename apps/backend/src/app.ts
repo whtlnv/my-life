@@ -1550,12 +1550,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .map((action) => createDraftCommand(action, reportedMessageWithId(reportedMessages, action.target)));
     const reportsWhatsapp = accountEmail === whatsappAccountEmail;
     const sendWhatsappCommands = reportsWhatsapp
-      ? whatsappSends.map(({ id, chatTitle, text }) => ({
-          id,
-          type: 'send-whatsapp',
-          chatTitle,
-          text,
-        }))
+      ? whatsappSends.map((send) => ({ ...send, type: 'send-whatsapp' }))
       : [];
     const pendingCommands = [
       ...archiveCommands,
