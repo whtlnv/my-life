@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FetchFunction } from './fetch-function';
+import { parseWhatsappPage } from './whatsapp-page-parser';
 import { watchWhatsappPage } from './whatsapp-report-watch';
 
 const backendUrl = 'http://127.0.0.1:7777';
@@ -77,6 +78,26 @@ describe('watchWhatsappPage', () => {
     expect(postedReports).toEqual([
       expect.objectContaining({ channel: 'whatsapp', accountEmail: 'francisco@example.com' }),
       expect.objectContaining({ channel: 'whatsapp', accountEmail: 'francisco@example.com' }),
+    ]);
+  });
+
+  it('posts the parser failure instead of a report when the parse fails', async () => {
+    const document = new DOMParser().parseFromString('<html><body></body></html>', 'text/html');
+    const postedReports: unknown[] = [];
+    watchWhatsappPage({
+      fetch: recordingBackend(postedReports),
+      accountEmail: 'francisco@example.com',
+      backendUrl,
+      document,
+    });
+
+    await mutate(document);
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    const parserFailure = parseWhatsappPage(document);
+    expect(parserFailure.ok).toBe(false);
+    expect(postedReports).toEqual([
+      { ...parserFailure, channel: 'whatsapp', accountEmail: 'francisco@example.com' },
     ]);
   });
 });
