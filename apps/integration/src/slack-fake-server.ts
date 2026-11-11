@@ -54,7 +54,6 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
   },
   'direct-messages-across-pages': {},
   mention: {
-    '/conversations.list': { ok: true, channels: [] },
     '/search.messages': {
       ok: true,
       messages: {
@@ -70,7 +69,6 @@ const responseByPathByScenario: Record<SlackScenario, Record<string, unknown>> =
     },
   },
   'thread-reply': {
-    '/conversations.list': { ok: true, channels: [] },
     '/search.messages': {
       ok: true,
       messages: {
