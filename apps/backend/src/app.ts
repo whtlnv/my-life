@@ -682,7 +682,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         senderId: message.sender,
         senderName: message.sender,
         text: message.text,
-        time: message.sentAt,
+        // The page writes local times with an offset; the chat store compares times as UTC strings.
+        time: new Date(message.sentAt).toISOString(),
         sentByUser: message.sentByUser,
       });
     }

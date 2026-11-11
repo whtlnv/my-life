@@ -1166,7 +1166,7 @@ describe('createApp chat messages', () => {
         channel: 'whatsapp',
         displayName: 'Ana',
         whatsappHandles: [{ name: 'Ana' }],
-        lastMessageAt: '2026-11-10T09:41:00-06:00',
+        lastMessageAt: '2026-11-10T15:41:00.000Z',
       }),
     ]);
     const { messages } = await getJson<{ messages: unknown[] }>(app, '/whatsapp-contacts/Ana/timeline');
@@ -1174,6 +1174,30 @@ describe('createApp chat messages', () => {
       expect.objectContaining({ channel: 'whatsapp', text: 'Can we move the call to tomorrow?' }),
     ]);
   });
+  it('stores a WhatsApp message time in UTC, as every other chat message is, so times from different channels order correctly', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '9:41 am' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F7',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Hola',
+            sentByUser: false,
+          },
+        ],
+      },
+    });
+
+    const { messages } = await getJson<{ messages: { time: string }[] }>(app, '/chat-messages');
+
+    expect(messages.map(({ time }) => time)).toEqual(['2026-11-10T15:41:00.000Z']);
+  });
+
   it('leaves out of GET /people a WhatsApp message the user sent, so the user is not listed as their own WhatsApp contact', async () => {
     const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
     await postJson(app, '/chat-messages', {
@@ -1391,7 +1415,7 @@ describe('createApp chat messages', () => {
     const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
 
     expect(people).toEqual([
-      expect.objectContaining({ channel: 'whatsapp', displayName: 'Ana', waitingSince: '2026-11-10T09:41:00-06:00' }),
+      expect.objectContaining({ channel: 'whatsapp', displayName: 'Ana', waitingSince: '2026-11-10T15:41:00.000Z' }),
     ]);
   });
 
