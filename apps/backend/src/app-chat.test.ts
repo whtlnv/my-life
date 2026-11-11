@@ -360,6 +360,26 @@ describe('createApp chat messages', () => {
       }),
     ]);
   });
+  it('leaves out of GET /people the sender of a Telegram chat with a bot, so a bot is not listed as a contact', async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '8001',
+      chatTitle: 'BBVA Alertas',
+      messageId: '77',
+      senderId: '8001',
+      senderName: 'BBVA Alertas',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+      chatIsBot: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([]);
+  });
   it('gives a Telegram contact at GET /people the time of their last message as lastMessageAt, so the row can show "last message …"', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');

@@ -2147,7 +2147,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           slackMessages.filter(isFromSomeoneElse).filter((message) => !isFromMarkedSlackSender(message)),
         ).map(slackSenderAsContact),
         ...newestMessagePerSender(
-          telegramMessages.filter(isFromSomeoneElse).filter((message) => !isFromMarkedTelegramSender(message)),
+          telegramMessages
+            .filter(isFromSomeoneElse)
+            .filter((message) => !message.chatIsBot && !isFromMarkedTelegramSender(message)),
         ).map(telegramSenderAsContact),
       ],
     };

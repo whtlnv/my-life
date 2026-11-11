@@ -48,7 +48,7 @@
 - [x] A Telegram message from a chat with a person is stored with the chat not marked as a bot
 - [x] A database whose `chat_messages` table predates the bot mark gains `chat_is_bot` when the store opens (supervisor, 2026-11-10: the live store has that table, so the restart would have failed every Telegram save)
 - [x] A Telegram bot chat shows no triage card
-- [ ] A Telegram bot chat's sender is not a contact on the People tab
+- [x] A Telegram bot chat's sender is not a contact on the People tab
 - [ ] A Telegram bot chat makes no waiting-on entry
 - [ ] A Telegram bot chat with unconfirmed messages is a digest in the triage queue with the bot's name as title, channel `telegram` and the count of unconfirmed messages
 - [ ] A Telegram bot chat whose messages are all confirmed is not a digest
