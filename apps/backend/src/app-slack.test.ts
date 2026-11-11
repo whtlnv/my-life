@@ -883,4 +883,25 @@ describe('createApp Slack polls', () => {
     expect(loggedText).toContain('T0001');
     expect(loggedText).toContain('invalid_auth');
   });
+
+  it("reports on GET /now, after a failed POST /slack-poll, the workspace's failure reason", async () => {
+    const slackApiUrl = await localSlackAnsweringEveryRequest({ ok: false, error: 'invalid_auth' });
+    const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    onTestFinished(() => {
+      backendLog.mockRestore();
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      slackApiUrl,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-revoked' }],
+    });
+
+    await app.request('/slack-poll', { method: 'POST' });
+    const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: unknown };
+
+    expect(now.slackWorkspaces).toEqual([
+      expect.objectContaining({ teamId: 'T0001', lastPollFailure: expect.stringContaining('invalid_auth') }),
+    ]);
+  });
 });

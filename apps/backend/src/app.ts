@@ -719,6 +719,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     name?: string;
     url?: string | undefined;
     lastSuccessfulPollAt?: string;
+    lastPollFailure?: string | undefined;
   }
   let slackWorkspacePolls: SlackWorkspacePoll[] | undefined;
   const slackWorkspacePollFor = (workspaceTeamId: string) =>
@@ -767,6 +768,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   };
   const slackDisplayNamesByUserId = new Map<string, string>();
   app.post('/slack-poll', async (context) => {
+    const pollFailuresByTeamId = new Map<string, string>();
     const succeededTeamIds = await pollSlackWorkspaces({
       fetch,
       apiUrl: slackApiUrl,
@@ -776,6 +778,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       displayNamesByUserId: slackDisplayNamesByUserId,
       logPollFailure: (teamId, error) => {
         console.error(`Slack poll failed for workspace ${teamId}:`, error);
+        pollFailuresByTeamId.set(teamId, String(error));
       },
     });
     slackWorkspacePolls = await Promise.all(
@@ -786,7 +789,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
               ...(await fetchSlackWorkspaceIdentity(userToken)),
               lastSuccessfulPollAt: clock.now().toISOString(),
             }
-          : { teamId },
+          : { teamId, lastPollFailure: pollFailuresByTeamId.get(teamId) },
       ),
     );
     return context.json({});
