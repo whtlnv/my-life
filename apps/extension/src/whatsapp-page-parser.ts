@@ -55,7 +55,7 @@ const senderAndTimeOf = (row: Element): { sender: string; sentAt: string } => {
   };
 };
 
-const mediaPlaceholders: ReadonlyArray<{ testId: string; placeholder: string }> = [
+const mediaPlaceholders: readonly { testId: string; placeholder: string }[] = [
   { testId: 'sticker-container', placeholder: '[sticker]' },
   { testId: 'image-thumb', placeholder: '[photo]' },
 ];
@@ -114,7 +114,7 @@ export interface WhatsappPageFailure {
 }
 
 // Each selector must match once the selector it depends on matches; the first one that does not names the failure.
-const requiredSelectors: ReadonlyArray<{ selector: string; whenPresent?: string }> = [
+const requiredSelectors: readonly { selector: string; whenPresent?: string }[] = [
   { selector: chatRowSelector },
   { selector: messageRowSelector, whenPresent: chatPaneSelector },
   { selector: prePlainTextSelector, whenPresent: messageRowSelector },
