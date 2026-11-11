@@ -146,6 +146,17 @@ function TelegramConnectedChip({
   );
 }
 
+function WhatsappChip({ whatsapp }: { whatsapp: NonNullable<ShellStatus['whatsapp']> }) {
+  return (
+    <li
+      className="chip chip-source is-fresh"
+      title={`WhatsApp · last report ${timeInBusinessZone(whatsapp.lastReportedAt)}`}
+    >
+      <span className="chip-account">whatsapp</span>
+    </li>
+  );
+}
+
 function TelegramChip({ telegram }: { telegram: NonNullable<ShellStatus['telegram']> }) {
   if (!telegram.loggedIn) return <TelegramNotLoggedInChip />;
   const stale = telegram.stale === true;
@@ -235,14 +246,7 @@ export function AppShell({ route, children }: { route: string; children: ReactNo
               <SlackWorkspaceChip key={workspace.teamId} workspace={workspace} />
             ))}
             {status.telegram && <TelegramChip telegram={status.telegram} />}
-            {status.whatsapp && (
-              <li
-                className="chip chip-source is-fresh"
-                title={`WhatsApp · last report ${timeInBusinessZone(status.whatsapp.lastReportedAt)}`}
-              >
-                <span className="chip-account">whatsapp</span>
-              </li>
-            )}
+            {status.whatsapp && <WhatsappChip whatsapp={status.whatsapp} />}
           </ul>
         </div>
       </header>
