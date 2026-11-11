@@ -24,14 +24,18 @@ const mediaPlaceholders: Partial<Record<string, string>> = {
   MessageMediaDocument: '[video]',
 };
 
+function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
+  if (media instanceof Api.MessageMediaDocument && media.voice) {
+    return '[voice note]';
+  }
+  return mediaPlaceholders[media.className];
+}
+
 function messageText(message: Api.Message): string {
   if (message.message || !message.media) {
     return message.message;
   }
-  if (message.media instanceof Api.MessageMediaDocument && message.media.voice) {
-    return '[voice note]';
-  }
-  return mediaPlaceholders[message.media.className] ?? message.message;
+  return mediaPlaceholder(message.media) ?? message.message;
 }
 
 export function mapTelegramMessage({ message, chat, sender }: TelegramMessageContext): ChatMessage | undefined {
