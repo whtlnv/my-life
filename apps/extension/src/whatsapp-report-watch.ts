@@ -25,7 +25,9 @@ export function watchWhatsappPage({ fetch, accountEmail, backendUrl, document }:
     });
   const observer = new MutationObserver(() => {
     clearTimeout(pendingReport);
-    pendingReport = setTimeout(postReport, quietPeriodMilliseconds);
+    pendingReport = setTimeout(() => {
+      void postReport();
+    }, quietPeriodMilliseconds);
   });
   observer.observe(document.body, { childList: true, subtree: true });
 }
