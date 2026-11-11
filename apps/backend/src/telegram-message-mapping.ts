@@ -33,5 +33,6 @@ export function mapTelegramMessage({ message, chat, sender }: TelegramMessageCon
     text: message.message,
     time: new Date(message.date * 1000).toISOString(),
     sentByUser: Boolean(message.out),
+    ...('bot' in chat && chat.bot && { chatIsBot: true }),
   };
 }

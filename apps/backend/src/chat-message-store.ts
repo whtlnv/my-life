@@ -10,6 +10,7 @@ export interface ChatMessage {
   text: string;
   time: string;
   sentByUser: boolean;
+  chatIsBot?: boolean;
 }
 
 export interface ChatMessageVerdict {
@@ -19,7 +20,7 @@ export interface ChatMessageVerdict {
   decision: string;
 }
 
-type ChatMessageRow = Omit<ChatMessage, 'sentByUser'> & { sentByUser: number };
+type ChatMessageRow = Omit<ChatMessage, 'sentByUser' | 'chatIsBot'> & { sentByUser: number; chatIsBot: number };
 
 export function openChatMessageStore(databasePath: string) {
   const database = openDatabase(databasePath);
@@ -27,7 +28,7 @@ export function openChatMessageStore(databasePath: string) {
     `CREATE TABLE IF NOT EXISTS chat_messages (
       channel TEXT NOT NULL, chat_id TEXT NOT NULL, chat_title TEXT NOT NULL, message_id TEXT NOT NULL,
       sender_id TEXT NOT NULL, sender_name TEXT NOT NULL, text TEXT NOT NULL, time TEXT NOT NULL,
-      sent_by_user INTEGER NOT NULL, PRIMARY KEY (channel, chat_id, message_id))`,
+      sent_by_user INTEGER NOT NULL, chat_is_bot INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (channel, chat_id, message_id))`,
   );
   database.exec(
     `CREATE TABLE IF NOT EXISTS chat_message_verdicts (
@@ -42,12 +43,12 @@ export function openChatMessageStore(databasePath: string) {
   );
   const insertMessage = database.prepare(
     `INSERT OR IGNORE INTO chat_messages
-      (channel, chat_id, chat_title, message_id, sender_id, sender_name, text, time, sent_by_user)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (channel, chat_id, chat_title, message_id, sender_id, sender_name, text, time, sent_by_user, chat_is_bot)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const selectMessages = database.prepare<[], ChatMessageRow>(
     `SELECT channel, chat_id AS chatId, chat_title AS chatTitle, message_id AS messageId,
-      sender_id AS senderId, sender_name AS senderName, text, time, sent_by_user AS sentByUser
+      sender_id AS senderId, sender_name AS senderName, text, time, sent_by_user AS sentByUser, chat_is_bot AS chatIsBot
       FROM chat_messages ORDER BY time, rowid`,
   );
   return {
@@ -62,10 +63,15 @@ export function openChatMessageStore(databasePath: string) {
         message.text,
         message.time,
         message.sentByUser ? 1 : 0,
+        message.chatIsBot ? 1 : 0,
       );
     },
     listMessages(): ChatMessage[] {
-      return selectMessages.all().map((row) => ({ ...row, sentByUser: row.sentByUser === 1 }));
+      return selectMessages.all().map(({ chatIsBot, ...row }) => ({
+        ...row,
+        sentByUser: row.sentByUser === 1,
+        ...(chatIsBot === 1 && { chatIsBot: true }),
+      }));
     },
     saveVerdict(verdict: ChatMessageVerdict): void {
       insertVerdict.run(verdict.channel, verdict.chatId, verdict.messageId, verdict.decision);

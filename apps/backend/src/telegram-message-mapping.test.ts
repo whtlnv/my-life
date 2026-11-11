@@ -1,7 +1,12 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { Api } from 'telegram';
 import { returnBigInt } from 'telegram/Helpers';
 import { describe, expect, it } from 'vitest';
 
+import { openChatMessageStore } from './chat-message-store';
 import { mapTelegramMessage } from './telegram-message-mapping';
 
 const luis = new Api.User({ id: returnBigInt(424242), firstName: 'Luis', lastName: 'Ortega' });
@@ -196,5 +201,26 @@ describe('Telegram message mapping', () => {
     expect(mapTelegramMessage({ message, chat: supergroup, sender: luis })).toEqual(
       expect.objectContaining({ chatId: '-100707070', chatTitle: 'Mutuus equipo' }),
     );
+  });
+
+  it('stores a message from a chat with a bot user with the chat marked as a bot', () => {
+    const bot = new Api.User({ id: returnBigInt(939393), firstName: 'BBVA Alertas', bot: true });
+    const message = new Api.Message({
+      id: 5001,
+      peerId: new Api.PeerUser({ userId: returnBigInt(939393) }),
+      date: Date.parse('2026-11-10T09:00:00.000Z') / 1000,
+      message: 'Cargo por $1,250.00 en tu tarjeta',
+      out: false,
+    });
+    const directory = mkdtempSync(join(tmpdir(), 'my-life-'));
+    try {
+      const store = openChatMessageStore(join(directory, 'my-life.sqlite'));
+      const mapped = mapTelegramMessage({ message, chat: bot, sender: bot });
+      if (mapped) store.saveMessage(mapped);
+
+      expect(store.listMessages()).toEqual([expect.objectContaining({ chatId: '939393', chatIsBot: true })]);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
