@@ -62,4 +62,16 @@ describe('parseWhatsappOpenChat', () => {
       { id: '3EB0F00000019223A1B2C3', text: 'aa aaa aaaaa aaa aaaaaaaa aaaa.' },
     ]);
   });
+
+  it('marks as sent by the user exactly the messages whose meta holds a delivery-status icon, though their ids carry no direction prefix', () => {
+    const messages = parseWhatsappOpenChat(fixtureDocument('whatsapp-group-chat.fixture.html'));
+
+    expect(messages.filter(({ sentByUser }) => sentByUser).map(({ id }) => id)).toEqual([
+      '3EB0F00000003DDEA1B2C3',
+      '3EB0F0000000B99AA1B2C3',
+      '3EB0F00000011667A1B2C3',
+      '3EB0F00000013556A1B2C3',
+      '3EB0F00000017334A1B2C3',
+    ]);
+  });
 });

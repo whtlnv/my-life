@@ -19,6 +19,7 @@ export const parseWhatsappChatList = (document: Document): WhatsappChatListEntry
 export interface WhatsappOpenChatMessage {
   id: string;
   text: string;
+  sentByUser: boolean;
 }
 
 export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessage[] =>
@@ -27,4 +28,5 @@ export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessa
     .map((row) => ({
       id: row.getAttribute('data-id') ?? '',
       text: row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '',
+      sentByUser: row.querySelector('[data-testid="msg-meta"] span[aria-label]') !== null,
     }));
