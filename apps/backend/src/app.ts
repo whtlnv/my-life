@@ -633,8 +633,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const app = new Hono();
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
+  let whatsappParserFailure: { parserBroken: true; missingSelector: string } | undefined;
   app.post('/chat-messages', async (context) => {
-    const parsed = whatsappReport.safeParse(await context.req.json());
+    const body = await context.req.json<{ ok?: boolean; missingSelector: string }>();
+    if (body.ok === false) {
+      whatsappParserFailure = { parserBroken: true, missingSelector: body.missingSelector };
+      return context.json({ ok: true });
+    }
+    const parsed = whatsappReport.safeParse(body);
     if (!parsed.success) {
       return context.body(null, 400);
     }
@@ -2383,6 +2389,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
       slackWorkspaces: slackWorkspacePolls?.map(describeSlackWorkspaceFreshness),
       telegram: describeTelegramConnection(),
+      whatsapp: whatsappParserFailure,
     });
   });
   const dashboardDirectory = options.dashboardDirectory;

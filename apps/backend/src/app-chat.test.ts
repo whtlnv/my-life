@@ -137,6 +137,16 @@ describe('createApp chat messages', () => {
     expect(messages).toEqual([]);
   });
 
+  it('reports WhatsApp at GET /now as parser broken, naming the missing selector, after POST /chat-messages with a parser failure', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    const parserFailure = { channel: 'whatsapp', ok: false, missingSelector: '[data-pre-plain-text]' };
+
+    await postJson(app, '/chat-messages', parserFailure);
+    const { whatsapp } = await getJson<{ whatsapp: unknown }>(app, '/now');
+
+    expect(whatsapp).toEqual(expect.objectContaining({ parserBroken: true, missingSelector: '[data-pre-plain-text]' }));
+  });
+
   it('stores an ignore verdict on that chat message at POST /chat-verdicts', async () => {
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: [], databasePath });

@@ -23,7 +23,7 @@
 - [x] The report built from the fixture document passes the shared contract schema before it is posted
 - [x] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
 - [x] `POST /chat-messages` with a body that fails the contract schema answers 400 and stores nothing
-- [ ] `POST /chat-messages` with a parser failure makes `GET /now` report WhatsApp as parser broken
+- [x] `POST /chat-messages` with a parser failure makes `GET /now` report WhatsApp as parser broken
 - [ ] A good WhatsApp report after a parser failure makes `GET /now` report WhatsApp as healthy with the report's time
 - [ ] `GET /now` reports WhatsApp as fresh when the last report is within the staleness threshold
 - [ ] `GET /now` reports WhatsApp as stale when the last report is older than the staleness threshold
