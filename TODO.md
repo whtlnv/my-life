@@ -13,7 +13,7 @@
 - [x] A message row whose `msg-meta` has no delivery-status icon parses as not sent by the user
 - [x] A message's sender name and time are read from its `data-pre-plain-text` attribute (`[9:41 pm, 30/9/2026] Name: `: 12-hour time, day/month/year as on the user's page; an unsaved group member's name is their phone number)
 - [x] Two messages in the open-chat fixture dated on different days parse to their own dates
-- [ ] When no chat is open (no chat pane), the parse succeeds with the chat list and no messages
+- [x] When no chat is open (no chat pane), the parse succeeds with the chat list and no messages
 - [ ] When the chat pane is present but the message-row selector matches nothing, the parse reports a failure naming that selector instead of an empty message list
 - [ ] When the chat-list selector matches nothing, the parse reports a failure naming that selector
 - [ ] A rendered message row with no `data-pre-plain-text` and no text (a photo or sticker) parses as a placeholder (`[photo]`, `[sticker]`) taking its time from `msg-meta`; the parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it

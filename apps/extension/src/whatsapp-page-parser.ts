@@ -49,3 +49,11 @@ export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessa
       sentByUser: row.querySelector('[data-testid="msg-meta"] span[aria-label]') !== null,
       ...senderAndTimeOf(row),
     }));
+
+export const parseWhatsappPage = (
+  document: Document,
+): { ok: true; chats: WhatsappChatListEntry[]; messages: WhatsappOpenChatMessage[] } => ({
+  ok: true,
+  chats: parseWhatsappChatList(document),
+  messages: parseWhatsappOpenChat(document),
+});

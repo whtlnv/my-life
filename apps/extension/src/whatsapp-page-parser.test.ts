@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseWhatsappChatList, parseWhatsappOpenChat } from './whatsapp-page-parser';
+import { parseWhatsappChatList, parseWhatsappOpenChat, parseWhatsappPage } from './whatsapp-page-parser';
 
 const fixtureDocument = (fileName: string): Document =>
   new DOMParser().parseFromString(readFileSync(new URL(fileName, import.meta.url), 'utf8'), 'text/html');
@@ -112,5 +112,21 @@ describe('parseWhatsappOpenChat', () => {
       '2026-09-29T18:15:00-06:00',
       '2026-09-30T19:16:00-06:00',
     ]);
+  });
+});
+
+describe('parseWhatsappPage', () => {
+  it('succeeds with the chat list and no messages when no chat is open', () => {
+    const document = new DOMParser().parseFromString(
+      '<div id="pane-side"><div role="row"><div data-testid="cell-frame-title"><span title="Ana"></span></div>' +
+        '<div data-testid="chat-list-timestamp">9:41 am</div></div></div>',
+      'text/html',
+    );
+
+    expect(parseWhatsappPage(document)).toEqual({
+      ok: true,
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '9:41 am' }],
+      messages: [],
+    });
   });
 });
