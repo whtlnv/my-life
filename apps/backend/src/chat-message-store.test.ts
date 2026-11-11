@@ -73,6 +73,23 @@ describe('chat message store', () => {
     expect(store.listMessages()).toEqual([{ ...telegramMessageFromLuis, chatIsBot: true }]);
   });
 
+  it("marks a bot chat's earlier messages as from a bot chat when a newer message of that chat is saved with the bot mark", () => {
+    const store = openChatMessageStore(':memory:');
+    store.saveMessage(telegramMessageFromLuis);
+
+    store.saveMessage({
+      ...telegramMessageFromLuis,
+      messageId: '1018',
+      time: '2026-11-09T17:00:00.000Z',
+      chatIsBot: true,
+    });
+
+    expect(store.listMessages().map(({ messageId, chatIsBot }) => ({ messageId, chatIsBot }))).toEqual([
+      { messageId: '1017', chatIsBot: true },
+      { messageId: '1018', chatIsBot: true },
+    ]);
+  });
+
   it('lists two messages with the same chat id and message id but different channels both', () => {
     withTemporaryDatabase((databasePath) => {
       const store = openChatMessageStore(databasePath);

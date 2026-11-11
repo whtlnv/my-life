@@ -56,6 +56,7 @@ export function openChatMessageStore(databasePath: string) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT (channel, chat_id, message_id) DO UPDATE SET chat_is_bot = MAX(chat_is_bot, excluded.chat_is_bot)`,
   );
+  const markChatAsBot = database.prepare('UPDATE chat_messages SET chat_is_bot = 1 WHERE channel = ? AND chat_id = ?');
   const selectMessages = database.prepare<[], ChatMessageRow>(
     `SELECT channel, chat_id AS chatId, chat_title AS chatTitle, message_id AS messageId,
       sender_id AS senderId, sender_name AS senderName, text, time, sent_by_user AS sentByUser, chat_is_bot AS chatIsBot
@@ -75,6 +76,8 @@ export function openChatMessageStore(databasePath: string) {
         message.sentByUser ? 1 : 0,
         message.chatIsBot ? 1 : 0,
       );
+      // A bot chat is a bot chat for every message in it, including those stored before the mark existed.
+      if (message.chatIsBot) markChatAsBot.run(message.channel, message.chatId);
     },
     listMessages(): ChatMessage[] {
       return selectMessages.all().map(({ chatIsBot, ...row }) => ({
