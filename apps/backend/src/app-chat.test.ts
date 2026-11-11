@@ -401,6 +401,34 @@ describe('createApp chat messages', () => {
     expect(commands).toEqual([]);
   });
 
+  it('lists at GET /triage-queue a WhatsApp chat item with its reply pending while the send-whatsapp command is unacknowledged', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      accountEmail: 'ana@example.com',
+      chats: [{ title: 'Ana', unreadCount: 1, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F6',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+        ],
+      },
+    });
+
+    await postJson(app, '/chat-sends', { channel: 'whatsapp', chatId: 'Ana', text: 'Tomorrow at ten works' });
+    const { chatItems } = await getJson<{ chatItems: unknown[] }>(app, '/triage-queue');
+
+    expect(chatItems).toEqual([
+      expect.objectContaining({ channel: 'whatsapp', chatId: 'Ana', pendingReply: 'Tomorrow at ten works' }),
+    ]);
+  });
+
   it('answers POST /chat-sends with 502 and the Telegram error when Telegram refuses the send, and stores nothing', async () => {
     const databasePath = temporaryDatabasePath();
     const telegramClient = {

@@ -1319,6 +1319,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         text,
         time,
         link: chatLink(channel, chatId),
+        pendingReply: whatsappSends.find((send) => send.chatTitle === chatId)?.text,
       }));
   }
   app.get('/triage-queue', (context) => {

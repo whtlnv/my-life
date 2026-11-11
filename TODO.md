@@ -41,7 +41,7 @@
   - predicted-contradiction: `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing` — asserts: a `POST /chat-sends` with channel `whatsapp` and text answers 400 — retired-by: "`POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command"
 - [x] `POST /chat-sends` for channel `whatsapp` with empty text answers 400 and queues no command
 - [x] An acknowledged `send-whatsapp` command is no longer listed by `GET /commands`
-- [ ] A WhatsApp triage card shows its reply as pending while the `send-whatsapp` command is unacknowledged
+- [x] A WhatsApp triage card shows its reply as pending while the `send-whatsapp` command is unacknowledged
 - [ ] A WhatsApp triage card no longer shows the reply as pending once the command is acknowledged
 - [ ] Given a `send-whatsapp` command and the fixture document, the content script selects the chat with that title, types the text into the composer, presses send and acknowledges the command
 - [ ] Given a `send-whatsapp` command whose chat title is not in the chat list, the content script types nothing and does not acknowledge the command
