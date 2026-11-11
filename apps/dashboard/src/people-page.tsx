@@ -41,8 +41,7 @@ interface SlackTimelineMessage {
   permalink: string;
 }
 
-// A Telegram or WhatsApp message: both come from the chat store with a link to their chat.
-interface TelegramTimelineMessage {
+interface ChatTimelineMessage {
   channel: 'telegram' | 'whatsapp';
   messageId: string;
   text: string;
@@ -51,7 +50,7 @@ interface TelegramTimelineMessage {
 }
 
 interface Timeline {
-  messages: (TimelineMessage | SlackTimelineMessage | TelegramTimelineMessage)[];
+  messages: (TimelineMessage | SlackTimelineMessage | ChatTimelineMessage)[];
 }
 
 interface SelectedTimeline extends Timeline {
@@ -173,7 +172,7 @@ const TimelineRow = ({ href, title, side }: { href: string; title: string; side:
   </li>
 );
 
-const TelegramTimelineRow = ({ message }: { message: TelegramTimelineMessage }) => (
+const ChatTimelineRow = ({ message }: { message: ChatTimelineMessage }) => (
   <li className="row">
     <div className="row-main">
       <p className="row-title">{message.text}</p>
@@ -196,7 +195,7 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
       <ul aria-label={`Timeline of ${timeline.displayName}`} className="rows">
         {timeline.messages.map((message) =>
           'channel' in message ? (
-            <TelegramTimelineRow key={message.messageId} message={message} />
+            <ChatTimelineRow key={message.messageId} message={message} />
           ) : 'permalink' in message ? (
             <TimelineRow
               key={message.timestamp}
