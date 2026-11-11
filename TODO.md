@@ -62,7 +62,7 @@
 - [x] A Telegram message with a voice note and no text is stored with text `[voice note]`
 - [x] A Telegram message with an audio file that is not a voice note and no text is stored with text `[audio]`
 - [x] A Telegram message with a document and no text is stored with text `[document]`
-- [ ] A Telegram message with a sticker and no text is stored with text `[sticker]`
+- [x] A Telegram message with a sticker and no text is stored with text `[sticker]`
 - [ ] A Telegram photo with a caption is stored with text `[photo] <caption>`
 - [ ] A Telegram message with neither text nor media is still not stored
 - [ ] The backend started by `main.ts` (as `scripts/demo.sh` runs it) with a scripted Slack whose `is:dm` matches span two pages and a scripted Telegram with a bot chat shows one card per Slack conversation, a Telegram bot digest and a `[photo]` placeholder; a screenshot of the Triage tab is taken against `scripts/demo.sh`

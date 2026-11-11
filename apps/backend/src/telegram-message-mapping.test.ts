@@ -291,6 +291,36 @@ describe('Telegram message mapping', () => {
     );
   });
 
+  it('maps a sticker sent with no text to a chat message whose text is [sticker]', () => {
+    const message = new Api.Message({
+      id: 1028,
+      peerId: new Api.PeerUser({ userId: returnBigInt(424242) }),
+      date: Date.parse('2026-11-09T19:45:00.000Z') / 1000,
+      message: '',
+      media: new Api.MessageMediaDocument({
+        document: new Api.Document({
+          id: returnBigInt(5590002),
+          accessHash: returnBigInt(0),
+          fileReference: Buffer.from(''),
+          date: Date.parse('2026-11-09T19:45:00.000Z') / 1000,
+          mimeType: 'image/webp',
+          size: returnBigInt(24576),
+          dcId: 1,
+          attributes: [
+            new Api.DocumentAttributeImageSize({ w: 512, h: 512 }),
+            new Api.DocumentAttributeSticker({ alt: '👍', stickerset: new Api.InputStickerSetEmpty() }),
+            new Api.DocumentAttributeFilename({ fileName: 'sticker.webp' }),
+          ],
+        }),
+      }),
+      out: false,
+    });
+
+    expect(mapTelegramMessage({ message, chat: luis, sender: luis })).toEqual(
+      expect.objectContaining({ messageId: '1028', text: '[sticker]' }),
+    );
+  });
+
   it("maps a message in a supergroup to a chat message whose chat id is the supergroup's -100 marked peer id", () => {
     const supergroup = new Api.Channel({
       id: returnBigInt(707070),

@@ -26,7 +26,10 @@ const mediaPlaceholders: Partial<Record<string, string>> = {
 
 function hasDocumentAttribute(
   media: Api.TypeMessageMedia,
-  attributeType: typeof Api.DocumentAttributeVideo | typeof Api.DocumentAttributeAudio,
+  attributeType:
+    | typeof Api.DocumentAttributeVideo
+    | typeof Api.DocumentAttributeAudio
+    | typeof Api.DocumentAttributeSticker,
 ): boolean {
   return (
     media instanceof Api.MessageMediaDocument &&
@@ -38,6 +41,9 @@ function hasDocumentAttribute(
 function mediaPlaceholder(media: Api.TypeMessageMedia): string | undefined {
   if (media instanceof Api.MessageMediaDocument && media.voice) {
     return '[voice note]';
+  }
+  if (hasDocumentAttribute(media, Api.DocumentAttributeSticker)) {
+    return '[sticker]';
   }
   if (hasDocumentAttribute(media, Api.DocumentAttributeAudio)) {
     return '[audio]';
