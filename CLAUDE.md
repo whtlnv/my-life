@@ -13,7 +13,7 @@ Repository map:
 - `DONE.md` / `NOT_DONE.md` — append-only ledgers of delivered and bailed items.
 - `BACKLOG.md` — deferred refactors and known gaps. Not a queue.
 - `MISMATCHES.md`, `TEST_DELETIONS.md` — append-only audits written by `/red` and `/reconcile`.
-- `PENDING_TASKS.md` — the user's own to-do list: accounts, credentials, approvals and decisions only the user can provide. **It is not a work queue.** Never start, plan or deliver an entry from it. Work that depends on an unchecked entry waits; an agent that reaches such work skips it and reports the blocker instead of guessing or stubbing around it.
+- `PENDING_TASKS.md` — how Claude asks the user for what only they can provide (accounts, credentials, approvals, decisions); Claude keeps it current, checking entries off and adding new asks. **It is not a work queue.** Never start, plan or deliver an entry from it. Work that depends on an unchecked entry waits; an agent that reaches such work skips it and reports the blocker instead of guessing or stubbing around it.
 - `docs/decisions/` — dated decision records (spikes, measurements, fidelity gaps).
 - `profile/` — the user's hand-written context for the LLM (accounts, people, current priorities). Gitignored except the template.
 - `.tdd-test-cmd`, `.tdd-lint-cmd`, `.tdd-clean-cmd` — the commands the TDD skills resolve (written by `/tdd-init`).

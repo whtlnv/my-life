@@ -31,7 +31,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 ## 6. Telegram (Phase 6)
 
 - [x] `api_id` and `api_hash` from https://my.telegram.org under your account → `.env`.
-- [ ] One interactive phone login when Phase 6 starts (Claude runs the script, you type the code).
+- [x] One interactive phone login when Phase 6 starts (Claude runs the script, you type the code). Done 2026-11-10; the live backend reads Telegram.
 
 ## 7. Decisions and confirmations (each has a default so nothing waits)
 
