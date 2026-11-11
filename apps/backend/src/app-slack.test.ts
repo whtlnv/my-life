@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { describe, expect, it, onTestFinished } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createApp } from './app';
 import { budgetReviewReport, getJson, postJson, temporaryDatabasePath } from './app.test-support';
@@ -874,5 +874,40 @@ describe('createApp Slack polls', () => {
 
     expect(historyRequestCount).toBe(2);
     expect(usersInfoRequests).toEqual(['U0001']);
+  });
+
+  it("writes to the backend log, on POST /slack-poll, a failed workspace's team id and the error", async () => {
+    const server: Server = createServer((request, response) => {
+      request.resume();
+      request.on('end', () => {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(JSON.stringify({ ok: false, error: 'invalid_auth' }));
+      });
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    onTestFinished(
+      () =>
+        new Promise<void>((resolve) =>
+          server.close(() => {
+            resolve();
+          }),
+        ),
+    );
+    const backendLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    onTestFinished(() => {
+      backendLog.mockRestore();
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      slackApiUrl: `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-revoked' }],
+    });
+
+    await app.request('/slack-poll', { method: 'POST' });
+
+    const loggedText = backendLog.mock.calls.map((call) => call.map(String).join(' ')).join('\n');
+    expect(loggedText).toContain('T0001');
+    expect(loggedText).toContain('invalid_auth');
   });
 });

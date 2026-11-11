@@ -774,6 +774,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       store: slackMessageStore,
       clock,
       displayNamesByUserId: slackDisplayNamesByUserId,
+      logPollFailure: (teamId, error) => {
+        console.error(`Slack poll failed for workspace ${teamId}:`, error);
+      },
     });
     slackWorkspacePolls = await Promise.all(
       configuredSlackWorkspaces.map(async ({ teamId, userToken }) =>
