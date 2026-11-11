@@ -17,10 +17,19 @@ export interface BackendFetchAnswer {
   body: unknown;
 }
 
+// The relay serves the WhatsApp content script, which runs inside the web.whatsapp.com page: it reaches only the
+// routes WhatsApp needs, never the rest of the backend.
+const whatsappRoutePattern = /^\/(chat-messages|commands)(\/|\?|$)/;
+
+function isWhatsappRoute(path: string): boolean {
+  return whatsappRoutePattern.test(path);
+}
+
 export async function answerBackendFetch(
   options: BackendFetchRelayOptions,
   message: BackendFetchMessage,
 ): Promise<BackendFetchAnswer> {
+  if (!isWhatsappRoute(message.path)) return { status: 403, body: null };
   const response = await options.fetch(`${options.backendUrl}${message.path}`, {
     method: message.method,
     body: message.body ?? null,

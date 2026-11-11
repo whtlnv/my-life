@@ -32,6 +32,22 @@ describe('answerBackendFetch', () => {
 
     expect(answer).toEqual({ status: 200, body: null });
   });
+  it('refuses with 403, fetching nothing, a path outside the WhatsApp routes (/chat-messages and /commands)', async () => {
+    const requested: string[] = [];
+    const answer = await answerBackendFetch(
+      {
+        fetch: (input) => {
+          requested.push(input.toString());
+          return Promise.resolve(Response.json({}));
+        },
+        backendUrl: 'http://127.0.0.1:7777',
+      },
+      { type: 'backend-fetch', path: '/agent/conversations', method: 'POST', body: '{}' },
+    );
+
+    expect(answer).toEqual({ status: 403, body: null });
+    expect(requested).toEqual([]);
+  });
 });
 
 describe('relayedFetch', () => {
