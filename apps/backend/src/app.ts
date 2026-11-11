@@ -154,6 +154,7 @@ export interface AppOptions {
   slackWorkspaces?: { teamId: string; userToken: string }[];
   telegramClient?: TelegramAppClient;
   slackPollingIntervalInMilliseconds?: number;
+  whatsappReportIntervalInMilliseconds?: number;
   // How many days a first Slack poll reads back for a conversation with nothing stored (default 7).
   slackFirstPollLookbackDays?: number;
   urgency?: { unansweredAskBusinessDays: number };
@@ -638,7 +639,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
   let whatsappStatus: WhatsappStatus | undefined;
-  const whatsappReportIntervalInMilliseconds = 60_000;
+  const whatsappReportIntervalInMilliseconds = options.whatsappReportIntervalInMilliseconds ?? 60_000;
   const describeWhatsappFreshness = () => {
     if (whatsappStatus === undefined || whatsappStatus.parserBroken) {
       return whatsappStatus;
