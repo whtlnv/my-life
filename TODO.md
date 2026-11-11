@@ -52,5 +52,7 @@
 - [x] The header shows a WhatsApp chip with the time of the last report
 - [x] The header's WhatsApp chip shows as stale when `GET /now` reports WhatsApp stale
 - [x] The header's WhatsApp chip says "whatsapp parser broken" when `GET /now` reports the parser broken
-- [ ] The built extension's manifest registers the WhatsApp content script for `https://web.whatsapp.com/*`, and the shipped backend (`main.ts`) accepts a WhatsApp report on `POST /chat-messages` and lists it in the triage queue
+- [ ] The background service worker answers a `backend-fetch` runtime message (path, method, body) by fetching that path from the backend and replying with the status and the JSON body; the content script cannot fetch `localhost` from the `web.whatsapp.com` page itself (cross-origin and private-network rules), so every WhatsApp request goes through this relay (supervisor, 2026-11-11)
+- [ ] The built extension's manifest registers a `whatsapp.content.ts` content script for `https://web.whatsapp.com/*` that starts the page watch (`watchWhatsappPage`) and carries out `send-whatsapp` commands every few seconds (`carryOutWhatsappSends`), both with a fetch that relays through the background's `backend-fetch` and the profile's account email from the background (keystone: today the watch and the sends run only in tests)
+- [ ] The shipped backend (`main.ts`) accepts a WhatsApp report on `POST /chat-messages` and lists it in the triage queue
 - [ ] `scripts/demo.sh` posts WhatsApp chats; screenshots of the WhatsApp triage section, People timeline and header chip are taken over the demo, and `docs/decisions/` records the hand-written-fixture fidelity gap
