@@ -345,6 +345,29 @@ describe('pollSlackWorkspace', () => {
     expect(directMessageSearchPages).toEqual(['1', '2', '3']);
   });
 
+  it('requests no search.messages page past the last page Slack names, though every match on it is newer than anything stored', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': (url) =>
+        url.searchParams.get('query')?.startsWith('is:dm') === true
+          ? {
+              ok: true,
+              messages: {
+                matches: [{ user: 'U0002', text: 'Ping', ts: '1762780000.000200', channel: { id: 'D0002' } }],
+                paging: { page: Number(url.searchParams.get('page') ?? '1'), pages: 2 },
+              },
+            }
+          : { ok: true, messages: { matches: [] } },
+      '/conversations.history': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollWith(slack);
+
+    const directMessageSearches = slack.requests.filter(
+      (url) => url.pathname === '/search.messages' && url.searchParams.get('query')?.startsWith('is:dm'),
+    );
+    expect(directMessageSearches).toHaveLength(2);
+  });
+
   it("stores a message's sender name as the sender's user id when their Slack profile has no display name", async () => {
     const slack = scriptedSlack({
       '/search.messages': directMessageSearchNaming('D0001'),

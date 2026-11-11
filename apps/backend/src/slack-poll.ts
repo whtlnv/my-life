@@ -43,13 +43,21 @@ interface SlackMessage {
   ts: string;
 }
 
-async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string, page = 1): Promise<Match[]> {
+async function searchSlackMessagesPage<Match>(
+  input: PollSlackWorkspaceInput,
+  query: string,
+  page: number,
+): Promise<{ matches: Match[]; pages: number }> {
   const pageParameter = page === 1 ? '' : `&page=${page}`;
-  const { messages } = await callSlack<{ messages: { matches: Match[] } }>(
+  const { messages } = await callSlack<{ messages: { matches: Match[]; paging?: { pages: number } } }>(
     input,
-    `/search.messages?query=${encodeURIComponent(query)}&sort=timestamp&sort_dir=desc${pageParameter}`,
+    `/search.messages?query=${encodeURIComponent(query)}&sort=timestamp&sort_dir=desc&count=100${pageParameter}`,
   );
-  return messages.matches;
+  return { matches: messages.matches, pages: messages.paging?.pages ?? 1 };
+}
+
+async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string): Promise<Match[]> {
+  return (await searchSlackMessagesPage<Match>(input, query, 1)).matches;
 }
 
 async function lookUpSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
@@ -110,11 +118,11 @@ function oldestParameterAfter(newestStoredTimestamp: string | undefined): string
   return newestStoredTimestamp === undefined ? '' : `&oldest=${newestStoredTimestamp}`;
 }
 
+// With nothing stored, every page is unread; otherwise a page is unread while all its matches are newer than the store.
 function isEntirelyNewerThan(pageMatches: { ts: string }[], newestStoredTimestamp: string | undefined): boolean {
   return (
-    newestStoredTimestamp !== undefined &&
     pageMatches.length > 0 &&
-    pageMatches.every((match) => match.ts > newestStoredTimestamp)
+    (newestStoredTimestamp === undefined || pageMatches.every((match) => match.ts > newestStoredTimestamp))
   );
 }
 
@@ -128,12 +136,13 @@ async function searchPagesUntilCaughtUp(
   query: string,
   newestStoredTimestamp: string | undefined,
 ): Promise<DirectMessageMatch[]> {
-  const matches = await searchSlackMessages<DirectMessageMatch>(input, query);
+  const firstPage = await searchSlackMessagesPage<DirectMessageMatch>(input, query, 1);
+  const matches = firstPage.matches;
   let page = 1;
   let pageMatches = matches;
-  while (isEntirelyNewerThan(pageMatches, newestStoredTimestamp)) {
+  while (page < firstPage.pages && isEntirelyNewerThan(pageMatches, newestStoredTimestamp)) {
     page += 1;
-    pageMatches = await searchSlackMessages<DirectMessageMatch>(input, query, page);
+    pageMatches = (await searchSlackMessagesPage<DirectMessageMatch>(input, query, page)).matches;
     matches.push(...pageMatches);
   }
   return matches;
