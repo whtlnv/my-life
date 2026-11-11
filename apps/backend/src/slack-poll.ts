@@ -64,10 +64,12 @@ async function searchSlackMessages(input: PollSlackWorkspaceInput, query: string
 }
 
 async function lookUpSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
-  const { user } = await callSlack<{ user: { profile: { display_name?: string; real_name?: string } } }>(
+  // users.info answers no user for a sender it cannot find (an app, a deleted or foreign user): the id stands in.
+  const { user } = await callSlack<{ user?: { profile: { display_name?: string; real_name?: string } } }>(
     input,
     `/users.info?user=${userId}`,
   );
+  if (user === undefined) return userId;
   // Slack answers an empty display_name, not a missing one, for a user who never set one.
   const names = [user.profile.display_name, user.profile.real_name].filter((name) => name !== undefined && name !== '');
   return names[0] ?? userId;

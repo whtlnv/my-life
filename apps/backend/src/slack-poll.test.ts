@@ -405,6 +405,21 @@ describe('pollSlackWorkspace', () => {
     expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0009', senderName: 'U0009' })]);
   });
 
+  it("stores a message's sender name as the sender's user id when users.info cannot find the sender, and keeps polling", async () => {
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({
+        ok: true,
+        messages: [{ user: 'U0404', text: 'Deploy finished.', ts: '1762700000.000100' }],
+      }),
+      '/users.info': () => ({ ok: false, error: 'user_not_found' }),
+    });
+
+    const store = await pollWith(slack);
+
+    expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0404', senderName: 'U0404' })]);
+  });
+
   it("stores a message's sender name as the sender's real name when Slack answers an empty display name", async () => {
     const slack = scriptedSlack({
       '/search.messages': directMessageSearchNaming('D0001'),
