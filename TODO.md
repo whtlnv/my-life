@@ -1,3 +1,51 @@
 # TODO.md — working set
 
 
+## Phase 6b — WhatsApp
+
+- [ ] A WhatsApp report (channel `whatsapp`, a chat list with title, unread count and last message time, and the open chat's messages with id, sender, time, text and sent-by-user) passes the shared contract schema
+- [ ] A WhatsApp report whose message has no id fails the shared contract schema
+- [ ] Parsing the saved chat-list fixture yields each chat's title, unread count and last message time
+- [ ] A chat in the chat-list fixture with no unread badge parses with an unread count of 0
+- [ ] Parsing the saved open-chat fixture yields each message's id (from the row's `data-id`) and text
+- [ ] A message row whose `data-id` starts with `true_` parses as sent by the user
+- [ ] A message row whose `data-id` starts with `false_` parses as not sent by the user
+- [ ] A message's sender name and time are read from its `data-pre-plain-text` attribute
+- [ ] Two messages in the open-chat fixture dated on different days parse to their own dates
+- [ ] When no chat is open (no chat pane), the parse succeeds with the chat list and no messages
+- [ ] When the chat pane is present but the message-row selector matches nothing, the parse reports a failure naming that selector instead of an empty message list
+- [ ] When the chat-list selector matches nothing, the parse reports a failure naming that selector
+- [ ] When a message row has no `data-pre-plain-text`, the parse reports a failure naming that attribute
+- [ ] The report built from the fixture document passes the shared contract schema before it is posted
+- [ ] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
+- [ ] `POST /chat-messages` with a body that fails the contract schema answers 400 and stores nothing
+- [ ] `POST /chat-messages` with a parser failure makes `GET /now` report WhatsApp as parser broken
+- [ ] A good WhatsApp report after a parser failure makes `GET /now` report WhatsApp as healthy with the report's time
+- [ ] `GET /now` reports WhatsApp as fresh when the last report is within the staleness threshold
+- [ ] `GET /now` reports WhatsApp as stale when the last report is older than the staleness threshold
+- [ ] The WhatsApp staleness threshold follows its startup setting instead of the default
+- [ ] An unanswered incoming WhatsApp message appears in the triage queue's chat items with channel `whatsapp`
+- [ ] A WhatsApp message with a stored verdict is no longer in the triage queue
+- [ ] A WhatsApp sender whose last message the user has not answered appears in waiting-on with channel `whatsapp`
+- [ ] A WhatsApp chat whose last message was sent by the user does not appear in waiting-on
+- [ ] A WhatsApp sender appears on the People tab as a contact with their WhatsApp messages in the timeline
+- [ ] The user's own WhatsApp messages do not list the user as a WhatsApp contact
+- [ ] A task made from a WhatsApp triage item links to the WhatsApp chat
+- [ ] A task made from a Telegram triage item still links to the Telegram chat
+- [ ] `POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command (chat title, text) in `GET /commands` for the profile that reports WhatsApp
+  - predicted-contradiction: `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing` — asserts: a `POST /chat-sends` with channel `whatsapp` and text answers 400 — retired-by: "`POST /chat-sends` for channel `whatsapp` with text queues a `send-whatsapp` command"
+- [ ] `POST /chat-sends` for channel `whatsapp` with empty text answers 400 and queues no command
+- [ ] An acknowledged `send-whatsapp` command is no longer listed by `GET /commands`
+- [ ] A WhatsApp triage card shows its reply as pending while the `send-whatsapp` command is unacknowledged
+- [ ] A WhatsApp triage card no longer shows the reply as pending once the command is acknowledged
+- [ ] Given a `send-whatsapp` command and the fixture document, the content script selects the chat with that title, types the text into the composer, presses send and acknowledges the command
+- [ ] Given a `send-whatsapp` command whose chat title is not in the chat list, the content script types nothing and does not acknowledge the command
+- [ ] Several DOM mutations within 10 s make the content script post one report, 10 s after the last mutation
+- [ ] Two DOM mutations more than 10 s apart make the content script post two reports
+- [ ] When the parse fails, the content script posts the parser failure instead of a report
+- [ ] The triage page shows WhatsApp items in their own WhatsApp section, with the reply composer naming WhatsApp
+- [ ] The header shows a WhatsApp chip with the time of the last report
+- [ ] The header's WhatsApp chip shows as stale when `GET /now` reports WhatsApp stale
+- [ ] The header's WhatsApp chip says "whatsapp parser broken" when `GET /now` reports the parser broken
+- [ ] The built extension's manifest registers the WhatsApp content script for `https://web.whatsapp.com/*`, and the shipped backend (`main.ts`) accepts a WhatsApp report on `POST /chat-messages` and lists it in the triage queue
+- [ ] `scripts/demo.sh` posts WhatsApp chats; screenshots of the WhatsApp triage section, People timeline and header chip are taken over the demo, and `docs/decisions/` records the hand-written-fixture fidelity gap
