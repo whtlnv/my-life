@@ -43,21 +43,24 @@ interface SlackMessage {
   ts: string;
 }
 
-async function searchSlackMessagesPage<Match>(
+// Slack's search matches: a message with its channel, and a permalink that names its thread, if any.
+type SlackSearchMatch = SlackMessage & { permalink?: string; channel: { id: string } };
+
+async function searchSlackMessagesPage(
   input: PollSlackWorkspaceInput,
   query: string,
   page: number,
-): Promise<{ matches: Match[]; pages: number }> {
-  const pageParameter = page === 1 ? '' : `&page=${page}`;
-  const { messages } = await callSlack<{ messages: { matches: Match[]; paging?: { pages: number } } }>(
+): Promise<{ matches: SlackSearchMatch[]; pages: number }> {
+  const pageParameter = page === 1 ? '' : `&page=${String(page)}`;
+  const { messages } = await callSlack<{ messages: { matches: SlackSearchMatch[]; paging?: { pages: number } } }>(
     input,
     `/search.messages?query=${encodeURIComponent(query)}&sort=timestamp&sort_dir=desc&count=100${pageParameter}`,
   );
   return { matches: messages.matches, pages: messages.paging?.pages ?? 1 };
 }
 
-async function searchSlackMessages<Match>(input: PollSlackWorkspaceInput, query: string): Promise<Match[]> {
-  return (await searchSlackMessagesPage<Match>(input, query, 1)).matches;
+async function searchSlackMessages(input: PollSlackWorkspaceInput, query: string): Promise<SlackSearchMatch[]> {
+  return (await searchSlackMessagesPage(input, query, 1)).matches;
 }
 
 async function lookUpSlackDisplayName(input: PollSlackWorkspaceInput, userId: string): Promise<string> {
@@ -136,13 +139,13 @@ async function searchPagesUntilCaughtUp(
   query: string,
   newestStoredTimestamp: string | undefined,
 ): Promise<DirectMessageMatch[]> {
-  const firstPage = await searchSlackMessagesPage<DirectMessageMatch>(input, query, 1);
+  const firstPage = await searchSlackMessagesPage(input, query, 1);
   const matches = firstPage.matches;
   let page = 1;
   let pageMatches = matches;
   while (page < firstPage.pages && isEntirelyNewerThan(pageMatches, newestStoredTimestamp)) {
     page += 1;
-    pageMatches = (await searchSlackMessagesPage<DirectMessageMatch>(input, query, page)).matches;
+    pageMatches = (await searchSlackMessagesPage(input, query, page)).matches;
     matches.push(...pageMatches);
   }
   return matches;
@@ -189,7 +192,7 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput, ownSlackUserId
 
 async function pollMentions(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const mentionsQuery = `<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
-  const matches = await searchSlackMessages<SlackMessage & { channel: { id: string } }>(input, mentionsQuery);
+  const matches = await searchSlackMessages(input, mentionsQuery);
   for (const match of matches) {
     await saveSlackMessage(input, match.channel.id, match, { ownSlackUserId });
   }
@@ -202,7 +205,7 @@ function threadTimestampOf(match: { permalink?: string }): string | null {
 
 async function pollThreadsTheUserWroteIn(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const ownMessagesQuery = `from:<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
-  const matches = await searchSlackMessages<{ permalink?: string; channel: { id: string } }>(input, ownMessagesQuery);
+  const matches = await searchSlackMessages(input, ownMessagesQuery);
   for (const match of matches) {
     const threadTimestamp = threadTimestampOf(match);
     if (threadTimestamp === null) {

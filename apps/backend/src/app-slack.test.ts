@@ -109,14 +109,14 @@ describe('createApp Slack messages', () => {
       ['1762700000.000100', 'Hi there.'],
       ['1762700000.000300', 'Can you look at the contract today?'],
       ['1762700000.000200', 'I have a question.'],
-    ]) {
+    ] as const) {
       store.saveMessage({
         workspaceTeamId: 'T0001',
         conversationId: 'D0001',
         senderUserId: 'U0001',
         senderName: 'Ana',
-        text: text!,
-        timestamp: timestamp!,
+        text: text,
+        timestamp: timestamp,
       });
     }
     const app = createApp({ allowedEmails: [], databasePath });
@@ -136,14 +136,14 @@ describe('createApp Slack messages', () => {
       ['D0002', '1762700000.000200', 'Is the invoice ready?'],
       ['D0001', '1762700000.000300', 'Can you look at the contract today?'],
       ['D0002', '1762700000.000150', 'Morning.'],
-    ]) {
+    ] as const) {
       store.saveMessage({
         workspaceTeamId: 'T0001',
-        conversationId: conversationId!,
+        conversationId: conversationId,
         senderUserId: conversationId === 'D0001' ? 'U0001' : 'U0002',
         senderName: conversationId === 'D0001' ? 'Ana' : 'Bruno',
-        text: text!,
-        timestamp: timestamp!,
+        text: text,
+        timestamp: timestamp,
       });
     }
     const app = createApp({ allowedEmails: [], databasePath });
@@ -292,14 +292,14 @@ describe('createApp Slack messages', () => {
     for (const [timestamp, text] of [
       ['1762700000.000100', 'Hi there.'],
       ['1762700000.000200', 'Can you look at the contract today?'],
-    ]) {
+    ] as const) {
       store.saveMessage({
         workspaceTeamId: 'T0001',
         conversationId: 'D0001',
         senderUserId: 'U0001',
         senderName: 'Ana',
-        text: text!,
-        timestamp: timestamp!,
+        text: text,
+        timestamp: timestamp,
       });
     }
     const app = createApp({ allowedEmails: [], databasePath });
@@ -924,7 +924,7 @@ describe('createApp Slack polls', () => {
     const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: unknown };
 
     expect(now.slackWorkspaces).toEqual([
-      expect.objectContaining({ teamId: 'T0001', lastPollFailure: expect.stringContaining('invalid_auth') }),
+      expect.objectContaining({ teamId: 'T0001', lastPollFailure: expect.stringContaining('invalid_auth') as unknown }),
     ]);
   });
 
