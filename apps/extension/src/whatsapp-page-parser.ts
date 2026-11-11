@@ -26,10 +26,13 @@ export interface WhatsappOpenChatMessage {
 
 const twoDigits = (value: number): string => String(value).padStart(2, '0');
 
+// `[9:41 pm, 30/9/2026] Name: `: 12-hour time, day/month/year.
+const prePlainTextPattern = /^\[(\d+):(\d+) (am|pm), (\d+)\/(\d+)\/(\d+)\] (.*): $/;
+
 const senderAndTimeOf = (row: Element): { sender: string; sentAt: string } => {
   const label = row.querySelector('[data-pre-plain-text]')?.getAttribute('data-pre-plain-text') ?? '';
   const [, hour = '', minute = '', meridiem = '', day = '', month = '', year = '', sender = ''] =
-    /^\[(\d+):(\d+) (am|pm), (\d+)\/(\d+)\/(\d+)\] (.*): $/.exec(label) ?? [];
+    prePlainTextPattern.exec(label) ?? [];
   const hour24 = (Number(hour) % 12) + (meridiem === 'pm' ? 12 : 0);
   return {
     sender,
