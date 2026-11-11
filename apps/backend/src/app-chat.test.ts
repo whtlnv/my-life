@@ -120,6 +120,35 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('stores at POST /chat-messages an unread chat with a preview that is not the open chat as one incoming message, timed when the backend received it', async () => {
+    const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath: temporaryDatabasePath() });
+    const report = {
+      channel: 'whatsapp',
+      chats: [
+        { title: 'Ana', unreadCount: 0, lastMessageAt: '9:00 am' },
+        { title: 'Bruno', unreadCount: 2, lastMessageAt: '9:41 pm', lastMessagePreview: 'Are you coming tonight?' },
+      ],
+      openChat: { title: 'Ana', messages: [] },
+    };
+
+    await postJson(app, '/chat-messages', report);
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(messages).toEqual([
+      expect.objectContaining({
+        channel: 'whatsapp',
+        chatId: 'Bruno',
+        chatTitle: 'Bruno',
+        messageId: 'preview:9:41 pm',
+        senderId: 'Bruno',
+        senderName: 'Bruno',
+        text: 'Are you coming tonight?',
+        time: '2026-11-02T15:10:00.000Z',
+        sentByUser: false,
+      }),
+    ]);
+  });
+
   it('refuses at POST /chat-messages, with 400, a body that fails the WhatsApp report schema, and stores nothing', async () => {
     const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
     const reportWithMessageMissingItsId = {

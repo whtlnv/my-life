@@ -679,6 +679,22 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         sentByUser: message.sentByUser,
       });
     }
+    for (const chat of report.chats) {
+      if (chat.lastMessagePreview === undefined) {
+        continue;
+      }
+      chatMessageStore.saveMessage({
+        channel: report.channel,
+        chatId: chat.title,
+        chatTitle: chat.title,
+        messageId: `preview:${chat.lastMessageAt}`,
+        senderId: chat.title,
+        senderName: chat.title,
+        text: chat.lastMessagePreview,
+        time: clock.now().toISOString(),
+        sentByUser: false,
+      });
+    }
     return context.json({ ok: true });
   });
   app.post('/chat-verdicts', async (context) => {
