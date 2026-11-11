@@ -129,4 +129,15 @@ describe('parseWhatsappPage', () => {
       messages: [],
     });
   });
+
+  it('fails naming the message-row selector when the chat pane is present but holds no message rows', () => {
+    const document = new DOMParser().parseFromString(
+      '<div id="pane-side"><div role="row"><div data-testid="cell-frame-title"><span title="Ana"></span></div>' +
+        '<div data-testid="chat-list-timestamp">9:41 am</div></div></div>' +
+        '<div id="main"><div data-testid="conversation-panel-messages"></div></div>',
+      'text/html',
+    );
+
+    expect(parseWhatsappPage(document)).toEqual({ ok: false, missingSelector: '#main [data-id]' });
+  });
 });

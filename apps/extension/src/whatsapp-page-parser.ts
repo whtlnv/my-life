@@ -56,8 +56,14 @@ export interface WhatsappPage {
   messages: WhatsappOpenChatMessage[];
 }
 
-export const parseWhatsappPage = (document: Document): WhatsappPage => ({
-  ok: true,
-  chats: parseWhatsappChatList(document),
-  messages: parseWhatsappOpenChat(document),
-});
+export interface WhatsappPageFailure {
+  ok: false;
+  missingSelector: string;
+}
+
+const messageRowSelector = '#main [data-id]';
+
+export const parseWhatsappPage = (document: Document): WhatsappPage | WhatsappPageFailure =>
+  document.querySelector('#main') !== null && document.querySelector(messageRowSelector) === null
+    ? { ok: false, missingSelector: messageRowSelector }
+    : { ok: true, chats: parseWhatsappChatList(document), messages: parseWhatsappOpenChat(document) };
