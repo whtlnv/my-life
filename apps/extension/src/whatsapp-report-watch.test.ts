@@ -96,8 +96,6 @@ describe('watchWhatsappPage', () => {
 
     const parserFailure = parseWhatsappPage(document);
     expect(parserFailure.ok).toBe(false);
-    expect(postedReports).toEqual([
-      { ...parserFailure, channel: 'whatsapp', accountEmail: 'francisco@example.com' },
-    ]);
+    expect(postedReports).toEqual([{ ...parserFailure, channel: 'whatsapp', accountEmail: 'francisco@example.com' }]);
   });
 });
