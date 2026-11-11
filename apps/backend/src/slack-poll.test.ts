@@ -36,13 +36,17 @@ const pollWith = (slack: ReturnType<typeof scriptedSlack>, store = openSlackMess
 
 const pollClock = { now: () => new Date('2026-11-10T18:00:00.000Z') };
 
-// An is:dm search answering one match in the given DM conversation; every other search finds nothing.
-const directMessageSearchNaming =
-  (conversationId: string): SlackRoute =>
+// A search answering the given matches to a query that starts with the given prefix; every other search finds nothing.
+const searchAnswering =
+  (queryPrefix: string, matches: unknown[]): SlackRoute =>
   (url) =>
-    url.searchParams.get('query')?.startsWith('is:dm') === true
-      ? { ok: true, messages: { matches: [{ ts: '1762700000.000100', channel: { id: conversationId } }] } }
+    url.searchParams.get('query')?.startsWith(queryPrefix) === true
+      ? { ok: true, messages: { matches } }
       : { ok: true, messages: { matches: [] } };
+
+// An is:dm search answering one match in the given DM conversation; every other search finds nothing.
+const directMessageSearchNaming = (conversationId: string): SlackRoute =>
+  searchAnswering('is:dm', [{ ts: '1762700000.000100', channel: { id: conversationId } }]);
 
 describe('pollSlackWorkspace', () => {
   it("stores each DM message with its workspace, conversation, sender, the sender's display name, text and timestamp", async () => {
@@ -208,18 +212,10 @@ describe('pollSlackWorkspace', () => {
 
   it('reads the history of a DM conversation once though several is:dm matches name it', async () => {
     const slack = scriptedSlack({
-      '/search.messages': (url) =>
-        url.searchParams.get('query')?.startsWith('is:dm') === true
-          ? {
-              ok: true,
-              messages: {
-                matches: [
-                  { user: 'U0002', text: 'Ping', ts: '1762780000.000200', channel: { id: 'D0002' } },
-                  { user: 'U0002', text: 'Hello?', ts: '1762770000.000100', channel: { id: 'D0002' } },
-                ],
-              },
-            }
-          : { ok: true, messages: { matches: [] } },
+      '/search.messages': searchAnswering('is:dm', [
+        { user: 'U0002', text: 'Ping', ts: '1762780000.000200', channel: { id: 'D0002' } },
+        { user: 'U0002', text: 'Hello?', ts: '1762770000.000100', channel: { id: 'D0002' } },
+      ]),
       '/conversations.history': () => ({ ok: true, messages: [] }),
     });
 
@@ -422,10 +418,7 @@ describe('pollSlackWorkspace', () => {
       ts: '1762700100.000200',
     };
     const slack = scriptedSlack({
-      '/search.messages': (url) =>
-        url.searchParams.get('query')?.startsWith(`<@${ownSlackUserId}>`) === true
-          ? { ok: true, messages: { matches: [{ ...mention, channel: { id: 'C0001' } }] } }
-          : { ok: true, messages: { matches: [] } },
+      '/search.messages': searchAnswering(`<@${ownSlackUserId}>`, [{ ...mention, channel: { id: 'C0001' } }]),
     });
 
     const store = await pollWith(slack);
@@ -463,22 +456,14 @@ describe('pollSlackWorkspace', () => {
 
   it('stores a mention match the user sent themselves as sent by the user', async () => {
     const slack = scriptedSlack({
-      '/search.messages': (url) =>
-        url.searchParams.get('query')?.startsWith(`<@${ownSlackUserId}>`) === true
-          ? {
-              ok: true,
-              messages: {
-                matches: [
-                  {
-                    user: ownSlackUserId,
-                    text: `Note to self <@${ownSlackUserId}>`,
-                    ts: '1762700100.000200',
-                    channel: { id: 'C0001' },
-                  },
-                ],
-              },
-            }
-          : { ok: true, messages: { matches: [] } },
+      '/search.messages': searchAnswering(`<@${ownSlackUserId}>`, [
+        {
+          user: ownSlackUserId,
+          text: `Note to self <@${ownSlackUserId}>`,
+          ts: '1762700100.000200',
+          channel: { id: 'C0001' },
+        },
+      ]),
     });
 
     const store = await pollWith(slack);
@@ -489,28 +474,19 @@ describe('pollSlackWorkspace', () => {
   it("fetches replies only for threads the user wrote in, and stores each reply with its thread, marking the user's own as sent by them", async () => {
     const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
     const slack = scriptedSlack({
-      '/search.messages': (url) =>
-        url.searchParams.get('query')?.startsWith(ownMessagesQuery) === true
-          ? {
-              ok: true,
-              messages: {
-                // Slack's search matches carry no thread_ts: a reply names its thread only in its permalink.
-                matches: [
-                  {
-                    channel: { id: 'C0002' },
-                    ts: '1762700250.000350',
-                    permalink:
-                      'https://acme.slack.com/archives/C0002/p1762700250000350?thread_ts=1762700200.000300&cid=C0002',
-                  },
-                  {
-                    channel: { id: 'C0003' },
-                    ts: '1762700260.000360',
-                    permalink: 'https://acme.slack.com/archives/C0003/p1762700260000360',
-                  },
-                ],
-              },
-            }
-          : { ok: true, messages: { matches: [] } },
+      // Slack's search matches carry no thread_ts: a reply names its thread only in its permalink.
+      '/search.messages': searchAnswering(ownMessagesQuery, [
+        {
+          channel: { id: 'C0002' },
+          ts: '1762700250.000350',
+          permalink: 'https://acme.slack.com/archives/C0002/p1762700250000350?thread_ts=1762700200.000300&cid=C0002',
+        },
+        {
+          channel: { id: 'C0003' },
+          ts: '1762700260.000360',
+          permalink: 'https://acme.slack.com/archives/C0003/p1762700260000360',
+        },
+      ]),
       '/conversations.replies': () => ({
         ok: true,
         messages: [
@@ -537,18 +513,10 @@ describe('pollSlackWorkspace', () => {
     const threadPermalink = (ts: string) =>
       `https://example.slack.com/archives/C0001/p${ts.replace('.', '')}?thread_ts=1762700000.000100`;
     const slack = scriptedSlack({
-      '/search.messages': (url) =>
-        url.searchParams.get('query')?.startsWith(`from:<@${ownSlackUserId}>`) === true
-          ? {
-              ok: true,
-              messages: {
-                matches: [
-                  { permalink: threadPermalink('1762700300.000300'), channel: { id: 'C0001' } },
-                  { permalink: threadPermalink('1762700200.000200'), channel: { id: 'C0001' } },
-                ],
-              },
-            }
-          : { ok: true, messages: { matches: [] } },
+      '/search.messages': searchAnswering(`from:<@${ownSlackUserId}>`, [
+        { permalink: threadPermalink('1762700300.000300'), channel: { id: 'C0001' } },
+        { permalink: threadPermalink('1762700200.000200'), channel: { id: 'C0001' } },
+      ]),
       '/conversations.replies': () => ({ ok: true, messages: [] }),
     });
 
@@ -559,22 +527,13 @@ describe('pollSlackWorkspace', () => {
 
   it("asks conversations.replies on a second poll only for replies newer than the thread's newest stored one", async () => {
     const slack = scriptedSlack({
-      '/search.messages': (url) =>
-        url.searchParams.get('query')?.startsWith(`from:<@${ownSlackUserId}>`) === true
-          ? {
-              ok: true,
-              messages: {
-                matches: [
-                  {
-                    channel: { id: 'C0002' },
-                    ts: '1762700250.000350',
-                    permalink:
-                      'https://acme.slack.com/archives/C0002/p1762700250000350?thread_ts=1762700200.000300&cid=C0002',
-                  },
-                ],
-              },
-            }
-          : { ok: true, messages: { matches: [] } },
+      '/search.messages': searchAnswering(`from:<@${ownSlackUserId}>`, [
+        {
+          channel: { id: 'C0002' },
+          ts: '1762700250.000350',
+          permalink: 'https://acme.slack.com/archives/C0002/p1762700250000350?thread_ts=1762700200.000300&cid=C0002',
+        },
+      ]),
       '/conversations.replies': () => ({
         ok: true,
         messages: [{ user: 'U0003', text: 'Carrier confirmed Thursday.', ts: '1762700300.000400' }],
