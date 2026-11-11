@@ -5,17 +5,18 @@
 
 - [ ] A WhatsApp report (channel `whatsapp`, a chat list with title, unread count and last message time, and the open chat's messages with id, sender, time, text and sent-by-user) passes the shared contract schema
 - [ ] A WhatsApp report whose message has no id fails the shared contract schema
-- [ ] Parsing the saved chat-list fixture yields each chat's title, unread count and last message time
-- [ ] A chat in the chat-list fixture with no unread badge parses with an unread count of 0
-- [ ] Parsing the saved open-chat fixture yields each message's id (from the row's `data-id`) and text
-- [ ] A message row whose `data-id` starts with `true_` parses as sent by the user
-- [ ] A message row whose `data-id` starts with `false_` parses as not sent by the user
-- [ ] A message's sender name and time are read from its `data-pre-plain-text` attribute
+- [ ] The chat-list and open-chat fixtures in `apps/extension/src/` are trimmed from the user's masked WhatsApp Web structure (captured 2026-11-10, every text, name and number masked; message ids replaced by made-up ones): a one-to-one chat and a group with the user's own messages
+- [ ] Parsing the saved chat-list fixture yields each chat's title (`[data-testid="cell-frame-title"] span[title]`), unread count and last message time (`[data-testid="chat-list-timestamp"]`)
+- [ ] A chat-list row's unread count is the number in its unread badge (a span in `cell-frame-secondary` whose `aria-label` starts with that number); a row with no badge parses with an unread count of 0
+- [ ] Parsing the saved open-chat fixture yields each message's id (the row's `data-id`, a bare hex id on the real page) and text (`[data-testid="selectable-text"]`); rows WhatsApp has not rendered (no `msg-container`) are skipped
+- [ ] A message row whose `msg-meta` holds a delivery-status icon (a labelled span, the ✓✓) parses as sent by the user; on the real page `data-id` no longer starts with `true_`/`false_`
+- [ ] A message row whose `msg-meta` has no delivery-status icon parses as not sent by the user
+- [ ] A message's sender name and time are read from its `data-pre-plain-text` attribute (`[9:41 pm, 30/9/2026] Name: `: 12-hour time, day/month/year as on the user's page; an unsaved group member's name is their phone number)
 - [ ] Two messages in the open-chat fixture dated on different days parse to their own dates
 - [ ] When no chat is open (no chat pane), the parse succeeds with the chat list and no messages
 - [ ] When the chat pane is present but the message-row selector matches nothing, the parse reports a failure naming that selector instead of an empty message list
 - [ ] When the chat-list selector matches nothing, the parse reports a failure naming that selector
-- [ ] When a message row has no `data-pre-plain-text`, the parse reports a failure naming that attribute
+- [ ] A rendered message row with no `data-pre-plain-text` and no text (a photo or sticker) parses as a placeholder (`[photo]`, `[sticker]`) taking its time from `msg-meta`; the parse reports a failure naming `data-pre-plain-text` only when no rendered row in the open chat has it
 - [ ] The report built from the fixture document passes the shared contract schema before it is posted
 - [ ] `POST /chat-messages` with a valid WhatsApp report stores its messages, and `GET /chat-messages` lists them with channel `whatsapp`
 - [ ] `POST /chat-messages` with a body that fails the contract schema answers 400 and stores nothing
