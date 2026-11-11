@@ -1284,8 +1284,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   function describeChatItems() {
     const newestMessageByChat = new Map(chatMessageStore.listMessages().map((message) => [message.chatId, message]));
     const verdicts = chatMessageStore.listVerdicts();
-    const hasVerdict = (message: { chatId: string; messageId: string }) =>
-      verdicts.some((verdict) => verdict.chatId === message.chatId && verdict.messageId === message.messageId);
+    const hasVerdict = (message: { channel: string; chatId: string; messageId: string }) =>
+      verdicts.some(
+        (verdict) =>
+          verdict.channel === message.channel &&
+          verdict.chatId === message.chatId &&
+          verdict.messageId === message.messageId,
+      );
     return [...newestMessageByChat.values()]
       .filter((message) => !message.sentByUser && !message.chatIsBot && !hasVerdict(message))
       .map(({ channel, chatId, messageId, chatTitle, senderName, text, time }) => ({

@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-11 00:36 · `apps/backend/src/app-chat.test.ts::keeps at GET /triage-queue a WhatsApp message whose only stored verdict with its chat id and message id is on Telegram, since a verdict hides only its own channel's message`
+- Behavior: A WhatsApp message with a stored verdict is no longer in the triage queue
+- Predicted: first draft (WhatsApp verdict hides the WhatsApp message) passes vacuously
+- Actual: passed on first run, as predicted
+- Type: passed unexpectedly
+- Resolution: `describeChatItems` already hides any message whose chatId + messageId has a verdict, and WhatsApp messages are stored with the chat title as chatId, so the item's literal behavior existed; rewrote the test to drive what is missing: verdict matching ignores channel, so a Telegram verdict with the same ids hid the WhatsApp message (now fails: `expected [] to deeply equal [ObjectContaining{channel: 'whatsapp', …}]`).
+
 ## 2026-11-10 22:52 · `apps/extension/src/whatsapp-page-parser.test.ts::dates each message in the saved group chat on its own day, across the change from one day to the next`
 - Behavior: Two messages in the open-chat fixture dated on different days parse to their own dates
 - Predicted: passes on first run (behavior already delivered by the `data-pre-plain-text` item, a6ef124, which parses each row's own date)
