@@ -1203,6 +1203,35 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('moves a WhatsApp contact into VIP at GET /people once marked through PUT /whatsapp-contacts/:name/marks/vip, and out again through DELETE', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '9:41 am' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5FA',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Hola',
+            sentByUser: false,
+          },
+        ],
+      },
+    });
+
+    await app.request('/whatsapp-contacts/Ana/marks/vip', { method: 'PUT' });
+    const marked = await getJson<{ vip: unknown[]; everyoneElse: unknown[] }>(app, '/people');
+    await app.request('/whatsapp-contacts/Ana/marks/vip', { method: 'DELETE' });
+    const unmarked = await getJson<{ vip: unknown[]; everyoneElse: unknown[] }>(app, '/people');
+
+    expect(marked.vip).toEqual([expect.objectContaining({ channel: 'whatsapp', displayName: 'Ana' })]);
+    expect(marked.everyoneElse).toEqual([]);
+    expect(unmarked.vip).toEqual([]);
+  });
+
   it('stores a WhatsApp message time in UTC, as every other chat message is, so times from different channels order correctly', async () => {
     const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
     await postJson(app, '/chat-messages', {

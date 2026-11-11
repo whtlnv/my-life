@@ -2046,6 +2046,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     contactDetailsStore.removeMark(slackContactKey(context.req.param()), 'vip');
     return context.body(null, 200);
   });
+  app.put('/whatsapp-contacts/:name/marks/vip', (context) => {
+    contactDetailsStore.saveMark(`whatsapp:${context.req.param('name')}`, 'vip');
+    return context.body(null, 200);
+  });
+  app.delete('/whatsapp-contacts/:name/marks/vip', (context) => {
+    contactDetailsStore.removeMark(`whatsapp:${context.req.param('name')}`, 'vip');
+    return context.body(null, 200);
+  });
   app.delete('/telegram-contacts/:userId/marks/vip', (context) => {
     contactDetailsStore.removeMark(telegramContactKey(context.req.param('userId')), 'vip');
     return context.body(null, 200);
@@ -2288,13 +2296,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
               (message) => chatIds.has(message.chatId) && (message.sentByUser || message.senderId === newest.senderId),
             )
             .map((message) => ({ threadId: message.chatId, receivedAt: message.time, sentByUser: message.sentByUser })),
-          contactKey: telegramContactKey(newest.senderId),
+          contactKey: chatContactKey(newest),
           contact: chatSenderAsContact(newest),
         });
       },
     );
-    const isFromMarkedTelegramSender = (message: { senderId: string }): boolean =>
-      markedContactKeys.has(telegramContactKey(message.senderId));
+    const isFromMarkedTelegramSender = (message: { channel: string; senderId: string }): boolean =>
+      markedContactKeys.has(chatContactKey(message));
     const isFromMarkedSlackSender = (message: SlackMessage): boolean =>
       markedContactKeys.has(slackSenderContactKey(message));
     return {
@@ -2540,6 +2548,11 @@ function slackTimestampAsIso(timestamp: string): string {
 
 function slackContactKey({ workspaceTeamId, userId }: { workspaceTeamId: string; userId: string }): string {
   return `slack:${workspaceTeamId}/${userId}`;
+}
+
+// A chat sender's contact key: Telegram senders by user id (as stored since Phase 6a), WhatsApp senders by name.
+function chatContactKey(message: { channel: string; senderId: string }): string {
+  return message.channel === 'whatsapp' ? `whatsapp:${message.senderId}` : telegramContactKey(message.senderId);
 }
 
 function telegramContactKey(userId: string): string {
