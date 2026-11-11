@@ -634,7 +634,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/health', (context) => context.json({ ok: true } satisfies HealthResponse));
   app.get('/chat-messages', (context) => context.json({ messages: chatMessageStore.listMessages() }));
   app.post('/chat-messages', async (context) => {
-    const report = whatsappReport.parse(await context.req.json());
+    const parsed = whatsappReport.safeParse(await context.req.json());
+    if (!parsed.success) {
+      return context.body(null, 400);
+    }
+    const report = parsed.data;
     for (const message of report.openChat.messages) {
       chatMessageStore.saveMessage({
         channel: report.channel,

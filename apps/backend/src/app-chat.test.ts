@@ -112,6 +112,31 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('refuses at POST /chat-messages, with 400, a body that fails the WhatsApp report schema, and stores nothing', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    const reportWithMessageMissingItsId = {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 1, lastMessageAt: '2026-11-10T09:41:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+        ],
+      },
+    };
+
+    const response = await postJson(app, '/chat-messages', reportWithMessageMissingItsId);
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(response.status).toBe(400);
+    expect(messages).toEqual([]);
+  });
+
   it('stores an ignore verdict on that chat message at POST /chat-verdicts', async () => {
     const databasePath = temporaryDatabasePath();
     const app = createApp({ allowedEmails: [], databasePath });
