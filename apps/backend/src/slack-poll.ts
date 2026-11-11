@@ -37,8 +37,11 @@ async function fetchOwnSlackUserId(input: PollSlackWorkspaceInput): Promise<stri
   return ownSlackUserId;
 }
 
+// A person's message names its user; an app's message has no user, only a bot id and the username it posts as.
 interface SlackMessage {
-  user: string;
+  user?: string;
+  bot_id?: string;
+  username?: string;
   text: string;
   ts: string;
 }
@@ -91,11 +94,13 @@ async function saveSlackMessage(
   message: SlackMessage,
   { threadTimestamp, ownSlackUserId }: { threadTimestamp?: string; ownSlackUserId?: string } = {},
 ): Promise<void> {
-  const senderName = await fetchSlackDisplayName(input, message.user);
+  const senderUserId = message.user ?? message.bot_id ?? '';
+  const senderName =
+    message.user === undefined ? (message.username ?? senderUserId) : await fetchSlackDisplayName(input, message.user);
   input.store.saveMessage({
     workspaceTeamId: input.workspace.teamId,
     conversationId,
-    senderUserId: message.user,
+    senderUserId,
     senderName,
     text: message.text,
     timestamp: message.ts,

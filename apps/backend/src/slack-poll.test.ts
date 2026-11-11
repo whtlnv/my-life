@@ -420,6 +420,30 @@ describe('pollSlackWorkspace', () => {
     expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: 'U0404', senderName: 'U0404' })]);
   });
 
+  it("stores an app's message, which has no user but a bot id and a username, under the bot id and the username", async () => {
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({
+        ok: true,
+        messages: [
+          {
+            subtype: 'bot_message',
+            bot_id: 'B0001',
+            username: 'Deploy Bot',
+            text: 'Deploy finished.',
+            ts: '1762700000.000100',
+          },
+        ],
+      }),
+    });
+
+    const store = await pollWith(slack);
+
+    expect(store.listMessages()).toEqual([
+      expect.objectContaining({ senderUserId: 'B0001', senderName: 'Deploy Bot' }),
+    ]);
+  });
+
   it("stores a message's sender name as the sender's real name when Slack answers an empty display name", async () => {
     const slack = scriptedSlack({
       '/search.messages': directMessageSearchNaming('D0001'),
