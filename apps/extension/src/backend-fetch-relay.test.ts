@@ -37,7 +37,7 @@ describe('answerBackendFetch', () => {
     const answer = await answerBackendFetch(
       {
         fetch: (input) => {
-          requested.push(input.toString());
+          requested.push(input instanceof Request ? input.url : String(input));
           return Promise.resolve(Response.json({}));
         },
         backendUrl: 'http://127.0.0.1:7777',
