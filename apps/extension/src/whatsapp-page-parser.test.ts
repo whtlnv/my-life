@@ -210,7 +210,7 @@ describe('parseWhatsappPage', () => {
 
     expect(parseWhatsappPage(document)).toEqual({
       ok: false,
-      missingSelector: expect.stringContaining('data-pre-plain-text'),
+      missingSelector: expect.stringContaining('data-pre-plain-text') as unknown,
     });
   });
 
