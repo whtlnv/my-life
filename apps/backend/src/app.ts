@@ -1105,9 +1105,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   app.post('/digests/:id/confirmation', (context) => {
     const digestId = context.req.param('id');
-    const botChatMessages = [...unconfirmedBotMessagesByChat()].find(
-      ([chatId]) => identifyBotChatDigest(chatId) === digestId,
-    )?.[1];
+    const botChatMessages = unconfirmedBotChatDigestMessages(digestId);
     if (botChatMessages) {
       for (const { channel, chatId, messageId } of botChatMessages)
         chatMessageStore.saveVerdict({ channel, chatId, messageId, decision: 'confirmed' });
@@ -1197,6 +1195,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
   }
   const identifyBotChatDigest = (chatId: string) => JSON.stringify(['bot-chat', chatId]);
+  function unconfirmedBotChatDigestMessages(digestId: string) {
+    return [...unconfirmedBotMessagesByChat()].find(([chatId]) => identifyBotChatDigest(chatId) === digestId)?.[1];
+  }
   function describeBotChatDigests() {
     return [...unconfirmedBotMessagesByChat()].map(([chatId, messages]) => ({
       id: identifyBotChatDigest(chatId),
