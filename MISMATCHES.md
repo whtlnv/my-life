@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 18:01 · `apps/backend/src/slack-poll.test.ts::logs no failure when every workspace polls successfully`
+- Behavior: A successful Slack workspace poll logs no error
+- Predicted: passes on first run, since `pollSlackWorkspaces` calls `logPollFailure` only inside its `catch` (shipped by the previous item, ab5de77)
+- Actual: passes (1 passed)
+- Type: passed unexpectedly
+- Resolution: The behavior is the other half of the previous item, and the minimal green for that item already covers it, so no version of the test can fail without asserting something else. The test stays as a guard against logging on success; /green has nothing to implement. Separately, `apps/backend/src/app.ts:770` does not pass `logPollFailure`, so the real backend logs nothing yet. That wiring needs its own item.
+
 ## 2026-11-10 17:55 · `apps/backend/src/app-slack.test.ts::lists again at GET /triage-queue a conversation's Slack item, carrying the newer message, when a message arrives after the user confirmed ignore on its newest one`
 - Behavior: A Slack message newer than the card's verdict brings the conversation's card back, carrying the newer message
 - Predicted: passes on first run (verdicts are keyed per message and `describeSlackItems` takes the newest message per conversation before filtering decided ones); fallback AssertionError with `slackItems` empty

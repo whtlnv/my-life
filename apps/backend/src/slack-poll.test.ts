@@ -627,4 +627,28 @@ describe('pollSlackWorkspaces', () => {
       { teamId: 'T0001', error: new Error('Slack workspace T0001 answered invalid_auth') },
     ]);
   });
+
+  it('logs no failure when every workspace polls successfully', async () => {
+    const slack = scriptedSlack({
+      '/auth.test': () => ({ ok: true, user_id: ownSlackUserId }),
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({
+        ok: true,
+        messages: [{ user: 'U0001', text: 'Hi', ts: '1762700000.000100' }],
+      }),
+    });
+    const loggedFailures: { teamId: string; error: unknown }[] = [];
+
+    const succeeded = await pollSlackWorkspaces({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      clock: pollClock,
+      workspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+      store: openSlackMessageStore(':memory:'),
+      logPollFailure: (teamId, error) => loggedFailures.push({ teamId, error }),
+    });
+
+    expect([...succeeded]).toEqual(['T0001']);
+    expect(loggedFailures).toEqual([]);
+  });
 });
