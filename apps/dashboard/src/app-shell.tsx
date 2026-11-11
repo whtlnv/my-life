@@ -83,6 +83,10 @@ function describeSource(source: SourceStatus | undefined, label: string): string
   return source === undefined ? `${label} never` : `${label} ${timeInBusinessZone(source.lastReportedAt)}`;
 }
 
+function sourceChipClassName(stale: boolean): string {
+  return stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh';
+}
+
 // Compact on purpose: the dot carries the state, the tooltip the times. A stale source is named so the chip says
 // what is wrong without opening the Now page.
 function AccountChip({ account }: { account: AccountStatus }) {
@@ -90,7 +94,7 @@ function AccountChip({ account }: { account: AccountStatus }) {
   const stale = staleSources.length > 0;
   const title = `${account.email} · ${describeSource(account.calendar, 'calendar')} · ${describeSource(account.mail, 'mail')}`;
   return (
-    <li className={stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'} title={title}>
+    <li className={sourceChipClassName(stale)} title={title}>
       <span className="dot" aria-hidden="true" />
       <span className="chip-account">{accountName(account.email)}</span>
       {stale && <span className="chip-detail is-stale">{staleSources.join(' + ')} stale</span>}
@@ -106,10 +110,7 @@ function SlackWorkspaceChip({ workspace }: { workspace: SlackWorkspaceStatus }) 
       ? 'never polled'
       : `polled ${timeInBusinessZone(workspace.lastSuccessfulPollAt)}`;
   return (
-    <li
-      className={workspace.stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
-      title={`Slack ${name} · ${polled}`}
-    >
+    <li className={sourceChipClassName(workspace.stale === true)} title={`Slack ${name} · ${polled}`}>
       <span className="dot" aria-hidden="true" />
       <span className="chip-account">{name}</span>
       {workspace.stale && <span className="chip-detail is-stale">slack stale</span>}
@@ -136,7 +137,7 @@ function TelegramConnectedChip({
 }) {
   return (
     <li
-      className={stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
+      className={sourceChipClassName(stale)}
       title={`Telegram · ${activityLabel} ${timeInBusinessZone(lastActivityAt)}`}
     >
       <span className="dot" aria-hidden="true" />
@@ -149,7 +150,7 @@ function TelegramConnectedChip({
 function WhatsappChip({ whatsapp }: { whatsapp: NonNullable<ShellStatus['whatsapp']> }) {
   return (
     <li
-      className={whatsapp.stale ? 'chip chip-source is-stale' : 'chip chip-source is-fresh'}
+      className={sourceChipClassName(whatsapp.stale)}
       title={`WhatsApp · last report ${timeInBusinessZone(whatsapp.lastReportedAt)}`}
     >
       <span className="chip-account">whatsapp</span>
