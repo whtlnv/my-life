@@ -71,13 +71,11 @@ export function openSlackMessageStore(databasePath: string) {
       return selectVerdicts.all();
     },
     listMessages(): SlackMessage[] {
-      return selectMessages
-        .all()
-        .map(({ sentByUser, threadTimestamp, ...message }) => ({
-          ...message,
-          ...(threadTimestamp === null ? {} : { threadTimestamp }),
-          ...(sentByUser === 1 ? { sentByUser: true as const } : {}),
-        }));
+      return selectMessages.all().map(({ sentByUser, threadTimestamp, ...message }) => ({
+        ...message,
+        ...(threadTimestamp === null ? {} : { threadTimestamp }),
+        ...(sentByUser === 1 ? { sentByUser: true as const } : {}),
+      }));
     },
   };
 }
