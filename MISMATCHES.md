@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-11 00:59 · `apps/backend/src/app-chat.test.ts::leaves out of GET /people a WhatsApp message the user sent, so the user is not listed as their own WhatsApp contact`
+- Behavior: The user's own WhatsApp messages do not list the user as a WhatsApp contact
+- Predicted: passes on first run (not a right-reason failure) — every `/people` group filters chat messages through `isFromSomeoneElse` regardless of channel
+- Actual: passed
+- Type: passed unexpectedly (by the item; predicted by the reading)
+- Resolution: The behavior shipped with the previous item (02ace23): WhatsApp messages share the channel-agnostic `sentByUser` filter on every `/people` list. No failing rewrite exists without testing a different behavior; the test is kept as a guard and the TODO item needs no green step.
+
 ## 2026-11-11 00:53 · `apps/backend/src/app-chat.test.ts::lists at GET /people, under Everyone else on channel whatsapp, the sender of a WhatsApp message, and lists that message at GET /whatsapp-contacts/:name/timeline`
 - Behavior: A WhatsApp sender appears on the People tab as a contact with their WhatsApp messages in the timeline
 - Predicted: AssertionError — `/people` lists Ana with channel `telegram` and `telegramHandles`, since every chat message goes through `telegramSenderAsContact`

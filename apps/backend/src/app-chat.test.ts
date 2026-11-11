@@ -986,6 +986,36 @@ describe('createApp chat messages', () => {
       expect.objectContaining({ channel: 'whatsapp', text: 'Can we move the call to tomorrow?' }),
     ]);
   });
+  it('leaves out of GET /people a WhatsApp message the user sent, so the user is not listed as their own WhatsApp contact', async () => {
+    const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/chat-messages', {
+      channel: 'whatsapp',
+      chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '2026-11-10T09:45:00-06:00' }],
+      openChat: {
+        title: 'Ana',
+        messages: [
+          {
+            id: '3EB0A1B2C3D4E5F6',
+            sender: 'Ana',
+            sentAt: '2026-11-10T09:41:00-06:00',
+            text: 'Can we move the call to tomorrow?',
+            sentByUser: false,
+          },
+          {
+            id: '3EB0F6E5D4C3B2A1',
+            sender: 'You',
+            sentAt: '2026-11-10T09:45:00-06:00',
+            text: 'Tomorrow works.',
+            sentByUser: true,
+          },
+        ],
+      },
+    });
+
+    const { everyoneElse } = await getJson<{ everyoneElse: unknown[] }>(app, '/people');
+
+    expect(everyoneElse).toEqual([expect.objectContaining({ channel: 'whatsapp', whatsappHandles: [{ name: 'Ana' }] })]);
+  });
   it('lists at GET /people under VIP, after a backend restart on the same database file, a Telegram contact marked vip through PUT /telegram-contacts/:userId/marks/vip before it', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
