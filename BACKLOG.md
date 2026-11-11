@@ -15,7 +15,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
-- **[apps/backend/src/app.ts:2246] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10)
+- **[apps/backend/src/app.ts:2347] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10)
   Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
   scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
   agent (Phase 4) needs ranking.
@@ -31,17 +31,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   so Claude's tool inputs are only checked for required properties by `claude-agent.ts`. Make the schemas strict and send
   `strict: true` when a malformed tool input is seen in practice, or with the next change to the agent tools.
 
-- **[apps/backend/src/app.ts:723] Each Slack workspace's name, URL and last poll live only in memory** (added: 2026-11-09; location corrected 2026-11-10)
-  `slackWorkspacePolls` is filled by `POST /slack-poll`, and `main.ts` first calls it one polling interval after start. Until
-  then, after a restart, Slack items show team ids, links fall back to the hand-built `app.slack.com` form, and the source
-  chip says never polled. Store the `auth.test` answer per workspace, or poll once at startup.
-- **[apps/backend/src/slack-poll.ts:44] The Slack poll asks `users.info` for every message on every poll, and `auth.test` three times** (added: 2026-11-09)
-  No cache of display names or of the own user id. Slack's tier limits allow it at today's volume; cache both per poll when a
-  workspace with many DMs hits 429s.
-- **[apps/backend/src/slack-poll.ts:150] A failed Slack poll is swallowed with no log** (added: 2026-11-09)
-  `pollSlackWorkspaces` catches every error (invalid_auth, a missing scope, a changed response shape) and only leaves the
-  workspace's last poll time unchanged, so the chip turns stale with no reason given. Log the error and show it on the chip.
-
 ## Out of Scope
 
 - **[apps/dashboard/src/app-shell.tsx:23] The `GET /now` Telegram status shape is declared apart from the route that builds it** (added: 2026-11-10)
@@ -55,7 +44,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   call `auth.test` and pick fields out of its answer, so a change to how the identity is read has to be made three times.
   Deferred because unifying them sends the app's calls through `callSlack`, which retries on 429 and throws on
   `invalid_auth`. That changes what `POST /slack-poll` and `POST /slack-sends` do when Slack fails.
-- **[apps/backend/src/app.ts:1120] A task made from a Slack item stores the workspace team id as its `accountEmail`** (added: 2026-11-09; location corrected 2026-11-10)
+- **[apps/backend/src/app.ts:1145] A task made from a Slack item stores the workspace team id as its `accountEmail`** (added: 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10)
   `POST /slack-verdicts` saves `accountEmail: verdict.workspaceTeamId`, so a field every reader takes for an email address
   holds `T0001` for Slack tasks. Deferred because the field is stored in the task event log and returned by `GET /tasks`,
   which `app-slack.test.ts` pins, so renaming it (to an account id) changes stored data and the API output.
@@ -63,7 +52,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip` saves a `slack:<team>/<user>` key through `saveMark`, so
   `markedEmails()` returns keys that are not emails; the local in `GET /people` is renamed `markedContactKeys`, the store is
   not. Deferred because `contact-details-store.ts` sits outside 96c4939..HEAD.
-- **[apps/integration/src/slack-fake-server.test.ts:23] One 1284-line file of 52 tests mixes three subjects** (added: 2026-11-09; location corrected 2026-11-09)
+- **[apps/integration/src/slack-fake-server.test.ts:23] One 1338-line file of 54 tests mixes three subjects** (added: 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10)
   The fake's own answers, `pollSlackWorkspace` against the fake and the backend's Slack routes against the fake share one
   `describe`, so a reader of a failing route test scrolls past the fake's self-tests. Deferred because the split needs test
   files with no sibling source in `apps/integration`, against the project's co-location rule; decide the layout first.
@@ -82,14 +71,14 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `recordingAction` in `apps/backend/src/app.ts` reads only `record.outcome` and runs the tool itself, so `effects` looks
   like the list of actions to perform while nothing performs it. Deferred because `agent-action.test.ts` asserts the field
   in two tests, so dropping it changes the function's tested output; it is a `/test-quality` matter first.
-- **[apps/backend/src/app.ts:1981] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10)
+- **[apps/backend/src/app.ts:2070] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10)
   `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
   reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
   for them would look live and do nothing. Deferred because honoring them changes what `createApp` does with its options.
 - **[apps/dashboard/src/dashboard-app.tsx:160] `millisecondsPerDay` is defined again in the statement page** (added: 2026-11-08)
   `dashboard-app.tsx` (`86_400_000`) and `statement-page.tsx` (`24 * 60 * 60 * 1000`) each define it. Deferred because the
   dashboard has no shared time module to hoist it into, and the statement page's copy goes with its `mondayOf` entry below.
-- **[apps/dashboard/src/triage-page.tsx:567] The Handled for you copy spells the backend's automatic label** (added: 2026-11-08)
+- **[apps/dashboard/src/triage-page.tsx:620] The Handled for you copy spells the backend's automatic label** (added: 2026-11-08; location corrected 2026-11-10)
   The toggle text says items are "labeled my-life/auto", the label `automaticLabelName` in `apps/backend/src/app.ts` puts on
   every automatic archive and its undo removes; renaming the backend constant leaves the dashboard naming a label Gmail no
   longer shows. Deferred for the same reason as the `my-life/archived` entry below: no shared package holds plain constants.
@@ -98,7 +87,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `groups`, so `TriageGroup.systems`, `SystemSection` and the `sales` / `calendar-drive` cases of `GroupRows` never render
   live data but read as live. Deferred because `triage-page.test.tsx` pins each of them with a hand-built response, and a
   refactor pass never deletes a test; it is a `/test-quality` matter (the domain's `systems` in `triage-queue.ts` goes with it).
-- **[apps/backend/src/app.ts:51] The `/bodies-missing` and `/bodies-report` bodies are declared apart from the extension that sends and reads them** (added: 2026-11-08)
+- **[apps/backend/src/app.ts:81] The `/bodies-missing` and `/bodies-report` bodies are declared apart from the extension that sends and reads them** (added: 2026-11-08; location corrected 2026-11-10)
   `BodiesReport` here and the `{ accountEmail, bodies }` post and `BodiesMissing` read in `apps/extension/src/body-backfill.ts`
   must change together, and nothing ties them: a renamed field compiles and the backfill silently stores nothing. Deferred for
   the same reason as the `/triage-queue` and `/now` entries below: there is no contract to share, and adding one is new
@@ -123,8 +112,8 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:466] `createApp` is one 1813-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10)
-  The file is 2384 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:469] `createApp` is one 1911-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10)
+  The file is 2485 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
@@ -137,11 +126,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Nothing in `apps/*` imports it (the backend tests stub `propose` inline), so it reads as a live Triage adapter while being dead.
   Deferred because deleting it deletes `scripted-triage.test.ts`, and a refactor pass never deletes a test; it is a
   `/test-quality` matter.
-- **[apps/backend/src/app.ts:453] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09)
+- **[apps/backend/src/app.ts:508] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-10)
   `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
   the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
   same message id (the map keeps the last account, the store's `INSERT OR IGNORE` the first), so dropping either changes behavior.
-- **[apps/dashboard/src/triage-page.tsx:39] The `GET /triage-queue` body shape is declared apart from the route that builds it** (added: 2026-11-07; description corrected 2026-11-07)
+- **[apps/dashboard/src/triage-page.tsx:87] The `GET /triage-queue` body shape is declared apart from the route that builds it** (added: 2026-11-07; description corrected 2026-11-07; location corrected 2026-11-10)
   `TriageQueueResponse` and `TriageItem` here and `splitActionFromGroups` in `apps/backend/src/app.ts` must change together, and
   nothing ties them: a renamed field compiles and the page reads it as missing. Deferred for the same reason as the `/now` entry
   below: there is no response contract to unify into, and adding one is new `packages/contracts` surface delivered test-first.
@@ -151,11 +140,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   returns must change together, and nothing ties them: a renamed field compiles and renders an empty dashboard. Deferred because
   there is no `/now` contract to unify into; adding one is new public surface in `packages/contracts`, which the project
   delivers test-first as a planned item.
-- **[apps/backend/src/startup-settings.ts:12] Default port 7777 is coupled to the extension's default backend URL** (added: 2026-11-02)
+- **[apps/backend/src/startup-settings.ts:45] Default port 7777 is coupled to the extension's default backend URL** (added: 2026-11-02; location corrected 2026-11-10)
   `defaultPort` and `defaultBackendUrl` in `apps/extension/src/backend-url.ts` must change together, but nothing ties them. Deferred
   because the fix has to edit `backend-url.ts`, which is outside aa9e97f..HEAD, and no existing shared package holds plain
   constants (`packages/contracts` holds zod schemas).
-- **[apps/dashboard/src/app-shell.tsx:33] Dashboard hard-codes the business time zone** (added: 2026-11-02; description corrected 2026-11-07; location corrected 2026-11-08; description corrected 2026-11-10)
+- **[apps/dashboard/src/app-shell.tsx:45] Dashboard hard-codes the business time zone** (added: 2026-11-02; description corrected 2026-11-07; location corrected 2026-11-08; description corrected 2026-11-10; location corrected 2026-11-10)
   `businessTimeZone` here, which the Now, Triage, People, Filters and Agent pages import, is a third copy of `America/Mexico_City`, alongside the two
   (backend `startup-settings.ts`, extension `background.ts`) in § Config gaps. Deferred to the same change: when the time
   zone becomes a setting, the dashboard should get it from `GET /now`, which changes behavior.
