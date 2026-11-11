@@ -214,13 +214,7 @@ describe('pollSlackWorkspace', () => {
     });
     const store = openSlackMessageStore(':memory:');
 
-    await pollSlackWorkspace({
-      fetch: slack.fetch,
-      apiUrl: 'https://slack.test',
-      workspace,
-      store,
-      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
-    });
+    await pollWith(slack, store);
 
     expect(store.listMessages()).toEqual([
       expect.objectContaining({ conversationId: 'D0002', senderUserId: 'U0002', text: 'Are we still on for Friday?' }),
@@ -237,13 +231,7 @@ describe('pollSlackWorkspace', () => {
       }),
     });
 
-    await pollSlackWorkspace({
-      fetch: slack.fetch,
-      apiUrl: 'https://slack.test',
-      workspace,
-      store: openSlackMessageStore(':memory:'),
-      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
-    });
+    await pollWith(slack);
 
     const historyRequests = slack.requests.filter((url) => url.pathname === '/conversations.history');
     expect(historyRequests.map((url) => url.searchParams.get('channel'))).toEqual([]);
@@ -274,13 +262,7 @@ describe('pollSlackWorkspace', () => {
   it('never calls conversations.list', async () => {
     const slack = scriptedSlack();
 
-    await pollSlackWorkspace({
-      fetch: slack.fetch,
-      apiUrl: 'https://slack.test',
-      workspace,
-      store: openSlackMessageStore(':memory:'),
-      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
-    });
+    await pollWith(slack);
 
     expect(slack.requests.map((url) => url.pathname)).not.toContain('/conversations.list');
   });
@@ -313,13 +295,7 @@ describe('pollSlackWorkspace', () => {
       '/conversations.history': () => ({ ok: true, messages: [] }),
     });
 
-    await pollSlackWorkspace({
-      fetch: slack.fetch,
-      apiUrl: 'https://slack.test',
-      workspace,
-      store,
-      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
-    });
+    await pollWith(slack, store);
 
     const directMessageSearchPages = slack.requests
       .filter((url) => url.pathname === '/search.messages' && url.searchParams.get('query')?.startsWith('is:dm'))
