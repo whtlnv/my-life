@@ -62,6 +62,7 @@ const textOf = (row: Element): string => {
 
 const chatPaneSelector = '#main';
 const messageRowSelector = `${chatPaneSelector} [data-id]`;
+const prePlainTextSelector = `${messageRowSelector} [data-pre-plain-text]`;
 
 const metaTimePattern = /^(\d+):(\d+) (am|pm)$/;
 
@@ -110,6 +111,9 @@ export const parseWhatsappPage = (document: Document): WhatsappPage | WhatsappPa
   }
   if (document.querySelector(chatPaneSelector) !== null && document.querySelector(messageRowSelector) === null) {
     return { ok: false, missingSelector: messageRowSelector };
+  }
+  if (document.querySelector(messageRowSelector) !== null && document.querySelector(prePlainTextSelector) === null) {
+    return { ok: false, missingSelector: prePlainTextSelector };
   }
   return { ok: true, chats: parseWhatsappChatList(document), messages: parseWhatsappOpenChat(document) };
 };

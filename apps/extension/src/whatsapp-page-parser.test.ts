@@ -174,6 +174,27 @@ describe('parseWhatsappPage', () => {
     expect(parseWhatsappPage(document)).toEqual({ ok: false, missingSelector: '#main [data-id]' });
   });
 
+  it('fails naming the pre-plain-text label when no rendered message row in the open chat has one', () => {
+    const document = new DOMParser().parseFromString(
+      '<div id="pane-side"><div role="row"><div data-testid="cell-frame-title"><span title="Ana"></span></div>' +
+        '<div data-testid="chat-list-timestamp">9:41 am</div></div></div>' +
+        '<div id="main">' +
+        '<div data-id="3EB0F000000000AAA1B2C3"><div data-testid="msg-container">' +
+        '<div class="copyable-text"><span data-testid="selectable-text">Hola</span></div>' +
+        '<div data-testid="msg-meta"><span dir="auto"><span>9:41 pm</span></span></div></div></div>' +
+        '<div data-id="3EB0F000000000BBB1B2C3"><div data-testid="msg-container">' +
+        '<div data-testid="sticker-container"></div>' +
+        '<div data-testid="msg-meta"><span dir="auto"><span>9:55 pm</span></span></div></div></div>' +
+        '</div>',
+      'text/html',
+    );
+
+    expect(parseWhatsappPage(document)).toEqual({
+      ok: false,
+      missingSelector: expect.stringContaining('data-pre-plain-text'),
+    });
+  });
+
   it('fails naming the chat-list selector when the side pane holds no chat rows', () => {
     const document = new DOMParser().parseFromString(
       '<div id="pane-side"><div data-testid="chat-list"></div></div>',
