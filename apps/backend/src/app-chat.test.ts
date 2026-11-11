@@ -469,6 +469,45 @@ describe('createApp chat messages', () => {
     ).toEqual([{ spentAt: '2026-11-02T15:10:00.000Z', costInUsd: 0.25 }]);
   });
 
+  it("writes no Telegram bot digest summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines", async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '8001',
+      chatTitle: 'BBVA Alertas',
+      senderId: '8001',
+      senderName: 'BBVA Alertas',
+      sentByUser: false,
+      chatIsBot: true,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:00:00.000Z',
+    });
+    openSpendStore(databasePath).save({ spentAt: '2026-11-02T15:00:00.000Z', model: 'claude-opus-5-5', costInUsd: 1 });
+    let summaryCalls = 0;
+    const summary = {
+      summarize: () => {
+        summaryCalls += 1;
+        return Promise.resolve({ lines: ['BBVA Alertas: 1 card charge'], costInUsd: 0.25 });
+      },
+    };
+    const app = createApp({
+      allowedEmails: [],
+      clock: clockAtTenPastThree,
+      databasePath,
+      dailySpendCeilingInUsd: 1,
+      summary,
+    });
+
+    await postTriageRun(app);
+
+    const { digests } = await getJson<{ digests: object[] }>(app, '/triage-queue');
+    expect(summaryCalls).toBe(0);
+    expect(digests).toHaveLength(1);
+    expect(digests[0]).toMatchObject({ title: 'BBVA Alertas' });
+    expect(digests[0]).not.toHaveProperty('summaryLines');
+  });
+
   it('lists at GET /people, under Everyone else on channel telegram, the sender of a Telegram message as a contact with a Telegram handle of their user id and their display name', async () => {
     const databasePath = temporaryDatabasePath();
     saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');

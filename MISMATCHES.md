@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-10 19:16 · `apps/backend/src/app-chat.test.ts::writes no Telegram bot digest summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines`
+- Behavior: The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
+- Predicted: pass (stated before running) — the bot-digest path from b6395cb already goes through `summarizeWithinTheSpendCeiling`, which returns early at the ceiling
+- Actual: passed
+- Type: passed unexpectedly (for a Red step; matched the stated prediction)
+- Resolution: The behavior was delivered as a side effect of b6395cb reusing the shared ceiling-guarded summarizer. A mutation check (removing the guard) makes the test fail with `expected 1 to be +0`, so the test is not vacuous; it is kept as a pin and no rewrite can make it fail without changing production code. `/green` has nothing to implement.
+
 ## 2026-11-10 18:42 · `apps/backend/src/telegram-message-mapping.test.ts::stores a message from a chat with a person with the chat not marked as a bot`
 - Behavior: A Telegram message from a chat with a person is stored with the chat not marked as a bot
 - Predicted: passes on first run — the previous green step sets `chatIsBot` only when `chat.bot` is true, and the store adds it back only when the column is 1

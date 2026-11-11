@@ -53,7 +53,7 @@
 - [x] A Telegram bot chat with unconfirmed messages is a digest in the triage queue with the bot's name as title, channel `telegram` and the count of unconfirmed messages
 - [x] A Telegram bot chat whose messages are all confirmed is not a digest
 - [x] The triage run writes a Telegram bot digest's summary lines from its messages' text, with the call's spend logged
-- [ ] The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
+- [x] The triage run writes no Telegram bot digest summary once the daily spend ceiling is reached
 - [ ] Confirming a Telegram bot digest marks its messages handled, so the digest leaves the triage queue
 - [ ] A bot message arriving after a confirm opens a fresh digest counting only the new message
 - [ ] A Telegram message with a photo and no text is stored with text `[photo]`
