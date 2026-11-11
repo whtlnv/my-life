@@ -24,15 +24,21 @@ function recordPageActions(document: Document, actions: string[]) {
   });
 }
 
-const onMyWayCommand = { id: 'send-whatsapp-1', type: 'send-whatsapp', chatTitle: 'aaaaaaaaa aaaaaaa', text: 'On my way' };
+const onMyWayCommand = {
+  id: 'send-whatsapp-1',
+  type: 'send-whatsapp',
+  chatTitle: 'aaaaaaaaa aaaaaaa',
+  text: 'On my way',
+};
 
-function fakeBackend(actions: string[], commands: object[] = [onMyWayCommand]): FetchFunction {
+function fakeBackend(actions: string[], commands: object[]): FetchFunction {
   return (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
-    if (url.origin + url.pathname === `${backendUrl}/commands` && url.searchParams.get('accountEmail') === 'francisco@example.com') {
-      return Promise.resolve(
-        Response.json({ commands }),
-      );
+    if (
+      url.origin + url.pathname === `${backendUrl}/commands` &&
+      url.searchParams.get('accountEmail') === 'francisco@example.com'
+    ) {
+      return Promise.resolve(Response.json({ commands }));
     }
     const acknowledgementPath = /^\/commands\/([^/]+)\/acknowledgement$/.exec(url.pathname);
     if (url.origin === backendUrl && acknowledgementPath !== null && init?.method === 'POST') {
@@ -43,33 +49,28 @@ function fakeBackend(actions: string[], commands: object[] = [onMyWayCommand]): 
   };
 }
 
+async function carryOutSendsOnFixture(commands: object[]) {
+  const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
+  const actions: string[] = [];
+  recordPageActions(document, actions);
+  await carryOutWhatsappSends({
+    fetch: fakeBackend(actions, commands),
+    accountEmail: 'francisco@example.com',
+    backendUrl,
+    document,
+  });
+  return actions;
+}
+
 describe('carryOutWhatsappSends', () => {
   it('selects the chat with the command title, types the text into the composer, presses send and acknowledges the command', async () => {
-    const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
-    const actions: string[] = [];
-    recordPageActions(document, actions);
-
-    await carryOutWhatsappSends({
-      fetch: fakeBackend(actions),
-      accountEmail: 'francisco@example.com',
-      backendUrl,
-      document,
-    });
+    const actions = await carryOutSendsOnFixture([onMyWayCommand]);
 
     expect(actions).toEqual(['select aaaaaaaaa aaaaaaa', 'send On my way', 'acknowledge send-whatsapp-1']);
   });
 
   it('types nothing and does not acknowledge a command whose chat title is not in the chat list', async () => {
-    const document = fixtureDocument('whatsapp-one-to-one-chat.fixture.html');
-    const actions: string[] = [];
-    recordPageActions(document, actions);
-
-    await carryOutWhatsappSends({
-      fetch: fakeBackend(actions, [{ ...onMyWayCommand, chatTitle: 'Nobody In This List' }]),
-      accountEmail: 'francisco@example.com',
-      backendUrl,
-      document,
-    });
+    const actions = await carryOutSendsOnFixture([{ ...onMyWayCommand, chatTitle: 'Nobody In This List' }]);
 
     expect(actions).toEqual([]);
   });
