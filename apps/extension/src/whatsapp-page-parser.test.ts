@@ -1,12 +1,8 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs';
-
 import { describe, expect, it } from 'vitest';
 
 import { parseWhatsappChatList, parseWhatsappOpenChat, parseWhatsappPage } from './whatsapp-page-parser';
-
-const fixtureDocument = (fileName: string): Document =>
-  new DOMParser().parseFromString(readFileSync(new URL(fileName, import.meta.url), 'utf8'), 'text/html');
+import { fixtureDocument } from './whatsapp-fixture-document';
 
 describe('parseWhatsappChatList', () => {
   it('yields each chat in the saved chat list with its title, unread count and last message time', () => {

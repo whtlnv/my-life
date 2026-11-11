@@ -1,10 +1,6 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs';
-
 import { describe, expect, it } from 'vitest';
-
-const fixtureDocument = (fileName: string): Document =>
-  new DOMParser().parseFromString(readFileSync(new URL(fileName, import.meta.url), 'utf8'), 'text/html');
+import { fixtureDocument } from './whatsapp-fixture-document';
 
 const senderOf = (row: Element): string => {
   const prePlainText = row.querySelector('[data-pre-plain-text]')?.getAttribute('data-pre-plain-text') ?? '';

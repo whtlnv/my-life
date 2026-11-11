@@ -1,16 +1,12 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FetchFunction } from './fetch-function';
 import { parseWhatsappPage } from './whatsapp-page-parser';
 import { watchWhatsappPage } from './whatsapp-report-watch';
+import { fixtureDocument } from './whatsapp-fixture-document';
 
 const backendUrl = 'http://127.0.0.1:7777';
-
-const fixtureDocument = (fileName: string): Document =>
-  new DOMParser().parseFromString(readFileSync(new URL(fileName, import.meta.url), 'utf8'), 'text/html');
 
 function recordingBackend(postedReports: unknown[]): FetchFunction {
   return (input, init) => {

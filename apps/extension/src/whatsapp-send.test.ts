@@ -1,15 +1,11 @@
 // @vitest-environment jsdom
-import { readFileSync } from 'node:fs';
-
 import { describe, expect, it } from 'vitest';
 
 import type { FetchFunction } from './fetch-function';
 import { carryOutWhatsappSends } from './whatsapp-send';
+import { fixtureDocument } from './whatsapp-fixture-document';
 
 const backendUrl = 'http://127.0.0.1:7777';
-
-const fixtureDocument = (fileName: string): Document =>
-  new DOMParser().parseFromString(readFileSync(new URL(fileName, import.meta.url), 'utf8'), 'text/html');
 
 // Records, in order, what the page saw: a chat row clicked, the composer's text when Enter was pressed in it.
 function recordPageActions(document: Document, actions: string[]) {
