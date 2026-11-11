@@ -22,4 +22,10 @@ describe('buildWhatsappReport', () => {
       parseWhatsappChatList(document).map(({ lastMessagePreview }) => lastMessagePreview),
     );
   });
+
+  it("names the open chat by the title in the conversation header, so its messages are stored under that chat", () => {
+    const report = buildWhatsappReport(fixtureDocument('whatsapp-group-chat.fixture.html'));
+
+    expect(report.openChat.title).toBe('aaaaaaaaa aaaaaaaaaaa aaaaaa');
+  });
 });
