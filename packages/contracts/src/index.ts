@@ -7,3 +7,4 @@ export { contactDetails } from './contact-details';
 export { contactsImport, type ContactsImport } from './contacts-import';
 export { digestSummary } from './digest-summary';
 export { taskRanks, type TaskRanks } from './task-ranks';
+export { whatsappReport } from './whatsapp-report';
