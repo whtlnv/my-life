@@ -1296,7 +1296,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         senderName,
         text,
         time,
-        link: channel === 'whatsapp' ? 'https://web.whatsapp.com/' : telegramChatLink(chatId),
+        link: chatLink(channel, chatId),
       }));
   }
   app.get('/triage-queue', (context) => {
@@ -2486,6 +2486,10 @@ function telegramContactKey(userId: string): string {
 
 function telegramChatLink(chatId: string): string {
   return `https://web.telegram.org/k/#${chatId}`;
+}
+
+function chatLink(channel: ChatMessage['channel'], chatId: string): string {
+  return channel === 'whatsapp' ? 'https://web.whatsapp.com/' : telegramChatLink(chatId);
 }
 
 function slackClientLink(message: SlackMessageReference): string {
