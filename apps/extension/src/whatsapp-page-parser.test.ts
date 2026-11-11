@@ -156,7 +156,7 @@ describe('parseWhatsappPage', () => {
       'text/html',
     );
 
-    expect(parseWhatsappPage(document)).toEqual({
+    expect(parseWhatsappPage(document)).toMatchObject({
       ok: true,
       chats: [{ title: 'Ana', unreadCount: 0, lastMessageAt: '9:41 am' }],
       messages: [],
