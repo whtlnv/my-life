@@ -643,12 +643,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (whatsappStatus === undefined || whatsappStatus.parserBroken) {
       return whatsappStatus;
     }
-    const lastReportedAt = whatsappStatus.lastReportedAt;
-    const pollingIntervalInMilliseconds = whatsappReportIntervalInMilliseconds;
-    return {
-      ...whatsappStatus,
-      stale: !isAccountFresh({ email: 'whatsapp', lastReportedAt, pollingIntervalInMilliseconds }, clock),
+    const freshnessSubject = {
+      email: 'whatsapp',
+      lastReportedAt: whatsappStatus.lastReportedAt,
+      pollingIntervalInMilliseconds: whatsappReportIntervalInMilliseconds,
     };
+    return { ...whatsappStatus, stale: !isAccountFresh(freshnessSubject, clock) };
   };
   app.post('/chat-messages', async (context) => {
     const body = await context.req.json<{ ok?: boolean; missingSelector: string }>();
