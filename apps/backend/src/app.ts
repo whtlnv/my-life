@@ -1105,6 +1105,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   app.post('/digests/:id/confirmation', (context) => {
     const digestId = context.req.param('id');
+    const botChatMessages = [...unconfirmedBotMessagesByChat()].find(
+      ([chatId]) => identifyBotChatDigest(chatId) === digestId,
+    )?.[1];
+    if (botChatMessages) {
+      for (const { channel, chatId, messageId } of botChatMessages)
+        chatMessageStore.saveVerdict({ channel, chatId, messageId, decision: 'confirmed' });
+      return context.body(null, 200);
+    }
     const listedMessageIds = listedDigestStore.load(digestId);
     if (!listedMessageIds) return context.body(null, 404);
     waitingDigests(verdictStore.loadAll())
@@ -1191,6 +1199,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const identifyBotChatDigest = (chatId: string) => JSON.stringify(['bot-chat', chatId]);
   function describeBotChatDigests() {
     return [...unconfirmedBotMessagesByChat()].map(([chatId, messages]) => ({
+      id: identifyBotChatDigest(chatId),
       title: messages[0]?.chatTitle,
       channel: messages[0]?.channel,
       count: messages.length,
