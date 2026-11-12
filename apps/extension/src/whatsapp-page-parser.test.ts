@@ -68,6 +68,8 @@ describe('parseWhatsappOpenChat', () => {
     ['[9:41 p.m., 30/9/2026] Ana: ', '2026-09-30T21:41:00-06:00'],
     ['[9:41\u202fAM, 30/9/2026] Ana: ', '2026-09-30T09:41:00-06:00'],
     ['[21:41, 30/9/2026] Ana: ', '2026-09-30T21:41:00-06:00'],
+    // The user's page writes month/day/year: 11/3/2026 is November 3, not March 11.
+    ['[9:41 PM, 11/3/2026] Ana: ', '2026-11-03T21:41:00-06:00'],
   ])('reads the time of a message labelled %j as WhatsApp writes it in other locales', (label, sentAt) => {
     const document = new DOMParser().parseFromString(
       `<div id="main"><div data-id="3EB0F0000000000000AA"><div data-testid="msg-container">` +
@@ -122,13 +124,13 @@ describe('parseWhatsappOpenChat', () => {
     ]);
   });
 
-  it("reads each message's sender and time from its pre-plain-text label, a 12-hour time and day/month/year in Mexico City, with an unsaved group member named by their phone number", () => {
+  it("reads each message's sender and time from its pre-plain-text label, a 12-hour time and month/day/year (as the user's page writes it) in Mexico City, with an unsaved group member named by their phone number", () => {
     const row = (id: string, prePlainText: string): string =>
       `<div data-id="${id}"><div data-testid="msg-container"><div data-pre-plain-text="${prePlainText}">` +
       '<span data-testid="selectable-text">Hola</span></div></div></div>';
     const document = new DOMParser().parseFromString(
       `<div id="main">${row('3EB0F000000000AAA1B2C3', '[9:41 pm, 30/9/2026] Sam Rivera: ')}` +
-        `${row('3EB0F000000000BBB1B2C3', '[8:05 am, 1/10/2026] +52 55 1234 0001: ')}</div>`,
+        `${row('3EB0F000000000BBB1B2C3', '[8:05 am, 10/1/2026] +52 55 1234 0001: ')}</div>`,
       'text/html',
     );
 

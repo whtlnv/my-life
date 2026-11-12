@@ -51,12 +51,14 @@ const clockTimeOf = (text: string): string | undefined => {
   return `${twoDigits(hour24Of(hour, meridiem))}:${minute}:00-06:00`;
 };
 
-// `[9:41 pm, 30/9/2026] Name: `: a clock time, then day/month/year, then the sender.
+// `[9:41 PM, 11/3/2026] Name: `: a clock time, then the date (month/day/year, or day/month/year), then the sender.
 const prePlainTextPattern = /^\[([^,\]]+), (\d{1,2})\/(\d{1,2})\/(\d{4})\] (.*?):\s*$/;
 
 const senderAndTimeOf = (row: Element): { sender: string; sentAt: string | undefined } => {
   const label = row.querySelector('[data-pre-plain-text]')?.getAttribute('data-pre-plain-text') ?? '';
-  const [, time = '', day = '', month = '', year = '', sender = ''] = prePlainTextPattern.exec(label) ?? [];
+  const [, time = '', first = '', second = '', year = '', sender = ''] = prePlainTextPattern.exec(label) ?? [];
+  // The user's page writes month/day/year (11/3/2026 is November 3); a first number above 12 can only be a day.
+  const [day, month] = Number(first) > 12 ? [first, second] : [second, first];
   const clockTime = clockTimeOf(time);
   return {
     sender,
