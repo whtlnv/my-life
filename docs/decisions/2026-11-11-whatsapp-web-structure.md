@@ -13,11 +13,12 @@ no unmasked letter or digit in any text node or masked attribute.
 - **A message's `data-id` is a bare hex id** (`3A23CD1B…`), not `true_<chat>@c.us_<id>`. The plan read sent-by-user from
   the `true_`/`false_` prefix; there is none. **Sent by the user** is read from the delivery-status icon (a labelled span
   inside `[data-testid="msg-meta"]`, the ✓✓), which only the user's own messages carry.
-- **Sender and time** are in `data-pre-plain-text`: `[9:41 pm, 30/9/2026] Name: `, a 12-hour time and day/month/year.
-  An unsaved group member is named by their phone number. The day/month order is assumed from the capture and is
-  checked on the first real report (`PENDING_TASKS.md` § 10).
+- **Sender and time** are in `data-pre-plain-text`: `[9:41 PM, 11/3/2026] Name: `, a 12-hour time with upper-case
+  AM/PM and **month/day/year** (confirmed on the first real reports, 2026-11-11: read as day/month, a November
+  conversation landed on the 11th of other months). The parser also reads lower-case, dotted and 24-hour times, and
+  day/month when the first number is above 12. An unsaved group member is named by their phone number.
 - **Photos and stickers** have no `data-pre-plain-text` and no text; they become `[photo]` and `[sticker]`, timed from
-  `msg-meta`. The parser fails only when no rendered row in the open chat has `data-pre-plain-text`.
+  `msg-meta`; other media with no text (voice notes, videos, documents) become `[media]`, with the previous sender. The parser fails only when no rendered row in the open chat has `data-pre-plain-text`.
 - **Rows WhatsApp has not rendered** (scrolled away) are empty placeholders; only rendered rows are read.
 - **Chat list:** title in `[data-testid="cell-frame-title"] span[title]`, time in `[data-testid="chat-list-timestamp"]`
   (display text such as `9:41 pm`, `Yesterday` or a weekday, not a date), unread count in
@@ -37,3 +38,10 @@ report a parser failure, and the header chip says `whatsapp parser broken`.
 
 The real message ids from the captures were in the fixtures for a few local commits on 2026-11-10 before being replaced;
 they are random ids with no personal data.
+
+## First real reports (2026-11-11)
+
+The first reports stored no open-chat messages: upper-case `PM` failed the time pattern and the backend threw on the
+first invalid time after marking WhatsApp healthy. Fixed test-first (time formats, a row with an unreadable time left
+out, the backend skipping such a message, the open chat named by its header), then the date order. A report holds the
+rows on screen when the page has been quiet for 10 s, so scrolling past a day without pausing does not report it.
