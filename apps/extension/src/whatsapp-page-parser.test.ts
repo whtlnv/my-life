@@ -63,6 +63,22 @@ describe('parseWhatsappChatList', () => {
 });
 
 describe('parseWhatsappOpenChat', () => {
+  it("gives an unlabelled row with no text and no known media (a voice note, a video, a document) the text [media] and the previous message's sender", () => {
+    const document = new DOMParser().parseFromString(
+      '<div id="main"><div data-id="3EB0F0000000000000B1"><div data-testid="msg-container">' +
+        '<div data-pre-plain-text="[9:41 PM, 11/3/2026] Ana: "><span data-testid="selectable-text">Escucha</span></div>' +
+        '<div data-testid="msg-meta">9:41 PM</div></div></div>' +
+        '<div data-id="3EB0F0000000000000B2"><div data-testid="msg-container"><div data-testid="audio-play"></div>' +
+        '<div data-testid="msg-meta">9:42 PM</div></div></div></div>',
+      'text/html',
+    );
+
+    expect(parseWhatsappOpenChat(document).map(({ text, sender, sentAt }) => ({ text, sender, sentAt }))).toEqual([
+      { text: 'Escucha', sender: 'Ana', sentAt: '2026-11-03T21:41:00-06:00' },
+      { text: '[media]', sender: 'Ana', sentAt: '2026-11-03T21:42:00-06:00' },
+    ]);
+  });
+
   it.each([
     ['[9:41 PM, 30/9/2026] Ana: ', '2026-09-30T21:41:00-06:00'],
     ['[9:41 p.m., 30/9/2026] Ana: ', '2026-09-30T21:41:00-06:00'],

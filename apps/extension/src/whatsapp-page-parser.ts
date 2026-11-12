@@ -79,7 +79,9 @@ const textOf = (row: Element): string => {
   if (media !== undefined) {
     return media.placeholder;
   }
-  return row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '';
+  // A row with no text and no media WhatsApp names (a voice note, a video, a document) is still a message.
+  const text = row.querySelector('[data-testid="selectable-text"]')?.textContent ?? '';
+  return text === '' ? '[media]' : text;
 };
 
 const chatPaneSelector = '#main';
@@ -112,7 +114,8 @@ export const parseWhatsappOpenChat = (document: Document): WhatsappOpenChatMessa
       id: row.getAttribute('data-id') ?? '',
       text: textOf(row),
       sentByUser: row.querySelector('[data-testid="msg-meta"] span[aria-label]') !== null,
-      sender: senderAndTime.sender,
+      // An unlabelled row is part of the previous message's run, so it has that message's sender.
+      sender: senderAndTime.sender === '' ? (messages.at(-1)?.sender ?? '') : senderAndTime.sender,
       sentAt,
     });
   });
