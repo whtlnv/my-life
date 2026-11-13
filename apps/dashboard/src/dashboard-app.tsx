@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { type AccountReport, businessTimeZone, routes, timeInBusinessZone } from './app-shell';
+import { slackContactKey } from './people-page';
 
 interface NowEvent {
   id: string;
@@ -158,7 +159,7 @@ export function waitingDurationText(waitingSince: string, now: Date): string {
 
 const waitingContactKey = (person: WaitingPerson): string => {
   const [slackHandle] = person.slackHandles ?? [];
-  if (slackHandle !== undefined) return `slack:${slackHandle.workspaceTeamId}:${slackHandle.userId}`;
+  if (slackHandle !== undefined) return slackContactKey(slackHandle);
   return person.email;
 };
 

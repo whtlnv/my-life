@@ -67,12 +67,15 @@ const weekdayAndTimeInBusinessZone = (isoTime: string) =>
     timeZone: businessTimeZone,
   }).format(new Date(isoTime));
 
+export const slackContactKey = (handle: { workspaceTeamId: string; userId: string }): string =>
+  `slack:${handle.workspaceTeamId}:${handle.userId}`;
+
 // An email contact can share a display name with a Slack, Telegram or WhatsApp contact, so a chat row is keyed by its handle.
 const personKey = (person: PersonRow): string => {
   const [telegramHandle] = person.telegramHandles ?? [];
   if (telegramHandle !== undefined) return `telegram:${telegramHandle.userId}`;
   const [slackHandle] = person.slackHandles ?? [];
-  if (slackHandle !== undefined) return `slack:${slackHandle.workspaceTeamId}:${slackHandle.userId}`;
+  if (slackHandle !== undefined) return slackContactKey(slackHandle);
   const [whatsappHandle] = person.whatsappHandles ?? [];
   if (whatsappHandle !== undefined) return `whatsapp:${whatsappHandle.name}`;
   return person.displayName;
