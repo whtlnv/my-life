@@ -135,7 +135,7 @@
 
 ### Keystone
 
-- [ ] A Slack workspace chip whose last poll failed shows Slack's error name (from `lastPollFailure` on `GET /now`) next to the workspace's name (keystone: the backend sends it since f11a646, the dashboard never shows it)
+- [x] A Slack workspace chip whose last poll failed shows Slack's error name (from `lastPollFailure` on `GET /now`) next to the workspace's name (keystone: the backend sends it since f11a646, the dashboard never shows it)
 
 ### Phase 5 walk-through
 

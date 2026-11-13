@@ -35,6 +35,7 @@ interface SlackWorkspaceStatus {
   name?: string;
   lastSuccessfulPollAt?: string;
   stale?: boolean;
+  lastPollFailure?: string;
 }
 
 interface AccountStatus {
@@ -117,6 +118,9 @@ function SlackWorkspaceChip({ workspace }: { workspace: SlackWorkspaceStatus }) 
       <span className="dot" aria-hidden="true" />
       <span className="chip-account">{name}</span>
       {workspace.stale && <span className="chip-detail is-stale">slack stale</span>}
+      {workspace.lastPollFailure !== undefined && (
+        <span className="chip-detail is-stale">{workspace.lastPollFailure}</span>
+      )}
     </li>
   );
 }

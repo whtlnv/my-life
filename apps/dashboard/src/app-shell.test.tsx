@@ -165,6 +165,27 @@ describe('AppShell', () => {
     expect(item).toHaveTextContent(/stale/i);
   });
 
+  it("shows on a Slack workspace chip whose last poll failed Slack's error name next to the workspace's name", async () => {
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      slackWorkspaces: [
+        {
+          teamId: 'T0001',
+          name: 'Acme Studio',
+          lastSuccessfulPollAt: '2026-11-09T16:00:00.000Z',
+          stale: true,
+          lastPollFailure: 'missing_scope',
+        },
+      ],
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const item = (await within(status).findByText('Acme Studio')).closest('li');
+    expect(item).toHaveTextContent(/missing_scope/);
+  });
+
   it('shows a Telegram source chip saying telegram not logged in when there is no session', async () => {
     answerGetNowWith({ ...nowWithNoAccountsAndNothingToTriage, telegram: { loggedIn: false } });
 
