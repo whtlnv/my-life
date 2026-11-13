@@ -8,9 +8,10 @@ const followingHeadings = ['Details'];
 
 const actionItem = (line: string): NotesActionItem => {
   const assigneeEnd = line.indexOf('] ');
-  return line.startsWith('[') && assigneeEnd !== -1
-    ? { assignee: line.slice(1, assigneeEnd), text: line.slice(assigneeEnd + 2) }
-    : { text: line };
+  if (line.startsWith('[') && assigneeEnd !== -1)
+    return { assignee: line.slice(1, assigneeEnd), text: line.slice(assigneeEnd + 2) };
+  const willIndex = line.indexOf(' will ');
+  return willIndex !== -1 ? { assignee: line.slice(0, willIndex), text: line } : { text: line };
 };
 
 export const notesActionItems = (document: string): NotesActionItem[] => {

@@ -9,7 +9,7 @@
 - [x] A notes doc with no next-steps heading yields no items
 - [x] Empty text, or a next-steps heading with nothing under it, yields no items and does not throw
 - [x] An item written `[Name] does the thing` carries the assignee `Name` and the text `does the thing`
-- [ ] An item written `Name will do the thing` carries the assignee `Name`
+- [x] An item written `Name will do the thing` carries the assignee `Name`
 - [ ] An item that names no one carries no assignee
 - [ ] A notes poll lists the profile's Drive Docs whose name contains `Notes by Gemini` from the Drive fake and posts one report to `POST /notes-report` with each doc's account, id, title, modified time, web link and plain-text export
 - [ ] A Doc whose name does not contain `Notes by Gemini` is not in the report

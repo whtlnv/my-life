@@ -51,4 +51,10 @@ describe('notesActionItems', () => {
 
     expect(items).toEqual([{ assignee: 'Lucía Ferrer', text: 'Send the signed contract to the vendor.' }]);
   });
+
+  it('reads an item written `Name will do the thing` as carrying the assignee Name', () => {
+    const items = notesActionItems(fixture('gemini-notes-will-assignee.fixture.txt'));
+
+    expect(items.map((item) => item.assignee)).toEqual(['Tomás Ibarra']);
+  });
 });
