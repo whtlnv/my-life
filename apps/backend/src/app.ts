@@ -632,7 +632,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   let verdictGivenSinceLastRun = false;
   // A message proposed before its body arrived is asked about once more, this time with the body.
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
-    (message) => message.body !== undefined && wasProposedUnderAnOlderPrompt(message.id),
+    (message) =>
+      message.body !== undefined &&
+      wasProposedUnderAnOlderPrompt(message.id) &&
+      latestVerdictFor(message.id, verdictStore.loadAll()) === undefined,
   );
   const messageIdsAwaitingRetriage = new Set<string>(
     messagesWithBodyProposedUnderAnOlderPrompt.map((message) => message.id),

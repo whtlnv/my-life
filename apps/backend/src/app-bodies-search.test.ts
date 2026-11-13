@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
+import { openProposalStore } from './proposal-store';
 
 import {
   postJson,
@@ -137,6 +138,30 @@ describe('backend app: message bodies, retriage, triage context and search', () 
     await postTriageRun(afterRestart);
 
     expect(askedMessages).toEqual([{ id: 'message-1', body }]);
+  });
+
+  it('neither asks the triage port again nor stores a new proposal, on the first POST /triage-run after a restart, for a message whose keep proposal the user confirmed before the restart', async () => {
+    const databasePath = temporaryDatabasePath();
+    await storeBudgetReviewProposedUnder(databasePath, 'triage-v1');
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
+    await postJson(beforeRestart, '/verdicts', { messageId: 'message-1', decision: 'confirmed' });
+    await postJson(beforeRestart, '/bodies-report', {
+      accountEmail: 'ana@example.com',
+      bodies: [{ messageId: 'message-1', body: 'Hi Ana, can you review the budget by Friday? Luis' }],
+    });
+    const askedMessages: { id: string }[] = [];
+    const triage = triageUnderV2Recording(askedMessages, ({ id }) => ({ id }));
+    const afterRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+    });
+
+    await postTriageRun(afterRestart);
+
+    expect(askedMessages).toEqual([]);
+    expect(openProposalStore(databasePath).loadAll()).toHaveLength(1);
   });
 
   it("hands the triage port, for a message from a contact the user marked vip and gave an organization, lists and a note, that contact's record with the display name from the From header", async () => {

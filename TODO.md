@@ -45,7 +45,7 @@
 
 ### Triage decisions stick
 
-- [ ] After a restart, a message whose Keep was confirmed is not retriaged and gets no new proposal
+- [x] After a restart, a message whose Keep was confirmed is not retriaged and gets no new proposal
 - [ ] After a restart, a reported message with no proposal and no verdict is triaged (triangulates the item above)
 - [ ] A group confirmation leaves a proposal in that group that was decided individually with its own verdict
 - [ ] A group confirmation confirms the group's undecided proposals (triangulates the item above)
