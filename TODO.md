@@ -100,7 +100,8 @@
 - [x] `GET /people` counts business days for urgency in the time zone `createApp` is given (backlog: apps/backend/src/app.ts:2181)
 - [x] The backend `main.ts` starts serves `GET /people` with the urgency settings its startup settings read
 - [x] A person only mentioned in someone else's email is not marked urgent
-- [ ] A person who asked the user directly and has waited past the threshold is still marked urgent (triangulates the item above)
+- [x] A person who asked the user directly and has waited past the threshold is still marked urgent (triangulates the item above)
+  - already covered: the test passes on its first run against the previous green step (driver)
 - [ ] A person only mentioned in someone else's email is not on the waiting-on list
 - [ ] A Slack person's waiting-on link opens that contact on the People tab
 - [ ] A Telegram person's waiting-on link opens that contact on the People tab
