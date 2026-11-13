@@ -1,3 +1,4 @@
+import { mailReport } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { pollGmailOnce } from './gmail-poll';
@@ -686,5 +687,62 @@ describe('pollGmailOnce', () => {
         },
       },
     ]);
+  });
+
+  it('when Gmail returns a message with no Subject header, posts the batch and returns the new history id', async () => {
+    const withSubject = gmailMessage('withSubject', 'Contract review', 'Fri, 6 Nov 2026 12:00:00 -0600');
+    const noSubject = {
+      ...gmailMessage('noSubject', 'unused', 'Fri, 6 Nov 2026 12:30:00 -0600'),
+      payload: {
+        headers: [
+          { name: 'From', value: 'Ana <ana@example.com>' },
+          { name: 'To', value: 'francisco@example.com' },
+          { name: 'Date', value: 'Fri, 6 Nov 2026 12:30:00 -0600' },
+        ],
+      },
+    };
+    const reportedMessageIds: string[] = [];
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/history` && url.searchParams.get('startHistoryId') === '98000') {
+        return Promise.resolve(
+          Response.json({
+            history: [
+              { id: '98700', messagesAdded: [{ message: { id: 'withSubject' } }, { message: { id: 'noSubject' } }] },
+            ],
+            historyId: '98765',
+          }),
+        );
+      }
+      const messageRead = answerMessageRead(url, { withSubject, noSubject });
+      if (messageRead !== undefined) {
+        return messageRead;
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        const parsed = mailReport.safeParse(JSON.parse(init.body as string));
+        if (!parsed.success) {
+          return Promise.resolve(Response.json({ error: 'invalid mail report' }, { status: 400 }));
+        }
+        reportedMessageIds.push(...parsed.data.messages.map(({ id }) => id));
+        return Promise.resolve(Response.json({ ok: true }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+
+    const nextHistoryId = await pollGmailOnce({
+      fetch: fakeFetch,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      storedHistoryId: '98000',
+    });
+
+    expect({ nextHistoryId, reportedMessageIds }).toEqual({
+      nextHistoryId: '98765',
+      reportedMessageIds: ['withSubject', 'noSubject'],
+    });
   });
 });

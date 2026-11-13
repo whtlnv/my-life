@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 00:47 · `apps/extension/src/gmail-poll.test.ts::when Gmail returns a message with no Subject header, posts the batch and returns the new history id`
+- Behavior: a Gmail poll with a message missing its Subject header posts the batch and returns the new history id
+- Predicted: pass on first run (no right-reason failure available), because the extension drops an undefined subject and `mailReport` defaults it to `''` since 6aa1b3f
+- Actual: passed, as predicted; with `subject` temporarily made required in `packages/contracts/src/mail-report.ts` it failed (returned `98000` instead of `98765`), so it is not vacuous
+- Type: passed unexpectedly
+- Resolution: the behavior was already delivered by the backend-side contract fix (6aa1b3f); the test is kept as a regression guard because its fake backend validates with the real `mailReport` schema, and the TODO item needs no green step
+
 ## 2026-11-11 02:42 · `apps/backend/src/main.test.ts::accepts a WhatsApp report at POST /chat-messages and lists its unanswered message in the triage queue`
 - Behavior: The shipped backend (`main.ts`) accepts a WhatsApp report on `POST /chat-messages` and lists it in the triage queue
 - Predicted: passes on first run (no right-reason failure available: `createApp` registers `/chat-messages` and `chatItems` unconditionally, and `main.ts` composes `createApp`)
