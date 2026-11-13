@@ -31,8 +31,10 @@ export function createClaudeSummary({ model, promptPath, pricing, createMessage 
         tool_choice: { type: 'tool', name: summaryToolName },
         messages: [{ role: 'user', content: items.map(({ summary }) => summary).join('\n') }],
       });
-      const { lines } = digestSummary.parse(readToolUseInput(response));
-      return { lines, costInUsd: computeCostInUsd(response.usage, pricing) };
+      const costInUsd = computeCostInUsd(response.usage, pricing);
+      const parsed = digestSummary.safeParse(readToolUseInput(response));
+      if (!parsed.success) throw Object.assign(parsed.error, { costInUsd });
+      return { lines: parsed.data.lines, costInUsd };
     },
   };
 }

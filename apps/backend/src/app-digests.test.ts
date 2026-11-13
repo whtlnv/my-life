@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
+import { createClaudeSummary } from './claude-summary';
 import { openSpendStore } from './spend-store';
 import { openVerdictStore } from './verdict-store';
 
@@ -377,6 +378,36 @@ describe('backend app: digests and their confirmation', () => {
         .filter(({ costInUsd }) => costInUsd === 0.25)
         .map(({ model }) => model),
     ).toEqual(['claude-summary-model-from-settings']);
+  });
+
+  it('logs the cost of a summary call at POST /triage-run as spend even when the summary model answers with output that fails validation', async () => {
+    const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
+    const summary = createClaudeSummary({
+      model: 'claude-haiku-5-5',
+      pricing: { inputPerMillionTokensInUsd: 1, outputPerMillionTokensInUsd: 5 },
+      createMessage: () =>
+        Promise.resolve({
+          content: [{ type: 'tool_use', id: 'tool-use-1', name: 'write_summary', input: { lines: [] } }],
+          usage: { input_tokens: 250_000, output_tokens: 0 },
+        }),
+    });
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage,
+      summary,
+    });
+    await reportFromGitHub(app, 'message-build');
+
+    await postTriageRun(app);
+
+    expect(
+      openSpendStore(databasePath)
+        .loadAll()
+        .map(({ costInUsd }) => costInUsd),
+    ).toEqual([1, 0.25]);
   });
 
   it("writes no summary at POST /triage-run once today's spend reaches the daily ceiling, and still returns the digest in GET /triage-queue without summary lines", async () => {
