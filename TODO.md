@@ -135,4 +135,4 @@
 
 ### Phase 5 walk-through
 
-- [ ] `docs/phase-5-walkthrough.md` lists the live Slack checks for the user, and `PENDING_TASKS.md` gains an entry asking the user to run it
+- [x] `docs/phase-5-walkthrough.md` lists the live Slack checks for the user, and `PENDING_TASKS.md` gains an entry asking the user to run it

@@ -27,6 +27,7 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 - [x] One app per workspace, client ids and secrets in `.env` (2026-11-09).
 - [x] In each app: **Reinstall to Workspace** (the scopes changed), then copy OAuth & Permissions → **User OAuth Token** (`xoxp-…`) into `.env` as `MY_LIFE_SLACK_WORKSPACE_1_USER_TOKEN` / `_2_`.
 - [x] `profile/accounts.md` names the workspaces: `T027T2P54BW` is PS Mutuus, `T099H5TTQE8` is Erlia.
+- [ ] **Slack walk-through:** go through `docs/phase-5-walkthrough.md` once against PS Mutuus and Erlia and tell Claude what differs (added 2026-11-13).
 
 ## 6. Telegram (Phase 6)
 
