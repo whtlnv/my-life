@@ -16,7 +16,7 @@
 - [x] A calendar event with a title is still reported with that title (triangulates the item above)
   - already covered by apps/extension/src/calendar-events-snapshot.test.ts:7 (supervisor)
 - [x] When the backend rejects a mail report, the extension logs the account and the status it answered
-- [ ] When the backend accepts a mail report, the extension logs nothing (triangulates the item above)
+- [x] When the backend accepts a mail report, the extension logs nothing (triangulates the item above)
 - [ ] When the backend rejects a calendar snapshot, the extension logs the account and the status it answered
 - [ ] When the backend accepts a calendar snapshot, the extension logs nothing (triangulates the item above)
 

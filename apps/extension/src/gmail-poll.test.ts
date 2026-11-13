@@ -634,6 +634,37 @@ describe('pollGmailOnce', () => {
     }
   });
 
+  it('when the backend accepts a mail report, logs nothing', async () => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/history`) {
+        return Promise.resolve(Response.json({ history: [], historyId: '98765' }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ accepted: 0 }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      await pollGmailOnce({
+        fetch: fakeFetch,
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+        storedHistoryId: '12345',
+      });
+
+      expect(consoleError).not.toHaveBeenCalled();
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
   it('when the history response has no history field because nothing changed, reports zero messages and the current history id', async () => {
     const backendPosts: { url: string; body: unknown }[] = [];
     const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {

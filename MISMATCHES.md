@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 00:57 · `apps/extension/src/gmail-poll.test.ts::when the backend accepts a mail report, logs nothing`
+- Behavior: when the backend accepts a mail report, the extension logs nothing
+- Predicted: pass on first run (no right-reason failure available), because `pollGmailOnce` calls `console.error` only inside `if (!report.ok)` since dba45a3
+- Actual: passed, as predicted; with the guard temporarily flipped to `if (report.ok)` it failed (`console.error` called 1 time), so it is not vacuous
+- Type: passed unexpectedly
+- Resolution: the triangulating behavior was delivered with the refusal log in dba45a3; the test is kept as a regression guard and the TODO item needs no green step
+
 ## 2026-11-13 00:47 · `apps/extension/src/gmail-poll.test.ts::when Gmail returns a message with no Subject header, posts the batch and returns the new history id`
 - Behavior: a Gmail poll with a message missing its Subject header posts the batch and returns the new history id
 - Predicted: pass on first run (no right-reason failure available), because the extension drops an undefined subject and `mailReport` defaults it to `''` since 6aa1b3f
