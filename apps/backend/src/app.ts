@@ -656,7 +656,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
-  // A message proposed before its body arrived is asked about once more, this time with the body.
+  // A message proposed before its body arrived is asked about once more, this time with the body, unless the user has
+  // already decided it.
   const verdictsAtStartup = verdictStore.loadAll();
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
     (message) =>
