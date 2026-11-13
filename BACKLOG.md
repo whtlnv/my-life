@@ -15,16 +15,10 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 - `apps/integration` runs in the fast loop but has no `test:coverage` script, so `scripts/test.sh` does not count its tests;
   decide whether it joins the coverage floors or is counted separately.
-- **[apps/backend/src/app.ts:2461] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10; location corrected 2026-11-11)
+- **[apps/backend/src/app.ts:2569] `GET /search` scans every stored message instead of an SQLite FTS5 index** (added: 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10; location corrected 2026-11-11; location corrected 2026-11-13)
   Phase 2b planned FTS5 over bodies, summaries, extracts and thread states; the delivered route matches words by a linear
   scan, which is enough at today's store size (hundreds of messages). Move to FTS5 when a search is measured slow or the
   agent (Phase 4) needs ranking.
-
-- **[apps/backend/src/app.ts:325] _Handled for you_ lists automatic `keep` proposals, where nothing was done** (added: 2026-11-08; location corrected 2026-11-09)
-  `describeHandledForYou` keeps every `madeAutomatic` proposal made today, so an automatic category's `keep` shows in the
-  strip and its Undo queues an `undo-automatic` command for a message that was never labeled or archived. List only the
-  proposals that produced an archive command or a task. A digest's listed message ids are also overwritten by every
-  `GET /triage-queue`, so a second open tab widens what the first tab's confirm reaches.
 
 - **[apps/backend/src/main.ts:134] The agent's tools go to Claude with `strict: false`** (added: 2026-11-09)
   The agent tool schemas (`stringInputs` in `app.ts`) do not set `additionalProperties: false`, which strict tool use requires,
@@ -38,7 +32,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   together, and nothing ties them: a renamed field compiles and the chip shows the wrong state. Deferred for the same reason
   as the Telegram status entry: there is no `/now` contract to share, and adding one is new `packages/contracts` surface
   delivered test-first.
-- **[apps/backend/src/app.ts:658] The WhatsApp parser-failure body and the `send-whatsapp` command are declared apart from the extension** (added: 2026-11-11)
+- **[apps/backend/src/app.ts:690] The WhatsApp parser-failure body and the `send-whatsapp` command are declared apart from the extension** (added: 2026-11-11; location corrected 2026-11-13)
   `POST /chat-messages` reads `{ ok, missingSelector, accountEmail }` through a hand-written type while
   `whatsapp-report-watch.ts` builds it, and `GET /commands` builds `{ id, chatTitle, text, type }` while `whatsapp-send.ts`
   declares its own `SendWhatsappCommand`; `whatsappReport` in `packages/contracts` covers neither. A renamed field compiles
@@ -50,15 +44,16 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   wrong state. Deferred for the same reason as the `/now` entry below: there is no `/now` contract to share, and adding one
   is new `packages/contracts` surface delivered test-first.
 
-- **[apps/backend/src/app.ts:857] Three separate `auth.test` readers** (added: 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-11)
+- **[apps/backend/src/app.ts:890] Three separate `auth.test` readers** (added: 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-11; location corrected 2026-11-13)
   `fetchSlackWorkspaceIdentity` and `fetchOwnSlackUserId` in `app.ts` and `fetchOwnSlackUserId` in `slack-poll.ts` each
   call `auth.test` and pick fields out of its answer, so a change to how the identity is read has to be made three times.
   Deferred because unifying them sends the app's calls through `callSlack`, which retries on 429 and throws on
   `invalid_auth`. That changes what `POST /slack-poll` and `POST /slack-sends` do when Slack fails.
-- **[apps/backend/src/app.ts:1234] A task made from a Slack item stores the workspace team id as its `accountEmail`** (added: 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10; location corrected 2026-11-11)
-  `POST /slack-verdicts` saves `accountEmail: verdict.workspaceTeamId`, so a field every reader takes for an email address
-  holds `T0001` for Slack tasks. Deferred because the field is stored in the task event log and returned by `GET /tasks`,
-  which `app-slack.test.ts` pins, so renaming it (to an account id) changes stored data and the API output.
+- **[apps/backend/src/app.ts:1280] A task made from a Slack item stores the workspace name as its `accountEmail`** (added: 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10; location corrected 2026-11-11; description corrected 2026-11-13)
+  `POST /slack-verdicts` saves `accountEmail: slackWorkspacePollFor(verdict.workspaceTeamId)?.name ?? verdict.workspaceTeamId`,
+  so a field every reader takes for an email address holds `PS Mutuus` (or the team id `T0001` when the workspace has no
+  name) for Slack tasks. Deferred because the field is stored in the task event log and returned by `GET /tasks`, which
+  `app-slack.test.ts` pins as `PS Mutuus`, so renaming it (to an account id) changes stored data and the API output.
 - **[apps/backend/src/contact-details-store.ts:65] `markedEmails` and `saveMark(email, …)` now hold Slack contact keys too** (added: 2026-11-09)
   `PUT /slack-contacts/:workspaceTeamId/:userId/marks/vip` saves a `slack:<team>/<user>` key through `saveMark`, so
   `markedEmails()` returns keys that are not emails; the local in `GET /people` is renamed `markedContactKeys`, the store is
@@ -82,10 +77,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `recordingAction` in `apps/backend/src/app.ts` reads only `record.outcome` and runs the tool itself, so `effects` looks
   like the list of actions to perform while nothing performs it. Deferred because `agent-action.test.ts` asserts the field
   in two tests, so dropping it changes the function's tested output; it is a `/test-quality` matter first.
-- **[apps/backend/src/app.ts:2181] `GET /people` ignores the urgency time zone, deadline window and VIP wait that main.ts passes** (added: 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10; location corrected 2026-11-11)
-  `readStartupSettings` builds a full `urgency` object and `main.ts` hands it to `createApp`, but `AppOptions.urgency`
-  reads only `unansweredAskBusinessDays`; the other three come from `startup-settings.ts`'s defaults, so a setting added
-  for them would look live and do nothing. Deferred because honoring them changes what `createApp` does with its options.
 - **[apps/dashboard/src/dashboard-app.tsx:160] `millisecondsPerDay` is defined again in the statement page** (added: 2026-11-08)
   `dashboard-app.tsx` (`86_400_000`) and `statement-page.tsx` (`24 * 60 * 60 * 1000`) each define it. Deferred because the
   dashboard has no shared time module to hoist it into, and the statement page's copy goes with its `mondayOf` entry below.
@@ -109,9 +100,9 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   reordered or added column compiles and shows amounts under the wrong heading. Deferred for the same reason as the
   `/triage-queue` and `/now` entries below: there is no statement contract to share the column list from, and adding one is
   new `packages/contracts` surface delivered test-first.
-- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; description corrected 2026-11-11)
-  `new URL(input instanceof Request ? input.url : input.toString())` opens 33 fake `fetch` functions across nine
-  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 33 times.
+- **[apps/extension/src/gmail-filter.test.ts:18] Every extension fetch fake re-parses the request URL by hand** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; description corrected 2026-11-11; location corrected 2026-11-13)
+  `new URL(input instanceof Request ? input.url : input.toString())` opens 36 fake `fetch` functions across nine
+  extension test files, so a change to how fakes read a request (a `Request` body, a relative URL) is made 36 times.
   Deferred because two of those files (`calendar-poll.test.ts`, `gmail-poll.test.ts`) sit outside 2aaf298..HEAD and the
   extension has no shared test-helper module to hoist it into.
 - **[apps/dashboard/src/statement-page.tsx:112] The statement page computes the business week apart from the backend** (added: 2026-11-07)
@@ -123,8 +114,8 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `archivedLabelName` (`my-life/archived`) repeats the label `GET /commands` in `apps/backend/src/app.ts` puts on every archive
   command, and the backend always sends one, so the fallback looks live and drifts silently if the backend label is renamed.
   Deferred because no shared package holds plain constants, and dropping the fallback changes what a label-less command does.
-- **[apps/backend/src/app.ts:469] `createApp` is one 2018-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10; location corrected 2026-11-11)
-  The file is 2613 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
+- **[apps/backend/src/app.ts:504] `createApp` is one 2099-line closure holding every route** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-10; location corrected 2026-11-11; location corrected 2026-11-13)
+  The file is 2721 lines and every route reads the in-memory `proposals` and `reportedMessages` arrays and the store handles
   through the closure, so a change to one route means reading the whole function. Deferred because splitting it by route
   first needs a shared state object passed to route modules, which is an architectural change for `/complexity-pass`, not
   a mechanical extraction.
@@ -137,7 +128,7 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   Nothing in `apps/*` imports it (the backend tests stub `propose` inline), so it reads as a live Triage adapter while being dead.
   Deferred because deleting it deletes `scripted-triage.test.ts`, and a refactor pass never deletes a test; it is a
   `/test-quality` matter.
-- **[apps/backend/src/app.ts:508] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-10)
+- **[apps/backend/src/app.ts:543] `accountEmailByMessageId` duplicates `reportedMessageStore.accountEmailOf`** (added: 2026-11-07; location corrected 2026-11-07; location corrected 2026-11-08; location corrected 2026-11-08; location corrected 2026-11-09; location corrected 2026-11-10; location corrected 2026-11-13)
   `/mail-report` writes the message's account to both, and `/triage-run` reads the in-memory map while the startup reload reads
   the store, so two sources of the same fact must stay in agreement. Deferred because they disagree when two accounts report the
   same message id (the map keeps the last account, the store's `INSERT OR IGNORE` the first), so dropping either changes behavior.
@@ -164,6 +155,6 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   After an outage Telegram sends `UpdatesTooLong`; gramjs's `NewMessage` handler ignores it and `catchUp()` is not
   implemented, and history loads only at start-up, so messages from the gap are never stored. Needs a design: reload
   each dialog's history since its newest stored message after a reconnect or a gap notice.
-- **[apps/backend/src/slack-poll.ts:222] Slack threads the user wrote in before the lookback stop being polled** (added: 2026-11-13, Codex pollers audit)
+- **[apps/backend/src/slack-poll.ts:242] Slack threads the user wrote in before the lookback stop being polled** (added: 2026-11-13, Codex pollers audit; location corrected 2026-11-13)
   Threads are found by an `after:` search on the user's own messages, so a reply on day 8 in a thread the user last
   wrote in on day 1 is missed. Needs a design: keep polling stored threads with recent activity, independent of the lookback.
