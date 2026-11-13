@@ -1218,13 +1218,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const digestId = context.req.param('id');
     const botChatMessages = unconfirmedBotChatDigestMessages(digestId);
     if (botChatMessages) {
-      const listedBotMessageIds = listedDigestStore.load(digestId);
-      for (const { channel, chatId, messageId } of botChatMessages.filter(({ messageId }) =>
-        listedBotMessageIds?.includes(messageId),
-      ))
-        chatMessageStore.saveVerdict({ channel, chatId, messageId, decision: 'confirmed' });
-      digestSummaryStore.save(digestId, undefined);
-      listedDigestStore.remove(digestId);
+      confirmBotChatDigest(digestId, botChatMessages);
       return context.body(null, 200);
     }
     const listedMessageIds = listedDigestStore.load(digestId);
@@ -1319,6 +1313,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
   }
   const identifyBotChatDigest = (chatId: string) => JSON.stringify(['bot-chat', chatId]);
+  function confirmBotChatDigest(
+    digestId: string,
+    botChatMessages: NonNullable<ReturnType<typeof unconfirmedBotChatDigestMessages>>,
+  ) {
+    const listedBotMessageIds = listedDigestStore.load(digestId);
+    const listedBotMessages = botChatMessages.filter(({ messageId }) => listedBotMessageIds?.includes(messageId));
+    for (const { channel, chatId, messageId } of listedBotMessages)
+      chatMessageStore.saveVerdict({ channel, chatId, messageId, decision: 'confirmed' });
+    digestSummaryStore.save(digestId, undefined);
+    listedDigestStore.remove(digestId);
+  }
   function unconfirmedBotChatDigestMessages(digestId: string) {
     return [...unconfirmedBotMessagesByChat()].find(([chatId]) => identifyBotChatDigest(chatId) === digestId)?.[1];
   }
