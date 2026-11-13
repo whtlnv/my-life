@@ -18,6 +18,7 @@ interface PollSlackWorkspaceInput {
 }
 
 const pollFailingSlackErrors = new Set(['invalid_auth', 'missing_scope', 'channel_not_found']);
+const ratelimitedRetryDelayMilliseconds = 1000;
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
   const response = await input.fetch(`${input.apiUrl}${path}`, {
@@ -30,7 +31,7 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
   }
   const body = (await response.json()) as Response & { error?: string };
   if (body.error === 'ratelimited') {
-    await input.wait?.(1000);
+    await input.wait?.(ratelimitedRetryDelayMilliseconds);
     return callSlack<Response>(input, path);
   }
   if (body.error !== undefined && pollFailingSlackErrors.has(body.error)) {
