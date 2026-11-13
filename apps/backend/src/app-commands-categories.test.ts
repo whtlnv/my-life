@@ -648,6 +648,19 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
 
     expect(await queue.json()).toMatchObject({ handledForYou: [] });
   });
+  it('lists at GET /triage-queue nothing under handled for you for a keep proposal in a category switched to automatic, where nothing was done', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+    });
+    await switchCategory(app, 'cc-thread', 'automatic');
+    await proposeBudgetReview(app);
+
+    const queue = await app.request('/triage-queue');
+
+    expect(await queue.json()).toMatchObject({ handledForYou: [] });
+  });
   it('lists at GET /triage-queue nothing under handled for you for a proposal the user confirmed in advise mode, even after its category is switched to automatic', async () => {
     const app = createApp({
       allowedEmails: ['ana@example.com'],

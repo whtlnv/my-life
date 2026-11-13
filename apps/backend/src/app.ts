@@ -356,7 +356,7 @@ function withLink(proposal: Proposal) {
 function describeHandledForYou(proposals: Proposal[], clock: Clock) {
   const today = localCalendarDate(clock.now(), businessTimeZone);
   return proposals
-    .filter((proposal) => proposal.madeAutomatic === true)
+    .filter((proposal) => proposal.madeAutomatic === true && proposal.action !== 'keep')
     .filter(
       (proposal) => proposal.madeAt !== undefined && localCalendarDate(proposal.madeAt, businessTimeZone) === today,
     )
