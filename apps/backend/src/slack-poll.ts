@@ -193,6 +193,23 @@ async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Pr
   return [...conversationIds].map((id) => ({ id }));
 }
 
+async function fetchConversationHistory(input: PollSlackWorkspaceInput, query: string): Promise<SlackMessage[]> {
+  const messages: SlackMessage[] = [];
+  let cursorParameter = '';
+  for (;;) {
+    const page = await callSlack<{
+      messages: SlackMessage[];
+      has_more?: boolean;
+      response_metadata: { next_cursor: string };
+    }>(input, `/conversations.history?${query}${cursorParameter}`);
+    messages.push(...page.messages);
+    if (page.has_more !== true) {
+      return messages;
+    }
+    cursorParameter = `&cursor=${page.response_metadata.next_cursor}`;
+  }
+}
+
 async function pollDirectMessages(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const directMessageChannels = await searchedDirectMessageChannels(input);
   const firstPollLookbackStart = String(firstPollLookbackStartInMilliseconds(input) / 1000);
@@ -200,20 +217,9 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput, ownSlackUserId
     const oldestParameter = oldestParameterAfter(
       newestStoredTimestampIn(input.store, channel.id) ?? firstPollLookbackStart,
     );
-    let cursorParameter = '';
-    for (;;) {
-      const page = await callSlack<{
-        messages: SlackMessage[];
-        has_more?: boolean;
-        response_metadata: { next_cursor: string };
-      }>(input, `/conversations.history?channel=${channel.id}${oldestParameter}${cursorParameter}`);
-      for (const message of page.messages) {
-        await saveSlackMessage(input, channel.id, message, { ownSlackUserId });
-      }
-      if (page.has_more !== true) {
-        break;
-      }
-      cursorParameter = `&cursor=${page.response_metadata.next_cursor}`;
+    const messages = await fetchConversationHistory(input, `channel=${channel.id}${oldestParameter}`);
+    for (const message of messages) {
+      await saveSlackMessage(input, channel.id, message, { ownSlackUserId });
     }
   }
 }
