@@ -103,7 +103,7 @@
 - [x] A person who asked the user directly and has waited past the threshold is still marked urgent (triangulates the item above)
   - already covered: the test passes on its first run against the previous green step (driver)
 - [x] A person only mentioned in someone else's email is not on the waiting-on list
-- [ ] A Slack person's waiting-on link opens that contact on the People tab
+- [x] A Slack person's waiting-on link opens that contact on the People tab
 - [ ] A Telegram person's waiting-on link opens that contact on the People tab
 - [ ] An organization's timeline lists each mail message with its Gmail link
 - [ ] A task made from a Slack item names its workspace as its account, not the team id (backlog: apps/backend/src/app.ts:1234 A task made from a Slack item stores the workspace team id as its `accountEmail`)

@@ -136,6 +136,7 @@ function TopTasks({ tasks, onDone }: { tasks: RankedTask[]; onDone: (taskId: str
 interface WaitingPerson {
   email: string;
   displayName: string;
+  slackHandles?: { workspaceTeamId: string; userId: string }[];
   waitingSince: string;
 }
 
@@ -155,6 +156,12 @@ export function waitingDurationText(waitingSince: string, now: Date): string {
   return days === 1 ? '1 day' : `${String(days)} days`;
 }
 
+const waitingContactKey = (person: WaitingPerson): string => {
+  const [slackHandle] = person.slackHandles ?? [];
+  if (slackHandle !== undefined) return `slack:${slackHandle.workspaceTeamId}:${slackHandle.userId}`;
+  return person.email;
+};
+
 function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
   return (
     <section aria-label="Waiting on you" className="section">
@@ -166,7 +173,7 @@ function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
             <li key={person.email} className="row">
               <div className="row-main">
                 <p className="row-title">
-                  <a href={`${routes.people}?contact=${encodeURIComponent(person.email)}`}>{person.displayName}</a>
+                  <a href={`${routes.people}?contact=${encodeURIComponent(waitingContactKey(person))}`}>{person.displayName}</a>
                 </p>
               </div>
               <div className="row-side">

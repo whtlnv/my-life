@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 10:50 · `apps/dashboard/src/dashboard-router.test.tsx::opens a Slack person's timeline on the People tab when the user follows their link in Waiting on you`
+- Behavior: A Slack person's waiting-on link opens that contact on the People tab
+- Predicted: assertion failure — no "Timeline of Leo Ramírez" list, because the link carries `?contact=undefined` (a Slack waiting-on entry has no email)
+- Actual: first run: the `<AppShell>` crashed with `sources is not iterable` and Waiting on you never listed Leo; after the fix, the predicted failure, plus an unhandled `Cannot read properties of undefined (reading 'includes')` from the People page matching `emails` on a Slack contact
+- Type: wrong-reason
+- Resolution: the shell reads `sources` from `GET /now`, so the router-level `/now` stub must carry `sources: []`; added it. The `emails.includes` crash is part of the missing behavior, since the real `GET /people` sends Slack contacts without `emails`, and is left for green.
+
 ## 2026-11-13 09:44 · `apps/backend/src/app-tasks.test.ts::counts in the GET /now badge count an open task with a date-only due time once that business day has ended in the business time zone`
 - Behavior: A task with a date-only due time is overdue after the end of that business day (triangulates the item above)
 - Predicted: passes on first run, because 11e10f3 already compares the due date with the clock's calendar date in the business time zone (`due < localCalendarDate(clock.now(), businessTimeZone)`)

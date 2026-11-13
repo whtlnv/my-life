@@ -215,7 +215,9 @@ const ContactTimeline = ({ timeline }: { timeline: SelectedTimeline }) => (
 const personRequestedByLocation = (lists: PeopleLists): PersonRow | undefined => {
   const contact = new URLSearchParams(window.location.hash.split('?')[1]).get('contact');
   if (contact === null) return undefined;
-  return [...lists.vip, ...lists.urgent, ...lists.everyoneElse].find((candidate) => candidate.emails.includes(contact));
+  return [...lists.vip, ...lists.urgent, ...lists.everyoneElse].find(
+    (candidate) => personKey(candidate) === contact || candidate.emails.includes(contact),
+  );
 };
 
 const contactPath = (person: PersonRow) => {
