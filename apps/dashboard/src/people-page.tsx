@@ -10,7 +10,7 @@ interface SlackHandle {
 
 interface PersonRow {
   displayName: string;
-  emails: string[];
+  emails?: string[];
   organization: string;
   lastMessageAt?: string;
   reasons?: string[];
@@ -221,7 +221,7 @@ const personRequestedByLocation = (lists: PeopleLists): PersonRow | undefined =>
   const contact = new URLSearchParams(window.location.hash.split('?')[1]).get('contact');
   if (contact === null) return undefined;
   return [...lists.vip, ...lists.urgent, ...lists.everyoneElse].find(
-    (candidate) => personKey(candidate) === contact || candidate.emails.includes(contact),
+    (candidate) => personKey(candidate) === contact || candidate.emails?.includes(contact),
   );
 };
 
@@ -238,7 +238,7 @@ const contactPath = (person: PersonRow) => {
   if (slackHandle) {
     return `/slack-contacts/${slackHandle.workspaceTeamId}/${slackHandle.userId}`;
   }
-  return `/contacts/${encodeURIComponent(person.emails[0] ?? '')}`;
+  return `/contacts/${encodeURIComponent(person.emails?.[0] ?? '')}`;
 };
 
 const vipMarkPath = (person: PersonRow) => `${contactPath(person)}/marks/vip`;

@@ -418,6 +418,49 @@ describe('PeoplePage', () => {
       'https://mail.google.com/mail/?authuser=work%40example.com#all/m5',
     );
   });
+
+  it("shows the timeline of the contact named in the route's query even when a contact listed before it has no email", async () => {
+    const people = {
+      vip: [
+        {
+          channel: 'slack',
+          displayName: 'Ana',
+          slackHandles: [{ workspaceTeamId: 'T0001', userId: 'U0001' }],
+        },
+      ],
+      urgent: [
+        {
+          displayName: 'Sofía Herrera',
+          emails: ['sofia@erlia.mx'],
+          messageIds: ['m5'],
+          organization: 'Erlia',
+          lastMessageAt: '2026-11-07T15:00:00.000Z',
+        },
+      ],
+      everyoneElse: [],
+    };
+    const timeline = {
+      messages: [
+        {
+          id: 'm5',
+          subject: 'Can you sign the addendum?',
+          accountEmail: 'work@example.com',
+          link: 'https://mail.google.com/mail/?authuser=work%40example.com#all/m5',
+        },
+      ],
+    };
+    answerGetsWith({
+      '/people': people,
+      [`/contacts/${encodeURIComponent('sofia@erlia.mx')}/timeline`]: timeline,
+    });
+    window.location.hash = `${routes.people}?contact=${encodeURIComponent('sofia@erlia.mx')}`;
+
+    render(<PeoplePage />);
+
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Sofía Herrera' });
+    expect(within(timelineList).getByRole('link', { name: 'Can you sign the addendum?' })).toBeInTheDocument();
+  });
+
   it("shows a Slack contact from GET /people with its channel tag, and opens its timeline from GET /slack-contacts/:workspaceTeamId/:userId/timeline with each message's text linked to its Slack permalink and its workspace", async () => {
     const people = {
       vip: [],
