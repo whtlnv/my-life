@@ -86,77 +86,63 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(await queue.json()).toMatchObject({ remaining });
   });
 
-  it('accepts at POST /mail-report a message with no subject and counts it as remaining in GET /triage-queue', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const messageWithNoSubject = {
-      id: 'message-4',
-      threadId: 'thread-4',
-      from: 'Luis <luis@example.com>',
-      to: 'ana@example.com',
-      date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-      snippet: 'This message has no subject.',
-    };
+  it.each([
+    {
+      missing: 'subject',
+      message: {
+        id: 'message-4',
+        threadId: 'thread-4',
+        from: 'Luis <luis@example.com>',
+        to: 'ana@example.com',
+        date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+        snippet: 'This message has no subject.',
+      },
+    },
+    {
+      missing: 'To header',
+      message: {
+        id: 'message-5',
+        threadId: 'thread-5',
+        from: 'Luis <luis@example.com>',
+        subject: 'Undisclosed recipients',
+        date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+        snippet: 'This message has no To header.',
+      },
+    },
+    {
+      missing: 'Date header',
+      message: {
+        id: 'message-6',
+        threadId: 'thread-6',
+        from: 'Luis <luis@example.com>',
+        to: 'ana@example.com',
+        subject: 'No date on this one',
+        snippet: 'This message has no Date header.',
+      },
+    },
+    {
+      missing: 'From header',
+      message: {
+        id: 'message-7',
+        threadId: 'thread-7',
+        to: 'ana@example.com',
+        subject: 'Who sent this?',
+        date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+        snippet: 'This message has no From header.',
+      },
+    },
+  ])(
+    'accepts at POST /mail-report a message with no $missing and counts it as remaining in GET /triage-queue',
+    async ({ message }) => {
+      const app = createApp({ allowedEmails: ['ana@example.com'] });
 
-    const posted = await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [messageWithNoSubject] });
-    const queue = await app.request('/triage-queue');
+      const posted = await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [message] });
+      const queue = await app.request('/triage-queue');
 
-    expect(posted.status).toBe(200);
-    expect(await queue.json()).toMatchObject({ remaining: 1 });
-  });
-
-  it('accepts at POST /mail-report a message with no To header and counts it as remaining in GET /triage-queue', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const messageWithNoTo = {
-      id: 'message-5',
-      threadId: 'thread-5',
-      from: 'Luis <luis@example.com>',
-      subject: 'Undisclosed recipients',
-      date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-      snippet: 'This message has no To header.',
-    };
-
-    const posted = await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [messageWithNoTo] });
-    const queue = await app.request('/triage-queue');
-
-    expect(posted.status).toBe(200);
-    expect(await queue.json()).toMatchObject({ remaining: 1 });
-  });
-
-  it('accepts at POST /mail-report a message with no Date header and counts it as remaining in GET /triage-queue', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const messageWithNoDate = {
-      id: 'message-6',
-      threadId: 'thread-6',
-      from: 'Luis <luis@example.com>',
-      to: 'ana@example.com',
-      subject: 'No date on this one',
-      snippet: 'This message has no Date header.',
-    };
-
-    const posted = await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [messageWithNoDate] });
-    const queue = await app.request('/triage-queue');
-
-    expect(posted.status).toBe(200);
-    expect(await queue.json()).toMatchObject({ remaining: 1 });
-  });
-
-  it('accepts at POST /mail-report a message with no From header and counts it as remaining in GET /triage-queue', async () => {
-    const app = createApp({ allowedEmails: ['ana@example.com'] });
-    const messageWithNoFrom = {
-      id: 'message-7',
-      threadId: 'thread-7',
-      to: 'ana@example.com',
-      subject: 'Who sent this?',
-      date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-      snippet: 'This message has no From header.',
-    };
-
-    const posted = await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [messageWithNoFrom] });
-    const queue = await app.request('/triage-queue');
-
-    expect(posted.status).toBe(200);
-    expect(await queue.json()).toMatchObject({ remaining: 1 });
-  });
+      expect(posted.status).toBe(200);
+      expect(await queue.json()).toMatchObject({ remaining: 1 });
+    },
+  );
 
   it('says when GET /triage-queue was fetched, from the clock', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
