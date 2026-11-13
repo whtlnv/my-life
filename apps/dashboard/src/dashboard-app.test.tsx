@@ -455,7 +455,7 @@ describe('DashboardApp', () => {
 
   it('marks a Slack task, whose id holds slashes, done at the one task path the backend routes', async () => {
     const slackTaskId = 'slack-T0001/D0001/1700000000.000100';
-    const fetchStub = vi.fn((input: string, init?: RequestInit) => {
+    const fetchStub = vi.fn((input: string) => {
       const json = (body: unknown) =>
         Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
       if (input === '/tasks') {
