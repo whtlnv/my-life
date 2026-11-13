@@ -1182,8 +1182,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   // Summarizes one digest and logs its spend; writes nothing once the daily ceiling is reached.
   async function summarizeWithinTheSpendCeiling(items: { summary: string }[]) {
     if (hasReachedDailySpendCeiling()) return undefined;
-    const summary = await options.summary?.summarize({ items }).catch((error: { costInUsd?: number }) => {
-      if (error.costInUsd !== undefined) logSpend({ costInUsd: error.costInUsd });
+    const summary = await options.summary?.summarize({ items }).catch((error: unknown) => {
+      const { costInUsd } = error as { costInUsd?: number };
+      if (costInUsd !== undefined) logSpend({ costInUsd });
       return undefined;
     });
     if (summary) logSpend(summary);
