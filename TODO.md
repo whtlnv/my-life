@@ -22,7 +22,7 @@
 
 ### Slack poll errors are named
 
-- [ ] A Slack answer `{ ok: false, error: "missing_scope" }` fails that workspace's poll with an error naming `missing_scope`
+- [x] A Slack answer `{ ok: false, error: "missing_scope" }` fails that workspace's poll with an error naming `missing_scope`
 - [ ] A Slack answer `{ ok: false, error: "channel_not_found" }` fails that workspace's poll with an error naming `channel_not_found` (triangulates the item above)
 - [ ] A failed poll's Slack error name is what the Slack chip and the poll log show for that workspace
 - [ ] A Slack answer `{ ok: false, error: "ratelimited" }` waits and retries the call, and the poll completes when the retry answers `ok: true`

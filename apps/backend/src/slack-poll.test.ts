@@ -583,6 +583,12 @@ describe('pollSlackWorkspace', () => {
 
     await expect(pollWith(slack)).rejects.toThrow('Slack workspace T0001 answered invalid_auth');
   });
+
+  it('fails the poll, naming the error, when a search answers missing_scope', async () => {
+    const slack = scriptedSlack({ '/search.messages': () => ({ ok: false, error: 'missing_scope' }) });
+
+    await expect(pollWith(slack)).rejects.toThrow('missing_scope');
+  });
 });
 
 describe('pollSlackWorkspaces', () => {
