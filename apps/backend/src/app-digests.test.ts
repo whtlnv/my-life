@@ -329,6 +329,39 @@ describe('backend app: digests and their confirmation', () => {
     expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: ['Summary written on call 1'] })]);
   });
 
+  it('rewrites the summary lines of a digest at the first triage run after a backend restart when one of its items got its own verdict before the restart', async () => {
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
+    const summary = {
+      summarize: (request?: { items?: { summary: string }[] }) =>
+        Promise.resolve({
+          lines: [(request?.items ?? []).map((item) => item.summary).join(' and ')],
+          costInUsd: 0.01,
+        }),
+    };
+    const databasePath = temporaryDatabasePath();
+    const options = { allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, summary, databasePath };
+    const beforeRestart = createApp(options);
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(beforeRestart, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-build', threadId: 'message-build', from: 'GitHub <noreply@github.com>' },
+        { ...budgetReview, id: 'message-deploy', threadId: 'message-deploy', from: 'GitHub <noreply@github.com>' },
+      ],
+    });
+    await postTriageRun(beforeRestart);
+    await postJson(beforeRestart, '/verdicts', { messageId: 'message-deploy', decision: 'confirmed' });
+
+    const afterRestart = createApp(options);
+    await postTriageRun(afterRestart);
+
+    const { digests } = await getJson<{ digests: unknown[] }>(afterRestart, '/triage-queue');
+    expect(digests).toEqual([expect.objectContaining({ key: 'GitHub', summaryLines: ['GitHub build passed'] })]);
+  });
+
   it('logs the cost of each summary call made at POST /triage-run as spend, with its time, next to the triage spend', async () => {
     const triage = triageAnswering(systemUpdateNotice('GitHub', 'GitHub build passed'));
     const summary = { summarize: () => Promise.resolve({ lines: ['GitHub: 1 notice'], costInUsd: 0.25 }) };

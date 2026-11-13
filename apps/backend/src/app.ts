@@ -643,7 +643,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       verdictExampleLimit,
     );
   let triageRunInProgress = false;
-  let verdictGivenSinceLastRun = false;
   // A message proposed before its body arrived is asked about once more, this time with the body.
   const verdictsAtStartup = verdictStore.loadAll();
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
@@ -1123,8 +1122,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         queueProposal({ ...displayedProposal, madeAutomatic, madeAt: answeredAt });
         proposedInThisRun = true;
       }
-      if (proposedInThisRun || verdictGivenSinceLastRun) {
-        verdictGivenSinceLastRun = false;
+      if (proposedInThisRun || digestSummaryStore.isRewriteNeeded()) {
+        digestSummaryStore.markRewriteNeeded(false);
         await rewriteDigestSummaryLines();
       }
     } finally {
@@ -1142,7 +1141,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.body(null, 404);
     }
     verdictStore.save({ messageId, decision, correction, decidedAt: clock.now().toISOString() });
-    verdictGivenSinceLastRun = true;
+    digestSummaryStore.markRewriteNeeded(true);
     await proposeNewFilterCandidates();
     return context.body(null, 200);
   });
