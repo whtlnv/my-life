@@ -1224,7 +1224,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       const { key, proposals: digested, severityCounts, significantItems } = digest;
       const { accountEmail, category } = digested[0] ?? {};
       const id = identifyDigest(digest);
-      listedDigestStore.save(
+      listedDigestStore.saveFirstListing(
         id,
         digested.map(({ messageId }) => messageId),
       );
@@ -1361,7 +1361,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   function describeBotChatDigests() {
     return [...unconfirmedBotMessagesByChat()].map(([chatId, messages]) => {
       const digestId = identifyBotChatDigest(chatId);
-      listedDigestStore.save(
+      listedDigestStore.saveFirstListing(
         digestId,
         messages.map(({ messageId }) => messageId),
       );
