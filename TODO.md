@@ -85,7 +85,7 @@
   - already working; red's test passed on the first run and is kept as a regression guard (driver)
 - [x] Setting a second waiting-on person on a task replaces the first
 - [x] Snoozing a task a second time replaces the first snooze time
-- [ ] Confirming the same task proposal twice leaves one task
+- [x] Confirming the same task proposal twice leaves one task
 - [ ] A task due at a time written with an offset is overdue only after that instant, whatever offset the clock reads in
 - [ ] A task due at a time written with an offset is not overdue before that instant (triangulates the item above)
 - [ ] A task with a date-only due time is not overdue before the end of that business day in the business time zone

@@ -204,6 +204,20 @@ describe('openTasks', () => {
       expect.objectContaining({ id: 'task-budget', waitingOn: 'marta@example.com' }),
     ]);
   });
+
+  it('leaves one open task when the same task proposal is confirmed twice', () => {
+    const proposal = {
+      title: 'Review the Q3 budget spreadsheet and send comments',
+      link: budgetMessageLink,
+      accountEmail: 'ana@example.com',
+    };
+    const events = [
+      { type: 'proposal-confirmed' as const, taskId: 'task-budget', at: '2026-11-09T15:00:00.000Z', proposal },
+      { type: 'proposal-confirmed' as const, taskId: 'task-budget', at: '2026-11-09T15:00:01.000Z', proposal },
+    ];
+
+    expect(openTasks(events)).toEqual([expect.objectContaining({ id: 'task-budget' })]);
+  });
 });
 
 describe('taskHistory', () => {
