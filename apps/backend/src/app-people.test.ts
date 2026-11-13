@@ -479,6 +479,25 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['unanswered ask'] })]);
   });
 
+  it("does not list at GET /people under Urgent a contact who is only mentioned in someone else's email whose ask has waited 2 business days", async () => {
+    const triage = triageAnsweringByMessageId({
+      'message-1': keepProposalExtracting({
+        asks: [{ ask: 'Review the budget with Marta' }],
+        people: [{ name: 'Marta', email: 'marta@acme.com', role: 'mentioned' }],
+      }),
+      'message-2': keepProposalExtracting(),
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
+    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+    await postTriageRun(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { urgent } = (await response.json()) as { urgent: { emails: string[] }[] };
+    expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['marta@acme.com']);
+  });
+
   it('lists at GET /waiting-on a contact whose last message the user has not answered, and leaves out a contact whose last message the user answered in the thread', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = budgetReviewReport.messages[0];
