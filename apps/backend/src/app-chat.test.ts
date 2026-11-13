@@ -868,6 +868,32 @@ describe('createApp chat messages', () => {
     expect(after).toEqual([expect.objectContaining({ title: 'BBVA Alertas', count: 1 })]);
   });
 
+  it('confirms, when a Telegram bot digest is confirmed, every bot message the digest listed when it was loaded', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    for (const [messageId, hour] of [
+      ['81', 13],
+      ['82', 14],
+      ['83', 15],
+    ] as const)
+      chatMessageStore.saveMessage({
+        ...bbvaAlertsBotMessage,
+        messageId,
+        text: `Cargo ${messageId} en tu tarjeta terminación 4321`,
+        time: `2026-11-09T${hour}:00:00.000Z`,
+      });
+    const app = createApp({ allowedEmails: [], databasePath });
+    const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+
+    await app.request(`/digests/${encodeURIComponent(before[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+
+    const confirmedMessageIds = chatMessageStore
+      .listVerdicts()
+      .filter(({ decision }) => decision === 'confirmed')
+      .map(({ messageId }) => messageId);
+    expect(confirmedMessageIds.sort()).toEqual(['81', '82', '83']);
+  });
+
   it("writes at POST /triage-run a Telegram bot digest's summary lines from its messages' text, and logs the call's spend", async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);

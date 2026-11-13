@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 01:42 · `apps/backend/src/app-chat.test.ts::confirms, when a Telegram bot digest is confirmed, every bot message the digest listed when it was loaded`
+- Behavior: Confirming a Telegram bot digest marks every message it listed (triangulates the item above)
+- Predicted: passes on first run — f6108d4's green already filters the confirmation by every id in `listedDigestStore`, not a hard-coded one, so there is nothing left to triangulate
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: no failing test can drive this item; the earlier tests at app-chat.test.ts:780 and :841 already pin the general rule. Kept the test as a direct pin that each listed message gets a `confirmed` verdict (commit as `test:`); /green has nothing to implement.
+
 ## 2026-11-13 01:34 · `apps/backend/src/app-slack.test.ts::leaves out of GET /waiting-on a person who wrote in a thread of a channel when the user replied later in that same thread`
 - Behavior: A user reply in thread A clears the person waiting in thread A (triangulates the thread B item)
 - Predicted: passes on first run (stated before running): the previous green already matches `reply.threadTimestamp === message.threadTimestamp`
