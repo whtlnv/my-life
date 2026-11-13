@@ -53,6 +53,7 @@
   - already covered by existing tests, per the cycle (driver; review at phase end)
 - [x] Correcting a proposal to Archive queues an archive command for that message
 - [ ] Correcting a proposal to Keep queues no archive command (triangulates the item above)
+- [ ] Confirming a second Telegram bot digest in the same chat, after the first was confirmed, marks the second digest's messages (found in cycle 15: a bot digest id is only the chat, so its listed ids stay those of the first digest)
 - [ ] A triage call that returns no proposal stores no proposal and leaves the message pending for the next triage run
 - [ ] Two cc-thread proposals from different threads show as two cards in the triage queue
 - [ ] Two cc-thread proposals from the same thread show as one card (triangulates the item above)
