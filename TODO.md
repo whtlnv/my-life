@@ -65,7 +65,7 @@
 ### Spend stays under the ceiling
 
 - [x] A digest summary call whose output fails validation still logs its cost in the day's spend
-- [ ] After a digest summary call fails, loading the same unchanged digest again makes no new summary call
+- [x] After a digest summary call fails, loading the same unchanged digest again makes no new summary call
 - [ ] After a digest summary call fails, a digest that has changed is asked for a summary again (triangulates the item above)
 - [ ] A filter-proposal run stops calling Claude once the day's spend reaches the ceiling partway through the run
 - [ ] A filter-proposal run under the ceiling asks Claude about every candidate (triangulates the item above)

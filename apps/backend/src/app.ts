@@ -1324,7 +1324,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       if (summarizedMessageKeysByBotDigest.get(digestId) === messageKeys) continue;
       const summary = await summarizeWithinTheSpendCeiling(messages.map(({ text }) => ({ summary: text })));
       digestSummaryStore.save(digestId, summary?.lines);
-      if (summary) summarizedMessageKeysByBotDigest.set(digestId, messageKeys);
+      summarizedMessageKeysByBotDigest.set(digestId, messageKeys);
     }
   }
   const identifyBotChatDigest = (chatId: string) => JSON.stringify(['bot-chat', chatId]);
