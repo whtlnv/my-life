@@ -596,9 +596,9 @@ describe('backend app: task proposals and tasks', () => {
     expect(prioritizationCalls).toBe(2);
   });
 
-  async function badgeCountsAroundConfirmingATaskDue(due: string) {
+  async function badgeCountsAroundConfirmingATaskDue(due: string, clock = clockAtTenPastThree) {
     const triage = triageAnswering(keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due }] }));
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock, triage });
     await proposeBudgetReview(app);
     const before = await getJson<{ badgeCount: number }>(app, '/now');
 
@@ -640,20 +640,11 @@ describe('backend app: task proposals and tasks', () => {
 
   it('counts in the GET /now badge count an open task with a date-only due time once that business day has ended in the business time zone', async () => {
     const halfPastMidnightTheNextDayInMexicoCity = { now: () => new Date('2026-11-03T06:30:00.000Z') };
-    const triage = triageAnswering(
-      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-02' }] }),
+    const { before, after } = await badgeCountsAroundConfirmingATaskDue(
+      '2026-11-02',
+      halfPastMidnightTheNextDayInMexicoCity,
     );
-    const app = createApp({
-      allowedEmails: ['ana@example.com'],
-      clock: halfPastMidnightTheNextDayInMexicoCity,
-      triage,
-    });
-    await proposeBudgetReview(app);
-    const before = await getJson<{ badgeCount: number }>(app, '/now');
 
-    await confirmFirstTaskProposal(app);
-
-    const after = await getJson<{ badgeCount: number }>(app, '/now');
-    expect(after.badgeCount).toBe(before.badgeCount + 1);
+    expect(after).toBe(before + 1);
   });
 });
