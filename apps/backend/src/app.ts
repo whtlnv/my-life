@@ -1675,7 +1675,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/tasks/:id/done', (context) => {
     const taskId = context.req.param('id');
-    const isKnownTask = taskEventStore.loadAll().some((event) => event.taskId === taskId);
+    const isKnownTask =
+      taskEventStore.loadAll().some((event) => event.taskId === taskId) ||
+      confirmedTasks(proposals, verdictStore.loadAll()).some((task) => task.id === taskId);
     if (!isKnownTask) return context.body(null, 404);
     taskEventStore.save({ type: 'done', taskId, at: clock.now().toISOString() });
     return context.json({ done: taskId });
@@ -2054,6 +2056,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     prioritizationStore.savePin({ taskId, pinned });
     return context.json({ pinned });
   });
+  const confirmedMailTasksNotDone = () => {
+    const doneTaskIds = taskEventStore
+      .loadAll()
+      .filter((event) => event.type === 'done')
+      .map((event) => event.taskId);
+    return confirmedTasks(proposals, verdictStore.loadAll()).filter((task) => !doneTaskIds.includes(task.id));
+  };
   app.get('/tasks', (context) => {
     const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
     const pinnedTaskIds = prioritizationStore.loadPinnedTaskIds();
@@ -2065,7 +2074,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       pinnedTaskIds.has(task.id) ? -Infinity : 'rank' in task ? task.rank : Infinity;
     rankedOpenTasks.sort((first, second) => pinnedFirstThenRank(first) - pinnedFirstThenRank(second));
     return context.json({
-      tasks: [...confirmedTasks(proposals, verdictStore.loadAll()), ...rankedOpenTasks],
+      tasks: [...confirmedMailTasksNotDone(), ...rankedOpenTasks],
     });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));

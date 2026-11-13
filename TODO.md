@@ -74,7 +74,7 @@
 ### Tasks are one model
 
 - [x] A task confirmed from a mail proposal keeps the same id across two `GET /tasks` reads and a restart
-- [ ] Marking a task confirmed from a mail proposal Done removes it from `GET /tasks`
+- [x] Marking a task confirmed from a mail proposal Done removes it from `GET /tasks`
 - [ ] A task confirmed from a mail proposal can be ranked by the prioritization pass and shows in its rank order
 - [ ] Undoing the confirmation of a mail-proposal task removes that task
 - [ ] Marking a Slack task Done from the dashboard (an id with slashes) reaches the backend and the task is done

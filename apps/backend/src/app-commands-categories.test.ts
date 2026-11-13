@@ -242,6 +242,23 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
     expect(afterRestart).toEqual(firstRead);
   });
 
+  it('drops from GET /tasks a task confirmed from a mail proposal once it is marked done at POST /tasks/:id/done', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage: budgetReviewActTriage({ title: 'Review the budget by Friday' }),
+    });
+    await confirmBudgetReviewProposal(app);
+    const listedTasks = async () =>
+      ((await (await app.request('/tasks')).json()) as { tasks: { id: string }[] }).tasks;
+    const [confirmedTask] = await listedTasks();
+
+    await postJson(app, `/tasks/${encodeURIComponent(String(confirmedTask?.id))}/done`, {});
+
+    expect(await listedTasks()).toEqual([]);
+  });
+
   it('lists at GET /tasks no task once its confirmed act proposal is re-decided as rejected through POST /verdicts', async () => {
     let currentTime = new Date('2026-11-02T15:10:00.000Z');
     const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });
