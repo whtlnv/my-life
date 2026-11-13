@@ -234,28 +234,13 @@ describe('backend app: filter proposals and Gmail filters', () => {
       allowedEmails: ['ana@example.com'],
       clock: clockAtTenPastThree,
       databasePath,
-      triage: triageAnsweringInOrder(Array.from({ length: 7 }, () => shopNewsletterArchiveProposal), 0),
+      triage: triageAnsweringInOrder(
+        Array.from({ length: 7 }, () => shopNewsletterArchiveProposal),
+        0,
+      ),
     });
     await reportTriageAndConfirmShopNewsletters(beforeRestart);
-    for (const messageId of ['deals-1', 'deals-2', 'deals-3']) {
-      await postJson(beforeRestart, '/mail-report', {
-        accountEmail: 'ana@example.com',
-        historyId: '1002',
-        messages: [
-          {
-            id: messageId,
-            threadId: messageId,
-            from: 'Deals <deals@store.example.com>',
-            to: 'ana@example.com',
-            subject: 'Deals of the week',
-            date: 'Mon, 2 Nov 2026 10:00:00 -0600',
-            snippet: 'Big discounts',
-          },
-        ],
-      });
-      await postTriageRun(beforeRestart);
-      await postJson(beforeRestart, '/verdicts', { messageId, decision: 'confirmed' });
-    }
+    await reportTriageAndConfirmStoreDeals(beforeRestart);
     await reportShopNewsletter(beforeRestart, 'newsletter-4');
     await postTriageRun(beforeRestart);
     const askedCandidates: unknown[] = [];
@@ -272,6 +257,28 @@ describe('backend app: filter proposals and Gmail filters', () => {
 
     expect(askedCandidates).toHaveLength(1);
   });
+
+  async function reportTriageAndConfirmStoreDeals(app: ReturnType<typeof createApp>) {
+    for (const messageId of ['deals-1', 'deals-2', 'deals-3']) {
+      await postJson(app, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1002',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Deals <deals@store.example.com>',
+            to: 'ana@example.com',
+            subject: 'Deals of the week',
+            date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+            snippet: 'Big discounts',
+          },
+        ],
+      });
+      await postTriageRun(app);
+      await postJson(app, '/verdicts', { messageId, decision: 'confirmed' });
+    }
+  }
 
   function appProposingShopNewslettersFilter() {
     const filter = filterAnswering(shopNewslettersFilterProposal);
