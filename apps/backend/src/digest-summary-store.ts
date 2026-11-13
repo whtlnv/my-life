@@ -6,6 +6,9 @@ export function openDigestSummaryStore(databasePath: string) {
   const saveSummary = database.prepare(
     'INSERT OR REPLACE INTO digest_summaries (digest_id, summary_lines) VALUES (?, ?)',
   );
+  const loadSummary = database.prepare<[string], { summary_lines: string | null }>(
+    'SELECT summary_lines FROM digest_summaries WHERE digest_id = ?',
+  );
   database.exec(
     'CREATE TABLE IF NOT EXISTS digest_summary_rewrite (id INTEGER PRIMARY KEY CHECK (id = 1), needed INTEGER)',
   );
@@ -14,9 +17,6 @@ export function openDigestSummaryStore(databasePath: string) {
   );
   const loadRewriteNeeded = database.prepare<[], { needed: number }>(
     'SELECT needed FROM digest_summary_rewrite WHERE id = 1',
-  );
-  const loadSummary = database.prepare<[string], { summary_lines: string | null }>(
-    'SELECT summary_lines FROM digest_summaries WHERE digest_id = ?',
   );
   return {
     // Whether a verdict has been given since the summaries were last rewritten; kept across restarts.
