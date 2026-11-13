@@ -52,6 +52,33 @@ describe('backend app: the weekly expense statement', () => {
     });
   });
 
+  it('quotes in GET /expense-statement a field containing a line break', async () => {
+    const proposalByMessageId: Record<string, unknown> = {
+      'message-acme': expenseInvoiceProposal('Acme\nInc.', '2026-11-02', 120),
+    };
+    const triage = triageAnsweringByMessageId(proposalByMessageId);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'message-acme', threadId: 'thread-acme', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(app);
+
+    const response = await app.request('/expense-statement?week=2026-11-02');
+
+    const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-acme';
+    expect(await response.text()).toBe(
+      [
+        'vendor,amount,currency,date,account,link',
+        `"Acme\nInc.",120,MXN,2026-11-02,ana@example.com,${link}`,
+        '',
+      ].join('\n'),
+    );
+  });
+
   it('answers GET /expense-statement without week with the current business week', async () => {
     const proposalByMessageId: Record<string, unknown> = {
       'message-last-week': expenseInvoiceProposal('Last week', '2026-10-30'),

@@ -321,7 +321,7 @@ function confirmedCheckLater(proposals: Proposal[], verdicts: StoredVerdict[]) {
 
 const csvField = (value: string | number): string => {
   const text = String(value);
-  return /[",]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 
 function agreementRate(category: string, proposals: Proposal[], verdicts: StoredVerdict[]): number | undefined {

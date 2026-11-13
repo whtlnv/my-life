@@ -113,7 +113,7 @@
 ### Dashboard edges
 
 - [x] A follow-up message in a new agent conversation continues that conversation instead of starting another
-- [ ] The expense statement CSV quotes a field containing a line break
+- [x] The expense statement CSV quotes a field containing a line break
 - [ ] The statement page reads a quoted field containing a line break as one entry with that field intact
 
 ### Pollers hold up against the real APIs (Codex audit, 2026-11-13)
