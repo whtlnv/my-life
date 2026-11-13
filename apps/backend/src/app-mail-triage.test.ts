@@ -466,6 +466,31 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(askedMessageIds).toEqual(['message-once']);
   });
 
+  it('stores no proposal when triage at POST /triage-run answers none, and asks again for that message on the next run', async () => {
+    const askedMessageIds: string[] = [];
+    const answersInOrder: unknown[] = [
+      undefined,
+      { action: 'keep', category: 'unknown', summary: 'A message', extract: {}, reason: 'Not sure what it is' },
+    ];
+    const triage = {
+      propose: (message: { id: string }) => {
+        askedMessageIds.push(message.id);
+        return Promise.resolve({ proposal: answersInOrder.shift(), costInUsd: 0, promptVersion: 'triage-v1' });
+      },
+    };
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const queueAfterFirstRun = (await (await app.request('/triage-queue')).json()) as { remaining: number };
+
+    await postTriageRun(app);
+
+    expect({ remaining: queueAfterFirstRun.remaining, askedMessageIds }).toEqual({
+      remaining: 1,
+      askedMessageIds: ['message-1', 'message-1'],
+    });
+  });
+
   it("stops asking triage at POST /triage-run once today's spend reaches the daily ceiling", async () => {
     const askedMessageIds: string[] = [];
     const triage = triageRecordingAskedMessageIds(askedMessageIds, 12);

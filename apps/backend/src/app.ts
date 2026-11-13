@@ -1091,6 +1091,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         const result = await triage.propose(triageRequestFor(message, accountEmail), examples);
         const answeredAt = clock.now().toISOString();
         logSpend(result, answeredAt);
+        if (result.proposal === undefined) {
+          continue;
+        }
         const proposal: Proposal = {
           action: '',
           category: '',
