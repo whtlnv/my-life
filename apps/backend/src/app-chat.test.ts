@@ -1730,6 +1730,27 @@ describe('createApp chat messages', () => {
     expect(people).toEqual([]);
   });
 
+  it("leaves out of GET /waiting-on a Telegram chat whose user's answer, stored first, has a higher message id than the message it answers in the same second", async () => {
+    const databasePath = temporaryDatabasePath();
+    openChatMessageStore(databasePath).saveMessage({
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Lucía Romero',
+      messageId: '43',
+      senderId: '9000',
+      senderName: 'Francisco',
+      text: 'Thursday works.',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: true,
+    });
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([]);
+  });
+
   it('leaves out of GET /waiting-on a Telegram chat with a bot, though its newest message is from the bot', async () => {
     const databasePath = temporaryDatabasePath();
     openChatMessageStore(databasePath).saveMessage({

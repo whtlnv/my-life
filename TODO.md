@@ -129,7 +129,7 @@
 - [x] A Slack mention found by search inside a thread is stored with its thread timestamp, read from its permalink
 - [x] When a Telegram send succeeds and the own-account lookup after it fails, `POST /chat-sends` still answers success
 - [x] When loading Telegram dialog history fails at start-up, new Telegram messages are still stored
-- [ ] Two Telegram messages in the same second are ordered by message id, so an answer sent in that second counts as the user's reply
+- [x] Two Telegram messages in the same second are ordered by message id, so an answer sent in that second counts as the user's reply
 - [ ] A Telegram session that connects but is not authorized shows the Telegram chip as not logged in
 - [ ] A message an anonymous admin posts in a Telegram supergroup is stored, named after the group
 

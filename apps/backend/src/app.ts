@@ -2452,9 +2452,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const chatMessages = chatMessageStore.listMessages();
     // The store lists oldest first, so a reply later in the list came after the message, even within the same minute.
     const userRepliedLaterInChat = (message: (typeof chatMessages)[number]): boolean =>
-      chatMessages
-        .slice(chatMessages.indexOf(message) + 1)
-        .some((reply) => reply.sentByUser && reply.channel === message.channel && reply.chatId === message.chatId);
+      chatMessages.some(
+        (reply, index) =>
+          reply.sentByUser &&
+          reply.channel === message.channel &&
+          reply.chatId === message.chatId &&
+          (index > chatMessages.indexOf(message) ||
+            (reply.time === message.time && Number(reply.messageId) > Number(message.messageId))),
+      );
     const awaitsUserReply = (message: (typeof chatMessages)[number]): boolean =>
       !message.sentByUser && !message.chatIsBot && !userRepliedLaterInChat(message);
     // One entry per sender in each chat, waiting since their first unanswered message (the store lists oldest first).
