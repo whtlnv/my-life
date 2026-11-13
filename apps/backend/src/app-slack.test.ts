@@ -1156,3 +1156,48 @@ describe('createApp Slack polls', () => {
     ]);
   });
 });
+
+describe('createApp Slack poll rate limits', () => {
+  it('waits, on POST /slack-poll, the Retry-After seconds of a 429 answer before calling Slack again', async () => {
+    const requestTimes: number[] = [];
+    const server: Server = createServer((request, response) => {
+      request.resume();
+      request.on('end', () => {
+        requestTimes.push(performance.now());
+        if (requestTimes.length === 1) {
+          response.writeHead(429, { 'Retry-After': '1' });
+          response.end();
+          return;
+        }
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end(
+          JSON.stringify(
+            request.url === '/auth.test'
+              ? { ok: true, user_id: 'UOWN', team: 'PS Mutuus' }
+              : { ok: true, messages: { matches: [] } },
+          ),
+        );
+      });
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    onTestFinished(
+      () =>
+        new Promise<void>((resolve) =>
+          server.close(() => {
+            resolve();
+          }),
+        ),
+    );
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      slackApiUrl: `http://127.0.0.1:${String((server.address() as AddressInfo).port)}`,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+    });
+
+    await app.request('/slack-poll', { method: 'POST' });
+
+    const [rateLimitedAt, retriedAt] = requestTimes;
+    expect((retriedAt ?? 0) - (rateLimitedAt ?? 0)).toBeGreaterThanOrEqual(1000);
+  });
+});

@@ -894,6 +894,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const succeededTeamIds = await pollSlackWorkspaces({
       fetch,
       apiUrl: slackApiUrl,
+      wait: (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
       workspaces: configuredSlackWorkspaces,
       store: slackMessageStore,
       clock,
