@@ -40,4 +40,9 @@ describe('notesActionItems', () => {
 
     expect(items).toEqual([]);
   });
+
+  it('yields no items for empty text or a next-steps heading with nothing under it', () => {
+    expect(notesActionItems('')).toEqual([]);
+    expect(notesActionItems(fixture('gemini-notes-empty-next-steps.fixture.txt'))).toEqual([]);
+  });
 });

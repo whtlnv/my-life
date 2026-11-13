@@ -7,7 +7,7 @@
 - [x] The notes parser returns the items under an `Action items` heading the same way
 - [x] The notes parser stops at the heading that follows the next-steps section: lines under a later heading are not items
 - [x] A notes doc with no next-steps heading yields no items
-- [ ] Empty text, or a next-steps heading with nothing under it, yields no items and does not throw
+- [x] Empty text, or a next-steps heading with nothing under it, yields no items and does not throw
 - [ ] An item written `[Name] does the thing` carries the assignee `Name` and the text `does the thing`
 - [ ] An item written `Name will do the thing` carries the assignee `Name`
 - [ ] An item that names no one carries no assignee
