@@ -45,4 +45,10 @@ describe('notesActionItems', () => {
     expect(notesActionItems('')).toEqual([]);
     expect(notesActionItems(fixture('gemini-notes-empty-next-steps.fixture.txt'))).toEqual([]);
   });
+
+  it('reads an item written `[Name] does the thing` as the assignee Name and the text after the brackets', () => {
+    const items = notesActionItems(fixture('gemini-notes-bracketed-assignee.fixture.txt'));
+
+    expect(items).toEqual([{ assignee: 'Lucía Ferrer', text: 'Send the signed contract to the vendor.' }]);
+  });
 });
