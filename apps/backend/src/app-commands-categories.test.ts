@@ -250,8 +250,7 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
       triage: budgetReviewActTriage({ title: 'Review the budget by Friday' }),
     });
     await confirmBudgetReviewProposal(app);
-    const listedTasks = async () =>
-      ((await (await app.request('/tasks')).json()) as { tasks: { id: string }[] }).tasks;
+    const listedTasks = async () => ((await (await app.request('/tasks')).json()) as { tasks: { id: string }[] }).tasks;
     const [confirmedTask] = await listedTasks();
 
     await postJson(app, `/tasks/${encodeURIComponent(String(confirmedTask?.id))}/done`, {});

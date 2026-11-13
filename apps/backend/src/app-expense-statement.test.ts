@@ -71,11 +71,9 @@ describe('backend app: the weekly expense statement', () => {
 
     const link = 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-acme';
     expect(await response.text()).toBe(
-      [
-        'vendor,amount,currency,date,account,link',
-        `"Acme\nInc.",120,MXN,2026-11-02,ana@example.com,${link}`,
-        '',
-      ].join('\n'),
+      ['vendor,amount,currency,date,account,link', `"Acme\nInc.",120,MXN,2026-11-02,ana@example.com,${link}`, ''].join(
+        '\n',
+      ),
     );
   });
 

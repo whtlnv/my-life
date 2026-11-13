@@ -424,7 +424,11 @@ describe('createApp chat messages', () => {
 
     expect(response.status).toBe(200);
     expect(messages).toEqual([
-      expect.objectContaining({ messageId: idsTelegramReturned[0], text: 'Thursday works, same time', sentByUser: true }),
+      expect.objectContaining({
+        messageId: idsTelegramReturned[0],
+        text: 'Thursday works, same time',
+        sentByUser: true,
+      }),
     ]);
   });
 

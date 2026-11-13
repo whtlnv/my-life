@@ -395,7 +395,9 @@ describe('createApp Slack messages', () => {
 
   it('lists at GET /tasks a task made from a Slack message on the account named by its workspace, not the team id', async () => {
     const slackApiUrl = await localSlackAnswering((path) =>
-      path === '/auth.test' ? { ok: true, user_id: 'UOWN', team: 'PS Mutuus' } : { ok: true, messages: { matches: [] } },
+      path === '/auth.test'
+        ? { ok: true, user_id: 'UOWN', team: 'PS Mutuus' }
+        : { ok: true, messages: { matches: [] } },
     );
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({

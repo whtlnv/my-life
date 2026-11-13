@@ -200,9 +200,7 @@ describe('openTasks', () => {
       },
     ];
 
-    expect(openTasks(events)).toEqual([
-      expect.objectContaining({ id: 'task-budget', waitingOn: 'marta@example.com' }),
-    ]);
+    expect(openTasks(events)).toEqual([expect.objectContaining({ id: 'task-budget', waitingOn: 'marta@example.com' })]);
   });
 
   it('leaves one open task when the same task proposal is confirmed twice', () => {
