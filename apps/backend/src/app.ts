@@ -2246,11 +2246,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         (isOnAlwaysMattersLine(contact) && !contactDetailsStore.userRemovedMark(primaryEmail, 'vip'))
       );
     };
+    const isSentBy = (contact: { emails: string[] }, message: (typeof reportedMessages)[number]) =>
+      contact.emails.includes(contactFromSender(message.from).email);
     const conversationMessagesOf = (contact: { emails: string[] }) =>
       reportedMessages
-        .filter(
-          (message) => contact.emails.includes(contactFromSender(message.from).email) || message.sentByUser === true,
-        )
+        .filter((message) => isSentBy(contact, message) || message.sentByUser === true)
         .map((message) => {
           const proposal = latestProposalFor(proposals, message.id);
           return {

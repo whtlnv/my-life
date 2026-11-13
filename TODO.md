@@ -99,7 +99,7 @@
 - [x] `GET /people` marks a waiting VIP urgent by the VIP wait `createApp` is given, not the default (backlog: apps/backend/src/app.ts:2181)
 - [x] `GET /people` counts business days for urgency in the time zone `createApp` is given (backlog: apps/backend/src/app.ts:2181)
 - [x] The backend `main.ts` starts serves `GET /people` with the urgency settings its startup settings read
-- [ ] A person only mentioned in someone else's email is not marked urgent
+- [x] A person only mentioned in someone else's email is not marked urgent
 - [ ] A person who asked the user directly and has waited past the threshold is still marked urgent (triangulates the item above)
 - [ ] A person only mentioned in someone else's email is not on the waiting-on list
 - [ ] A Slack person's waiting-on link opens that contact on the People tab
