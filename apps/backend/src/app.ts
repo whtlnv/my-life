@@ -1270,7 +1270,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         at: clock.now().toISOString(),
         proposal: {
           title: String(message?.text),
-          accountEmail: verdict.workspaceTeamId,
+          accountEmail: slackWorkspacePollFor(verdict.workspaceTeamId)?.name ?? verdict.workspaceTeamId,
           link: slackMessagePermalink(verdict),
         },
       });

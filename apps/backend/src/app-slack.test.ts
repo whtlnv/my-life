@@ -393,6 +393,39 @@ describe('createApp Slack messages', () => {
     ]);
   });
 
+  it('lists at GET /tasks a task made from a Slack message on the account named by its workspace, not the team id', async () => {
+    const slackApiUrl = await localSlackAnswering((path) =>
+      path === '/auth.test' ? { ok: true, user_id: 'UOWN', team: 'PS Mutuus' } : { ok: true, messages: { matches: [] } },
+    );
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      slackApiUrl,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+      clock: { now: () => new Date('2026-11-10T18:00:00.000Z') },
+    });
+
+    await app.request('/slack-poll', { method: 'POST' });
+    await postJson(app, '/slack-verdicts', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      timestamp: '1762700000.000100',
+      decision: 'act',
+    });
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+
+    expect(tasks).toEqual([expect.objectContaining({ accountEmail: 'PS Mutuus' })]);
+  });
+
   it('marks done at POST /tasks/:id/done a Slack task whose id is URL-encoded as one path segment, and drops it from GET /tasks', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({

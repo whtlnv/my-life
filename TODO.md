@@ -108,7 +108,7 @@
 - [x] An organization's timeline lists each mail message with its Gmail link
 - [x] The People tab opens a contact from a link even when a contact listed before it has no email (found in cycle 4: `people-page.tsx:222` reads `emails` of every contact)
 - [x] `GET /waiting-on` names a Telegram sender's Telegram id, so its link opens that contact on the People tab (found in cycle 5: `app.ts:2464` sends no id for chat senders)
-- [ ] A task made from a Slack item names its workspace as its account, not the team id (backlog: apps/backend/src/app.ts:1234 A task made from a Slack item stores the workspace team id as its `accountEmail`)
+- [x] A task made from a Slack item names its workspace as its account, not the team id (backlog: apps/backend/src/app.ts:1234 A task made from a Slack item stores the workspace team id as its `accountEmail`)
 
 ### Dashboard edges
 
