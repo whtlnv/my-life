@@ -473,6 +473,31 @@ describe('backend app: digests and their confirmation', () => {
     expect(after[0]?.id).not.toEqual(loadedDigestId);
   });
 
+  it('confirms at POST /digests/:id/confirmation only the proposals a digest held when it was loaded, even after a later GET /triage-queue listed it with one more', async () => {
+    const triage = triageAnsweringInOrder(
+      [systemUpdateNotice('GitHub', 'GitHub build passed'), systemUpdateNotice('GitHub', 'GitHub deploy done')],
+      1,
+    );
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, databasePath });
+    await reportFromGitHub(app, 'message-build');
+    await postTriageRun(app);
+    const { digests: loaded } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+    const loadedDigestId = loaded[0]?.id ?? '';
+    await reportFromGitHub(app, 'message-deploy');
+    await postTriageRun(app);
+    await getJson(app, '/triage-queue');
+
+    await app.request(`/digests/${encodeURIComponent(loadedDigestId)}/confirmation`, { method: 'POST' });
+
+    expect(loadedDigestId).toEqual(expect.any(String));
+    expect(
+      openVerdictStore(databasePath)
+        .loadAll()
+        .map(({ messageId }) => messageId),
+    ).toEqual(['message-build']);
+  });
+
   it('refuses a confirmation posted at POST /digests/:id/confirmation for an unknown digest as not found, and stores no verdict', async () => {
     const databasePath = temporaryDatabasePath();
     const triage = triageAnsweringInOrder([systemUpdateNotice('GitHub', 'GitHub build passed')], 1);

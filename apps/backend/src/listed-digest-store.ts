@@ -4,7 +4,7 @@ export function openListedDigestStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec('CREATE TABLE IF NOT EXISTS listed_digests (digest_id TEXT PRIMARY KEY, message_ids TEXT NOT NULL)');
   const saveListedDigest = database.prepare(
-    'INSERT OR REPLACE INTO listed_digests (digest_id, message_ids) VALUES (?, ?)',
+    'INSERT OR IGNORE INTO listed_digests (digest_id, message_ids) VALUES (?, ?)',
   );
   const loadListedDigest = database.prepare<[string], { message_ids: string }>(
     'SELECT message_ids FROM listed_digests WHERE digest_id = ?',
