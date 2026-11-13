@@ -60,12 +60,12 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
         historyId: '1001',
         messages: [
           {
-            id: 'message-3',
             threadId: 'thread-3',
             from: 'Luis <luis@example.com>',
             to: 'ana@example.com',
+            subject: 'No id',
             date: 'Mon, 2 Nov 2026 09:00:00 -0600',
-            snippet: 'This message has no subject.',
+            snippet: 'This message has no id.',
           },
         ],
       },
