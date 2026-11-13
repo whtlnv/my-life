@@ -51,6 +51,27 @@ function toolUseAnswer(request: RecordedAnthropicRequest) {
   };
 }
 
+function unsureTriageAnswer(extraction: Record<string, unknown>) {
+  return (request: RecordedAnthropicRequest) => ({
+    ...toolUseAnswer(request),
+    content: [
+      {
+        type: 'tool_use',
+        id: 'tool-use-1',
+        name: 'propose_triage',
+        input: {
+          action: 'keep',
+          category: 'unknown',
+          summary: 'A budget review',
+          extract: {},
+          reason: 'Unsure',
+          ...extraction,
+        },
+      },
+    ],
+  });
+}
+
 async function startFakeAnthropic(
   recorded: RecordedAnthropicRequest[],
   answer: (request: RecordedAnthropicRequest) => unknown = toolUseAnswer,
@@ -189,24 +210,7 @@ describe('the shipped backend (main.ts)', () => {
   }, 30_000);
 
   it('lists at GET /people under Urgent a contact whose unanswered ask is 1 business day old when MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS is 1', async () => {
-    fakeAnthropic = await startFakeAnthropic([], (request) => ({
-      ...toolUseAnswer(request),
-      content: [
-        {
-          type: 'tool_use',
-          id: 'tool-use-1',
-          name: 'propose_triage',
-          input: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-            asks: [{ ask: 'Review the budget' }],
-          },
-        },
-      ],
-    }));
+    fakeAnthropic = await startFakeAnthropic([], unsureTriageAnswer({ asks: [{ ask: 'Review the budget' }] }));
     const baseUrl = await startShippedBackend(fakeAnthropic, {
       MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
       MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS: '1',
@@ -223,24 +227,7 @@ describe('the shipped backend (main.ts)', () => {
 
   it('lists at GET /people under Urgent, with the reason "deadline", a contact whose message carries a date 5 days away when MY_LIFE_DEADLINE_HOURS is 240', async () => {
     const fiveDaysAway = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
-    fakeAnthropic = await startFakeAnthropic([], (request) => ({
-      ...toolUseAnswer(request),
-      content: [
-        {
-          type: 'tool_use',
-          id: 'tool-use-1',
-          name: 'propose_triage',
-          input: {
-            action: 'keep',
-            category: 'unknown',
-            summary: 'A budget review',
-            extract: {},
-            reason: 'Unsure',
-            dates: [fiveDaysAway],
-          },
-        },
-      ],
-    }));
+    fakeAnthropic = await startFakeAnthropic([], unsureTriageAnswer({ dates: [fiveDaysAway] }));
     const baseUrl = await startShippedBackend(fakeAnthropic, {
       MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
       MY_LIFE_DEADLINE_HOURS: '240',
