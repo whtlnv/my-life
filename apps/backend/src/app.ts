@@ -294,6 +294,8 @@ function shouldArchive(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
   return proposalEffects(proposal, verdicts).archives.length > 0;
 }
 
+const mailTaskId = (messageId: string): string => `mail-${messageId}`;
+
 function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
   return proposals.flatMap((proposal) => {
     const effects =
@@ -301,7 +303,7 @@ function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
         ? triageEffects(proposal as TriageProposal, { decision: 'confirmed' })
         : proposalEffects(proposal, verdicts);
     return effects.tasks.map(({ title, accountEmail }) => ({
-      id: `mail-${proposal.messageId}`,
+      id: mailTaskId(proposal.messageId),
       title,
       link: gmailMessageLink(proposal),
       accountEmail,
@@ -2082,7 +2084,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .loadAll()
       .filter((event) => event.type === 'done')
       .map((event) => event.taskId);
-    const undoneTaskIds = undoAutomaticStore.loadAll().map((messageId) => `mail-${messageId}`);
+    const undoneTaskIds = undoAutomaticStore.loadAll().map(mailTaskId);
     return confirmedTasks(proposals, verdictStore.loadAll()).filter(
       (task) => !doneTaskIds.includes(task.id) && !undoneTaskIds.includes(task.id),
     );
