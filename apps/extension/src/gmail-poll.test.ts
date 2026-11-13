@@ -603,19 +603,7 @@ describe('pollGmailOnce', () => {
   });
 
   it('when the backend refuses a mail report, logs the account and the status the backend answered', async () => {
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.origin + url.pathname === `${gmailApi}/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
-      }
-      if (url.origin + url.pathname === `${gmailApi}/history`) {
-        return Promise.resolve(Response.json({ history: [], historyId: '98765' }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ error: 'refused' }, { status: 422 }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+    const fakeFetch = fetchAnsweringMailReportWith(() => Response.json({ error: 'refused' }, { status: 422 }));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     try {
@@ -635,19 +623,7 @@ describe('pollGmailOnce', () => {
   });
 
   it('when the backend accepts a mail report, logs nothing', async () => {
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.origin + url.pathname === `${gmailApi}/profile`) {
-        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
-      }
-      if (url.origin + url.pathname === `${gmailApi}/history`) {
-        return Promise.resolve(Response.json({ history: [], historyId: '98765' }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ accepted: 0 }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+    const fakeFetch = fetchAnsweringMailReportWith(() => Response.json({ accepted: 0 }));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     try {
@@ -809,3 +785,21 @@ describe('pollGmailOnce', () => {
     });
   });
 });
+
+function fetchAnsweringMailReportWith(
+  mailReportResponse: () => Response,
+): (input: string | URL | Request, init?: RequestInit) => Promise<Response> {
+  return (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+    if (url.origin + url.pathname === `${gmailApi}/profile`) {
+      return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+    }
+    if (url.origin + url.pathname === `${gmailApi}/history`) {
+      return Promise.resolve(Response.json({ history: [], historyId: '98765' }));
+    }
+    if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+      return Promise.resolve(mailReportResponse());
+    }
+    return Promise.resolve(new Response('unexpected request', { status: 404 }));
+  };
+}
