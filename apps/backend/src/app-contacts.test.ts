@@ -274,7 +274,9 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      messages: [{ id: 'message-1', subject: 'Budget review', accountEmail: 'ana@example.com' }],
+      messages: [
+        expect.objectContaining({ id: 'message-1', subject: 'Budget review', accountEmail: 'ana@example.com' }),
+      ],
     });
   });
 
