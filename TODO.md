@@ -133,6 +133,10 @@
 - [x] A Telegram session that connects but is not authorized shows the Telegram chip as not logged in
 - [x] A message an anonymous admin posts in a Telegram supergroup is stored, named after the group
 
+### Keystone
+
+- [ ] A Slack workspace chip whose last poll failed shows Slack's error name (from `lastPollFailure` on `GET /now`) next to the workspace's name (keystone: the backend sends it since f11a646, the dashboard never shows it)
+
 ### Phase 5 walk-through
 
 - [x] `docs/phase-5-walkthrough.md` lists the live Slack checks for the user, and `PENDING_TASKS.md` gains an entry asking the user to run it
