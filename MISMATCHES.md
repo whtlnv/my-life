@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 02:42 · `apps/backend/src/app-chat.test.ts::asks the summarizer again at a second POST /triage-run about a Telegram bot digest that gained a message since the first run’s summary call failed`
+- Behavior: after a digest summary call fails, a digest that has changed is asked for a summary again (triangulates "an unchanged digest makes no new summary call")
+- Predicted: pass. ff6632c already stores the failed digest's message keys, so a new message breaks the match and the digest is summarized again
+- Actual: passed (1 passed). A scratch mutation (`summarizedMessageKeysByBotDigest.has(digestId)` in place of the key comparison) makes it fail with `expected 1 to be 2`; app.ts restored
+- Type: passed unexpectedly
+- Resolution: the previous green already generalizes; kept as a regression guard that pins the retry behavior against an over-broad "never retry after failure" fix. Nothing for /green to do
+
 ## 2026-11-13 02:20 · `apps/backend/src/app-mail-triage.test.ts::shows in GET /triage-queue two cc-thread proposals from the same thread as one card, for the newer message`
 - Behavior: two cc-thread proposals from the same thread show as one card (triangulates "different threads show as two cards")
 - Predicted: AssertionError — two cards where one is expected, since nothing in the backend collapses a thread

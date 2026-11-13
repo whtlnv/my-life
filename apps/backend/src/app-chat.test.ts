@@ -1011,6 +1011,38 @@ describe('createApp chat messages', () => {
     expect(summaryCalls).toBe(1);
   });
 
+  it('asks the summarizer again at a second POST /triage-run about a Telegram bot digest that gained a message since the first run’s summary call failed', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:00:00.000Z',
+    });
+    let summaryCalls = 0;
+    const summary = {
+      summarize: () => {
+        summaryCalls += 1;
+        return Promise.reject(
+          Object.assign(new Error('The summary model answered with output that fails validation'), { costInUsd: 0.25 }),
+        );
+      },
+    };
+    const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath, summary });
+    await postTriageRun(app);
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '78',
+      text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
+      time: '2026-11-02T14:30:00.000Z',
+    });
+
+    await postTriageRun(app);
+
+    expect(summaryCalls).toBe(2);
+  });
+
   it('summarizes a Telegram bot digest again at POST /triage-run, with every unconfirmed message, once a new bot message arrives after its last summary', async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);
