@@ -688,12 +688,6 @@ describe('pollSlackWorkspace', () => {
     await expect(pollWith(slack)).rejects.toThrow('Slack workspace T0001 answered invalid_auth');
   });
 
-  it('fails the poll, naming the error, when a search answers missing_scope', async () => {
-    const slack = scriptedSlack({ '/search.messages': () => ({ ok: false, error: 'missing_scope' }) });
-
-    await expect(pollWith(slack)).rejects.toThrow('missing_scope');
-  });
-
   it('fails the poll, naming the error, when a conversation history answers channel_not_found', async () => {
     const slack = scriptedSlack({
       '/search.messages': directMessageSearchNaming('D0001'),
@@ -703,16 +697,15 @@ describe('pollSlackWorkspace', () => {
     await expect(pollWith(slack)).rejects.toThrow('channel_not_found');
   });
 
-  it('fails the poll, naming the error, when a search answers internal_error', async () => {
-    const slack = scriptedSlack({ '/search.messages': () => ({ ok: false, error: 'internal_error' }) });
+  it.each([
+    { error: 'missing_scope' },
+    { error: 'internal_error' },
+    // An error name never seen before.
+    { error: 'fatal_error' },
+  ])('fails the poll, naming the error, when a search answers $error', async ({ error }) => {
+    const slack = scriptedSlack({ '/search.messages': () => ({ ok: false, error }) });
 
-    await expect(pollWith(slack)).rejects.toThrow('Slack workspace T0001 answered internal_error');
-  });
-
-  it('fails the poll, naming the error, when a search answers an error name never seen before', async () => {
-    const slack = scriptedSlack({ '/search.messages': () => ({ ok: false, error: 'fatal_error' }) });
-
-    await expect(pollWith(slack)).rejects.toThrow('Slack workspace T0001 answered fatal_error');
+    await expect(pollWith(slack)).rejects.toThrow(`Slack workspace T0001 answered ${error}`);
   });
 
   it('waits and retries a call Slack answers ratelimited, and stores the message once the retry answers ok', async () => {
