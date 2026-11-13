@@ -1100,6 +1100,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           ...(result.proposal as Proposal | undefined),
           messageId: message.id,
           threadId: message.threadId,
+          date: message.date,
           accountEmail,
         };
         const displayedProposal = withDisplayedCategory(proposal, message, accountEmail);

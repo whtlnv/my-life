@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 02:20 · `apps/backend/src/app-mail-triage.test.ts::shows in GET /triage-queue two cc-thread proposals from the same thread as one card, for the newer message`
+- Behavior: two cc-thread proposals from the same thread show as one card (triangulates "different threads show as two cards")
+- Predicted: AssertionError — two cards where one is expected, since nothing in the backend collapses a thread
+- Actual: passed on first run — the domain's `triageQueue` already keeps the newest proposal per thread (`newestPerThread`); the previous cycle's `threadId` on the proposal was the only missing piece
+- Type: passed unexpectedly
+- Resolution: the collapse exists, but the backend proposal carries no `date`, so `newest` compares NaN and keeps the first stored proposal; rewrote the test to report and triage a newer same-thread message after the first and expect its card, which fails with `['message-1']` for `['message-2']`
+
 ## 2026-11-13 01:42 · `apps/backend/src/app-chat.test.ts::confirms, when a Telegram bot digest is confirmed, every bot message the digest listed when it was loaded`
 - Behavior: Confirming a Telegram bot digest marks every message it listed (triangulates the item above)
 - Predicted: passes on first run — f6108d4's green already filters the confirmation by every id in `listedDigestStore`, not a hard-coded one, so there is nothing left to triangulate

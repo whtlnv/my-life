@@ -958,6 +958,32 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(ccThreadMessageIds).toEqual(['message-1', 'message-2']);
   });
 
+  it('shows in GET /triage-queue two cc-thread proposals from the same thread as one card, for the newer message', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+    });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postTriageRun(app);
+    const laterReplyInSameThread = {
+      ...budgetReviewReport.messages[0],
+      id: 'message-2',
+      from: 'Marta <marta@acme.com>',
+      date: 'Mon, 2 Nov 2026 09:05:00 -0600',
+    };
+    await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [laterReplyInSameThread] });
+    await postTriageRun(app);
+
+    const queue = await app.request('/triage-queue');
+
+    const { groups } = (await queue.json()) as { groups: { category: string; items: { messageId: string }[] }[] };
+    const ccThreadMessageIds = groups
+      .find(({ category }) => category === 'cc-thread')
+      ?.items.map(({ messageId }) => messageId);
+    expect(ccThreadMessageIds).toEqual(['message-2']);
+  });
+
   it('says in GET /triage-queue which account each item came from and links to the message in Gmail for that account', async () => {
     const triage = budgetReviewActTriage();
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
