@@ -220,6 +220,39 @@ describe('the shipped backend (main.ts)', () => {
 
     expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['unanswered ask'] })]);
   }, 30_000);
+
+  it('lists at GET /people under Urgent, with the reason "deadline", a contact whose message carries a date 5 days away when MY_LIFE_DEADLINE_HOURS is 240', async () => {
+    const fiveDaysAway = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    fakeAnthropic = await startFakeAnthropic([], (request) => ({
+      ...toolUseAnswer(request),
+      content: [
+        {
+          type: 'tool_use',
+          id: 'tool-use-1',
+          name: 'propose_triage',
+          input: {
+            action: 'keep',
+            category: 'unknown',
+            summary: 'A budget review',
+            extract: {},
+            reason: 'Unsure',
+            dates: [fiveDaysAway],
+          },
+        },
+      ],
+    }));
+    const baseUrl = await startShippedBackend(fakeAnthropic, {
+      MY_LIFE_TRIAGE_MODEL: 'claude-haiku-5-5',
+      MY_LIFE_DEADLINE_HOURS: '240',
+    });
+    await postMailReport(baseUrl, budgetReviewReport);
+    await fetch(`${baseUrl}/triage-run`, { method: 'POST' });
+
+    const { urgent } = await getJson<{ urgent: { emails: string[]; reasons: string[] }[] }>(`${baseUrl}/people`);
+
+    expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['deadline'] })]);
+  }, 30_000);
+
   it('lists at GET /people under VIP a contact on the "Always matters" line of a profile in MY_LIFE_PROFILE_DIRECTORY', async () => {
     fakeAnthropic = await startFakeAnthropic([]);
     const profileDirectory = profileDirectoryWith({

@@ -90,7 +90,7 @@ export function readStartupSettings(
         environment.MY_LIFE_UNANSWERED_ASK_BUSINESS_DAYS,
         defaultUnansweredAskBusinessDays,
       ),
-      deadlineHours: defaultDeadlineHours,
+      deadlineHours: parseNumberOrDefault(environment.MY_LIFE_DEADLINE_HOURS, defaultDeadlineHours),
       vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
     },
     slackWorkspaces: readSlackWorkspaces(environment),
