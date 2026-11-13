@@ -915,7 +915,7 @@ describe('createApp chat messages', () => {
         ...bbvaAlertsBotMessage,
         messageId,
         text: `Cargo ${messageId} en tu tarjeta terminación 4321`,
-        time: `2026-11-09T${hour}:00:00.000Z`,
+        time: `2026-11-09T${String(hour)}:00:00.000Z`,
       });
     const app = createApp({ allowedEmails: [], databasePath });
     const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
