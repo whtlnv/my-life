@@ -95,7 +95,7 @@
 
 ### People are right
 
-- [ ] `GET /people` marks a contact urgent by the deadline window `createApp` is given, not the default 48 hours (backlog: apps/backend/src/app.ts:2181 `GET /people` ignores the urgency time zone, deadline window and VIP wait)
+- [x] `GET /people` marks a contact urgent by the deadline window `createApp` is given, not the default 48 hours (backlog: apps/backend/src/app.ts:2181 `GET /people` ignores the urgency time zone, deadline window and VIP wait)
 - [ ] `GET /people` marks a waiting VIP urgent by the VIP wait `createApp` is given, not the default (backlog: apps/backend/src/app.ts:2181)
 - [ ] `GET /people` counts business days for urgency in the time zone `createApp` is given (backlog: apps/backend/src/app.ts:2181)
 - [ ] The backend `main.ts` starts serves `GET /people` with the urgency settings its startup settings read

@@ -333,6 +333,25 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(urgent.map(({ emails }) => emails)).not.toContainEqual(['luis@example.com']);
   });
 
+  it('lists at GET /people under Urgent, with the reason "deadline", a non-VIP contact whose triaged message carries a date more than 48 hours away but inside the deadline window createApp is given', async () => {
+    const nextWeek = '2026-11-10T12:00:00-06:00';
+    const triage = triageAnswering(keepProposalExtracting({ dates: [nextWeek] }));
+    const tenDaysInHours = 240;
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage,
+      urgency: { unansweredAskBusinessDays: 2, deadlineHours: tenDaysInHours },
+    });
+    await proposeBudgetReview(app);
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { urgent } = (await response.json()) as { urgent: { emails: string[]; reasons: string[] }[] };
+    expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['deadline'] })]);
+  });
+
   it('lists at GET /people a non-VIP contact whose only extracted deadline has already passed under Everyone else and not under Urgent', async () => {
     const lastSaturdayNoon = '2026-10-31T12:00:00-06:00';
     const triage = triageAnswering(keepProposalExtracting({ dates: [lastSaturdayNoon] }));
