@@ -34,4 +34,10 @@ describe('notesActionItems', () => {
       'Confirm the reporting scope with the sales team.',
     ]);
   });
+
+  it('yields no items for a notes doc with no next-steps heading', () => {
+    const items = notesActionItems(fixture('gemini-notes-no-next-steps.fixture.txt'));
+
+    expect(items).toEqual([]);
+  });
 });
