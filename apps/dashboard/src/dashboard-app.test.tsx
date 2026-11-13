@@ -10,6 +10,9 @@ const answerGetNowWith = (body: unknown) => {
   answerGetsWith({ '/now': body });
 };
 
+const jsonAnswer = (body: unknown) =>
+  Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -205,7 +208,7 @@ describe('DashboardApp', () => {
       vi.fn(() => {
         const body = answers[Math.min(answersGiven, answers.length - 1)];
         answersGiven += 1;
-        return Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
+        return jsonAnswer(body);
       }),
     );
 
@@ -427,15 +430,13 @@ describe('DashboardApp', () => {
       { id: 'task-2', title: 'Approve the budget', account: 'work@example.com', rank: 2, reason: 'Due today' },
     ];
     const fetchStub = vi.fn((input: string, init?: RequestInit) => {
-      const json = (body: unknown) =>
-        Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
       const url = input;
       if (url === '/tasks/task-1/done' && init?.method === 'POST') {
         openTasks = openTasks.filter((task) => task.id !== 'task-1');
-        return json({});
+        return jsonAnswer({});
       }
-      if (url === '/tasks') return json({ tasks: openTasks });
-      if (url === '/now') return json({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
+      if (url === '/tasks') return jsonAnswer({ tasks: openTasks });
+      if (url === '/now') return jsonAnswer({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
       return Promise.resolve(new Response(null, { status: 404 }));
     });
     vi.stubGlobal('fetch', fetchStub);
@@ -456,14 +457,12 @@ describe('DashboardApp', () => {
   it('marks a Slack task, whose id holds slashes, done at the one task path the backend routes', async () => {
     const slackTaskId = 'slack-T0001/D0001/1700000000.000100';
     const fetchStub = vi.fn((input: string) => {
-      const json = (body: unknown) =>
-        Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
       if (input === '/tasks') {
-        return json({
+        return jsonAnswer({
           tasks: [{ id: slackTaskId, title: 'Answer Ana in Slack', account: 'T0001', rank: 1, reason: 'Ana asked' }],
         });
       }
-      if (input === '/now') return json({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
+      if (input === '/now') return jsonAnswer({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
       return Promise.resolve(new Response(null, { status: 404 }));
     });
     vi.stubGlobal('fetch', fetchStub);
@@ -482,14 +481,12 @@ describe('DashboardApp', () => {
 
   it('keeps a task on the page when the backend refuses to mark it done', async () => {
     const fetchStub = vi.fn((input: string, init?: RequestInit) => {
-      const json = (body: unknown) =>
-        Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
       if (input === '/tasks') {
-        return json({
+        return jsonAnswer({
           tasks: [{ id: 'task-1', title: 'Approve the budget', account: 'a@x.com', rank: 1, reason: 'due' }],
         });
       }
-      if (input === '/now') return json({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
+      if (input === '/now') return jsonAnswer({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
       if (input === '/tasks/task-1/done' && init?.method === 'POST') {
         return Promise.resolve(new Response(JSON.stringify({ error: 'refused' }), { status: 409 }));
       }
