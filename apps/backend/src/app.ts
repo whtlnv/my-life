@@ -986,9 +986,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     report.messages.forEach((message) => {
       reportedMessageStore.save(message.id, report.accountEmail, message);
     });
-    reportedMessages.push(
-      ...report.messages.filter((message) => reportedMessageWithId(reportedMessages, message.id) === undefined),
+    const newlyReportedMessages = report.messages.filter(
+      (message) => reportedMessageWithId(reportedMessages, message.id) === undefined,
     );
+    reportedMessages.push(...newlyReportedMessages);
     report.messages.forEach((message) => accountEmailByMessageId.set(message.id, report.accountEmail));
     mailSourceStore.save(report.accountEmail, clock.now());
     return context.body(null, 200);
