@@ -86,7 +86,7 @@
 - [x] Setting a second waiting-on person on a task replaces the first
 - [x] Snoozing a task a second time replaces the first snooze time
 - [x] Confirming the same task proposal twice leaves one task
-- [ ] A task due at a time written with an offset is overdue only after that instant, whatever offset the clock reads in
+- [x] A task due at a time written with an offset is overdue only after that instant, whatever offset the clock reads in
 - [ ] A task due at a time written with an offset is not overdue before that instant (triangulates the item above)
 - [ ] A task with a date-only due time is not overdue before the end of that business day in the business time zone
 - [ ] A task with a date-only due time is overdue after the end of that business day (triangulates the item above)
