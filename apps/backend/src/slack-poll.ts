@@ -105,7 +105,7 @@ async function saveSlackMessage(
   input: PollSlackWorkspaceInput,
   conversationId: string,
   message: SlackMessage,
-  { threadTimestamp, ownSlackUserId }: { threadTimestamp?: string; ownSlackUserId?: string } = {},
+  { threadTimestamp, ownSlackUserId }: { threadTimestamp?: string | undefined; ownSlackUserId?: string } = {},
 ): Promise<void> {
   const senderUserId = message.user ?? message.bot_id ?? '';
   const senderName =
@@ -223,7 +223,10 @@ async function pollMentions(input: PollSlackWorkspaceInput, ownSlackUserId: stri
   const mentionsQuery = `<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
   const matches = await searchPagesUntilCaughtUp(input, mentionsQuery);
   for (const match of matches) {
-    await saveSlackMessage(input, match.channel.id, match, { ownSlackUserId });
+    await saveSlackMessage(input, match.channel.id, match, {
+      threadTimestamp: threadTimestampOf(match) ?? undefined,
+      ownSlackUserId,
+    });
   }
 }
 

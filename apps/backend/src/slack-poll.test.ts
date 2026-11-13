@@ -554,6 +554,27 @@ describe('pollSlackWorkspace', () => {
     expect(store.listMessages()).toEqual([expect.objectContaining({ senderUserId: ownSlackUserId, sentByUser: true })]);
   });
 
+  it('stores a mention match inside a thread with the thread timestamp its permalink names', async () => {
+    const slack = scriptedSlack({
+      // Slack's search matches carry no thread_ts: a reply names its thread only in its permalink.
+      '/search.messages': searchAnswering(`<@${ownSlackUserId}>`, [
+        {
+          user: 'U0002',
+          text: `<@${ownSlackUserId}> can you confirm the pickup?`,
+          ts: '1762700150.000250',
+          channel: { id: 'C0001' },
+          permalink: 'https://acme.slack.com/archives/C0001/p1762700150000250?thread_ts=1762700100.000200&cid=C0001',
+        },
+      ]),
+    });
+
+    const store = await pollWith(slack);
+
+    expect(store.listMessages()).toEqual([
+      expect.objectContaining({ timestamp: '1762700150.000250', threadTimestamp: '1762700100.000200' }),
+    ]);
+  });
+
   it("fetches replies only for threads the user wrote in, and stores each reply with its thread, marking the user's own as sent by them", async () => {
     const ownMessagesQuery = `from:<@${ownSlackUserId}>`;
     const slack = scriptedSlack({

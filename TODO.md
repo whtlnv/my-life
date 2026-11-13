@@ -126,7 +126,7 @@
 - [x] A second workspace's DM search reads every result page on its first poll even when the first workspace has a newer stored message
 - [x] The Slack mention search reads every result page within the lookback
 - [x] A Slack thread reply sent from the dashboard is stored with its thread timestamp, so that thread leaves triage and the waiting-on list
-- [ ] A Slack mention found by search inside a thread is stored with its thread timestamp, read from its permalink
+- [x] A Slack mention found by search inside a thread is stored with its thread timestamp, read from its permalink
 - [ ] When a Telegram send succeeds and the own-account lookup after it fails, `POST /chat-sends` still answers success
 - [ ] When loading Telegram dialog history fails at start-up, new Telegram messages are still stored
 - [ ] Two Telegram messages in the same second are ordered by message id, so an answer sent in that second counts as the user's reply
