@@ -6,7 +6,7 @@
 ### Ingestion never stalls on one odd item
 
 - [x] A mail report holding a message with no subject is accepted, and the message reaches the triage queue
-- [ ] A mail report holding a message with no To header is accepted, and the message is stored
+- [x] A mail report holding a message with no To header is accepted, and the message is stored
 - [ ] A mail report holding a message with no Date header is accepted, and the message is stored
 - [ ] A mail report holding a message with no From header is accepted, and the message is stored
 - [ ] A mail report holding a message with no id is still rejected with a 400 (triangulates the four items above)

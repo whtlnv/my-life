@@ -101,6 +101,24 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(await queue.json()).toMatchObject({ remaining: 1 });
   });
 
+  it('accepts at POST /mail-report a message with no To header and counts it as remaining in GET /triage-queue', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    const messageWithNoTo = {
+      id: 'message-5',
+      threadId: 'thread-5',
+      from: 'Luis <luis@example.com>',
+      subject: 'Undisclosed recipients',
+      date: 'Mon, 2 Nov 2026 09:00:00 -0600',
+      snippet: 'This message has no To header.',
+    };
+
+    const posted = await postJson(app, '/mail-report', { ...budgetReviewReport, messages: [messageWithNoTo] });
+    const queue = await app.request('/triage-queue');
+
+    expect(posted.status).toBe(200);
+    expect(await queue.json()).toMatchObject({ remaining: 1 });
+  });
+
   it('says when GET /triage-queue was fetched, from the clock', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree });
 

@@ -4,7 +4,7 @@ const mailMessage = z.object({
   id: z.string(),
   threadId: z.string(),
   from: z.string(),
-  to: z.string(),
+  to: z.string().default(''),
   cc: z.string().optional(),
   subject: z.string().default(''),
   date: z.string(),
