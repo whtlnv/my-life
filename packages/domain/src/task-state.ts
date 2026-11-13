@@ -28,7 +28,7 @@ const hidesTask = (event: TaskEvent, now?: string): boolean => {
 };
 
 const waitingOnPerson = (events: TaskEvent[], taskId: string): string | undefined =>
-  events.find(
+  events.findLast(
     (event): event is Extract<TaskEvent, { type: 'waiting-on' }> =>
       event.type === 'waiting-on' && event.taskId === taskId,
   )?.person;

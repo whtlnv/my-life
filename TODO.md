@@ -83,7 +83,7 @@
   - already covered by existing tests, per the cycle (driver; review at phase end)
 - [x] `POST /tasks/<id>/done` with a Slack task id URL-encoded as one segment (`slack-T1%2FD1%2F…`) marks that Slack task done (backend side of the item above it)
   - already working; red's test passed on the first run and is kept as a regression guard (driver)
-- [ ] Setting a second waiting-on person on a task replaces the first
+- [x] Setting a second waiting-on person on a task replaces the first
 - [ ] Snoozing a task a second time replaces the first snooze time
 - [ ] Confirming the same task proposal twice leaves one task
 - [ ] A task due at a time written with an offset is overdue only after that instant, whatever offset the clock reads in

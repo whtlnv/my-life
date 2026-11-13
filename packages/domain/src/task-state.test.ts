@@ -142,6 +142,37 @@ describe('openTasks', () => {
       },
     ]);
   });
+
+  it('shows the second waiting-on person set on a task in place of the first', () => {
+    const events = [
+      {
+        type: 'proposal-confirmed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T15:00:00.000Z',
+        proposal: {
+          title: 'Review the Q3 budget spreadsheet and send comments',
+          link: budgetMessageLink,
+          accountEmail: 'ana@example.com',
+        },
+      },
+      {
+        type: 'waiting-on' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T16:00:00.000Z',
+        person: 'luis@example.com',
+      },
+      {
+        type: 'waiting-on' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T17:00:00.000Z',
+        person: 'marta@example.com',
+      },
+    ];
+
+    expect(openTasks(events)).toEqual([
+      expect.objectContaining({ id: 'task-budget', waitingOn: 'marta@example.com' }),
+    ]);
+  });
 });
 
 describe('taskHistory', () => {
