@@ -46,7 +46,8 @@
 ### Triage decisions stick
 
 - [x] After a restart, a message whose Keep was confirmed is not retriaged and gets no new proposal
-- [ ] After a restart, a reported message with no proposal and no verdict is triaged (triangulates the item above)
+- [x] After a restart, a reported message with no proposal and no verdict is triaged (triangulates the item above)
+  - already covered by existing tests, per the cycle (driver; review at phase end)
 - [ ] A group confirmation leaves a proposal in that group that was decided individually with its own verdict
 - [ ] A group confirmation confirms the group's undecided proposals (triangulates the item above)
 - [ ] Correcting a proposal to Archive queues an archive command for that message
