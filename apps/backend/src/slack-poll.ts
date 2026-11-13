@@ -19,8 +19,13 @@ interface PollSlackWorkspaceInput {
 
 const toleratedSlackErrors = new Set(['user_not_found']);
 const ratelimitedRetryDelayMilliseconds = 1000;
+const ratelimitedAttemptLimit = 3;
 
-async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
+async function callSlack<Response>(
+  input: PollSlackWorkspaceInput,
+  path: string,
+  ratelimitedAttempt = 1,
+): Promise<Response> {
   const response = await input.fetch(`${input.apiUrl}${path}`, {
     headers: { Authorization: `Bearer ${input.workspace.userToken}` },
   });
@@ -30,9 +35,9 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
     return callSlack<Response>(input, path);
   }
   const body = (await response.json()) as Response & { error?: string };
-  if (body.error === 'ratelimited') {
+  if (body.error === 'ratelimited' && ratelimitedAttempt < ratelimitedAttemptLimit) {
     await input.wait?.(ratelimitedRetryDelayMilliseconds);
-    return callSlack<Response>(input, path);
+    return callSlack<Response>(input, path, ratelimitedAttempt + 1);
   }
   if (body.error !== undefined && !toleratedSlackErrors.has(body.error)) {
     throw new Error(`Slack workspace ${input.workspace.teamId} answered ${body.error}`, { cause: body.error });

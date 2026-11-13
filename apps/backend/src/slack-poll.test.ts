@@ -673,6 +673,47 @@ describe('pollSlackWorkspaces', () => {
     expect(store.listMessages().map((message) => message.workspaceTeamId)).toEqual(['T0002']);
   });
 
+  it('fails a workspace whose Slack call is answered ratelimited three times in a row, naming ratelimited, and still polls the next workspace', async () => {
+    const slack = scriptedSlack({
+      '/auth.test': () => ({ ok: true, user_id: ownSlackUserId }),
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({
+        ok: true,
+        messages: [{ user: 'U0001', text: 'Hi', ts: '1762700000.000100' }],
+      }),
+    });
+    let rateLimitedAnswers = 0;
+    const rateLimitingFetch: typeof fetch = (request, init) => {
+      if (new Headers(init?.headers).get('Authorization') === 'Bearer xoxp-rate-limited' && rateLimitedAnswers < 3) {
+        rateLimitedAnswers += 1;
+        return Promise.resolve(Response.json({ ok: false, error: 'ratelimited' }));
+      }
+      return slack.fetch(request, init);
+    };
+    const loggedFailures: { teamId: string; error: unknown }[] = [];
+
+    const succeeded = await pollSlackWorkspaces({
+      fetch: rateLimitingFetch,
+      apiUrl: 'https://slack.test',
+      clock: pollClock,
+      workspaces: [
+        { teamId: 'T0001', userToken: 'xoxp-rate-limited' },
+        { teamId: 'T0002', userToken: 'xoxp-test' },
+      ],
+      store: openSlackMessageStore(':memory:'),
+      wait: () => Promise.resolve(),
+      logPollFailure: (teamId, error) => loggedFailures.push({ teamId, error }),
+    });
+
+    expect([...succeeded]).toEqual(['T0002']);
+    expect(loggedFailures).toEqual([
+      {
+        teamId: 'T0001',
+        error: expect.objectContaining({ message: expect.stringContaining('ratelimited') as unknown }) as unknown,
+      },
+    ]);
+  });
+
   it("logs a failed workspace's team id and the error", async () => {
     const slack = scriptedSlack({ '/auth.test': () => ({ ok: false, error: 'invalid_auth' }) });
     const loggedFailures: { teamId: string; error: unknown }[] = [];

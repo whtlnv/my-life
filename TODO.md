@@ -121,7 +121,7 @@
 - [x] A Slack answer `{ ok: false, error: "internal_error" }` fails that workspace's poll with an error naming `internal_error` instead of a crash on a missing field (the live `reading 'matches'` failure)
 - [x] Any Slack answer with `ok: false` and an error name not listed before fails that workspace's poll naming that error (triangulates the item above)
 - [x] The Slack poll the backend runs on its schedule waits the `Retry-After` seconds of a 429 answer before retrying
-- [ ] A Slack call answered 429 or `ratelimited` three times in a row fails that workspace's poll naming `ratelimited`, and the next workspace is still polled
+- [x] A Slack call answered 429 or `ratelimited` three times in a row fails that workspace's poll naming `ratelimited`, and the next workspace is still polled
 - [ ] A Slack DM whose `conversations.history` answers `has_more` with a cursor has every message of the polled window stored, not only the newest page
 - [ ] A second workspace's DM search reads every result page on its first poll even when the first workspace has a newer stored message
 - [ ] The Slack mention search reads every result page within the lookback
