@@ -337,26 +337,7 @@ describe('pollCalendarOnce', () => {
   });
 
   it('when the backend refuses a calendar snapshot, logs the account and the status the backend answered', async () => {
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(
-          Response.json({
-            kind: 'calendar#calendarList',
-            items: [
-              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
-            ],
-          }),
-        );
-      }
-      if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
-        return Promise.resolve(Response.json({ kind: 'calendar#events', items: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ error: 'refused' }, { status: 422 }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+    const fakeFetch = fetchAnsweringCalendarSnapshotWith(() => Response.json({ error: 'refused' }, { status: 422 }));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     try {
@@ -376,26 +357,7 @@ describe('pollCalendarOnce', () => {
     }
   });
   it('when the backend accepts a calendar snapshot, logs nothing', async () => {
-    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
-      const url = new URL(input instanceof Request ? input.url : input.toString());
-      if (url.href === `${calendarApi}/users/me/calendarList`) {
-        return Promise.resolve(
-          Response.json({
-            kind: 'calendar#calendarList',
-            items: [
-              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
-            ],
-          }),
-        );
-      }
-      if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
-        return Promise.resolve(Response.json({ kind: 'calendar#events', items: [] }));
-      }
-      if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
-        return Promise.resolve(Response.json({ accepted: 0 }));
-      }
-      return Promise.resolve(new Response('unexpected request', { status: 404 }));
-    };
+    const fakeFetch = fetchAnsweringCalendarSnapshotWith(() => Response.json({ accepted: 0 }));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     try {
@@ -414,3 +376,28 @@ describe('pollCalendarOnce', () => {
     }
   });
 });
+
+function fetchAnsweringCalendarSnapshotWith(
+  calendarSnapshotResponse: () => Response,
+): (input: string | URL | Request, init?: RequestInit) => Promise<Response> {
+  return (input, init) => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+    if (url.href === `${calendarApi}/users/me/calendarList`) {
+      return Promise.resolve(
+        Response.json({
+          kind: 'calendar#calendarList',
+          items: [
+            { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+          ],
+        }),
+      );
+    }
+    if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
+      return Promise.resolve(Response.json({ kind: 'calendar#events', items: [] }));
+    }
+    if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
+      return Promise.resolve(calendarSnapshotResponse());
+    }
+    return Promise.resolve(new Response('unexpected request', { status: 404 }));
+  };
+}
