@@ -468,6 +468,18 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(askedMessageIds).toEqual(['message-once']);
   });
 
+  it('asks triage at POST /triage-run once for a message reported in two mail reports', async () => {
+    const askedMessageIds: string[] = [];
+    const triage = triageRecordingAskedMessageIds(askedMessageIds);
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await postJson(app, '/mail-report', budgetReviewReport);
+
+    await postTriageRun(app);
+
+    expect(askedMessageIds).toEqual(['message-1']);
+  });
+
   it('stores no proposal when triage at POST /triage-run answers none, and asks again for that message on the next run', async () => {
     const askedMessageIds: string[] = [];
     const answersInOrder: unknown[] = [
