@@ -279,7 +279,8 @@ function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
 }
 
 function shouldArchive(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
-  if (proposal.action === 'archive' && isCleared(proposal, verdicts)) return true;
+  const corrected = latestVerdictFor(proposal.messageId, verdicts)?.correction !== undefined;
+  if (proposal.action === 'archive' && !corrected && isCleared(proposal, verdicts)) return true;
   return proposalEffects(proposal, verdicts).archives.length > 0;
 }
 
