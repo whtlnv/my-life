@@ -631,11 +631,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   let triageRunInProgress = false;
   let verdictGivenSinceLastRun = false;
   // A message proposed before its body arrived is asked about once more, this time with the body.
+  const verdictsAtStartup = verdictStore.loadAll();
   const messagesWithBodyProposedUnderAnOlderPrompt = reportedMessages.filter(
     (message) =>
       message.body !== undefined &&
       wasProposedUnderAnOlderPrompt(message.id) &&
-      latestVerdictFor(message.id, verdictStore.loadAll()) === undefined,
+      latestVerdictFor(message.id, verdictsAtStartup) === undefined,
   );
   const messageIdsAwaitingRetriage = new Set<string>(
     messagesWithBodyProposedUnderAnOlderPrompt.map((message) => message.id),
