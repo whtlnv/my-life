@@ -57,4 +57,10 @@ describe('notesActionItems', () => {
 
     expect(items.map((item) => item.assignee)).toEqual(['Tomás Ibarra']);
   });
+
+  it('gives no assignee to an item that names no one, even when it contains the word will', () => {
+    const items = notesActionItems(fixture('gemini-notes-unassigned.fixture.txt'));
+
+    expect(items.map((item) => item.assignee)).toEqual([undefined]);
+  });
 });

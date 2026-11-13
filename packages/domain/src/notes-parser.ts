@@ -11,7 +11,9 @@ const actionItem = (line: string): NotesActionItem => {
   if (line.startsWith('[') && assigneeEnd !== -1)
     return { assignee: line.slice(1, assigneeEnd), text: line.slice(assigneeEnd + 2) };
   const willIndex = line.indexOf(' will ');
-  return willIndex !== -1 ? { assignee: line.slice(0, willIndex), text: line } : { text: line };
+  const assignee = line.slice(0, willIndex);
+  const namesSomeone = willIndex !== -1 && assignee.split(' ').every((word) => /^\p{Lu}/u.test(word));
+  return namesSomeone ? { assignee, text: line } : { text: line };
 };
 
 export const notesActionItems = (document: string): NotesActionItem[] => {
