@@ -375,4 +375,42 @@ describe('pollCalendarOnce', () => {
       consoleError.mockRestore();
     }
   });
+  it('when the backend accepts a calendar snapshot, logs nothing', async () => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.href === `${calendarApi}/users/me/calendarList`) {
+        return Promise.resolve(
+          Response.json({
+            kind: 'calendar#calendarList',
+            items: [
+              { kind: 'calendar#calendarListEntry', id: 'francisco@example.com', summary: 'Francisco', primary: true },
+            ],
+          }),
+        );
+      }
+      if (url.pathname === '/calendar/v3/calendars/francisco%40example.com/events') {
+        return Promise.resolve(Response.json({ kind: 'calendar#events', items: [] }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/calendar-snapshot' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ accepted: 0 }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      await pollCalendarOnce({
+        fetch: fakeFetch,
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+        now: new Date('2026-11-02T10:00:00-06:00'),
+        timeZone: 'America/Mexico_City',
+      });
+
+      expect(consoleError).not.toHaveBeenCalled();
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
 });

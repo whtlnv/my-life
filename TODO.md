@@ -18,7 +18,7 @@
 - [x] When the backend rejects a mail report, the extension logs the account and the status it answered
 - [x] When the backend accepts a mail report, the extension logs nothing (triangulates the item above)
 - [x] When the backend rejects a calendar snapshot, the extension logs the account and the status it answered
-- [ ] When the backend accepts a calendar snapshot, the extension logs nothing (triangulates the item above)
+- [x] When the backend accepts a calendar snapshot, the extension logs nothing (triangulates the item above)
 
 ### Slack poll errors are named
 
