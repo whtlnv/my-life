@@ -1224,6 +1224,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ))
         chatMessageStore.saveVerdict({ channel, chatId, messageId, decision: 'confirmed' });
       digestSummaryStore.save(digestId, undefined);
+      listedDigestStore.remove(digestId);
       return context.body(null, 200);
     }
     const listedMessageIds = listedDigestStore.load(digestId);

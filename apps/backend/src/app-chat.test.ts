@@ -894,6 +894,32 @@ describe('createApp chat messages', () => {
     expect(confirmedMessageIds.sort()).toEqual(['81', '82', '83']);
   });
 
+  it('leaves out of GET /triage-queue a second Telegram bot digest in the same chat once it is confirmed, after the first was confirmed', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-09T16:00:00.000Z',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+    const { digests: first } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+    await app.request(`/digests/${encodeURIComponent(first[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '78',
+      text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
+      time: '2026-11-09T17:00:00.000Z',
+    });
+    const { digests: second } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+
+    await app.request(`/digests/${encodeURIComponent(second[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+
+    const { digests: after } = await getJson<{ digests: unknown[] }>(app, '/triage-queue');
+    expect(after).toEqual([]);
+  });
+
   it("writes at POST /triage-run a Telegram bot digest's summary lines from its messages' text, and logs the call's spend", async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);

@@ -9,7 +9,11 @@ export function openListedDigestStore(databasePath: string) {
   const loadListedDigest = database.prepare<[string], { message_ids: string }>(
     'SELECT message_ids FROM listed_digests WHERE digest_id = ?',
   );
+  const removeListedDigest = database.prepare('DELETE FROM listed_digests WHERE digest_id = ?');
   return {
+    remove(digestId: string): void {
+      removeListedDigest.run(digestId);
+    },
     save(digestId: string, messageIds: string[]): void {
       saveListedDigest.run(digestId, JSON.stringify(messageIds));
     },
