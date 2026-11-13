@@ -259,6 +259,23 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
     expect(await listedTasks()).toEqual([]);
   });
 
+  it('drops from GET /tasks the task an automatic act proposal made once that handled-for-you item is undone', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: budgetReviewActTriage({ title: 'Review the budget by Friday' }),
+    });
+    await switchCategory(app, 'action', 'automatic');
+    await proposeBudgetReview(app);
+    const listedTasks = async () => ((await (await app.request('/tasks')).json()) as { tasks: unknown[] }).tasks;
+    const tasksBeforeUndo = await listedTasks();
+
+    await app.request('/handled-for-you/message-1/undo', { method: 'POST' });
+
+    expect(tasksBeforeUndo).toEqual([expect.objectContaining({ title: 'Review the budget by Friday' })]);
+    expect(await listedTasks()).toEqual([]);
+  });
+
   it('lists at GET /tasks no task once its confirmed act proposal is re-decided as rejected through POST /verdicts', async () => {
     let currentTime = new Date('2026-11-02T15:10:00.000Z');
     const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });

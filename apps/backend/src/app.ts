@@ -2069,7 +2069,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .loadAll()
       .filter((event) => event.type === 'done')
       .map((event) => event.taskId);
-    return confirmedTasks(proposals, verdictStore.loadAll()).filter((task) => !doneTaskIds.includes(task.id));
+    const undoneTaskIds = undoAutomaticStore.loadAll().map((messageId) => `mail-${messageId}`);
+    return confirmedTasks(proposals, verdictStore.loadAll()).filter(
+      (task) => !doneTaskIds.includes(task.id) && !undoneTaskIds.includes(task.id),
+    );
   };
   app.get('/tasks', (context) => {
     const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
