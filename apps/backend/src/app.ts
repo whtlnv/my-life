@@ -1715,7 +1715,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     lastPrioritizationCallAt = clock.now().getTime();
     const tasks = [
-      ...confirmedMailTasksNotDone().map(({ id, title, accountEmail }) => ({
+      ...openConfirmedMailTasks().map(({ id, title, accountEmail }) => ({
         id,
         title,
         accountEmail,
@@ -2064,7 +2064,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     prioritizationStore.savePin({ taskId, pinned });
     return context.json({ pinned });
   });
-  const confirmedMailTasksNotDone = () => {
+  const openConfirmedMailTasks = () => {
     const doneTaskIds = taskEventStore
       .loadAll()
       .filter((event) => event.type === 'done')
@@ -2077,7 +2077,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
     const pinnedTaskIds = prioritizationStore.loadPinnedTaskIds();
-    const rankedOpenTasks = [...confirmedMailTasksNotDone(), ...currentOpenTasks()].map((task) => {
+    const rankedOpenTasks = [...openConfirmedMailTasks(), ...currentOpenTasks()].map((task) => {
       const ranked = taskRanksFromLastRun.find(({ taskId }) => taskId === task.id);
       return ranked === undefined ? task : { ...task, rank: ranked.rank, reason: ranked.reason };
     });
