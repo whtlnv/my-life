@@ -4,6 +4,7 @@ import { createApp } from './app';
 import { openSpendStore } from './spend-store';
 
 import {
+  getJson,
   postJson,
   postTriageRun,
   getCommands,
@@ -384,7 +385,7 @@ describe('backend app: filter proposals and Gmail filters', () => {
     const app = appProposingShopNewslettersFilter();
     await reportTriageAndConfirmShopNewsletters(app);
 
-    const listed = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
+    const listed = await getJson<{ proposals: unknown[] }>(app, '/filter-proposals');
     const commands = (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type?: string }[] };
 
     expect({
@@ -514,7 +515,7 @@ describe('backend app: filter proposals and Gmail filters', () => {
     await postAcknowledgement(app, deleteFilterCommand?.id ?? '');
 
     expect({
-      filters: ((await (await app.request('/filters')).json()) as { filters: unknown[] }).filters,
+      filters: (await getJson<{ filters: unknown[] }>(app, '/filters')).filters,
       deleteFilterCommands: (
         (await (await getCommands(app, 'ana@example.com')).json()) as { commands: { type?: string }[] }
       ).commands.filter(({ type }) => type === 'delete-filter'),
@@ -562,7 +563,7 @@ describe('backend app: filter proposals and Gmail filters', () => {
     const rejection = await app.request(`/filter-proposals/${proposalId}/rejection`, {
       method: 'POST',
     });
-    const afterRejection = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
+    const afterRejection = await getJson<{ proposals: unknown[] }>(app, '/filter-proposals');
 
     expect({ status: rejection.status, proposals: afterRejection.proposals }).toEqual({ status: 200, proposals: [] });
   });
@@ -573,7 +574,7 @@ describe('backend app: filter proposals and Gmail filters', () => {
     const proposalId = await firstPendingFilterProposalId(app);
 
     const approval = await approveFilterProposal(app, proposalId);
-    const afterApproval = (await (await app.request('/filter-proposals')).json()) as { proposals: unknown[] };
+    const afterApproval = await getJson<{ proposals: unknown[] }>(app, '/filter-proposals');
 
     expect({ status: approval.status, proposals: afterApproval.proposals }).toEqual({ status: 200, proposals: [] });
   });
@@ -597,7 +598,7 @@ describe('backend app: filter proposals and Gmail filters', () => {
     const afterRestart = createApp(options);
 
     await reportTriageAndConfirmShopNewsletters(afterRestart, ['newsletter-4', 'newsletter-5']);
-    const afterRejection = (await (await afterRestart.request('/filter-proposals')).json()) as { proposals: unknown[] };
+    const afterRejection = await getJson<{ proposals: unknown[] }>(afterRestart, '/filter-proposals');
 
     expect({ askedCandidates, proposals: afterRejection.proposals }).toEqual({ askedCandidates: [], proposals: [] });
   });

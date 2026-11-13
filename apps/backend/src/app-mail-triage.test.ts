@@ -9,6 +9,7 @@ import { openSpendStore } from './spend-store';
 import { openVerdictStore } from './verdict-store';
 
 import {
+  getJson,
   postJson,
   postTriageRun,
   temporaryDatabasePath,
@@ -495,7 +496,7 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage });
     await postJson(app, '/mail-report', budgetReviewReport);
     await postTriageRun(app);
-    const queueAfterFirstRun = (await (await app.request('/triage-queue')).json()) as { remaining: number };
+    const queueAfterFirstRun = await getJson<{ remaining: number }>(app, '/triage-queue');
 
     await postTriageRun(app);
 
@@ -1254,10 +1255,10 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     });
 
     const afterRestart = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath });
-    const queue = (await (await afterRestart.request('/triage-queue')).json()) as {
-      action: { messageId: string; summary: string }[];
-      remaining: number;
-    };
+    const queue = await getJson<{ action: { messageId: string; summary: string }[]; remaining: number }>(
+      afterRestart,
+      '/triage-queue',
+    );
 
     expect({
       action: queue.action.map(({ messageId, summary }) => ({ messageId, summary })),

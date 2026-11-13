@@ -1112,7 +1112,7 @@ describe('createApp Slack polls', () => {
     const { app } = await appWithRevokedSlackToken();
 
     await app.request('/slack-poll', { method: 'POST' });
-    const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: unknown };
+    const now = await getJson<{ slackWorkspaces?: unknown }>(app, '/now');
 
     expect(now.slackWorkspaces).toEqual([
       expect.objectContaining({ teamId: 'T0001', lastPollFailure: expect.stringContaining('invalid_auth') as unknown }),
@@ -1130,7 +1130,7 @@ describe('createApp Slack polls', () => {
     });
 
     await app.request('/slack-poll', { method: 'POST' });
-    const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: unknown };
+    const now = await getJson<{ slackWorkspaces?: unknown }>(app, '/now');
 
     expect(now.slackWorkspaces).toEqual([
       expect.objectContaining({ teamId: 'T0001', lastPollFailure: 'missing_scope' }),
@@ -1159,7 +1159,7 @@ describe('createApp Slack polls', () => {
     await app.request('/slack-poll', { method: 'POST' });
     tokenRevoked = false;
     await app.request('/slack-poll', { method: 'POST' });
-    const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: Record<string, unknown>[] };
+    const now = await getJson<{ slackWorkspaces?: Record<string, unknown>[] }>(app, '/now');
 
     expect(now.slackWorkspaces).toEqual([expect.objectContaining({ teamId: 'T0001', name: 'PS Mutuus' })]);
     expect(now.slackWorkspaces?.[0]).not.toHaveProperty('lastPollFailure');
@@ -1182,7 +1182,7 @@ describe('createApp Slack polls', () => {
     await createApp(appOptions).request('/slack-poll', { method: 'POST' });
 
     const afterRestart = createApp(appOptions);
-    const now = (await (await afterRestart.request('/now')).json()) as { slackWorkspaces?: unknown };
+    const now = await getJson<{ slackWorkspaces?: unknown }>(afterRestart, '/now');
 
     expect(now.slackWorkspaces).toEqual([
       expect.objectContaining({ teamId: 'T0001', name: 'PS Mutuus', url: 'https://psmutuus.slack.com/' }),

@@ -5,6 +5,7 @@ import { triageCategories } from '@my-life/contracts';
 import { createApp } from './app';
 
 import {
+  getJson,
   postJson,
   postTriageRun,
   getCommands,
@@ -229,7 +230,7 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
     const beforeRestart = createApp(options);
     await confirmBudgetReviewProposal(beforeRestart);
     const taskIds = async (app: ReturnType<typeof createApp>) => {
-      const { tasks } = (await (await app.request('/tasks')).json()) as { tasks: { id?: unknown }[] };
+      const { tasks } = await getJson<{ tasks: { id?: unknown }[] }>(app, '/tasks');
       return tasks.map(({ id }) => id);
     };
 
@@ -250,7 +251,7 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
       triage: budgetReviewActTriage({ title: 'Review the budget by Friday' }),
     });
     await confirmBudgetReviewProposal(app);
-    const listedTasks = async () => ((await (await app.request('/tasks')).json()) as { tasks: { id: string }[] }).tasks;
+    const listedTasks = async () => (await getJson<{ tasks: { id: string }[] }>(app, '/tasks')).tasks;
     const [confirmedTask] = await listedTasks();
 
     await postJson(app, `/tasks/${encodeURIComponent(String(confirmedTask?.id))}/done`, {});
@@ -266,7 +267,7 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
     });
     await switchCategory(app, 'action', 'automatic');
     await proposeBudgetReview(app);
-    const listedTasks = async () => ((await (await app.request('/tasks')).json()) as { tasks: unknown[] }).tasks;
+    const listedTasks = async () => (await getJson<{ tasks: unknown[] }>(app, '/tasks')).tasks;
     const tasksBeforeUndo = await listedTasks();
 
     await app.request('/handled-for-you/message-1/undo', { method: 'POST' });
