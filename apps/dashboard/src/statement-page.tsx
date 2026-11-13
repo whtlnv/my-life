@@ -11,16 +11,17 @@ interface StatementEntry {
   link: string;
 }
 
-// One CSV line as the backend writes it: fields separated by commas, a field holding a comma or a quote wrapped in
-// quotes with inner quotes doubled.
-export const parseCsvLine = (line: string): string[] => {
-  const fields: string[] = [];
+// The CSV as the backend writes it: records separated by line breaks, fields by commas, a field holding a comma, a
+// quote or a line break wrapped in quotes with inner quotes doubled.
+export const parseCsvRecords = (csv: string): string[][] => {
+  const records: string[][] = [];
+  let fields: string[] = [];
   let field = '';
   let quoted = false;
-  for (let index = 0; index < line.length; index += 1) {
-    const character = line.charAt(index);
+  for (let index = 0; index < csv.length; index += 1) {
+    const character = csv.charAt(index);
     if (quoted) {
-      if (character === '"' && line.charAt(index + 1) === '"') {
+      if (character === '"' && csv.charAt(index + 1) === '"') {
         field += '"';
         index += 1;
       } else if (character === '"') {
@@ -33,23 +34,34 @@ export const parseCsvLine = (line: string): string[] => {
     } else if (character === ',') {
       fields.push(field);
       field = '';
+    } else if (character === '\n') {
+      fields.push(field);
+      records.push(fields);
+      fields = [];
+      field = '';
     } else {
       field += character;
     }
   }
-  fields.push(field);
-  return fields;
+  if (field !== '' || fields.length > 0) {
+    fields.push(field);
+    records.push(fields);
+  }
+  return records;
 };
 
 const parseStatement = (csv: string): StatementEntry[] =>
-  csv
-    .split('\n')
+  parseCsvRecords(csv)
     .slice(1)
-    .filter((line) => line !== '')
-    .map((line) => {
-      const [vendor = '', amount = '', currency = '', date = '', accountEmail = '', link = ''] = parseCsvLine(line);
-      return { vendor, amount: Number(amount), currency, date, accountEmail, link };
-    });
+    .filter((record) => record.join('') !== '')
+    .map(([vendor = '', amount = '', currency = '', date = '', accountEmail = '', link = '']) => ({
+      vendor,
+      amount: Number(amount),
+      currency,
+      date,
+      accountEmail,
+      link,
+    }));
 
 const totalsByCurrency = (entries: StatementEntry[]) => {
   const totals = new Map<string, number>();

@@ -125,4 +125,26 @@ describe('StatementPage', () => {
     expect(row).toHaveTextContent('psmutuus');
     expect(row).toHaveTextContent('85.50 MXN');
   });
+
+  it('reads a quoted vendor holding a line break as one entry with that vendor intact', async () => {
+    const csv = [
+      'vendor,amount,currency,date,account,link',
+      '"Acme\nWest Branch",120,MXN,2026-11-03,ana@example.com,https://mail.google.com/mail/?authuser=ana%40example.com#all/m-acme',
+      '',
+    ].join('\n');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(csvResponse(csv))),
+    );
+
+    render(<StatementPage />);
+
+    const table = await screen.findByRole('table');
+    const vendorLink = within(table).getByRole('link', { name: /Acme\s+West Branch/ });
+    expect(vendorLink).toHaveAttribute('href', 'https://mail.google.com/mail/?authuser=ana%40example.com#all/m-acme');
+    const row = vendorLink.closest('tr');
+    expect(row).toHaveTextContent('2026-11-03');
+    expect(row).toHaveTextContent('120.00 MXN');
+    expect(within(table).getAllByRole('link')).toHaveLength(1);
+  });
 });
