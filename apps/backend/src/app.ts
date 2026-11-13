@@ -1714,7 +1714,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return context.json({});
     }
     lastPrioritizationCallAt = clock.now().getTime();
-    const tasks = currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due }));
+    const tasks = [
+      ...confirmedMailTasksNotDone().map(({ id, title, accountEmail }) => ({
+        id,
+        title,
+        accountEmail,
+        due: undefined,
+      })),
+      ...currentOpenTasks().map(({ id, title, accountEmail, due }) => ({ id, title, accountEmail, due })),
+    ];
     const profile = tasks
       .map(({ accountEmail }) => profileOfAccount(accountEmail))
       .filter((accountProfile) => accountProfile !== undefined)
@@ -2066,7 +2074,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/tasks', (context) => {
     const taskRanksFromLastRun = prioritizationStore.loadLatestRanks();
     const pinnedTaskIds = prioritizationStore.loadPinnedTaskIds();
-    const rankedOpenTasks = currentOpenTasks().map((task) => {
+    const rankedOpenTasks = [...confirmedMailTasksNotDone(), ...currentOpenTasks()].map((task) => {
       const ranked = taskRanksFromLastRun.find(({ taskId }) => taskId === task.id);
       return ranked === undefined ? task : { ...task, rank: ranked.rank, reason: ranked.reason };
     });
@@ -2074,7 +2082,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       pinnedTaskIds.has(task.id) ? -Infinity : 'rank' in task ? task.rank : Infinity;
     rankedOpenTasks.sort((first, second) => pinnedFirstThenRank(first) - pinnedFirstThenRank(second));
     return context.json({
-      tasks: [...confirmedMailTasksNotDone(), ...rankedOpenTasks],
+      tasks: rankedOpenTasks,
     });
   });
   const reportedSenders = () => reportedMessageStore.loadAll().map(({ messageId, from }) => ({ messageId, from }));

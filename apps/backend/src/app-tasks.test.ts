@@ -7,6 +7,7 @@ import {
   postJson,
   putJson,
   proposeBudgetReview,
+  confirmBudgetReviewProposal,
   getJson,
   clockAtTenPastThree,
   keepProposalExtracting,
@@ -410,6 +411,33 @@ describe('backend app: task proposals and tasks', () => {
     expect(tasks.tasks).toEqual([
       expect.objectContaining({ title: 'Send the slides', rank: 1, reason: 'The board meets at four' }),
       expect.objectContaining({ title: 'Approve the budget', rank: 2, reason: 'Due at the end of the week' }),
+    ]);
+  });
+
+  it('ranks at POST /prioritization-run a task confirmed from a mail proposal and lists it at GET /tasks in its rank order with its reason', async () => {
+    const triage = triageAnswering({
+      action: 'act',
+      category: 'action',
+      summary: 'Luis asks for a budget review',
+      extract: { asker: 'Luis', ask: 'Review the budget' },
+      reason: 'Luis asks the user directly',
+      taskDraft: { title: 'Review the budget by Friday' },
+      asks: [{ ask: 'Send the slides' }],
+    });
+    const prioritization = prioritizationRankingByTitle({
+      'Send the slides': { rank: 1, reason: 'The board meets at four' },
+      'Review the budget by Friday': { rank: 2, reason: 'Due at the end of the week' },
+    });
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, triage, prioritization });
+    await confirmBudgetReviewProposal(app);
+    await confirmEveryTaskProposal(app);
+
+    await postJson(app, '/prioritization-run', {});
+
+    const tasks = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(tasks.tasks).toEqual([
+      expect.objectContaining({ title: 'Send the slides', rank: 1, reason: 'The board meets at four' }),
+      expect.objectContaining({ title: 'Review the budget by Friday', rank: 2, reason: 'Due at the end of the week' }),
     ]);
   });
 
