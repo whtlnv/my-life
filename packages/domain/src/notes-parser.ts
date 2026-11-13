@@ -2,11 +2,11 @@ export interface NotesActionItem {
   text: string;
 }
 
-const nextStepsHeading = 'Suggested next steps';
+const actionItemHeadings = ['Suggested next steps', 'Action items'];
 
 export const notesActionItems = (document: string): NotesActionItem[] => {
   const lines = document.split('\n');
-  const headingIndex = lines.indexOf(nextStepsHeading);
+  const headingIndex = lines.findIndex((line) => actionItemHeadings.includes(line));
   return lines
     .slice(headingIndex + 1)
     .filter((line) => line.trim() !== '')

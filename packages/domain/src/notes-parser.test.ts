@@ -16,4 +16,13 @@ describe('notesActionItems', () => {
       'Book a follow-up review for the first week of December.',
     ]);
   });
+
+  it('returns each item under the Action items heading, with its text', () => {
+    const items = notesActionItems(fixture('gemini-notes-action-items.fixture.txt'));
+
+    expect(items.map((item) => item.text)).toEqual([
+      'Share the take-home exercise with the two new candidates.',
+      'Update the job post with the remote-work policy.',
+    ]);
+  });
 });
