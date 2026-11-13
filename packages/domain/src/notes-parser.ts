@@ -6,14 +6,18 @@ export interface NotesActionItem {
 const actionItemHeadings = ['Suggested next steps', 'Action items'];
 const followingHeadings = ['Details'];
 
-const actionItem = (line: string): NotesActionItem => {
-  const assigneeEnd = line.indexOf('] ');
-  if (line.startsWith('[') && assigneeEnd !== -1)
-    return { assignee: line.slice(1, assigneeEnd), text: line.slice(assigneeEnd + 2) };
+const willActionItem = (line: string): NotesActionItem => {
   const willIndex = line.indexOf(' will ');
   const assignee = line.slice(0, willIndex);
   const namesSomeone = willIndex !== -1 && assignee.split(' ').every((word) => /^\p{Lu}/u.test(word));
   return namesSomeone ? { assignee, text: line } : { text: line };
+};
+
+const actionItem = (line: string): NotesActionItem => {
+  const assigneeEnd = line.indexOf('] ');
+  if (line.startsWith('[') && assigneeEnd !== -1)
+    return { assignee: line.slice(1, assigneeEnd), text: line.slice(assigneeEnd + 2) };
+  return willActionItem(line);
 };
 
 export const notesActionItems = (document: string): NotesActionItem[] => {
