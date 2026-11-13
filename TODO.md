@@ -1,3 +1,108 @@
 # TODO.md — working set
 
 
+## Phase 6c — Stabilization
+
+### Ingestion never stalls on one odd item
+
+- [ ] A mail report holding a message with no subject is accepted, and the message reaches the triage queue
+- [ ] A mail report holding a message with no To header is accepted, and the message is stored
+- [ ] A mail report holding a message with no Date header is accepted, and the message is stored
+- [ ] A mail report holding a message with no From header is accepted, and the message is stored
+- [ ] A mail report holding a message with no id is still rejected with a 400 (triangulates the four items above)
+- [ ] When Gmail returns a message with no Subject header, one Gmail poll posts the batch and returns the new history id
+- [ ] A calendar event with no title is reported with the title "(No title)" and the snapshot is accepted
+- [ ] A calendar event with a title is still reported with that title (triangulates the item above)
+- [ ] When the backend rejects a mail report, the extension logs the account and the status it answered
+- [ ] When the backend accepts a mail report, the extension logs nothing (triangulates the item above)
+- [ ] When the backend rejects a calendar snapshot, the extension logs the account and the status it answered
+- [ ] When the backend accepts a calendar snapshot, the extension logs nothing (triangulates the item above)
+
+### Slack poll errors are named
+
+- [ ] A Slack answer `{ ok: false, error: "missing_scope" }` fails that workspace's poll with an error naming `missing_scope`
+- [ ] A Slack answer `{ ok: false, error: "channel_not_found" }` fails that workspace's poll with an error naming `channel_not_found` (triangulates the item above)
+- [ ] A failed poll's Slack error name is what the Slack chip and the poll log show for that workspace
+- [ ] A Slack answer `{ ok: false, error: "ratelimited" }` waits and retries the call, and the poll completes when the retry answers `ok: true`
+
+### A delivered Slack reply answers success
+
+- [ ] When `chat.postMessage` succeeds and the `auth.test` that records the send then fails, `POST /slack-sends` answers success
+- [ ] When `chat.postMessage` itself fails, `POST /slack-sends` still answers an error (triangulates the item above)
+
+### Waiting-on is thread-aware for Slack
+
+- [ ] A user reply in thread B of a channel leaves a person waiting in thread A of the same channel on the waiting-on list
+- [ ] A user reply in thread A clears the person waiting in thread A (triangulates the item above)
+
+### Telegram bot digests confirm what was shown
+
+- [ ] Confirming a Telegram bot digest leaves a message that arrived after the digest was loaded undecided
+- [ ] Confirming a Telegram bot digest marks every message it listed (triangulates the item above)
+- [ ] Confirming a mail digest reaches only the messages listed when that digest was loaded, even after a later `GET /triage-queue` lists more (backlog: apps/backend/src/app.ts:325 _Handled for you_ lists automatic `keep` proposals — digest listed ids overwritten)
+
+### Triage decisions stick
+
+- [ ] After a restart, a message whose Keep was confirmed is not retriaged and gets no new proposal
+- [ ] After a restart, a reported message with no proposal and no verdict is triaged (triangulates the item above)
+- [ ] A group confirmation leaves a proposal in that group that was decided individually with its own verdict
+- [ ] A group confirmation confirms the group's undecided proposals (triangulates the item above)
+- [ ] Correcting a proposal to Archive queues an archive command for that message
+- [ ] Correcting a proposal to Keep queues no archive command (triangulates the item above)
+- [ ] A triage call that returns no proposal stores no proposal and leaves the message pending for the next triage run
+- [ ] Two cc-thread proposals from different threads show as two cards in the triage queue
+- [ ] Two cc-thread proposals from the same thread show as one card (triangulates the item above)
+- [ ] A message reported twice (by two reports) is sent to triage once
+- [ ] _Handled for you_ leaves out an automatic `keep` proposal (backlog: apps/backend/src/app.ts:325 _Handled for you_ lists automatic `keep` proposals, where nothing was done)
+- [ ] _Handled for you_ lists an automatic `archive` proposal (triangulates the item above)
+
+### Spend stays under the ceiling
+
+- [ ] A digest summary call whose output fails validation still logs its cost in the day's spend
+- [ ] After a digest summary call fails, loading the same unchanged digest again makes no new summary call
+- [ ] After a digest summary call fails, a digest that has changed is asked for a summary again (triangulates the item above)
+- [ ] A filter-proposal run stops calling Claude once the day's spend reaches the ceiling partway through the run
+- [ ] A filter-proposal run under the ceiling asks Claude about every candidate (triangulates the item above)
+- [ ] A digest whose messages changed before a restart is asked for a new summary after the restart, not shown its old one
+
+### Tasks are one model
+
+- [ ] A task confirmed from a mail proposal keeps the same id across two `GET /tasks` reads and a restart
+- [ ] Marking a task confirmed from a mail proposal Done removes it from `GET /tasks`
+- [ ] A task confirmed from a mail proposal can be ranked by the prioritization pass and shows in its rank order
+- [ ] Undoing the confirmation of a mail-proposal task removes that task
+- [ ] Marking a Slack task Done from the dashboard (an id with slashes) reaches the backend and the task is done
+- [ ] When the backend refuses Done, the dashboard keeps the task on the page
+- [ ] When the backend accepts Done, the dashboard removes the task (triangulates the item above)
+- [ ] Setting a second waiting-on person on a task replaces the first
+- [ ] Snoozing a task a second time replaces the first snooze time
+- [ ] Confirming the same task proposal twice leaves one task
+- [ ] A task due at a time written with an offset is overdue only after that instant, whatever offset the clock reads in
+- [ ] A task due at a time written with an offset is not overdue before that instant (triangulates the item above)
+- [ ] A task with a date-only due time is not overdue before the end of that business day in the business time zone
+- [ ] A task with a date-only due time is overdue after the end of that business day (triangulates the item above)
+
+### People are right
+
+- [ ] `GET /people` marks a contact urgent by the deadline window `createApp` is given, not the default 48 hours (backlog: apps/backend/src/app.ts:2181 `GET /people` ignores the urgency time zone, deadline window and VIP wait)
+- [ ] `GET /people` marks a waiting VIP urgent by the VIP wait `createApp` is given, not the default (backlog: apps/backend/src/app.ts:2181)
+- [ ] `GET /people` counts business days for urgency in the time zone `createApp` is given (backlog: apps/backend/src/app.ts:2181)
+- [ ] The backend `main.ts` starts serves `GET /people` with the urgency settings its startup settings read
+- [ ] A person only mentioned in someone else's email is not marked urgent
+- [ ] A person who asked the user directly and has waited past the threshold is still marked urgent (triangulates the item above)
+- [ ] A person only mentioned in someone else's email is not on the waiting-on list
+- [ ] A Slack person's waiting-on link opens that contact on the People tab
+- [ ] A Telegram person's waiting-on link opens that contact on the People tab
+- [ ] An organization's timeline lists each mail message with its Gmail link
+- [ ] A task made from a Slack item names its workspace as its account, not the team id (backlog: apps/backend/src/app.ts:1234 A task made from a Slack item stores the workspace team id as its `accountEmail`)
+  - predicted-contradiction: `apps/backend/src/app-slack.test.ts::lists at GET /tasks an open task linked to the Slack message, on its workspace, once the user confirms act on it at POST /slack-verdicts` — asserts: the task's `accountEmail` is the team id `'T0001'` — retired-by: "A task made from a Slack item names its workspace as its account, not the team id"
+
+### Dashboard edges
+
+- [ ] A follow-up message in a new agent conversation continues that conversation instead of starting another
+- [ ] The expense statement CSV quotes a field containing a line break
+- [ ] The statement page reads a quoted field containing a line break as one entry with that field intact
+
+### Phase 5 walk-through
+
+- [ ] `docs/phase-5-walkthrough.md` lists the live Slack checks for the user, and `PENDING_TASKS.md` gains an entry asking the user to run it
