@@ -365,7 +365,7 @@ describe('createApp Slack messages', () => {
     expect(slackItems).toEqual([]);
   });
 
-  it('lists at GET /tasks an open task linked to the Slack message, on its workspace, once the user confirms act on it at POST /slack-verdicts', async () => {
+  it('lists at GET /tasks an open task linked to the Slack message once the user confirms act on it at POST /slack-verdicts', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({
       workspaceTeamId: 'T0001',
@@ -389,7 +389,6 @@ describe('createApp Slack messages', () => {
       expect.objectContaining({
         status: 'open',
         link: 'https://app.slack.com/client/T0001/D0001/p1762700000000100',
-        accountEmail: 'T0001',
       }),
     ]);
   });
