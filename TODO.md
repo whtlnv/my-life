@@ -73,7 +73,7 @@
 
 ### Tasks are one model
 
-- [ ] A task confirmed from a mail proposal keeps the same id across two `GET /tasks` reads and a restart
+- [x] A task confirmed from a mail proposal keeps the same id across two `GET /tasks` reads and a restart
 - [ ] Marking a task confirmed from a mail proposal Done removes it from `GET /tasks`
 - [ ] A task confirmed from a mail proposal can be ranked by the prioritization pass and shows in its rank order
 - [ ] Undoing the confirmation of a mail-proposal task removes that task

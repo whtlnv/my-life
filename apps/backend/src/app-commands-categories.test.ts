@@ -219,6 +219,29 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
     });
   });
 
+  it('lists at GET /tasks a task confirmed from a mail proposal with the same id across two reads and a backend restart', async () => {
+    const options = {
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath: temporaryDatabasePath(),
+      triage: budgetReviewActTriage({ title: 'Review the budget by Friday' }),
+    };
+    const beforeRestart = createApp(options);
+    await confirmBudgetReviewProposal(beforeRestart);
+    const taskIds = async (app: ReturnType<typeof createApp>) => {
+      const { tasks } = (await (await app.request('/tasks')).json()) as { tasks: { id?: unknown }[] };
+      return tasks.map(({ id }) => id);
+    };
+
+    const firstRead = await taskIds(beforeRestart);
+    const secondRead = await taskIds(beforeRestart);
+    const afterRestart = await taskIds(createApp(options));
+
+    expect(firstRead).toEqual([expect.any(String)]);
+    expect(secondRead).toEqual(firstRead);
+    expect(afterRestart).toEqual(firstRead);
+  });
+
   it('lists at GET /tasks no task once its confirmed act proposal is re-decided as rejected through POST /verdicts', async () => {
     let currentTime = new Date('2026-11-02T15:10:00.000Z');
     const triage = budgetReviewActTriage({ title: 'Review the budget by Friday' });

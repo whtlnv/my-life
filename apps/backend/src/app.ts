@@ -294,7 +294,12 @@ function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
       proposal.madeAutomatic === true
         ? triageEffects(proposal as TriageProposal, { decision: 'confirmed' })
         : proposalEffects(proposal, verdicts);
-    return effects.tasks.map(({ title, accountEmail }) => ({ title, link: gmailMessageLink(proposal), accountEmail }));
+    return effects.tasks.map(({ title, accountEmail }) => ({
+      id: `mail-${proposal.messageId}`,
+      title,
+      link: gmailMessageLink(proposal),
+      accountEmail,
+    }));
   });
 }
 
