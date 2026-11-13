@@ -56,4 +56,4 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 - [x] **Which profile keeps WhatsApp open:** the `catala.francisco@gmail.com` profile (user, 2026-11-10).
 - [x] **Date order check:** done 2026-11-11: your page writes month/day/year (11/3/2026 is November 3); the parser reads it that way.
 - [x] **After Phase 6b is delivered:** extension reloaded and the first real reports checked with Claude (2026-11-11).
-- [ ] **First WhatsApp send:** pick a chat (yourself is safest), reply from the dashboard's WhatsApp card and press Send; Claude checks the message arrives as typed.
+- [ ] **First WhatsApp send:** paused with WhatsApp (2026-11-13); nothing to do until you reopen it.
