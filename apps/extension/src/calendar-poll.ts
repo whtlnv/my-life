@@ -56,8 +56,11 @@ export async function pollCalendarOnce(options: PollCalendarOptions): Promise<vo
     );
     items.push(...eventsResponse.items);
   }
-  await options.fetch(`${options.backendUrl}/calendar-snapshot`, {
+  const report = await options.fetch(`${options.backendUrl}/calendar-snapshot`, {
     method: 'POST',
     body: JSON.stringify(snapshotFromCalendarEvents(options.accountEmail, { items })),
   });
+  if (!report.ok) {
+    console.error(`Calendar snapshot for ${options.accountEmail} refused with ${String(report.status)}`);
+  }
 }
