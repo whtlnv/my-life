@@ -2220,6 +2220,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const messages = contactTimeline(context.req.param('email'));
     return context.json({ messages });
   });
+  const isSentBy = (contact: { emails: string[] }, message: ReportedMessage) =>
+    contact.emails.includes(contactFromSender(message.from).email);
   const peopleGroups = () => {
     const markedContactKeys = contactDetailsStore.markedEmails();
     const isWrittenInPerson = (message: (typeof reportedMessages)[number]) =>
@@ -2246,8 +2248,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         (isOnAlwaysMattersLine(contact) && !contactDetailsStore.userRemovedMark(primaryEmail, 'vip'))
       );
     };
-    const isSentBy = (contact: { emails: string[] }, message: (typeof reportedMessages)[number]) =>
-      contact.emails.includes(contactFromSender(message.from).email);
     const conversationMessagesOf = (contact: { emails: string[] }) =>
       reportedMessages
         .filter((message) => isSentBy(contact, message) || message.sentByUser === true)
@@ -2421,7 +2421,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       message.sentByUser !== true && !isAutomatedMail(message) && !userRepliedLaterInThread(message);
     const waitingTimesOf = (contact: { emails: string[] }): number[] =>
       reportedMessages
-        .filter((message) => contact.emails.includes(contactFromSender(message.from).email) && awaitsReply(message))
+        .filter((message) => isSentBy(contact, message) && awaitsReply(message))
         .map((message) => new Date(message.date).getTime());
     const people = contactsByEmail(reportedSenders(), proposals)
       .map((contact) => ({ contact, waitingTimes: waitingTimesOf(contact) }))
