@@ -17,6 +17,8 @@ interface PollSlackWorkspaceInput {
   displayNamesByUserId?: Map<string, string>;
 }
 
+const pollFailingSlackErrors = new Set(['invalid_auth', 'missing_scope', 'channel_not_found']);
+
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
   const response = await input.fetch(`${input.apiUrl}${path}`, {
     headers: { Authorization: `Bearer ${input.workspace.userToken}` },
@@ -27,7 +29,7 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
     return callSlack<Response>(input, path);
   }
   const body = (await response.json()) as Response & { error?: string };
-  if (body.error === 'invalid_auth' || body.error === 'missing_scope' || body.error === 'channel_not_found') {
+  if (body.error !== undefined && pollFailingSlackErrors.has(body.error)) {
     throw new Error(`Slack workspace ${input.workspace.teamId} answered ${body.error}`);
   }
   return body;
