@@ -350,6 +350,45 @@ describe('pollSlackWorkspace', () => {
     expect(directMessageSearches).toHaveLength(2);
   });
 
+  it("reads every is:dm search page on a workspace's first poll, though another workspace has a newer stored message", async () => {
+    const store = openSlackMessageStore(':memory:');
+    store.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Name of U0001',
+      text: 'Newest message of the first workspace',
+      timestamp: '1762790000.000100',
+      sentByUser: false,
+    });
+    const slack = scriptedSlack({
+      '/search.messages': (url) =>
+        url.searchParams.get('query')?.startsWith('is:dm') === true
+          ? {
+              ok: true,
+              messages: {
+                matches: [{ user: 'U0002', text: 'Ping', ts: '1762780000.000200', channel: { id: 'D0002' } }],
+                paging: { page: Number(url.searchParams.get('page') ?? '1'), pages: 2 },
+              },
+            }
+          : { ok: true, messages: { matches: [] } },
+      '/conversations.history': () => ({ ok: true, messages: [] }),
+    });
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      workspace: { teamId: 'T0002', userToken: 'xoxp-second' },
+      store,
+      clock: pollClock,
+    });
+
+    const directMessageSearchPages = slack.requests
+      .filter((url) => url.pathname === '/search.messages' && url.searchParams.get('query')?.startsWith('is:dm'))
+      .map((url) => url.searchParams.get('page') ?? '1');
+    expect(directMessageSearchPages).toEqual(['1', '2']);
+  });
+
   it.each([
     {
       when: 'their Slack profile has no display name',

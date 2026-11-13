@@ -133,8 +133,8 @@ function newestStoredTimestampIn(store: SlackMessageStore, conversationId: strin
   return newestTimestampOf(store.listMessages().filter((message) => message.conversationId === conversationId));
 }
 
-function newestStoredTimestampOverall(store: SlackMessageStore): string | undefined {
-  return newestTimestampOf(store.listMessages());
+function newestStoredTimestampInWorkspace(store: SlackMessageStore, workspaceTeamId: string): string | undefined {
+  return newestTimestampOf(store.listMessages().filter((message) => message.workspaceTeamId === workspaceTeamId));
 }
 
 function oldestParameterAfter(newestStoredTimestamp: string | undefined): string {
@@ -187,7 +187,7 @@ function lookbackSearchFilter(input: PollSlackWorkspaceInput): string {
 
 async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
   const query = `is:dm ${lookbackSearchFilter(input)}`;
-  const matches = await searchPagesUntilCaughtUp(input, query, newestStoredTimestampOverall(input.store));
+  const matches = await searchPagesUntilCaughtUp(input, query, newestStoredTimestampInWorkspace(input.store, input.workspace.teamId));
   // A busy DM names its conversation in many matches; each conversation's history is read once.
   const conversationIds = new Set(matches.map((match) => match.channel.id));
   return [...conversationIds].map((id) => ({ id }));
