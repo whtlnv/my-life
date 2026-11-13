@@ -1,7 +1,9 @@
+export const untitledEventTitle = '(No title)';
+
 interface GoogleCalendarEventFields {
   id: string;
   iCalUID: string;
-  summary: string;
+  summary?: string;
   hangoutLink?: string;
   attendees?: { email: string; displayName?: string; self?: boolean; responseStatus?: string }[];
 }
@@ -39,7 +41,7 @@ function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
   const commonFields = {
     id: event.id,
     iCalUID: event.iCalUID,
-    title: event.summary,
+    title: event.summary ?? untitledEventTitle,
     ...(event.hangoutLink === undefined ? {} : { meetLink: event.hangoutLink }),
     attendees: snapshotAttendeesOf(event),
   };

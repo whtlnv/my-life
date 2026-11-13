@@ -1,6 +1,7 @@
+import { calendarSnapshot } from '@my-life/contracts';
 import { describe, expect, it } from 'vitest';
 
-import { snapshotFromCalendarEvents } from './calendar-events-snapshot';
+import { snapshotFromCalendarEvents, untitledEventTitle } from './calendar-events-snapshot';
 
 describe('snapshotFromCalendarEvents', () => {
   it('converts a Google Calendar events response into a snapshot with title, start, end, Meet link, attendees and iCalUID', () => {
@@ -156,5 +157,26 @@ describe('snapshotFromCalendarEvents', () => {
     const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
 
     expect(snapshot.events[0]?.attendees).toEqual([{ email: 'vendor@example.com', displayName: 'vendor@example.com' }]);
+  });
+
+  it('reports an event with no title under the untitled-event title, in a snapshot the backend accepts', () => {
+    const eventsResponse = {
+      kind: 'calendar#events',
+      items: [
+        {
+          kind: 'calendar#event',
+          id: 'untitled',
+          iCalUID: 'untitled@google.com',
+          status: 'confirmed',
+          start: { dateTime: '2026-11-02T11:00:00-06:00', timeZone: 'America/Mexico_City' },
+          end: { dateTime: '2026-11-02T11:30:00-06:00', timeZone: 'America/Mexico_City' },
+        },
+      ],
+    };
+
+    const snapshot = calendarSnapshot.parse(snapshotFromCalendarEvents('francisco@example.com', eventsResponse));
+
+    expect(snapshot.events[0]?.title).toBe(untitledEventTitle);
+    expect(untitledEventTitle).toBe('(No title)');
   });
 });
