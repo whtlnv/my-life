@@ -112,6 +112,23 @@
 - [ ] The expense statement CSV quotes a field containing a line break
 - [ ] The statement page reads a quoted field containing a line break as one entry with that field intact
 
+### Pollers hold up against the real APIs (Codex audit, 2026-11-13)
+
+- [ ] A Slack answer `{ ok: false, error: "internal_error" }` fails that workspace's poll with an error naming `internal_error` instead of a crash on a missing field (the live `reading 'matches'` failure)
+- [ ] Any Slack answer with `ok: false` and an error name not listed before fails that workspace's poll naming that error (triangulates the item above)
+- [ ] The Slack poll the backend runs on its schedule waits the `Retry-After` seconds of a 429 answer before retrying
+- [ ] A Slack call answered 429 or `ratelimited` three times in a row fails that workspace's poll naming `ratelimited`, and the next workspace is still polled
+- [ ] A Slack DM whose `conversations.history` answers `has_more` with a cursor has every message of the polled window stored, not only the newest page
+- [ ] A second workspace's DM search reads every result page on its first poll even when the first workspace has a newer stored message
+- [ ] The Slack mention search reads every result page within the lookback
+- [ ] A Slack thread reply sent from the dashboard is stored with its thread timestamp, so that thread leaves triage and the waiting-on list
+- [ ] A Slack mention found by search inside a thread is stored with its thread timestamp, read from its permalink
+- [ ] When a Telegram send succeeds and the own-account lookup after it fails, `POST /chat-sends` still answers success
+- [ ] When loading Telegram dialog history fails at start-up, new Telegram messages are still stored
+- [ ] Two Telegram messages in the same second are ordered by message id, so an answer sent in that second counts as the user's reply
+- [ ] A Telegram session that connects but is not authorized shows the Telegram chip as not logged in
+- [ ] A message an anonymous admin posts in a Telegram supergroup is stored, named after the group
+
 ### Phase 5 walk-through
 
 - [ ] `docs/phase-5-walkthrough.md` lists the live Slack checks for the user, and `PENDING_TASKS.md` gains an entry asking the user to run it

@@ -159,3 +159,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
   `businessTimeZone` here, which the Now, Triage, People, Filters and Agent pages import, is a third copy of `America/Mexico_City`, alongside the two
   (backend `startup-settings.ts`, extension `background.ts`) in § Config gaps. Deferred to the same change: when the time
   zone becomes a setting, the dashboard should get it from `GET /now`, which changes behavior.
+
+- **[apps/backend/src/start-telegram.ts:18] Telegram update gaps are never recovered** (added: 2026-11-13, Codex pollers audit)
+  After an outage Telegram sends `UpdatesTooLong`; gramjs's `NewMessage` handler ignores it and `catchUp()` is not
+  implemented, and history loads only at start-up, so messages from the gap are never stored. Needs a design: reload
+  each dialog's history since its newest stored message after a reconnect or a gap notice.
+- **[apps/backend/src/slack-poll.ts:222] Slack threads the user wrote in before the lookback stop being polled** (added: 2026-11-13, Codex pollers audit)
+  Threads are found by an `after:` search on the user's own messages, so a reply on day 8 in a thread the user last
+  wrote in on day 1 is missed. Needs a design: keep polling stored threads with recent activity, independent of the lookback.
