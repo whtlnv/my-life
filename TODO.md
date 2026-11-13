@@ -1,2 +1,53 @@
 # TODO.md — working set
 
+
+## Phase 7 — Gemini meeting notes
+
+- [ ] The notes parser returns each item under a `Suggested next steps` heading of a fixture notes doc's text, with the item's text
+- [ ] The notes parser returns the items under an `Action items` heading the same way
+- [ ] The notes parser stops at the heading that follows the next-steps section: lines under a later heading are not items
+- [ ] A notes doc with no next-steps heading yields no items
+- [ ] Empty text, or a next-steps heading with nothing under it, yields no items and does not throw
+- [ ] An item written `[Name] does the thing` carries the assignee `Name` and the text `does the thing`
+- [ ] An item written `Name will do the thing` carries the assignee `Name`
+- [ ] An item that names no one carries no assignee
+- [ ] A notes poll lists the profile's Drive Docs whose name contains `Notes by Gemini` from the Drive fake and posts one report to `POST /notes-report` with each doc's account, id, title, modified time, web link and plain-text export
+- [ ] A Doc whose name does not contain `Notes by Gemini` is not in the report
+- [ ] A notes poll reports only docs modified since the profile's last successful notes poll
+- [ ] A notes poll whose report fails does not move the since time: the next poll reports the docs the failed one carried
+- [ ] A doc whose export fails is left out of the report and logged, and the other docs of the same poll are still reported
+- [ ] A notes report the backend rejects is logged
+- [ ] A notes poll that finds no new docs still posts an empty report
+- [ ] The extension's start-up runs the notes poll every 15 minutes alongside the Gmail and Calendar polls
+- [ ] The extension manifest asks for the `drive.readonly` scope
+- [ ] A notes report from an allow-listed account puts each parsed item in a _Meeting notes_ section of `GET /triage-queue` with its text, the doc title as the meeting, the doc link and the account
+- [ ] A notes report from an account not on the allow-list is rejected and proposes nothing
+- [ ] With `MY_LIFE_USER_NAMES` set, an item assigned to one of its names is proposed
+- [ ] With `MY_LIFE_USER_NAMES` set, an item assigned to someone else is not proposed
+- [ ] With `MY_LIFE_USER_NAMES` set to several comma-separated names, an item assigned to the second name is proposed
+- [ ] With `MY_LIFE_USER_NAMES` set, an item that names no assignee is proposed
+- [ ] With `MY_LIFE_USER_NAMES` unset, an item assigned to someone else is proposed
+- [ ] A doc reported again with the same modified time proposes nothing new
+- [ ] A doc reported again with a newer modified time proposes only the items not seen before
+- [ ] A proposed notes item is still in the triage queue after a backend restart
+- [ ] A task verdict on a notes item creates a task titled with the item's text, linked to the doc, on the doc's account, and the item leaves the queue
+- [ ] An ignore verdict on a notes item removes it from the queue and creates no task
+- [ ] An ignored notes item stays out of the queue after a backend restart
+- [ ] A task made from a notes item is still listed by `GET /tasks` after a backend restart
+- [ ] A task made from a notes item marked done leaves the open tasks, like any other task
+- [ ] The extension's calendar snapshot carries each event's attachment file ids
+- [ ] A notes item whose doc is attached to an event in that account's stored calendar snapshot shows the event's title and start time in the triage queue
+- [ ] A notes item whose doc is attached to no event in that account's snapshot shows no event, even when another account's event has the doc attached
+- [ ] A task made from a notes item linked to an event names the event's title and start time
+- [ ] `GET /now` gives one `notes` detail per account with the time of its last notes report
+- [ ] A `notes` detail whose last report is within 30 minutes is not stale
+- [ ] A `notes` detail whose last report is older than 30 minutes is stale
+- [ ] The triage page shows the _Meeting notes_ section with each item's text, meeting, doc link and account, and the linked event when there is one
+- [ ] Pressing `t` on a selected notes item posts a task verdict for it
+- [ ] Pressing `i` on a selected notes item posts an ignore verdict for it
+- [ ] The header chip lists the `notes` detail of each account and marks a stale one
+- [ ] The shipped backend (`main.ts`) accepts `POST /notes-report`, reads `MY_LIFE_USER_NAMES` and serves the proposed items in the triage queue
+- [ ] The shipped extension background starts the notes poll in every profile
+- [ ] `scripts/demo.sh` posts one notes report with two items, one assigned to someone else, and only the user's item shows in the triage queue
+- [ ] (hand-written) A decision record in `docs/decisions/` states that the notes fixture is written from Gemini's documented layout with made-up names, and the fidelity gap until a real doc is checked
+- [ ] Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes
