@@ -118,7 +118,7 @@
 
 ### Pollers hold up against the real APIs (Codex audit, 2026-11-13)
 
-- [ ] A Slack answer `{ ok: false, error: "internal_error" }` fails that workspace's poll with an error naming `internal_error` instead of a crash on a missing field (the live `reading 'matches'` failure)
+- [x] A Slack answer `{ ok: false, error: "internal_error" }` fails that workspace's poll with an error naming `internal_error` instead of a crash on a missing field (the live `reading 'matches'` failure)
 - [ ] Any Slack answer with `ok: false` and an error name not listed before fails that workspace's poll naming that error (triangulates the item above)
 - [ ] The Slack poll the backend runs on its schedule waits the `Retry-After` seconds of a 429 answer before retrying
 - [ ] A Slack call answered 429 or `ratelimited` three times in a row fails that workspace's poll naming `ratelimited`, and the next workspace is still polled

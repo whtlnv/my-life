@@ -599,6 +599,12 @@ describe('pollSlackWorkspace', () => {
     await expect(pollWith(slack)).rejects.toThrow('channel_not_found');
   });
 
+  it('fails the poll, naming the error, when a search answers internal_error', async () => {
+    const slack = scriptedSlack({ '/search.messages': () => ({ ok: false, error: 'internal_error' }) });
+
+    await expect(pollWith(slack)).rejects.toThrow('Slack workspace T0001 answered internal_error');
+  });
+
   it('waits and retries a call Slack answers ratelimited, and stores the message once the retry answers ok', async () => {
     let historyCalls = 0;
     const waits: number[] = [];

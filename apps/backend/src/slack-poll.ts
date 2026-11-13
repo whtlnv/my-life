@@ -17,7 +17,7 @@ interface PollSlackWorkspaceInput {
   displayNamesByUserId?: Map<string, string>;
 }
 
-const pollFailingSlackErrors = new Set(['invalid_auth', 'missing_scope', 'channel_not_found']);
+const pollFailingSlackErrors = new Set(['invalid_auth', 'missing_scope', 'channel_not_found', 'internal_error']);
 const ratelimitedRetryDelayMilliseconds = 1000;
 
 async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string): Promise<Response> {
