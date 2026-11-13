@@ -278,6 +278,11 @@ function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
   return triageEffects(proposal as TriageProposal, verdict as TriageVerdict);
 }
 
+function shouldArchive(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
+  if (proposal.action === 'archive' && isCleared(proposal, verdicts)) return true;
+  return proposalEffects(proposal, verdicts).archives.length > 0;
+}
+
 function confirmedTasks(proposals: Proposal[], verdicts: StoredVerdict[]) {
   return proposals.flatMap((proposal) => {
     const effects =
@@ -1526,11 +1531,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const approvedFilterProposalIds = filterProposalApprovalStore.loadApprovedProposalIds();
     const archiveCommands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
-      .filter(
-        (proposal) =>
-          (proposal.action === 'archive' && isCleared(proposal, verdicts)) ||
-          proposalEffects(proposal, verdicts).archives.length > 0,
-      )
+      .filter((proposal) => shouldArchive(proposal, verdicts))
       .map(({ messageId, madeAutomatic }) => ({
         id: `archive-${messageId}`,
         messageId,
