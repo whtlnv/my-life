@@ -258,6 +258,36 @@ describe('backend app: filter proposals and Gmail filters', () => {
     expect(askedCandidates).toHaveLength(1);
   });
 
+  it('asks the filter port about every candidate in a run whose proposals keep the day under the spend ceiling', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage: triageAnsweringInOrder(
+        Array.from({ length: 7 }, () => shopNewsletterArchiveProposal),
+        0,
+      ),
+    });
+    await reportTriageAndConfirmShopNewsletters(beforeRestart);
+    await reportTriageAndConfirmStoreDeals(beforeRestart);
+    await reportShopNewsletter(beforeRestart, 'newsletter-4');
+    await postTriageRun(beforeRestart);
+    const askedCandidates: unknown[] = [];
+    const afterRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      databasePath,
+      triage: triageAnsweringInOrder([], 0),
+      filter: filterRecordingAskedCandidates(askedCandidates, shopNewslettersFilterProposal, 1),
+    });
+
+    await postJson(afterRestart, '/verdicts', { messageId: 'newsletter-4', decision: 'confirmed' });
+
+    expect(askedCandidates).toHaveLength(2);
+  });
+
   async function reportTriageAndConfirmStoreDeals(app: ReturnType<typeof createApp>) {
     for (const messageId of ['deals-1', 'deals-2', 'deals-3']) {
       await postJson(app, '/mail-report', {

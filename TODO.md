@@ -68,7 +68,7 @@
 - [x] After a digest summary call fails, loading the same unchanged digest again makes no new summary call
 - [x] After a digest summary call fails, a digest that has changed is asked for a summary again (triangulates the item above)
 - [x] A filter-proposal run stops calling Claude once the day's spend reaches the ceiling partway through the run
-- [ ] A filter-proposal run under the ceiling asks Claude about every candidate (triangulates the item above)
+- [x] A filter-proposal run under the ceiling asks Claude about every candidate (triangulates the item above)
 - [ ] A digest whose messages changed before a restart is asked for a new summary after the restart, not shown its old one
 
 ### Tasks are one model
