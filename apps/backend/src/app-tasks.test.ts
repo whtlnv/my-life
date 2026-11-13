@@ -637,4 +637,23 @@ describe('backend app: task proposals and tasks', () => {
 
     expect(after).toBe(before);
   });
+
+  it('counts in the GET /now badge count an open task with a date-only due time once that business day has ended in the business time zone', async () => {
+    const halfPastMidnightTheNextDayInMexicoCity = { now: () => new Date('2026-11-03T06:30:00.000Z') };
+    const triage = triageAnswering(
+      keepProposalExtracting({ asks: [{ ask: 'Approve the budget', due: '2026-11-02' }] }),
+    );
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: halfPastMidnightTheNextDayInMexicoCity,
+      triage,
+    });
+    await proposeBudgetReview(app);
+    const before = await getJson<{ badgeCount: number }>(app, '/now');
+
+    await confirmFirstTaskProposal(app);
+
+    const after = await getJson<{ badgeCount: number }>(app, '/now');
+    expect(after.badgeCount).toBe(before.badgeCount + 1);
+  });
 });

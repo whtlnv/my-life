@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 09:44 · `apps/backend/src/app-tasks.test.ts::counts in the GET /now badge count an open task with a date-only due time once that business day has ended in the business time zone`
+- Behavior: A task with a date-only due time is overdue after the end of that business day (triangulates the item above)
+- Predicted: passes on first run, because 11e10f3 already compares the due date with the clock's calendar date in the business time zone (`due < localCalendarDate(clock.now(), businessTimeZone)`)
+- Actual: passes on first run (1 passed). A scratch mutation (date-only never overdue) makes it fail with `expected 2 to be 3`; app.ts restored
+- Type: passed unexpectedly (predicted pass; the test is not vacuous)
+- Resolution: The previous green step already covers this triangulation. I kept the test as a regression pin: its clock reads 00:30 in Mexico City on the next day (06:30Z), which pins the day boundary more tightly than the existing 2026-11-01 case. /green has nothing to implement.
+
 ## 2026-11-13 09:36 · `apps/backend/src/app-tasks.test.ts::leaves out of the GET /now badge count an open task due at a time written with an offset before that instant, though its local time reads earlier than the clock`
 - Behavior: A task due at a time written with an offset is not overdue before that instant (triangulates the item above)
 - Predicted: passes on first run, because the previous green step already compares instants (`Date.parse(due) < clock.now().getTime()`) and does not compare strings
