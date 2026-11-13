@@ -492,6 +492,30 @@ describe('pollSlackWorkspace', () => {
     ]);
   });
 
+  it('stores the mentions on every page of the mention search within the lookback, not only the first page', async () => {
+    const mentionOnPage = (page: number) => ({
+      user: 'U0002',
+      text: `<@${ownSlackUserId}> mention on page ${String(page)}`,
+      ts: page === 1 ? '1762700200.000200' : '1762700100.000100',
+      channel: { id: 'C0001' },
+    });
+    const slack = scriptedSlack({
+      '/search.messages': (url) => {
+        if (url.searchParams.get('query')?.startsWith(`<@${ownSlackUserId}>`) !== true) {
+          return { ok: true, messages: { matches: [] } };
+        }
+        const page = Number(url.searchParams.get('page') ?? '1');
+        return { ok: true, messages: { matches: [mentionOnPage(page)], paging: { page, pages: 2 } } };
+      },
+    });
+
+    const store = await pollWith(slack);
+
+    expect(store.listMessages().map((message) => message.text)).toEqual(
+      expect.arrayContaining([mentionOnPage(1).text, mentionOnPage(2).text]),
+    );
+  });
+
   it('asks every search for the newest messages first, not the most relevant', async () => {
     const slack = scriptedSlack();
 
