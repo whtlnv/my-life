@@ -36,11 +36,14 @@ const waitingOnPerson = (events: TaskEvent[], taskId: string): string | undefine
       event.type === 'waiting-on' && event.taskId === taskId,
   )?.person;
 
+const isFirstConfirmationOfTask = (event: ProposalEvent, index: number, confirmed: ProposalEvent[]): boolean =>
+  confirmed.findIndex((other) => other.taskId === event.taskId) === index;
+
 export const openTasks = (events: TaskEvent[], now?: string): Task[] => {
   const hiddenTaskIds = events.filter((event) => hidesTask(event, events, now)).map((event) => event.taskId);
   return events
     .filter((event): event is ProposalEvent => event.type === 'proposal-confirmed')
-    .filter((event, index, confirmed) => confirmed.findIndex((other) => other.taskId === event.taskId) === index)
+    .filter(isFirstConfirmationOfTask)
     .map((event): Task => {
       const waitingOn = waitingOnPerson(events, event.taskId);
       return { id: event.taskId, ...event.proposal, status: 'open', ...(waitingOn && { waitingOn }) };
