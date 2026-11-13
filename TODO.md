@@ -51,7 +51,7 @@
 - [x] A group confirmation leaves a proposal in that group that was decided individually with its own verdict
 - [x] A group confirmation confirms the group's undecided proposals (triangulates the item above)
   - already covered by existing tests, per the cycle (driver; review at phase end)
-- [ ] Correcting a proposal to Archive queues an archive command for that message
+- [x] Correcting a proposal to Archive queues an archive command for that message
 - [ ] Correcting a proposal to Keep queues no archive command (triangulates the item above)
 - [ ] A triage call that returns no proposal stores no proposal and leaves the message pending for the next triage run
 - [ ] Two cc-thread proposals from different threads show as two cards in the triage queue

@@ -125,6 +125,24 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
     expect(await response.json()).toMatchObject({ commands: [{ id: 'archive-message-1', messageId: 'message-1' }] });
   });
 
+  it('lists at GET /commands an archive command for a keep proposal the user corrected to archive through POST /verdicts', async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      triage: ccThreadTriage('keep'),
+    });
+    await proposeBudgetReview(app);
+
+    await postJson(app, '/verdicts', {
+      messageId: 'message-1',
+      decision: 'rejected',
+      correction: { action: 'archive' },
+    });
+
+    const response = await getCommands(app, 'ana@example.com');
+    expect(await response.json()).toMatchObject({ commands: [{ messageId: 'message-1' }] });
+  });
+
   it('lists at GET /commands no command once the extension acknowledged it through POST /commands/:id/acknowledgement', async () => {
     const app = createApp({
       allowedEmails: ['ana@example.com'],

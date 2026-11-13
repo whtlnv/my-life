@@ -1526,8 +1526,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const approvedFilterProposalIds = filterProposalApprovalStore.loadApprovedProposalIds();
     const archiveCommands = proposals
       .filter((proposal) => proposal.accountEmail === accountEmail)
-      .filter((proposal) => proposal.action === 'archive')
-      .filter((proposal) => isCleared(proposal, verdicts))
+      .filter(
+        (proposal) =>
+          (proposal.action === 'archive' && isCleared(proposal, verdicts)) ||
+          proposalEffects(proposal, verdicts).archives.length > 0,
+      )
       .map(({ messageId, madeAutomatic }) => ({
         id: `archive-${messageId}`,
         messageId,
