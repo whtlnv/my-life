@@ -29,6 +29,10 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
     return callSlack<Response>(input, path);
   }
   const body = (await response.json()) as Response & { error?: string };
+  if (body.error === 'ratelimited') {
+    await input.wait?.(1000);
+    return callSlack<Response>(input, path);
+  }
   if (body.error !== undefined && pollFailingSlackErrors.has(body.error)) {
     throw new Error(`Slack workspace ${input.workspace.teamId} answered ${body.error}`, { cause: body.error });
   }

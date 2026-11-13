@@ -598,6 +598,36 @@ describe('pollSlackWorkspace', () => {
 
     await expect(pollWith(slack)).rejects.toThrow('channel_not_found');
   });
+
+  it('waits and retries a call Slack answers ratelimited, and stores the message once the retry answers ok', async () => {
+    let historyCalls = 0;
+    const waits: number[] = [];
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => {
+        historyCalls += 1;
+        return historyCalls === 1
+          ? { ok: false, error: 'ratelimited' }
+          : { ok: true, messages: [{ user: 'U0001', text: 'Still there?', ts: '1762700000.000100' }] };
+      },
+    });
+    const store = openSlackMessageStore(':memory:');
+
+    await pollSlackWorkspace({
+      fetch: slack.fetch,
+      apiUrl: 'https://slack.test',
+      clock: pollClock,
+      workspace,
+      store,
+      wait: (milliseconds) => {
+        waits.push(milliseconds);
+        return Promise.resolve();
+      },
+    });
+
+    expect(waits).toHaveLength(1);
+    expect(store.listMessages().map((message) => message.text)).toEqual(['Still there?']);
+  });
 });
 
 describe('pollSlackWorkspaces', () => {
