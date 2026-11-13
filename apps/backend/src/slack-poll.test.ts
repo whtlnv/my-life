@@ -224,6 +224,26 @@ describe('pollSlackWorkspace', () => {
     expect(slack.requests.filter((url) => url.pathname === '/conversations.history')).toHaveLength(1);
   });
 
+  it('stores every message of a DM whose conversations.history answers has_more with a cursor, not only the newest page', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': (url) =>
+        url.searchParams.get('cursor') === 'next-page'
+          ? { ok: true, messages: [{ user: 'U0001', text: 'Older', ts: '1762700000.000100' }], has_more: false }
+          : {
+              ok: true,
+              messages: [{ user: 'U0001', text: 'Newer', ts: '1762700100.000200' }],
+              has_more: true,
+              response_metadata: { next_cursor: 'next-page' },
+            },
+    });
+
+    const store = await pollWith(slack);
+
+    expect(store.listMessages().map((message) => message.text)).toEqual(expect.arrayContaining(['Newer', 'Older']));
+    expect(store.listMessages()).toHaveLength(2);
+  });
+
   it('never calls conversations.list', async () => {
     const slack = scriptedSlack();
 
