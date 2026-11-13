@@ -394,6 +394,32 @@ describe('createApp Slack messages', () => {
     ]);
   });
 
+  it('marks done at POST /tasks/:id/done a Slack task whose id is URL-encoded as one path segment, and drops it from GET /tasks', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      senderUserId: 'U0001',
+      senderName: 'Ana',
+      text: 'Can you look at the contract today?',
+      timestamp: '1762700000.000100',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+    await postJson(app, '/slack-verdicts', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      timestamp: '1762700000.000100',
+      decision: 'act',
+    });
+    const before = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+    const slackTaskId = String(before.tasks[0]?.id);
+
+    const response = await postJson(app, `/tasks/${encodeURIComponent(slackTaskId)}/done`, {});
+    const after = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+
+    expect({ status: response.status, tasks: after.tasks }).toEqual({ status: 200, tasks: [] });
+  });
+
   it('lists at GET /waiting-on, on channel slack and waiting since its timestamp, the sender of a Slack DM the user has not answered later in the conversation', async () => {
     const databasePath = temporaryDatabasePath();
     const slackMessageStore = openSlackMessageStore(databasePath);

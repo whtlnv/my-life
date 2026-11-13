@@ -81,7 +81,8 @@
 - [x] When the backend refuses Done, the dashboard keeps the task on the page
 - [x] When the backend accepts Done, the dashboard removes the task (triangulates the item above)
   - already covered by existing tests, per the cycle (driver; review at phase end)
-- [ ] `POST /tasks/<id>/done` with a Slack task id URL-encoded as one segment (`slack-T1%2FD1%2F…`) marks that Slack task done (backend side of the item above it)
+- [x] `POST /tasks/<id>/done` with a Slack task id URL-encoded as one segment (`slack-T1%2FD1%2F…`) marks that Slack task done (backend side of the item above it)
+  - already working; red's test passed on the first run and is kept as a regression guard (driver)
 - [ ] Setting a second waiting-on person on a task replaces the first
 - [ ] Snoozing a task a second time replaces the first snooze time
 - [ ] Confirming the same task proposal twice leaves one task

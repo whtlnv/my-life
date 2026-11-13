@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 09:18 · `apps/backend/src/app-slack.test.ts::marks done at POST /tasks/:id/done a Slack task whose id is URL-encoded as one path segment, and drops it from GET /tasks`
+- Behavior: `POST /tasks/<id>/done` with a Slack task id URL-encoded as one segment marks that Slack task done
+- Predicted: AssertionError — 404 and the task still listed, the encoded id not matching the stored `slack-T0001/D0001/…` id
+- Actual: passed on first run
+- Type: passed unexpectedly
+- Resolution: Hono matches `%2F` inside one segment and `req.param('id')` decodes it, so the backend side already works; a mutation check (sending the id unencoded) fails with 404, so the test discriminates and is kept as a regression pin; not rewritten, since no correct test of this behavior can fail.
+
 ## 2026-11-13 02:42 · `apps/backend/src/app-chat.test.ts::asks the summarizer again at a second POST /triage-run about a Telegram bot digest that gained a message since the first run’s summary call failed`
 - Behavior: after a digest summary call fails, a digest that has changed is asked for a summary again (triangulates "an unchanged digest makes no new summary call")
 - Predicted: pass. ff6632c already stores the failed digest's message keys, so a new message breaks the match and the digest is summarized again
