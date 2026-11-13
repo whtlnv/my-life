@@ -159,7 +159,7 @@ export interface AppOptions {
   whatsappReportIntervalInMilliseconds?: number;
   // How many days a first Slack poll reads back for a conversation with nothing stored (default 7).
   slackFirstPollLookbackDays?: number;
-  urgency?: { unansweredAskBusinessDays: number; deadlineHours?: number };
+  urgency?: { unansweredAskBusinessDays: number; deadlineHours?: number; vipWaitingBusinessDays?: number };
   triage?: {
     propose: (message: TriageRequest, examples?: unknown[]) => Promise<TriageResult>;
   };
@@ -2258,7 +2258,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       timeZone: businessTimeZone,
       unansweredAskBusinessDays: options.urgency?.unansweredAskBusinessDays ?? defaultUnansweredAskBusinessDays,
       deadlineHours: options.urgency?.deadlineHours ?? defaultDeadlineHours,
-      vipWaitingBusinessDays: defaultVipWaitingBusinessDays,
+      vipWaitingBusinessDays: options.urgency?.vipWaitingBusinessDays ?? defaultVipWaitingBusinessDays,
     };
     const urgencyOf = (contact: { emails: string[]; messageIds: string[] }) =>
       contactUrgency({

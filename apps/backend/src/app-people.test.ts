@@ -385,6 +385,27 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['VIP waiting'] })]);
   });
 
+  it('does not list at GET /people under Urgent a VIP contact whose message has waited more than 1 business day but less than the VIP wait createApp is given', async () => {
+    const threeBusinessDays = 3;
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockOnWednesdayMorning,
+      urgency: { unansweredAskBusinessDays: 2, vipWaitingBusinessDays: threeBusinessDays },
+    });
+    await postJson(app, '/mail-report', budgetReviewReport);
+    await markContact(app, 'luis@example.com', 'vip');
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { vip, urgent } = (await response.json()) as {
+      vip: { emails: string[] }[];
+      urgent: { emails: string[] }[];
+    };
+    expect(vip.map(({ emails }) => emails)).toEqual([['luis@example.com']]);
+    expect(urgent).toEqual([]);
+  });
+
   it('does not list at GET /people under Urgent a VIP contact whose message the user answered in the thread, nor a VIP contact whose message arrived less than 1 business day ago', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = budgetReviewReport.messages[0];
