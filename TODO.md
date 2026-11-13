@@ -79,7 +79,8 @@
 - [x] Undoing the confirmation of a mail-proposal task removes that task
 - [x] Marking a Slack task Done from the dashboard (an id with slashes) reaches the backend and the task is done
 - [x] When the backend refuses Done, the dashboard keeps the task on the page
-- [ ] When the backend accepts Done, the dashboard removes the task (triangulates the item above)
+- [x] When the backend accepts Done, the dashboard removes the task (triangulates the item above)
+  - already covered by existing tests, per the cycle (driver; review at phase end)
 - [ ] `POST /tasks/<id>/done` with a Slack task id URL-encoded as one segment (`slack-T1%2FD1%2F…`) marks that Slack task done (backend side of the item above it)
 - [ ] Setting a second waiting-on person on a task replaces the first
 - [ ] Snoozing a task a second time replaces the first snooze time
