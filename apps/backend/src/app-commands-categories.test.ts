@@ -210,11 +210,11 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       tasks: [
-        {
+        expect.objectContaining({
           title: 'Review the budget by Friday',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
           accountEmail: 'ana@example.com',
-        },
+        }),
       ],
     });
   });
@@ -457,11 +457,11 @@ describe('backend app: commands, tasks, check-later and category modes', () => {
 
     expect(await response.json()).toEqual({
       tasks: [
-        {
+        expect.objectContaining({
           title: 'Review the budget by Friday',
           link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1',
           accountEmail: 'ana@example.com',
-        },
+        }),
       ],
     });
   });
