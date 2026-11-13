@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
@@ -478,6 +478,32 @@ describe('DashboardApp', () => {
       `/tasks/${encodeURIComponent(slackTaskId)}/done`,
       expect.objectContaining({ method: 'POST' }),
     );
+  });
+
+  it('keeps a task on the page when the backend refuses to mark it done', async () => {
+    const fetchStub = vi.fn((input: string, init?: RequestInit) => {
+      const json = (body: unknown) =>
+        Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
+      if (input === '/tasks') {
+        return json({ tasks: [{ id: 'task-1', title: 'Approve the budget', account: 'a@x.com', rank: 1, reason: 'due' }] });
+      }
+      if (input === '/now') return json({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
+      if (input === '/tasks/task-1/done' && init?.method === 'POST') {
+        return Promise.resolve(new Response(JSON.stringify({ error: 'refused' }), { status: 409 }));
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    });
+    vi.stubGlobal('fetch', fetchStub);
+
+    render(<DashboardApp />);
+
+    const taskRow = (await screen.findByText('Approve the budget')).closest('li');
+    if (taskRow === null) throw new Error('the task is not shown as a list item');
+    await userEvent.click(within(taskRow).getByRole('button'));
+
+    await waitFor(() => expect(fetchStub).toHaveBeenCalledWith('/tasks/task-1/done', expect.anything()));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.getByText('Approve the budget')).toBeInTheDocument();
   });
   it('lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page', async () => {
     answerGetsWith({
