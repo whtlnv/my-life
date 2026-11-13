@@ -5,8 +5,9 @@ Built and tested against a scripted Slack (2026-11-09); the backend has polled b
 
 1. **Header:** one Slack chip per workspace, named PS Mutuus and Erlia (not the team id), with the time of its last
    successful poll in its tooltip. A chip marked `slack stale` has not polled for more than twice the 60 s interval;
-   the backend log (`~/Library/Logs/my-life/backend.log`) then has a `Slack poll failed for workspace …` line naming
-   Slack's error (for example `invalid_auth`, `missing_scope`, `ratelimited`).
+   a chip whose last poll failed shows Slack's error name next to the workspace's name, and the backend log
+   (`~/Library/Logs/my-life/backend.log`) then has a `Slack poll failed for workspace …` line naming Slack's error
+   (for example `invalid_auth`, `missing_scope`, `ratelimited`).
 2. **Triage:** DMs and group DMs with messages from the last 7 days (`MY_LIFE_SLACK_FIRST_POLL_LOOKBACK_DAYS`), messages
    that mention you, and replies in threads you wrote in appear under _Slack_, one card per conversation. A new message
    appears within a minute without a restart. A message from an app shows the app's name.

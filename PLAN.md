@@ -25,7 +25,7 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 Read `CLAUDE.md` first. **Phases 2b through 6a are delivered** (`DONE.md`). Phase 6a added Telegram: `chat-message-store.ts` (one store for every chat channel, keyed by channel, chat id and message id; verdicts append-only), `telegram-message-mapping.ts` (gramjs messages to chat messages; chat ids are marked peer ids), `gramjs-telegram-client.ts` (the port over gramjs, whose real `TelegramClient` type-checks against it in `telegram-connection.ts`), `start-telegram.ts` (unread dialogs, then live messages, started by `createApp` when given a client), `/chat-messages`, `/chat-verdicts`, `/chat-sends`, Telegram in `/now`, `/people`, `/waiting-on` and the triage queue, and the scripted client in `scripted-telegram-client.ts` that tests and `scripts/demo.sh` use.
 
-**Next:** Phase 6c (stabilization, below), then Phase 7. WhatsApp is paused (user, 2026-11-13).
+**Next:** Phase 7. Phase 6c (stabilization: the 2026-11-13 Codex audits of domain, contracts and pollers, 89 items) is delivered 2026-11-13. WhatsApp is paused (user, 2026-11-13).
 
 **Waiting on the user**, not built:
 
@@ -33,8 +33,10 @@ Read `CLAUDE.md` first. **Phases 2b through 6a are delivered** (`DONE.md`). Phas
 - When to propose "same person?" merges, and from what (locked decision 22 says the model proposes them).
 - The todo-list import: `PENDING_TASKS.md` § 4 (the path).
 
-What the supervision showed in Phases 3 to 6b — check these every cycle:
+What the supervision showed in Phases 3 to 6c — check these every cycle:
 
+- **An outside read finds what green cycles do not** (6c): three read-only Codex audits over a clean export found 37 defects behind a green suite (restart retriage, group confirms overwriting verdicts, Slack pagination, unwaited rate limits). Re-run them after a large phase.
+- **A test that compares a whole response blocks adding a field** (6c): migrate it to match on the fields it means (`objectContaining`) in its own commit, never delete it.
 - **The plan's picture of a third-party page can be wrong** (6b): WhatsApp Web no longer writes `true_`/`false_` in `data-id`, writes chat-list times as display text, and leaves off-screen rows empty. A masked capture of the real page before building the parser replaced three planned items.
 - **Store times in one form** (6b): WhatsApp times arrived with an offset while every other chat stored UTC, and string comparisons ordered them wrongly.
 - **A trial on real data finds what fakes cannot** (6a.1): search matches carry no `thread_ts`, display names come back empty, app messages have no `user`, the active DMs sit on page 2 of `conversations.list`, and a cap of 5 messages per conversation hid the app sender that broke the live poll. Run the capped trial on a copy of the store, then watch the first live poll.
@@ -55,22 +57,6 @@ What the supervision showed in Phases 3 to 6b — check these every cycle:
 - **Restart items get greened on the narrowest case:** the task restart passed with one confirmed proposal while done, snooze and waiting-on were not stored.
 - **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
 - **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
-
-## Phase 6c — Stabilization (2026-11-13)
-
-Outcome: the sources the user runs live (Gmail, Calendar, Slack, Telegram) and the triage, task and spend paths behave correctly under the failures and edge cases found by the 2026-11-13 Codex audits (`gpt-6-astra`, read-only over a clean export: domain and contracts; the pollers audit stopped at the usage limit), the known `BACKLOG.md` gaps and the live logs. Each item is test-first: a finding whose red test passes at once is recorded in `MISMATCHES.md` and dropped. WhatsApp is paused and out of scope.
-
-- **Ingestion never stalls on one odd item:** a Gmail message with no Subject header (or any optional header) is reported, never rejecting the batch and freezing the history cursor; an untitled calendar event is reported with a fallback title; a snapshot or mail report the backend rejects is logged by the extension.
-- **Slack poll errors are named:** a Slack answer with `ok: false` (ratelimited, missing_scope, any error) fails the workspace poll with Slack's error, never `Cannot read properties of undefined (reading 'matches')` (seen live on PS Mutuus, 2026-11-11); `ratelimited` waits and retries like a 429.
-- **A delivered Slack reply answers success:** once `chat.postMessage` succeeds, a later failure (the `auth.test` that records the send) never turns the answer into a 500 that invites a second send.
-- **Waiting-on is thread-aware for Slack:** a user reply in another thread of the same channel does not clear someone waiting in thread A.
-- **Telegram bot digests confirm what was shown:** confirming a digest marks only the messages it listed, not a message that arrived after it was loaded.
-- **Triage decisions stick:** a decided message is never retriaged into a new proposal (a restart must not turn a confirmed Keep into an Archive); a group confirmation reaches only that group's undecided proposals, never one decided individually; a correction to Archive queues the archive command; a triage call that returns no proposal leaves the message pending, not stored as an empty proposal; cc-thread proposals keep their thread id, so distinct threads are distinct cards; a message reported twice is triaged once; _Handled for you_ lists only automatic actions that did something (not automatic `keep`).
-- **Spend stays under the ceiling:** a summary whose output fails validation still logs its cost, and an unchanged digest is not re-asked after a failure; filter proposals recheck the ceiling before each call; digest summary invalidation survives a restart.
-- **Tasks are one model:** a task confirmed from a mail proposal gets a stable id through the task events, so Done, ranking and undo reach it; a task id with slashes (Slack) is encoded in the Done URL, and the dashboard removes a task only after the backend accepts Done; a later waiting-on person or snooze replaces the earlier one and a repeated confirmation does not duplicate the task; overdue compares instants, a date-only due time ending at the end of that business day.
-- **People are right:** `GET /people` honors the configured urgency time zone, deadline window and VIP wait (`BACKLOG.md`); a person only mentioned in someone else's email is neither urgent nor waiting; waiting-on links for Slack and Telegram people open that contact on the People tab; organization timeline messages carry their Gmail link; a task made from a Slack item names its workspace, not the team id, as its account (`BACKLOG.md`).
-- **Dashboard edges:** a new agent conversation keeps its id, so a follow-up continues it; the statement parses quoted fields with line breaks and the backend quotes them.
-- **Phase 5 walk-through:** `docs/phase-5-walkthrough.md`, a short checklist of the live Slack behavior for the user (the user runs it; it adds an entry to `PENDING_TASKS.md`).
 
 ## Phase 7 — Gemini meeting notes
 
