@@ -13,7 +13,8 @@
   - already covered by `apps/backend/src/app-mail-triage.test.ts` (the refused-report case, migrated in cba0c5d to a message with no id) (supervisor)
 - [x] When Gmail returns a message with no Subject header, one Gmail poll posts the batch and returns the new history id
 - [x] A calendar event with no title is reported with the title "(No title)" and the snapshot is accepted
-- [ ] A calendar event with a title is still reported with that title (triangulates the item above)
+- [x] A calendar event with a title is still reported with that title (triangulates the item above)
+  - already covered by apps/extension/src/calendar-events-snapshot.test.ts:7 (supervisor)
 - [ ] When the backend rejects a mail report, the extension logs the account and the status it answered
 - [ ] When the backend accepts a mail report, the extension logs nothing (triangulates the item above)
 - [ ] When the backend rejects a calendar snapshot, the extension logs the account and the status it answered
