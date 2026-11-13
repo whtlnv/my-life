@@ -224,7 +224,7 @@ export function DashboardApp() {
   }, []);
 
   const markTaskDone = (taskId: string) => {
-    void fetch(`/tasks/${taskId}/done`, { method: 'POST' }).then(() => {
+    void fetch(`/tasks/${encodeURIComponent(taskId)}/done`, { method: 'POST' }).then(() => {
       setTopTasks((tasks) => tasks.filter((task) => task.id !== taskId));
     });
   };

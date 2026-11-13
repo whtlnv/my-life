@@ -77,7 +77,7 @@
 - [x] Marking a task confirmed from a mail proposal Done removes it from `GET /tasks`
 - [x] A task confirmed from a mail proposal can be ranked by the prioritization pass and shows in its rank order
 - [x] Undoing the confirmation of a mail-proposal task removes that task
-- [ ] Marking a Slack task Done from the dashboard (an id with slashes) reaches the backend and the task is done
+- [x] Marking a Slack task Done from the dashboard (an id with slashes) reaches the backend and the task is done
 - [ ] When the backend refuses Done, the dashboard keeps the task on the page
 - [ ] When the backend accepts Done, the dashboard removes the task (triangulates the item above)
 - [ ] Setting a second waiting-on person on a task replaces the first

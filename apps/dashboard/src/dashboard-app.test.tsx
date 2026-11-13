@@ -452,6 +452,33 @@ describe('DashboardApp', () => {
     });
     expect(screen.getByText('Approve the budget')).toBeInTheDocument();
   });
+
+  it('marks a Slack task, whose id holds slashes, done at the one task path the backend routes', async () => {
+    const slackTaskId = 'slack-T0001/D0001/1700000000.000100';
+    const fetchStub = vi.fn((input: string, init?: RequestInit) => {
+      const json = (body: unknown) =>
+        Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
+      if (input === '/tasks') {
+        return json({
+          tasks: [{ id: slackTaskId, title: 'Answer Ana in Slack', account: 'T0001', rank: 1, reason: 'Ana asked' }],
+        });
+      }
+      if (input === '/now') return json({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
+      return Promise.resolve(new Response(null, { status: 404 }));
+    });
+    vi.stubGlobal('fetch', fetchStub);
+
+    render(<DashboardApp />);
+
+    const taskRow = (await screen.findByText('Answer Ana in Slack')).closest('li');
+    if (taskRow === null) throw new Error('the task is not shown as a list item');
+    await userEvent.click(within(taskRow).getByRole('button'));
+
+    expect(fetchStub).toHaveBeenCalledWith(
+      `/tasks/${encodeURIComponent(slackTaskId)}/done`,
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
   it('lists the people waiting on a reply, longest wait first, each linking to their timeline on the People page', async () => {
     answerGetsWith({
       '/now': { current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 },
