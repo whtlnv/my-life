@@ -12,13 +12,18 @@ const recentMessagesPerDialog = 20;
 async function mapWithItsParties(message: Api.Message, knownChat?: TelegramChat): Promise<ChatMessage | undefined> {
   const chat = knownChat ?? message.chat ?? (await message.getChat());
   const sender = message.sender ?? (await message.getSender());
-  if (!isTelegramChat(chat) || (sender?.className !== 'User' && sender?.className !== 'Channel')) return undefined;
+  if (!isTelegramChat(chat) || !isTelegramSender(sender)) return undefined;
   return mapTelegramMessage({ message, chat, sender });
 }
 
 // A deleted account or a chat the user was removed from comes back as UserEmpty, ChatForbidden and the like.
 function isTelegramChat(entity: Api.TypeUser | Api.TypeChat | undefined): entity is TelegramChat {
   return entity?.className === 'User' || entity?.className === 'Chat' || entity?.className === 'Channel';
+}
+
+// An anonymous admin posts as the supergroup's Channel rather than as a User.
+function isTelegramSender(entity: Api.TypeUser | Api.TypeChat | undefined): entity is Api.User | Api.Channel {
+  return entity?.className === 'User' || entity?.className === 'Channel';
 }
 
 interface GramjsClient {
