@@ -928,6 +928,24 @@ describe('createApp Slack polls', () => {
     ]);
   });
 
+  it("reports on GET /now, after a POST /slack-poll that Slack answered missing_scope, the workspace's failure as the Slack error name alone", async () => {
+    const slackApiUrl = await localSlackAnsweringEveryRequest({ ok: false, error: 'missing_scope' });
+    silencedBackendLog();
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      slackApiUrl,
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+    });
+
+    await app.request('/slack-poll', { method: 'POST' });
+    const now = (await (await app.request('/now')).json()) as { slackWorkspaces?: unknown };
+
+    expect(now.slackWorkspaces).toEqual([
+      expect.objectContaining({ teamId: 'T0001', lastPollFailure: 'missing_scope' }),
+    ]);
+  });
+
   it('reports on GET /now no failure reason for a workspace whose failed POST /slack-poll was followed by a successful one', async () => {
     let tokenRevoked = true;
     const slackApiUrl = await localSlackAnswering((path) => {

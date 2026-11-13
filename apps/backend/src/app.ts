@@ -876,7 +876,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         : { firstPollLookbackDays: options.slackFirstPollLookbackDays }),
       logPollFailure: (teamId, error) => {
         console.error(`Slack poll failed for workspace ${teamId}:`, error);
-        pollFailuresByTeamId.set(teamId, String(error));
+        pollFailuresByTeamId.set(teamId, String((error as Error).cause));
       },
     });
     slackWorkspacePolls = await Promise.all(
