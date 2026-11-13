@@ -125,5 +125,9 @@ export async function pollGmailOnce(options: PollGmailOptions): Promise<string |
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, historyId: profile.historyId, messages }),
   });
-  return report.ok ? profile.historyId : options.storedHistoryId;
+  if (!report.ok) {
+    console.error(`Mail report for ${options.accountEmail} refused with ${String(report.status)}`);
+    return options.storedHistoryId;
+  }
+  return profile.historyId;
 }

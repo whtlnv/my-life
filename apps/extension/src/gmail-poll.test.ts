@@ -1,5 +1,5 @@
 import { mailReport } from '@my-life/contracts';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { pollGmailOnce } from './gmail-poll';
 
@@ -600,6 +600,38 @@ describe('pollGmailOnce', () => {
     await pollGmailOnce({ ...pollOptions, storedHistoryId: nextHistoryId });
 
     expect(historyReadsFrom).toEqual(['12345', '12345']);
+  });
+
+  it('when the backend refuses a mail report, logs the account and the status the backend answered', async () => {
+    const fakeFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.origin + url.pathname === `${gmailApi}/profile`) {
+        return Promise.resolve(Response.json({ emailAddress: 'francisco@example.com', historyId: '98765' }));
+      }
+      if (url.origin + url.pathname === `${gmailApi}/history`) {
+        return Promise.resolve(Response.json({ history: [], historyId: '98765' }));
+      }
+      if (url.href === 'http://127.0.0.1:7777/mail-report' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ error: 'refused' }, { status: 422 }));
+      }
+      return Promise.resolve(new Response('unexpected request', { status: 404 }));
+    };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      await pollGmailOnce({
+        fetch: fakeFetch,
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+        storedHistoryId: '12345',
+      });
+
+      const logged = consoleError.mock.calls.map((call) => call.map(String).join(' '));
+      expect(logged).toEqual([expect.stringMatching(/francisco@example\.com.*422|422.*francisco@example\.com/)]);
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it('when the history response has no history field because nothing changed, reports zero messages and the current history id', async () => {
