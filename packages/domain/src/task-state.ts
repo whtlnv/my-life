@@ -21,10 +21,11 @@ export interface Task extends TaskProposal {
   waitingOn?: string;
 }
 
-const hidesTask = (event: TaskEvent, now?: string): boolean => {
+const hidesTask = (event: TaskEvent, events: TaskEvent[], now?: string): boolean => {
   if (event.type === 'done' || event.type === 'undone') return true;
   if (event.type !== 'snoozed' || now === undefined) return false;
-  return Date.parse(event.until) > Date.parse(now);
+  const latestSnooze = events.findLast((other) => other.type === 'snoozed' && other.taskId === event.taskId);
+  return event === latestSnooze && Date.parse(event.until) > Date.parse(now);
 };
 
 const waitingOnPerson = (events: TaskEvent[], taskId: string): string | undefined =>
@@ -34,7 +35,7 @@ const waitingOnPerson = (events: TaskEvent[], taskId: string): string | undefine
   )?.person;
 
 export const openTasks = (events: TaskEvent[], now?: string): Task[] => {
-  const hiddenTaskIds = events.filter((event) => hidesTask(event, now)).map((event) => event.taskId);
+  const hiddenTaskIds = events.filter((event) => hidesTask(event, events, now)).map((event) => event.taskId);
   return events
     .filter((event): event is ProposalEvent => event.type === 'proposal-confirmed')
     .map((event): Task => {

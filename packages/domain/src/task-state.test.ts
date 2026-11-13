@@ -143,6 +143,37 @@ describe('openTasks', () => {
     ]);
   });
 
+  it('brings a task back among the open tasks once its second snooze time has passed, even if the first snooze ran later', () => {
+    const events = [
+      {
+        type: 'proposal-confirmed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T15:00:00.000Z',
+        proposal: {
+          title: 'Review the Q3 budget spreadsheet and send comments',
+          link: budgetMessageLink,
+          accountEmail: 'ana@example.com',
+        },
+      },
+      {
+        type: 'snoozed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T16:00:00.000Z',
+        until: '2026-11-12T15:00:00.000Z',
+      },
+      {
+        type: 'snoozed' as const,
+        taskId: 'task-budget',
+        at: '2026-11-09T17:00:00.000Z',
+        until: '2026-11-10T15:00:00.000Z',
+      },
+    ];
+
+    expect(openTasks(events, '2026-11-11T15:00:00.000Z')).toEqual([
+      expect.objectContaining({ id: 'task-budget', status: 'open' }),
+    ]);
+  });
+
   it('shows the second waiting-on person set on a task in place of the first', () => {
     const events = [
       {
