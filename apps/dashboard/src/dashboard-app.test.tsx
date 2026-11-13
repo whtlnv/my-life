@@ -485,7 +485,9 @@ describe('DashboardApp', () => {
       const json = (body: unknown) =>
         Promise.resolve(new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
       if (input === '/tasks') {
-        return json({ tasks: [{ id: 'task-1', title: 'Approve the budget', account: 'a@x.com', rank: 1, reason: 'due' }] });
+        return json({
+          tasks: [{ id: 'task-1', title: 'Approve the budget', account: 'a@x.com', rank: 1, reason: 'due' }],
+        });
       }
       if (input === '/now') return json({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 0 });
       if (input === '/tasks/task-1/done' && init?.method === 'POST') {
@@ -501,7 +503,9 @@ describe('DashboardApp', () => {
     if (taskRow === null) throw new Error('the task is not shown as a list item');
     await userEvent.click(within(taskRow).getByRole('button'));
 
-    await waitFor(() => expect(fetchStub).toHaveBeenCalledWith('/tasks/task-1/done', expect.anything()));
+    await waitFor(() => {
+      expect(fetchStub).toHaveBeenCalledWith('/tasks/task-1/done', expect.anything());
+    });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(screen.getByText('Approve the budget')).toBeInTheDocument();
   });
