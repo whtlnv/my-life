@@ -1126,8 +1126,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   app.post('/group-verdicts', async (context) => {
     const { category, decision } = await context.req.json<{ category: string; decision: string }>();
+    const decidedMessageIds = new Set(verdictStore.loadAll().map(({ messageId }) => messageId));
     proposals
-      .filter((proposal) => proposal.category === category)
+      .filter((proposal) => proposal.category === category && !decidedMessageIds.has(proposal.messageId))
       .forEach(({ messageId }) => {
         verdictStore.save({ messageId, decision, decidedAt: clock.now().toISOString() });
       });

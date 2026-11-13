@@ -1083,6 +1083,35 @@ describe('backend app: mail reports, triage runs, the triage queue and verdicts'
     expect(stored.map(({ messageId }) => messageId).sort()).toEqual(['receipt-newest', 'receipt-older']);
     expect(stored.every(({ decision }) => decision === 'confirmed')).toBe(true);
   });
+  it('leaves a proposal decided on its own out of a later group confirmation, keeping only its own verdict', async () => {
+    const expense = {
+      action: 'archive',
+      category: 'expense',
+      summary: 'Receipt from Acme',
+      extract: { vendor: 'Acme', amount: 120, currency: 'MXN', date: '2026-11-02' },
+      reason: 'A receipt to file',
+    };
+    const triage = triageAnsweringInOrder([expense, expense], 1);
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockAtTenPastThree, databasePath, triage });
+    const [budgetReview] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [
+        { ...budgetReview, id: 'receipt-newest', threadId: 'thread-1', date: 'Mon, 2 Nov 2026 10:00:00 -0600' },
+        { ...budgetReview, id: 'receipt-older', threadId: 'thread-3', date: 'Mon, 2 Nov 2026 08:00:00 -0600' },
+      ],
+    });
+    await postTriageRun(app);
+    await postJson(app, '/verdicts', { messageId: 'receipt-older', decision: 'rejected' });
+
+    await postJson(app, '/group-verdicts', { category: 'expense', decision: 'confirmed' });
+
+    const stored = openVerdictStore(databasePath).loadAll();
+    expect(stored.filter(({ messageId }) => messageId === 'receipt-older').map(({ decision }) => decision)).toEqual([
+      'rejected',
+    ]);
+  });
 
   it('proposes each message once when a second POST /triage-run starts while the first is still waiting on Claude', async () => {
     const askedMessageIds: string[] = [];
