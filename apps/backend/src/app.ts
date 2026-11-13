@@ -1308,16 +1308,17 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   }
   function describeBotChatDigests() {
     return [...unconfirmedBotMessagesByChat()].map(([chatId, messages]) => {
+      const digestId = identifyBotChatDigest(chatId);
       listedDigestStore.save(
-        identifyBotChatDigest(chatId),
+        digestId,
         messages.map(({ messageId }) => messageId),
       );
       return {
-        id: identifyBotChatDigest(chatId),
+        id: digestId,
         title: messages[0]?.chatTitle,
         channel: messages[0]?.channel,
         count: messages.length,
-        summaryLines: digestSummaryStore.load(identifyBotChatDigest(chatId)),
+        summaryLines: digestSummaryStore.load(digestId),
       };
     });
   }
