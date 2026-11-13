@@ -1597,6 +1597,16 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it("names at GET /waiting-on a Telegram sender's Telegram id, so the People tab can open that contact", async () => {
+    const databasePath = temporaryDatabasePath();
+    saveTelegramMessageFromLucia(databasePath, '2026-11-09T16:00:00.000Z');
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([expect.objectContaining({ telegramHandles: [{ userId: '7001' }] })]);
+  });
+
   it('lists at GET /waiting-on, on channel whatsapp, the sender of a WhatsApp message the user has not answered', async () => {
     const app = createApp({ allowedEmails: [], databasePath: temporaryDatabasePath() });
     await postJson(app, '/chat-messages', {

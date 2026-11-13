@@ -2465,6 +2465,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       channel: message.channel,
       displayName: message.senderName,
       waitingSince: message.time,
+      ...(message.channel === 'telegram' ? { telegramHandles: [{ userId: message.senderId }] } : {}),
     }));
     return context.json({
       people: [...people, ...slackPeople, ...chatPeople].toSorted((first, second) =>
