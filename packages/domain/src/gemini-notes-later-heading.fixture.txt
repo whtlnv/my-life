@@ -1,0 +1,17 @@
+Roadmap planning
+Notes by Gemini
+
+Nov 13, 2026
+
+Attendees: Ana Rivas, Pablo Mendoza
+
+Summary
+The team ordered the first-quarter roadmap and moved the reporting work ahead of the mobile release.
+
+Suggested next steps
+Draft the first-quarter roadmap document for review.
+Confirm the reporting scope with the sales team.
+
+Details
+Reporting: Ana Rivas said the sales team needs monthly exports before the mobile release.
+Mobile release: Pablo Mendoza agreed to move it to the second quarter.

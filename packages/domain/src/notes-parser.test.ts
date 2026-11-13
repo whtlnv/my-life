@@ -25,4 +25,13 @@ describe('notesActionItems', () => {
       'Update the job post with the remote-work policy.',
     ]);
   });
+
+  it('stops at the heading that follows the next-steps section, so lines under a later heading are not items', () => {
+    const items = notesActionItems(fixture('gemini-notes-later-heading.fixture.txt'));
+
+    expect(items.map((item) => item.text)).toEqual([
+      'Draft the first-quarter roadmap document for review.',
+      'Confirm the reporting scope with the sales team.',
+    ]);
+  });
 });

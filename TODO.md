@@ -5,7 +5,7 @@
 
 - [x] The notes parser returns each item under a `Suggested next steps` heading of a fixture notes doc's text, with the item's text
 - [x] The notes parser returns the items under an `Action items` heading the same way
-- [ ] The notes parser stops at the heading that follows the next-steps section: lines under a later heading are not items
+- [x] The notes parser stops at the heading that follows the next-steps section: lines under a later heading are not items
 - [ ] A notes doc with no next-steps heading yields no items
 - [ ] Empty text, or a next-steps heading with nothing under it, yields no items and does not throw
 - [ ] An item written `[Name] does the thing` carries the assignee `Name` and the text `does the thing`
