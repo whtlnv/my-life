@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 01:11 · `apps/backend/src/slack-poll.test.ts::fails the poll, naming the error, when a conversation history answers channel_not_found`
+- Behavior: A Slack answer `{ ok: false, error: "channel_not_found" }` fails that workspace's poll with an error naming `channel_not_found`
+- Predicted: AssertionError — the poll resolves, because `callSlack` passes any error other than invalid_auth/missing_scope through and the history would read as empty
+- Actual: AssertionError — the poll rejects with `TypeError: messages is not iterable`, not naming `channel_not_found`
+- Type: right-reason mismatch
+- Resolution: The error body is passed through to the history reader, which iterates the missing `messages` field and crashes; the poll already fails, but with no clue to the cause. The test stays as written: it pins that the error names `channel_not_found`.
+
 ## 2026-11-13 01:04 · `apps/extension/src/calendar-poll.test.ts::when the backend accepts a calendar snapshot, logs nothing`
 - Behavior: when the backend accepts a calendar snapshot, the extension logs nothing
 - Predicted: pass on first run (no right-reason failure available), because `pollCalendarOnce` calls `console.error` only inside `if (!report.ok)` since 497a306

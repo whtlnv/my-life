@@ -27,7 +27,7 @@ async function callSlack<Response>(input: PollSlackWorkspaceInput, path: string)
     return callSlack<Response>(input, path);
   }
   const body = (await response.json()) as Response & { error?: string };
-  if (body.error === 'invalid_auth' || body.error === 'missing_scope') {
+  if (body.error === 'invalid_auth' || body.error === 'missing_scope' || body.error === 'channel_not_found') {
     throw new Error(`Slack workspace ${input.workspace.teamId} answered ${body.error}`);
   }
   return body;

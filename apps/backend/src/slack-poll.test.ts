@@ -589,6 +589,15 @@ describe('pollSlackWorkspace', () => {
 
     await expect(pollWith(slack)).rejects.toThrow('missing_scope');
   });
+
+  it('fails the poll, naming the error, when a conversation history answers channel_not_found', async () => {
+    const slack = scriptedSlack({
+      '/search.messages': directMessageSearchNaming('D0001'),
+      '/conversations.history': () => ({ ok: false, error: 'channel_not_found' }),
+    });
+
+    await expect(pollWith(slack)).rejects.toThrow('channel_not_found');
+  });
 });
 
 describe('pollSlackWorkspaces', () => {
