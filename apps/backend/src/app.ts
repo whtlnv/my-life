@@ -353,10 +353,14 @@ function withLink(proposal: Proposal) {
   return { ...proposal, link: gmailMessageLink(proposal) };
 }
 
+function wasActedOnAutomatically(proposal: Proposal) {
+  return proposal.madeAutomatic === true && proposal.action !== 'keep';
+}
+
 function describeHandledForYou(proposals: Proposal[], clock: Clock) {
   const today = localCalendarDate(clock.now(), businessTimeZone);
   return proposals
-    .filter((proposal) => proposal.madeAutomatic === true && proposal.action !== 'keep')
+    .filter(wasActedOnAutomatically)
     .filter(
       (proposal) => proposal.madeAt !== undefined && localCalendarDate(proposal.madeAt, businessTimeZone) === today,
     )
