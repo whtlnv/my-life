@@ -59,7 +59,8 @@
 - [x] Two cc-thread proposals from the same thread show as one card (triangulates the item above)
 - [x] A message reported twice (by two reports) is sent to triage once
 - [x] _Handled for you_ leaves out an automatic `keep` proposal (backlog: apps/backend/src/app.ts:325 _Handled for you_ lists automatic `keep` proposals, where nothing was done)
-- [ ] _Handled for you_ lists an automatic `archive` proposal (triangulates the item above)
+- [x] _Handled for you_ lists an automatic `archive` proposal (triangulates the item above)
+  - already covered: `apps/backend/src/app-commands-categories.test.ts:612`
 
 ### Spend stays under the ceiling
 
