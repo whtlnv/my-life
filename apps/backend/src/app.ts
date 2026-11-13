@@ -1700,7 +1700,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const mergedCalendarEvents = () => mergeCalendarSnapshots(snapshotStore.loadAll().map((entry) => entry.snapshot));
   const currentOpenTasks = () => openTasks(taskEventStore.loadAll(), clock.now().toISOString());
   const overdueOpenTasks = () =>
-    currentOpenTasks().filter(({ due }) => due !== undefined && Date.parse(due) < clock.now().getTime());
+    currentOpenTasks().filter(({ due }) =>
+      due === undefined
+        ? false
+        : due.length === 'YYYY-MM-DD'.length
+          ? due < localCalendarDate(clock.now(), businessTimeZone)
+          : Date.parse(due) < clock.now().getTime(),
+    );
   const profileOfAccount = (accountEmail: string): string | undefined =>
     readOptionalFile(join(options.profileDirectory ?? '', profileFileName(accountEmail)));
   let lastPrioritizationCallAt: number | undefined;

@@ -631,4 +631,10 @@ describe('backend app: task proposals and tasks', () => {
 
     expect(after).toBe(before);
   });
+
+  it('leaves out of the GET /now badge count an open task with a date-only due time on the business day the clock reads, before that day ends in the business time zone', async () => {
+    const { before, after } = await badgeCountsAroundConfirmingATaskDue('2026-11-02');
+
+    expect(after).toBe(before);
+  });
 });
