@@ -47,8 +47,14 @@ async function readTurns(response: Response): Promise<Turn[]> {
   return turns;
 }
 
-async function askAgent(message: string): Promise<{ id: string; turns: Turn[] }> {
-  return (await (await sendMessage('/agent/conversations', message)).json()) as { id: string; turns: Turn[] };
+interface StartedConversation {
+  id: string;
+  turns: Turn[];
+}
+
+async function askAgent(message: string): Promise<StartedConversation> {
+  const response = await sendMessage('/agent/conversations', message);
+  return (await response.json()) as StartedConversation;
 }
 
 interface ConversationSummary {
