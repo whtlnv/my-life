@@ -838,6 +838,36 @@ describe('createApp chat messages', () => {
     expect(after[0]).not.toHaveProperty('summaryLines');
   });
 
+  it('leaves undecided, when a Telegram bot digest is confirmed, a bot message that arrived after the digest was loaded', async () => {
+    const databasePath = temporaryDatabasePath();
+    const chatMessageStore = openChatMessageStore(databasePath);
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '77',
+      text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
+      time: '2026-11-09T16:00:00.000Z',
+    });
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '78',
+      text: 'Cargo de $310.50 en tu tarjeta terminación 4321',
+      time: '2026-11-09T17:00:00.000Z',
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+    const { digests: before } = await getJson<{ digests: { id: string }[] }>(app, '/triage-queue');
+    chatMessageStore.saveMessage({
+      ...bbvaAlertsBotMessage,
+      messageId: '79',
+      text: 'Cargo de $89.00 en tu tarjeta terminación 4321',
+      time: '2026-11-09T18:00:00.000Z',
+    });
+
+    await app.request(`/digests/${encodeURIComponent(before[0]?.id ?? '')}/confirmation`, { method: 'POST' });
+
+    const { digests: after } = await getJson<{ digests: object[] }>(app, '/triage-queue');
+    expect(after).toEqual([expect.objectContaining({ title: 'BBVA Alertas', count: 1 })]);
+  });
+
   it("writes at POST /triage-run a Telegram bot digest's summary lines from its messages' text, and logs the call's spend", async () => {
     const databasePath = temporaryDatabasePath();
     const chatMessageStore = openChatMessageStore(databasePath);

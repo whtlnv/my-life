@@ -1203,7 +1203,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const digestId = context.req.param('id');
     const botChatMessages = unconfirmedBotChatDigestMessages(digestId);
     if (botChatMessages) {
-      for (const { channel, chatId, messageId } of botChatMessages)
+      const listedBotMessageIds = listedDigestStore.load(digestId);
+      for (const { channel, chatId, messageId } of botChatMessages.filter(({ messageId }) =>
+        listedBotMessageIds?.includes(messageId),
+      ))
         chatMessageStore.saveVerdict({ channel, chatId, messageId, decision: 'confirmed' });
       digestSummaryStore.save(digestId, undefined);
       return context.body(null, 200);
@@ -1304,13 +1307,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return [...unconfirmedBotMessagesByChat()].find(([chatId]) => identifyBotChatDigest(chatId) === digestId)?.[1];
   }
   function describeBotChatDigests() {
-    return [...unconfirmedBotMessagesByChat()].map(([chatId, messages]) => ({
-      id: identifyBotChatDigest(chatId),
-      title: messages[0]?.chatTitle,
-      channel: messages[0]?.channel,
-      count: messages.length,
-      summaryLines: digestSummaryStore.load(identifyBotChatDigest(chatId)),
-    }));
+    return [...unconfirmedBotMessagesByChat()].map(([chatId, messages]) => {
+      listedDigestStore.save(
+        identifyBotChatDigest(chatId),
+        messages.map(({ messageId }) => messageId),
+      );
+      return {
+        id: identifyBotChatDigest(chatId),
+        title: messages[0]?.chatTitle,
+        channel: messages[0]?.channel,
+        count: messages.length,
+        summaryLines: digestSummaryStore.load(identifyBotChatDigest(chatId)),
+      };
+    });
   }
   function unconfirmedBotMessagesByChat() {
     const confirmedMessageKeys = new Set(

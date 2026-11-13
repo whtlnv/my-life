@@ -39,7 +39,7 @@
 
 ### Telegram bot digests confirm what was shown
 
-- [ ] Confirming a Telegram bot digest leaves a message that arrived after the digest was loaded undecided
+- [x] Confirming a Telegram bot digest leaves a message that arrived after the digest was loaded undecided
 - [ ] Confirming a Telegram bot digest marks every message it listed (triangulates the item above)
 - [ ] Confirming a mail digest reaches only the messages listed when that digest was loaded, even after a later `GET /triage-queue` lists more (backlog: apps/backend/src/app.ts:325 _Handled for you_ lists automatic `keep` proposals — digest listed ids overwritten)
 
