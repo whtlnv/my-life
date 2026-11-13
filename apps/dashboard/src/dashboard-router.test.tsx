@@ -68,4 +68,47 @@ describe('DashboardRouter', () => {
       slackMessage.permalink,
     );
   });
+
+  it("opens a Telegram person's timeline on the People tab when the user follows their link in Waiting on you", async () => {
+    const valeriaHandle = { userId: '7001' };
+    const telegramMessage = {
+      channel: 'telegram',
+      chatId: '7001',
+      chatTitle: 'Valeria Núñez',
+      messageId: '42',
+      senderId: '7001',
+      senderName: 'Valeria Núñez',
+      text: '¿Revisaste la propuesta?',
+      time: '2026-11-09T16:00:00.000Z',
+      sentByUser: false,
+      link: 'https://web.telegram.org/k/#7001',
+    };
+    answerGetsWith({
+      '/now': { current: [], next: [], laterToday: [], accounts: [], sources: [], badgeCount: 0 },
+      '/tasks': { tasks: [] },
+      '/waiting-on': {
+        people: [
+          {
+            channel: 'telegram',
+            displayName: 'Valeria Núñez',
+            telegramHandles: [valeriaHandle],
+            waitingSince: telegramMessage.time,
+          },
+        ],
+      },
+      '/people': {
+        vip: [],
+        urgent: [],
+        everyoneElse: [{ channel: 'telegram', displayName: 'Valeria Núñez', telegramHandles: [valeriaHandle] }],
+      },
+      '/telegram-contacts/7001/timeline': { messages: [telegramMessage] },
+    });
+
+    render(<DashboardRouter />);
+    const waitingBlock = await screen.findByRole('region', { name: 'Waiting on you' });
+    await userEvent.click(await within(waitingBlock).findByRole('link', { name: /Valeria Núñez/ }));
+
+    const timelineList = await screen.findByRole('list', { name: 'Timeline of Valeria Núñez' });
+    expect(within(timelineList).getByRole('listitem')).toHaveTextContent(telegramMessage.text);
+  });
 });

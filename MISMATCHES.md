@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 10:58 · `apps/dashboard/src/dashboard-router.test.tsx::opens a Telegram person's timeline on the People tab when the user follows their link in Waiting on you`
+- Behavior: A Telegram person's waiting-on link opens that contact on the People tab
+- Predicted: TestingLibraryElementError — no list "Timeline of Valeria Núñez", because the link's contact key falls back to `person.email` (undefined for a Telegram row)
+- Actual: that TestingLibraryElementError, plus an unhandled `TypeError: Cannot read properties of undefined (reading 'includes')` at `people-page.tsx:222`
+- Type: right-reason mismatch
+- Resolution: the link carries `contact=undefined`, which matches no `personKey`, so `personRequestedByLocation` falls through to `candidate.email.includes` on an email-less Telegram row and throws; both failures come from missing production behavior, so the test stands. /green should key the link by the Telegram handle, and the lookup should not assume every row has an email.
+
 ## 2026-11-13 10:50 · `apps/dashboard/src/dashboard-router.test.tsx::opens a Slack person's timeline on the People tab when the user follows their link in Waiting on you`
 - Behavior: A Slack person's waiting-on link opens that contact on the People tab
 - Predicted: assertion failure — no "Timeline of Leo Ramírez" list, because the link carries `?contact=undefined` (a Slack waiting-on entry has no email)

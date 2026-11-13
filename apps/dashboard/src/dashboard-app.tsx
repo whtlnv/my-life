@@ -138,6 +138,7 @@ interface WaitingPerson {
   email: string;
   displayName: string;
   slackHandles?: { workspaceTeamId: string; userId: string }[];
+  telegramHandles?: { userId: string }[];
   waitingSince: string;
 }
 
@@ -158,6 +159,8 @@ export function waitingDurationText(waitingSince: string, now: Date): string {
 }
 
 const waitingContactKey = (person: WaitingPerson): string => {
+  const [telegramHandle] = person.telegramHandles ?? [];
+  if (telegramHandle !== undefined) return `telegram:${telegramHandle.userId}`;
   const [slackHandle] = person.slackHandles ?? [];
   if (slackHandle !== undefined) return slackContactKey(slackHandle);
   return person.email;
