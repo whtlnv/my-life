@@ -547,6 +547,23 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(people.map(({ email }) => email)).toEqual(['marta@acme.com']);
   });
 
+  it("leaves out of GET /waiting-on a contact who is only mentioned in someone else's email, and keeps that email's sender", async () => {
+    const triage = triageAnswering(
+      keepProposalExtracting({
+        asks: [{ ask: 'Review the budget with Marta' }],
+        people: [{ name: 'Marta', email: 'marta@acme.com', role: 'mentioned' }],
+      }),
+    );
+    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
+    await proposeBudgetReview(app);
+
+    const response = await app.request('/waiting-on');
+
+    expect(response.status).toBe(200);
+    const { people } = (await response.json()) as { people: { email: string }[] };
+    expect(people.map(({ email }) => email)).toEqual(['luis@example.com']);
+  });
+
   it('gives each person at GET /waiting-on their display name and the time of their oldest message still waiting for a reply', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = { ...budgetReviewReport.messages[0], from: 'Luis Pérez <luis@example.com>' };

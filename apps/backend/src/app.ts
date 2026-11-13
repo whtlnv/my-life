@@ -2419,9 +2419,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       message.listId !== undefined || isAutomatedCategory(latestProposalFor(proposals, message.id)?.category);
     const awaitsReply = (message: ReportedMessage): boolean =>
       message.sentByUser !== true && !isAutomatedMail(message) && !userRepliedLaterInThread(message);
-    const waitingTimesOf = (contact: { messageIds: string[] }): number[] =>
+    const waitingTimesOf = (contact: { emails: string[] }): number[] =>
       reportedMessages
-        .filter((message) => contact.messageIds.includes(message.id) && awaitsReply(message))
+        .filter((message) => contact.emails.includes(contactFromSender(message.from).email) && awaitsReply(message))
         .map((message) => new Date(message.date).getTime());
     const people = contactsByEmail(reportedSenders(), proposals)
       .map((contact) => ({ contact, waitingTimes: waitingTimesOf(contact) }))
