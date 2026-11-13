@@ -406,6 +406,28 @@ describe('createApp chat messages', () => {
     ]);
   });
 
+  it('answers POST /chat-sends with success and stores the sent reply when Telegram sends it but the own-account lookup after it fails', async () => {
+    const databasePath = temporaryDatabasePath();
+    const { telegramClient: recordingClient, idsTelegramReturned } = recordingTelegramClient();
+    const telegramClient = {
+      ...recordingClient,
+      getOwnAccount: () => Promise.reject(new Error('AUTH_KEY_UNREGISTERED')),
+    };
+    const app = createApp({ allowedEmails: [], databasePath, telegramClient });
+
+    const response = await postJson(app, '/chat-sends', {
+      channel: 'telegram',
+      chatId: '7001',
+      text: 'Thursday works, same time',
+    });
+    const { messages } = await getJson<{ messages: unknown[] }>(app, '/chat-messages');
+
+    expect(response.status).toBe(200);
+    expect(messages).toEqual([
+      expect.objectContaining({ messageId: idsTelegramReturned[0], text: 'Thursday works, same time', sentByUser: true }),
+    ]);
+  });
+
   it('refuses at POST /chat-sends, with 400, a send with empty text, and sends and stores nothing', async () => {
     const databasePath = temporaryDatabasePath();
     const { telegramClient, textsSentToTelegram } = recordingTelegramClient();

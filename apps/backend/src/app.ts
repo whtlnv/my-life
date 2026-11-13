@@ -773,7 +773,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     } catch (error) {
       return context.json({ error: (error as Error).message }, 502);
     }
-    const ownAccount = await telegramClient.getOwnAccount?.();
+    const ownAccount = await telegramClient.getOwnAccount?.().catch(() => undefined);
     const chatTitle = chatMessageStore.listMessages().find((message) => message.chatId === send.chatId)?.chatTitle;
     chatMessageStore.saveMessage({
       channel: send.channel,
