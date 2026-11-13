@@ -20,6 +20,20 @@ import {
 
 const clockOnWednesdayMorning = { now: () => new Date('2026-11-04T17:00:00.000Z') };
 
+const triageLuisAskNamingMartaOnWednesday = async () => {
+  const triage = triageAnsweringByMessageId({
+    'message-1': keepProposalExtracting({
+      asks: [{ ask: 'Review the budget with Marta' }],
+      people: [{ name: 'Marta', email: 'marta@acme.com', role: 'mentioned' }],
+    }),
+    'message-2': keepProposalExtracting(),
+  });
+  const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
+  await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
+  await postTriageRun(app);
+  return app;
+};
+
 const luisBudgetReviewActionProposal = {
   action: 'act',
   category: 'action',
@@ -480,16 +494,7 @@ describe('backend app: GET /people and GET /waiting-on', () => {
   });
 
   it("does not list at GET /people under Urgent a contact who is only mentioned in someone else's email whose ask has waited 2 business days", async () => {
-    const triage = triageAnsweringByMessageId({
-      'message-1': keepProposalExtracting({
-        asks: [{ ask: 'Review the budget with Marta' }],
-        people: [{ name: 'Marta', email: 'marta@acme.com', role: 'mentioned' }],
-      }),
-      'message-2': keepProposalExtracting(),
-    });
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
-    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
-    await postTriageRun(app);
+    const app = await triageLuisAskNamingMartaOnWednesday();
 
     const response = await app.request('/people');
 
@@ -499,16 +504,7 @@ describe('backend app: GET /people and GET /waiting-on', () => {
   });
 
   it('lists at GET /people under Urgent, with the reason "unanswered ask", the sender whose own email asks the user something and names someone else, after 2 business days', async () => {
-    const triage = triageAnsweringByMessageId({
-      'message-1': keepProposalExtracting({
-        asks: [{ ask: 'Review the budget with Marta' }],
-        people: [{ name: 'Marta', email: 'marta@acme.com', role: 'mentioned' }],
-      }),
-      'message-2': keepProposalExtracting(),
-    });
-    const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning, triage });
-    await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);
-    await postTriageRun(app);
+    const app = await triageLuisAskNamingMartaOnWednesday();
 
     const response = await app.request('/people');
 
