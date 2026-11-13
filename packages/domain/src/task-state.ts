@@ -21,11 +21,13 @@ export interface Task extends TaskProposal {
   waitingOn?: string;
 }
 
+const latestSnooze = (events: TaskEvent[], taskId: string): TaskEvent | undefined =>
+  events.findLast((event) => event.type === 'snoozed' && event.taskId === taskId);
+
 const hidesTask = (event: TaskEvent, events: TaskEvent[], now?: string): boolean => {
   if (event.type === 'done' || event.type === 'undone') return true;
   if (event.type !== 'snoozed' || now === undefined) return false;
-  const latestSnooze = events.findLast((other) => other.type === 'snoozed' && other.taskId === event.taskId);
-  return event === latestSnooze && Date.parse(event.until) > Date.parse(now);
+  return event === latestSnooze(events, event.taskId) && Date.parse(event.until) > Date.parse(now);
 };
 
 const waitingOnPerson = (events: TaskEvent[], taskId: string): string | undefined =>
