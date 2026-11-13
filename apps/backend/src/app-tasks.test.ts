@@ -625,4 +625,10 @@ describe('backend app: task proposals and tasks', () => {
 
     expect(after).toBe(before + 1);
   });
+
+  it('leaves out of the GET /now badge count an open task due at a time written with an offset before that instant, though its local time reads earlier than the clock', async () => {
+    const { before, after } = await badgeCountsAroundConfirmingATaskDue('2026-11-02T10:00:00-06:00');
+
+    expect(after).toBe(before);
+  });
 });

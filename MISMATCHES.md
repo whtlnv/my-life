@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 09:36 · `apps/backend/src/app-tasks.test.ts::leaves out of the GET /now badge count an open task due at a time written with an offset before that instant, though its local time reads earlier than the clock`
+- Behavior: A task due at a time written with an offset is not overdue before that instant (triangulates the item above)
+- Predicted: passes on first run, because the previous green step already compares instants (`Date.parse(due) < clock.now().getTime()`) and does not compare strings
+- Actual: passes on first run
+- Type: passed unexpectedly (predicted vacuous-looking pass; the test is not vacuous)
+- Resolution: The previous item's green step was general enough to cover this triangulation. Any honest test of this behavior passes, so I kept the test as a regression pin rather than rewriting it into a contrived failure. Before 182f390 it would have failed: "2026-11-02T10:00:00-06:00" sorts before "2026-11-02T15:10:00.000Z", but the instant is 16:00Z. /green has nothing to implement.
+
 ## 2026-11-13 09:18 · `apps/backend/src/app-slack.test.ts::marks done at POST /tasks/:id/done a Slack task whose id is URL-encoded as one path segment, and drops it from GET /tasks`
 - Behavior: `POST /tasks/<id>/done` with a Slack task id URL-encoded as one segment marks that Slack task done
 - Predicted: AssertionError — 404 and the task still listed, the encoded id not matching the stored `slack-T0001/D0001/…` id
