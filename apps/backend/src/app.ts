@@ -1099,6 +1099,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
           category: '',
           ...(result.proposal as Proposal | undefined),
           messageId: message.id,
+          threadId: message.threadId,
           accountEmail,
         };
         const displayedProposal = withDisplayedCategory(proposal, message, accountEmail);
