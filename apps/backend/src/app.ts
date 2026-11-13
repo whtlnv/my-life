@@ -943,7 +943,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (!slackResult.ok) {
       return context.json({ error: slackResult.error }, 502);
     }
-    await recordSlackSend(send, slackResult);
+    await recordSlackSend(send, slackResult).catch(() => undefined);
     return context.json({});
   });
   app.get('/slack-sends', (context) => context.json({ sends: slackSendStore.loadAll() }));

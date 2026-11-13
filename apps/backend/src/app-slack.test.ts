@@ -812,6 +812,26 @@ describe('createApp Slack sends', () => {
     ]);
   });
 
+  it('answers POST /slack-sends with success when chat.postMessage accepts the send and the auth.test that records it then fails', async () => {
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      slackApiUrl: await localSlackAnswering((path) =>
+        // An empty auth.test answer, which is not JSON.
+        path === '/auth.test' ? undefined : { ok: true, channel: 'D0001', ts: '1762700900.000900' },
+      ),
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+    });
+
+    const response = await postJson(app, '/slack-sends', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      text: 'On it.',
+    });
+
+    expect(response.status).toBe(200);
+  });
+
   it('lists at GET /slack-sends, after a backend restart on the same database file, a send Slack accepted before it', async () => {
     const databasePath = temporaryDatabasePath();
     const slackApiUrl = await localSlackAnsweringPostMessage({ ok: true, channel: 'D0001', ts: '1762700900.000900' });

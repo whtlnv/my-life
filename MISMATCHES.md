@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 01:23 · `apps/backend/src/app-slack.test.ts::answers POST /slack-sends with success when chat.postMessage accepts the send and the auth.test that records it then fails`
+- Behavior: a send Slack accepted answers success even when the auth.test that records it fails
+- Predicted: AssertionError, 500 instead of 200, saving the sent message throwing on the missing senderUserId
+- Actual: passed on first run with auth.test answering `{ ok: false, error: 'invalid_auth' }`
+- Type: passed unexpectedly
+- Resolution: `saveMessage` uses `INSERT OR IGNORE`, which also ignores the NOT NULL violation, so an `ok: false` auth.test drops the sent message silently and the route answers 200; rewrote the test so auth.test answers an empty, non-JSON body, which makes `.json()` throw, and it now fails with 500 instead of 200 (the silent drop is a separate gap).
+
 ## 2026-11-13 01:11 · `apps/backend/src/slack-poll.test.ts::fails the poll, naming the error, when a conversation history answers channel_not_found`
 - Behavior: A Slack answer `{ ok: false, error: "channel_not_found" }` fails that workspace's poll with an error naming `channel_not_found`
 - Predicted: AssertionError — the poll resolves, because `callSlack` passes any error other than invalid_auth/missing_scope through and the history would read as empty
