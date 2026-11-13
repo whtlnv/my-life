@@ -54,6 +54,19 @@ function saveTelegramMessageFromLucia(databasePath: string, time: string) {
   });
 }
 
+function summarizerFailingValidation() {
+  let calls = 0;
+  const summary = {
+    summarize: () => {
+      calls += 1;
+      return Promise.reject(
+        Object.assign(new Error('The summary model answered with output that fails validation'), { costInUsd: 0.25 }),
+      );
+    },
+  };
+  return { summary, summaryCalls: () => calls };
+}
+
 const bbvaAlertsBotMessage = {
   channel: 'telegram',
   chatId: '8001',
@@ -994,21 +1007,13 @@ describe('createApp chat messages', () => {
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-02T14:00:00.000Z',
     });
-    let summaryCalls = 0;
-    const summary = {
-      summarize: () => {
-        summaryCalls += 1;
-        return Promise.reject(
-          Object.assign(new Error('The summary model answered with output that fails validation'), { costInUsd: 0.25 }),
-        );
-      },
-    };
+    const { summary, summaryCalls } = summarizerFailingValidation();
     const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath, summary });
     await postTriageRun(app);
 
     await postTriageRun(app);
 
-    expect(summaryCalls).toBe(1);
+    expect(summaryCalls()).toBe(1);
   });
 
   it('asks the summarizer again at a second POST /triage-run about a Telegram bot digest that gained a message since the first run’s summary call failed', async () => {
@@ -1020,15 +1025,7 @@ describe('createApp chat messages', () => {
       text: 'Cargo de $1,250.00 en tu tarjeta terminación 4321',
       time: '2026-11-02T14:00:00.000Z',
     });
-    let summaryCalls = 0;
-    const summary = {
-      summarize: () => {
-        summaryCalls += 1;
-        return Promise.reject(
-          Object.assign(new Error('The summary model answered with output that fails validation'), { costInUsd: 0.25 }),
-        );
-      },
-    };
+    const { summary, summaryCalls } = summarizerFailingValidation();
     const app = createApp({ allowedEmails: [], clock: clockAtTenPastThree, databasePath, summary });
     await postTriageRun(app);
     chatMessageStore.saveMessage({
@@ -1040,7 +1037,7 @@ describe('createApp chat messages', () => {
 
     await postTriageRun(app);
 
-    expect(summaryCalls).toBe(2);
+    expect(summaryCalls()).toBe(2);
   });
 
   it('summarizes a Telegram bot digest again at POST /triage-run, with every unconfirmed message, once a new bot message arrives after its last summary', async () => {
