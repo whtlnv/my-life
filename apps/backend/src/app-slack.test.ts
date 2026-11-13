@@ -832,6 +832,28 @@ describe('createApp Slack sends', () => {
     expect(response.status).toBe(200);
   });
 
+  it('answers POST /slack-sends with 502, and records no sent message, when chat.postMessage itself fails while auth.test answers', async () => {
+    const databasePath = temporaryDatabasePath();
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      slackApiUrl: await localSlackAnswering((path) =>
+        // An empty chat.postMessage answer, which is not JSON.
+        path === '/auth.test' ? { ok: true, user_id: 'UOWN' } : undefined,
+      ),
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+    });
+
+    const response = await postJson(app, '/slack-sends', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'D0001',
+      text: 'On it.',
+    });
+
+    expect(response.status).toBe(502);
+    expect(openSlackMessageStore(databasePath).listMessages()).toEqual([]);
+  });
+
   it('lists at GET /slack-sends, after a backend restart on the same database file, a send Slack accepted before it', async () => {
     const databasePath = temporaryDatabasePath();
     const slackApiUrl = await localSlackAnsweringPostMessage({ ok: true, channel: 'D0001', ts: '1762700900.000900' });

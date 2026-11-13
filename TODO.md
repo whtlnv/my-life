@@ -30,7 +30,7 @@
 ### A delivered Slack reply answers success
 
 - [x] When `chat.postMessage` succeeds and the `auth.test` that records the send then fails, `POST /slack-sends` answers success
-- [ ] When `chat.postMessage` itself fails, `POST /slack-sends` still answers an error (triangulates the item above)
+- [x] When `chat.postMessage` itself fails, `POST /slack-sends` still answers an error (triangulates the item above)
 
 ### Waiting-on is thread-aware for Slack
 

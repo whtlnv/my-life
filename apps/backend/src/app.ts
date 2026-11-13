@@ -939,9 +939,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (!isSendableToSlack(send)) {
       return context.body(null, 400);
     }
-    const slackResult = await postSlackMessage(send);
-    if (!slackResult.ok) {
-      return context.json({ error: slackResult.error }, 502);
+    const slackResult = await postSlackMessage(send).catch(() => undefined);
+    if (!slackResult?.ok) {
+      return context.json({ error: slackResult?.error }, 502);
     }
     await recordSlackSend(send, slackResult).catch(() => undefined);
     return context.json({});
