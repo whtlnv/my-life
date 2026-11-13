@@ -928,6 +928,37 @@ describe('createApp Slack sends', () => {
     ]);
   });
 
+  it('drops a thread from GET /triage-queue and its sender from GET /waiting-on once the user replies in that thread at POST /slack-sends', async () => {
+    const databasePath = temporaryDatabasePath();
+    openSlackMessageStore(databasePath).saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0002',
+      senderName: 'Bruno',
+      text: '<@UOWN> can you review the launch plan?',
+      timestamp: '1762700000.000300',
+      threadTimestamp: '1762700000.000050',
+    });
+    const app = createApp({
+      allowedEmails: [],
+      databasePath,
+      slackApiUrl: await localSlackAnsweringPostMessage({ ok: true, channel: 'C0001', ts: '1762700900.000900' }),
+      slackWorkspaces: [{ teamId: 'T0001', userToken: 'xoxp-test' }],
+    });
+
+    await postJson(app, '/slack-sends', {
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      threadTimestamp: '1762700000.000050',
+      text: 'Reviewed, looks good.',
+    });
+
+    const { slackItems } = await getJson<{ slackItems: unknown[] }>(app, '/triage-queue');
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+    expect(slackItems).toEqual([]);
+    expect(people).toEqual([]);
+  });
+
   it('answers POST /slack-sends with success when chat.postMessage accepts the send and the auth.test that records it then fails', async () => {
     const app = createApp({
       allowedEmails: [],

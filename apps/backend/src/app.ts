@@ -957,6 +957,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       senderUserId: await fetchOwnSlackUserId(send.workspaceTeamId),
       text: send.text,
       timestamp: slackResult.ts,
+      threadTimestamp: send.threadTimestamp,
       sentByUser: true,
     });
   };
