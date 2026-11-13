@@ -6,7 +6,7 @@ const mailMessage = z.object({
   from: z.string(),
   to: z.string(),
   cc: z.string().optional(),
-  subject: z.string(),
+  subject: z.string().default(''),
   date: z.string(),
   snippet: z.string(),
   listId: z.string().optional(),
