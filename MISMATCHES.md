@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 01:34 · `apps/backend/src/app-slack.test.ts::leaves out of GET /waiting-on a person who wrote in a thread of a channel when the user replied later in that same thread`
+- Behavior: A user reply in thread A clears the person waiting in thread A (triangulates the thread B item)
+- Predicted: passes on first run (stated before running): the previous green already matches `reply.threadTimestamp === message.threadTimestamp`
+- Actual: passes; it fails with an AssertionError (Bruno still listed) when that clause is temporarily removed, so it is not vacuous
+- Type: passed unexpectedly
+- Resolution: The previous green generalized past its own test, so this triangulation has no missing behavior left to drive; the test was kept as the guard that pins the same-thread clause, and production code is unchanged.
+
 ## 2026-11-13 01:23 · `apps/backend/src/app-slack.test.ts::answers POST /slack-sends with success when chat.postMessage accepts the send and the auth.test that records it then fails`
 - Behavior: a send Slack accepted answers success even when the auth.test that records it fails
 - Predicted: AssertionError, 500 instead of 200, saving the sent message throwing on the missing senderUserId

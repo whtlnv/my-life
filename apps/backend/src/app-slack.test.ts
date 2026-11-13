@@ -506,6 +506,35 @@ describe('createApp Slack messages', () => {
     expect(people).toEqual([expect.objectContaining({ channel: 'slack', displayName: 'Bruno' })]);
   });
 
+  it('leaves out of GET /waiting-on a person who wrote in a thread of a channel when the user replied later in that same thread', async () => {
+    const databasePath = temporaryDatabasePath();
+    const slackMessageStore = openSlackMessageStore(databasePath);
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0002',
+      senderName: 'Bruno',
+      text: '<@U0000> can you review the launch plan?',
+      timestamp: '1762700000.000100',
+      threadTimestamp: '1762690000.000100',
+    });
+    slackMessageStore.saveMessage({
+      workspaceTeamId: 'T0001',
+      conversationId: 'C0001',
+      senderUserId: 'U0000',
+      senderName: 'Francisco',
+      text: 'Reviewed, looks good.',
+      timestamp: '1762701000.000100',
+      threadTimestamp: '1762690000.000100',
+      sentByUser: true,
+    });
+    const app = createApp({ allowedEmails: [], databasePath });
+
+    const { people } = await getJson<{ people: unknown[] }>(app, '/waiting-on');
+
+    expect(people).toEqual([]);
+  });
+
   it('orders email and Slack people together at GET /waiting-on, the one who has waited longest first', async () => {
     const databasePath = temporaryDatabasePath();
     openSlackMessageStore(databasePath).saveMessage({

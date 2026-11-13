@@ -35,7 +35,7 @@
 ### Waiting-on is thread-aware for Slack
 
 - [x] A user reply in thread B of a channel leaves a person waiting in thread A of the same channel on the waiting-on list
-- [ ] A user reply in thread A clears the person waiting in thread A (triangulates the item above)
+- [x] A user reply in thread A clears the person waiting in thread A (triangulates the item above)
 
 ### Telegram bot digests confirm what was shown
 
