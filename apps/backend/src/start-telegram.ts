@@ -16,11 +16,11 @@ interface StartTelegramDependencies {
 }
 
 export async function startTelegram({ client, store }: StartTelegramDependencies): Promise<void> {
+  client.onMessage((message) => {
+    store.saveMessage(message);
+  });
   for (const dialog of await client.listDialogs()) {
     if (dialog.unreadCount === 0) continue;
     for (const message of dialog.messages) store.saveMessage(message);
   }
-  client.onMessage((message) => {
-    store.saveMessage(message);
-  });
 }

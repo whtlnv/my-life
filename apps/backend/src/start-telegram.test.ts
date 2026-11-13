@@ -84,4 +84,19 @@ describe('startTelegram', () => {
       expect(store.listMessages()).toEqual([questionFromAna]);
     });
   });
+
+  it('stores new messages when loading dialog history fails at start-up', async () => {
+    await withTemporaryStore(async (store) => {
+      const scriptedClient = createScriptedTelegramClient({ dialogs: [] });
+      const client = {
+        ...scriptedClient,
+        listDialogs: () => Promise.reject(new Error('FLOOD_WAIT_30')),
+      };
+      await startTelegram({ client, store }).catch(() => undefined);
+
+      scriptedClient.receive(questionFromAna);
+
+      expect(store.listMessages()).toEqual([questionFromAna]);
+    });
+  });
 });
