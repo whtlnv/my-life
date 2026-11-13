@@ -177,7 +177,9 @@ function WaitingOnYou({ people }: { people: WaitingPerson[] }) {
             <li key={person.email} className="row">
               <div className="row-main">
                 <p className="row-title">
-                  <a href={`${routes.people}?contact=${encodeURIComponent(waitingContactKey(person))}`}>{person.displayName}</a>
+                  <a href={`${routes.people}?contact=${encodeURIComponent(waitingContactKey(person))}`}>
+                    {person.displayName}
+                  </a>
                 </p>
               </div>
               <div className="row-side">

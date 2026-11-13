@@ -182,7 +182,11 @@ function lookbackSearchFilter(input: PollSlackWorkspaceInput): string {
 
 async function searchedDirectMessageChannels(input: PollSlackWorkspaceInput): Promise<{ id: string }[]> {
   const query = `is:dm ${lookbackSearchFilter(input)}`;
-  const matches = await searchPagesUntilCaughtUp(input, query, newestStoredTimestampInWorkspace(input.store, input.workspace.teamId));
+  const matches = await searchPagesUntilCaughtUp(
+    input,
+    query,
+    newestStoredTimestampInWorkspace(input.store, input.workspace.teamId),
+  );
   // A busy DM names its conversation in many matches; each conversation's history is read once.
   const conversationIds = new Set(matches.map((match) => match.channel.id));
   return [...conversationIds].map((id) => ({ id }));
