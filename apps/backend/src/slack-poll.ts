@@ -152,7 +152,7 @@ function isEntirelyNewerThan(pageMatches: { ts: string }[], newestStoredTimestam
 async function searchPagesUntilCaughtUp(
   input: PollSlackWorkspaceInput,
   query: string,
-  newestStoredTimestamp: string | undefined,
+  newestStoredTimestamp?: string,
 ): Promise<SlackSearchMatch[]> {
   const firstPage = await searchSlackMessagesPage(input, query, 1);
   const matches = firstPage.matches;
@@ -221,7 +221,7 @@ async function pollDirectMessages(input: PollSlackWorkspaceInput, ownSlackUserId
 
 async function pollMentions(input: PollSlackWorkspaceInput, ownSlackUserId: string): Promise<void> {
   const mentionsQuery = `<@${ownSlackUserId}> ${lookbackSearchFilter(input)}`;
-  const matches = await searchPagesUntilCaughtUp(input, mentionsQuery, undefined);
+  const matches = await searchPagesUntilCaughtUp(input, mentionsQuery);
   for (const match of matches) {
     await saveSlackMessage(input, match.channel.id, match, { ownSlackUserId });
   }
