@@ -141,6 +141,7 @@ interface TelegramAppClient extends Partial<TelegramStartClient> {
   sendText: (chatId: string, text: string) => Promise<{ messageId: string }>;
   getOwnAccount?: () => Promise<{ id: string; name: string }>;
   isConnected?: () => boolean;
+  isAuthorized?: () => boolean;
 }
 
 export interface AppOptions {
@@ -860,7 +861,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const telegramConnectionCheckIntervalInMilliseconds = 60_000;
   let telegramLastSeenConnectedAt = startedAt;
   const describeTelegramConnection = () => {
-    if (options.telegramClient === undefined) {
+    if (options.telegramClient === undefined || options.telegramClient.isAuthorized?.() === false) {
       return { loggedIn: false };
     }
     if (options.telegramClient.isConnected?.() === false) {

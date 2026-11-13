@@ -1889,6 +1889,19 @@ describe('createApp chat messages', () => {
 
     expect(telegram).toEqual({ loggedIn: true, lastStartedAt: '2026-11-10T06:15:00.000Z' });
   });
+
+  it('reports Telegram at GET /now as not logged in when the client is connected but its session is not authorized', async () => {
+    const { telegramClient } = recordingTelegramClient();
+    const app = createApp({
+      allowedEmails: [],
+      databasePath: temporaryDatabasePath(),
+      telegramClient: { ...telegramClient, isConnected: () => true, isAuthorized: () => false },
+    });
+
+    const { telegram } = await getJson<{ telegram: unknown }>(app, '/now');
+
+    expect(telegram).toEqual({ loggedIn: false });
+  });
 });
 
 describe('createApp Telegram start', () => {
