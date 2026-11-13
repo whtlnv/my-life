@@ -2356,6 +2356,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         (reply) =>
           reply.sentByUser === true &&
           reply.conversationId === message.conversationId &&
+          (reply.threadTimestamp === message.threadTimestamp || reply.threadTimestamp === message.timestamp) &&
           Number(reply.timestamp) > Number(message.timestamp),
       );
     const slackPeople = slackMessages
