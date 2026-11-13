@@ -1,0 +1,18 @@
+Quarterly budget review
+Notes by Gemini
+
+Nov 12, 2026
+
+Attendees: Lucía Ferrer, Tomás Ibarra, Marta Quiroga
+
+Summary
+The team reviewed the third-quarter spend against the plan and agreed to move the vendor renewal to December.
+
+Details
+Spend review: Marta Quiroga reported that cloud spend ran eight percent over plan, driven by the analytics cluster.
+Vendor renewal: Tomás Ibarra proposed delaying the renewal until the new pricing arrives; the group agreed.
+
+Suggested next steps
+Send the revised budget to the finance team by Friday.
+Ask the vendor for the new pricing sheet.
+Book a follow-up review for the first week of December.

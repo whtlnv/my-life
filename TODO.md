@@ -3,7 +3,7 @@
 
 ## Phase 7 — Gemini meeting notes
 
-- [ ] The notes parser returns each item under a `Suggested next steps` heading of a fixture notes doc's text, with the item's text
+- [x] The notes parser returns each item under a `Suggested next steps` heading of a fixture notes doc's text, with the item's text
 - [ ] The notes parser returns the items under an `Action items` heading the same way
 - [ ] The notes parser stops at the heading that follows the next-steps section: lines under a later heading are not items
 - [ ] A notes doc with no next-steps heading yields no items
