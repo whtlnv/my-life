@@ -278,9 +278,13 @@ function proposalEffects(proposal: Proposal, verdicts: StoredVerdict[]) {
   return triageEffects(proposal as TriageProposal, verdict as TriageVerdict);
 }
 
-function shouldArchive(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
+function isClearedAsProposed(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
   const corrected = latestVerdictFor(proposal.messageId, verdicts)?.correction !== undefined;
-  if (proposal.action === 'archive' && !corrected && isCleared(proposal, verdicts)) return true;
+  return !corrected && isCleared(proposal, verdicts);
+}
+
+function shouldArchive(proposal: Proposal, verdicts: StoredVerdict[]): boolean {
+  if (proposal.action === 'archive' && isClearedAsProposed(proposal, verdicts)) return true;
   return proposalEffects(proposal, verdicts).archives.length > 0;
 }
 
