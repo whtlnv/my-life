@@ -2451,14 +2451,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       }));
     const chatMessages = chatMessageStore.listMessages();
     // The store lists oldest first, so a reply later in the list came after the message, even within the same minute.
+    // Within the same second, the message id breaks the tie.
+    const cameAfter = (
+      reply: (typeof chatMessages)[number],
+      replyIndex: number,
+      message: (typeof chatMessages)[number],
+    ): boolean =>
+      replyIndex > chatMessages.indexOf(message) ||
+      (reply.time === message.time && Number(reply.messageId) > Number(message.messageId));
     const userRepliedLaterInChat = (message: (typeof chatMessages)[number]): boolean =>
       chatMessages.some(
         (reply, index) =>
           reply.sentByUser &&
           reply.channel === message.channel &&
           reply.chatId === message.chatId &&
-          (index > chatMessages.indexOf(message) ||
-            (reply.time === message.time && Number(reply.messageId) > Number(message.messageId))),
+          cameAfter(reply, index, message),
       );
     const awaitsUserReply = (message: (typeof chatMessages)[number]): boolean =>
       !message.sentByUser && !message.chatIsBot && !userRepliedLaterInChat(message);
