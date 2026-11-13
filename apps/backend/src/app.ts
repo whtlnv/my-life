@@ -591,9 +591,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const proposeNewFilterCandidates = async (): Promise<void> => {
     const filter = options.filter;
     if (filter === undefined) return;
-    if (hasReachedDailySpendCeiling()) return;
     const decidedMessages = loadDecidedMessages();
     for (const candidate of filterCandidates(decidedMessages)) {
+      if (hasReachedDailySpendCeiling()) return;
       const key = JSON.stringify([candidate.accountEmail, candidate.criteria]);
       if (proposedCandidateKeys.has(key)) continue;
       proposedCandidateKeys.add(key);

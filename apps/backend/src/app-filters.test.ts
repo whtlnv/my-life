@@ -228,6 +228,51 @@ describe('backend app: filter proposals and Gmail filters', () => {
     expect(askedCandidates).toMatchObject([]);
   });
 
+  it('stops asking the filter port partway through a run once a proposal brings the day to the spend ceiling, leaving the next candidate unasked', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      databasePath,
+      triage: triageAnsweringInOrder(Array.from({ length: 7 }, () => shopNewsletterArchiveProposal), 0),
+    });
+    await reportTriageAndConfirmShopNewsletters(beforeRestart);
+    for (const messageId of ['deals-1', 'deals-2', 'deals-3']) {
+      await postJson(beforeRestart, '/mail-report', {
+        accountEmail: 'ana@example.com',
+        historyId: '1002',
+        messages: [
+          {
+            id: messageId,
+            threadId: messageId,
+            from: 'Deals <deals@store.example.com>',
+            to: 'ana@example.com',
+            subject: 'Deals of the week',
+            date: 'Mon, 2 Nov 2026 10:00:00 -0600',
+            snippet: 'Big discounts',
+          },
+        ],
+      });
+      await postTriageRun(beforeRestart);
+      await postJson(beforeRestart, '/verdicts', { messageId, decision: 'confirmed' });
+    }
+    await reportShopNewsletter(beforeRestart, 'newsletter-4');
+    await postTriageRun(beforeRestart);
+    const askedCandidates: unknown[] = [];
+    const afterRestart = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockAtTenPastThree,
+      dailySpendCeilingInUsd: 20,
+      databasePath,
+      triage: triageAnsweringInOrder([], 0),
+      filter: filterRecordingAskedCandidates(askedCandidates, shopNewslettersFilterProposal, 20),
+    });
+
+    await postJson(afterRestart, '/verdicts', { messageId: 'newsletter-4', decision: 'confirmed' });
+
+    expect(askedCandidates).toHaveLength(1);
+  });
+
   function appProposingShopNewslettersFilter() {
     const filter = filterAnswering(shopNewslettersFilterProposal);
     const triage = shopNewsletterArchiveTriage();
