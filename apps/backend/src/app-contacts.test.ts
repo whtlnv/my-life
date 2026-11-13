@@ -280,6 +280,21 @@ describe('backend app: contacts, organizations and the Google Contacts import', 
     });
   });
 
+  it('lists at GET /organizations/:name/timeline each mail message with its Gmail link', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'] });
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...budgetReviewReport.messages[0], from: 'Luis <luis@acme.com>' }],
+    });
+
+    const response = await app.request('/organizations/acme.com/timeline');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      messages: [{ id: 'message-1', link: 'https://mail.google.com/mail/?authuser=ana%40example.com#all/message-1' }],
+    });
+  });
+
   it('lists at GET /contacts two contacts for two messages from different emails', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'] });
     await postJson(app, '/mail-report', budgetReviewReportWithSecondMessageFromMarta);

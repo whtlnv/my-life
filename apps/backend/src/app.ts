@@ -2483,11 +2483,15 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const messages = reportedMessages
       .filter((message) => messageIds.includes(message.id))
       .toSorted(newestFirst)
-      .map((message) => ({
-        id: message.id,
-        subject: message.subject,
-        accountEmail: accountEmailOfReported(message.id),
-      }));
+      .map((message) => {
+        const accountEmail = accountEmailOfReported(message.id);
+        return {
+          id: message.id,
+          subject: message.subject,
+          accountEmail,
+          link: gmailMessageLink({ accountEmail, messageId: message.id }),
+        };
+      });
     return context.json({ messages });
   });
   app.put('/categories/:category/mode', async (context) => {
