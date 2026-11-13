@@ -127,6 +127,50 @@ describe('AgentPage', () => {
       screen.getByText(pastReply).compareDocumentPosition(shownNextReply) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
+  it('a follow-up question after a new conversation is sent to that conversation instead of starting another', async () => {
+    const firstQuestion = 'What is on my plate today?';
+    const firstReply = 'You have two open tasks today.';
+    const followUp = 'Which one is first?';
+    const followUpReply = 'The budget review is first.';
+    const turns = [
+      { role: 'user', text: firstQuestion },
+      { role: 'assistant', text: firstReply },
+    ];
+    const sentMessages: { url: string; body: unknown }[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (typeof input === 'string' && init?.method === 'POST') {
+          sentMessages.push({ url: input, body: JSON.parse(init.body as string) });
+        }
+        if (input === '/agent/conversations' && init?.method === 'POST') {
+          return Promise.resolve(Response.json({ id: 'conversation-1', turns }, { status: 201 }));
+        }
+        if (input === '/agent/conversations/conversation-1/messages' && init?.method === 'POST') {
+          turns.push({ role: 'user', text: followUp }, { role: 'assistant', text: followUpReply });
+          return Promise.resolve(Response.json({}));
+        }
+        if (input === '/agent/conversations/conversation-1' && init?.method !== 'POST') {
+          return Promise.resolve(Response.json({ id: 'conversation-1', turns }));
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      }),
+    );
+    const user = userEvent.setup();
+
+    render(<AgentPage />);
+
+    await user.type(screen.getByRole('textbox'), `${firstQuestion}{Enter}`);
+    await screen.findByText(firstReply);
+    await user.type(screen.getByRole('textbox'), `${followUp}{Enter}`);
+
+    await screen.findByText(followUpReply);
+    expect(sentMessages).toEqual([
+      { url: '/agent/conversations', body: { message: firstQuestion } },
+      { url: '/agent/conversations/conversation-1/messages', body: { message: followUp } },
+    ]);
+  });
+
   it('lists what the agent did with an Undo button only on reversible actions, and pressing Undo posts it and marks the action undone', async () => {
     const sentUndos: unknown[] = [];
     vi.stubGlobal(

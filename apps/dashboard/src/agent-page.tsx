@@ -47,8 +47,8 @@ async function readTurns(response: Response): Promise<Turn[]> {
   return turns;
 }
 
-async function askAgent(message: string): Promise<Turn[]> {
-  return readTurns(await sendMessage('/agent/conversations', message));
+async function askAgent(message: string): Promise<{ id: string; turns: Turn[] }> {
+  return (await (await sendMessage('/agent/conversations', message)).json()) as { id: string; turns: Turn[] };
 }
 
 interface ConversationSummary {
@@ -205,7 +205,13 @@ export function AgentPage() {
 
   const onSubmit = (event: SyntheticEvent) => {
     event.preventDefault();
-    const reply = conversationId === undefined ? askAgent(question) : continueConversation(conversationId, question);
+    const reply =
+      conversationId === undefined
+        ? askAgent(question).then((conversation) => {
+            setConversationId(conversation.id);
+            return conversation.turns;
+          })
+        : continueConversation(conversationId, question);
     setQuestion('');
     void reply.then(setTurns);
   };

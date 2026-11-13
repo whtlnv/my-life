@@ -112,7 +112,7 @@
 
 ### Dashboard edges
 
-- [ ] A follow-up message in a new agent conversation continues that conversation instead of starting another
+- [x] A follow-up message in a new agent conversation continues that conversation instead of starting another
 - [ ] The expense statement CSV quotes a field containing a line break
 - [ ] The statement page reads a quoted field containing a line break as one entry with that field intact
 
