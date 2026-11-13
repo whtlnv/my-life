@@ -62,8 +62,13 @@ What the supervision showed in Phases 3 to 6c — check these every cycle:
 
 Outcome: action items from Meet calls become task proposals.
 
-- Extension polls Drive for new "Notes by Gemini" docs per account every 15 min, posts the text.
-- Domain: a notes parser extracts action items assigned to the user; each becomes a triage proposal of kind `act` linked to the doc and the calendar event.
+- **The extension reads new notes:** every 15 min (an alarm beside the Gmail and Calendar ones), each profile lists the Google Docs in its Drive whose name contains `Notes by Gemini` modified since its last successful poll (`files.list`, `drive.readonly`, added to the manifest scopes), exports each as plain text (`files.export`, `text/plain`) and posts them to `POST /notes-report` (account, doc id, title, modified time, web link, text). A rejected report is logged; a doc that fails to export is skipped and logged, never blocking the others. Built and tested against a Drive fake server in `apps/integration`, like Gmail and Calendar.
+- **Domain: a pure notes parser** (`packages/domain`, fixture-tested) reads the action items from a notes doc's text: the items under its next-steps heading (`Suggested next steps`, and the `Action items` variant), each with its assignee when the item names one (`[Name] …` or `Name will …`) and its text. A doc with no next-steps section yields no items; a parse never throws. The fixture is written from Gemini's documented layout with made-up names; a decision record in `docs/decisions/` states the fidelity gap until a real doc is checked.
+- **Only the user's items:** an item is proposed when its assignee is one of the names in `MY_LIFE_USER_NAMES` (comma-separated, config) or when it names no assignee; with the setting unset, every item is proposed. Each doc is parsed once per modified time; a doc reported again unchanged proposes nothing new, and a re-edited doc proposes only items not seen before.
+- **Notes items in triage:** a _Meeting notes_ section of the triage queue lists each proposed item with its meeting (the doc title), the doc link and the account; `t` makes a task (title from the item, linked to the doc, on that account) and `i` ignores it; both are stored append-only and survive a restart. A task made this way goes through the same task events as every other task (Done, ranking, snooze).
+- **Linked to the calendar event:** when an event in the stored calendar snapshot of that account has the doc among its attachments (the calendar snapshot gains each event's attachment file ids), the item and its task name the event's title and time.
+- **Header chip:** one `notes` detail per account with the last notes poll; stale after twice the 15 min interval.
+- **Demo:** `scripts/demo.sh` posts one notes report with two items, one assigned to someone else.
 
 ## Phase 8 — Cloud
 
