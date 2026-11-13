@@ -16,7 +16,7 @@ function isBroadcastChannel(chat: TelegramChat): boolean {
 interface TelegramMessageContext {
   message: Api.Message | Api.MessageService;
   chat: TelegramChat;
-  sender: Api.User;
+  sender: Api.User | Api.Channel;
 }
 
 const mediaPlaceholders: Partial<Record<string, string>> = {
@@ -69,7 +69,7 @@ export function mapTelegramMessage({ message, chat, sender }: TelegramMessageCon
     chatTitle: 'title' in chat ? chat.title : userName(chat),
     messageId: String(message.id),
     senderId: sender.id.toString(),
-    senderName: userName(sender),
+    senderName: 'title' in sender ? sender.title : userName(sender),
     text,
     time: new Date(message.date * 1000).toISOString(),
     sentByUser: Boolean(message.out),

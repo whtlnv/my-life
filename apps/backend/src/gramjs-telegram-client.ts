@@ -12,7 +12,7 @@ const recentMessagesPerDialog = 20;
 async function mapWithItsParties(message: Api.Message, knownChat?: TelegramChat): Promise<ChatMessage | undefined> {
   const chat = knownChat ?? message.chat ?? (await message.getChat());
   const sender = message.sender ?? (await message.getSender());
-  if (!isTelegramChat(chat) || sender?.className !== 'User') return undefined;
+  if (!isTelegramChat(chat) || (sender?.className !== 'User' && sender?.className !== 'Channel')) return undefined;
   return mapTelegramMessage({ message, chat, sender });
 }
 

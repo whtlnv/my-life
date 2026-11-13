@@ -256,4 +256,43 @@ describe('createGramjsTelegramClient', () => {
       { unreadCount: 1, messages: [mapTelegramMessage({ message, chat: luis, sender: luis })] },
     ]);
   });
+
+  it('stores a message an anonymous admin posts in a supergroup, sent by the group itself and named after the group', async () => {
+    const supergroup = new Api.Channel({
+      id: returnBigInt(707070),
+      title: 'Erlia comunidad',
+      photo: new Api.ChatPhotoEmpty(),
+      date: Date.parse('2026-01-01T00:00:00.000Z') / 1000,
+      megagroup: true,
+    });
+    const anonymousAdminMessage = new Api.Message({
+      id: 4001,
+      peerId: new Api.PeerChannel({ channelId: returnBigInt(707070) }),
+      fromId: new Api.PeerChannel({ channelId: returnBigInt(707070) }),
+      date: Date.parse('2026-11-13T15:00:00.000Z') / 1000,
+      message: 'La asamblea se mueve al lunes',
+      out: false,
+    });
+    anonymousAdminMessage._chat = supergroup;
+    anonymousAdminMessage._sender = supergroup;
+    const newMessageCallbacks: ((event: { message: Api.Message }) => unknown)[] = [];
+    const gramjsClient = stubGramjsClient({
+      addEventHandler: (callback) => {
+        newMessageCallbacks.push(callback);
+      },
+    });
+    const client = createGramjsTelegramClient(gramjsClient);
+    const handled: unknown[] = [];
+
+    client.onMessage((message) => handled.push(message));
+    for (const callback of newMessageCallbacks) await callback({ message: anonymousAdminMessage });
+
+    expect(handled).toEqual([
+      expect.objectContaining({
+        chatTitle: 'Erlia comunidad',
+        senderName: 'Erlia comunidad',
+        text: 'La asamblea se mueve al lunes',
+      }),
+    ]);
+  });
 });

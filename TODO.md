@@ -131,7 +131,7 @@
 - [x] When loading Telegram dialog history fails at start-up, new Telegram messages are still stored
 - [x] Two Telegram messages in the same second are ordered by message id, so an answer sent in that second counts as the user's reply
 - [x] A Telegram session that connects but is not authorized shows the Telegram chip as not logged in
-- [ ] A message an anonymous admin posts in a Telegram supergroup is stored, named after the group
+- [x] A message an anonymous admin posts in a Telegram supergroup is stored, named after the group
 
 ### Phase 5 walk-through
 
