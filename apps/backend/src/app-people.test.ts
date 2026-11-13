@@ -406,6 +406,28 @@ describe('backend app: GET /people and GET /waiting-on', () => {
     expect(urgent).toEqual([]);
   });
 
+  it('lists at GET /people under Urgent a VIP contact whose message has waited 1 business day counted in the time zone createApp is given, though not yet in Mexico City', async () => {
+    // Friday 09:00 in Mexico City to Monday 06:00 there is 0 business days; in Tokyo it is Saturday 00:00 to Monday 21:00, 1 business day.
+    const clockOnMondayBeforeDawnInMexicoCity = { now: () => new Date('2026-11-09T12:00:00.000Z') };
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: clockOnMondayBeforeDawnInMexicoCity,
+      urgency: { timeZone: 'Asia/Tokyo', unansweredAskBusinessDays: 2 },
+    });
+    const [luisMessage] = budgetReviewReport.messages;
+    await postJson(app, '/mail-report', {
+      ...budgetReviewReport,
+      messages: [{ ...luisMessage, date: 'Fri, 6 Nov 2026 09:00:00 -0600' }],
+    });
+    await markContact(app, 'luis@example.com', 'vip');
+
+    const response = await app.request('/people');
+
+    expect(response.status).toBe(200);
+    const { urgent } = (await response.json()) as { urgent: { emails: string[]; reasons: string[] }[] };
+    expect(urgent).toEqual([expect.objectContaining({ emails: ['luis@example.com'], reasons: ['VIP waiting'] })]);
+  });
+
   it('does not list at GET /people under Urgent a VIP contact whose message the user answered in the thread, nor a VIP contact whose message arrived less than 1 business day ago', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], clock: clockOnWednesdayMorning });
     const luisMondayMessage = budgetReviewReport.messages[0];
