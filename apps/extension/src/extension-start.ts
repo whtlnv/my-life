@@ -70,7 +70,7 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
   await importContactsAndLogFailure();
   await pollNotesAndLogFailure();
   options.every?.(gmailPollIntervalMilliseconds, pollGmailAndLogFailure);
-  options.every?.(notesPollIntervalMilliseconds, pollNotes);
+  options.every?.(notesPollIntervalMilliseconds, pollNotesAndLogFailure);
   options.every?.(contactsImportIntervalMilliseconds, importContactsAndLogFailure);
   options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
 }

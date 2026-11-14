@@ -50,7 +50,7 @@
 - [x] The shipped backend (`main.ts`) accepts `POST /notes-report`, reads `MY_LIFE_USER_NAMES` and serves the proposed items in the triage queue
 - [x] (keystone) The existing extension start-up tests' fake network answers Drive `files.list` with an empty file list
 - [x] A notes poll that fails at extension start-up is logged and the rest of start-up continues
-- [ ] The shipped extension background starts the notes poll in every profile
+- [x] The shipped extension background starts the notes poll in every profile
 - [ ] `scripts/demo.sh` posts one notes report with two items, one assigned to someone else, and only the user's item shows in the triage queue
 - [ ] (hand-written) A decision record in `docs/decisions/` states that the notes fixture is written from Gemini's documented layout with made-up names, and the fidelity gap until a real doc is checked
 - [ ] Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes

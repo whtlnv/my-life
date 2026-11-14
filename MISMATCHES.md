@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-14 04:16 · `apps/extension/src/entrypoints/background.test.ts::starts the notes poll in the profile on a 15-minute alarm, and a notes poll that fails when the alarm fires is reported to the console`
+- Behavior: The shipped extension background starts the notes poll in every profile
+- Predicted: the first version (a 15-minute alarm whose firing posts a notes report) would pass, since `background.ts` already composes `startExtension`, which schedules the notes poll
+- Actual: it passed; rewritten, it fails with AssertionError (console.error never called with the Drive error) plus an unhandled rejection of `TypeError: Drive unreachable`
+- Type: passed unexpectedly
+- Resolution: the shipped background already starts and schedules the notes poll; the real gap is that `startExtension` hands the alarm the unwrapped notes poll, so a failing scheduled notes poll escapes `void poll()` as an unhandled rejection instead of being logged like the Gmail poll. The test now drives that.
+
 ## 2026-11-14 04:09 · `apps/extension/src/extension-start.test.ts::polls the notes at start, and a notes poll that fails there is reported to the console while the rest of start-up still runs`
 - Behavior: A notes poll that fails at extension start-up is logged and the rest of start-up continues
 - Predicted: AssertionError — console.error never called with the Drive error, since start-up does not run the notes poll
