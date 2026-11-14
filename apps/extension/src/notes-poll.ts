@@ -7,24 +7,39 @@ interface DriveFileListResponse {
   files: { id: string; name: string; modifiedTime: string; webViewLink: string }[];
 }
 
-export async function pollNotesOnce(options: AccountRequestOptions): Promise<void> {
-  const authorization = { Authorization: `Bearer ${options.accessToken}` };
+async function listNotesFiles(
+  options: AccountRequestOptions,
+  authorization: Record<string, string>,
+): Promise<DriveFileListResponse> {
   const listUrl = new URL(`${driveApi}/files`);
   listUrl.searchParams.set('q', `name contains 'Notes by Gemini' and mimeType = '${googleDocMimeType}'`);
   listUrl.searchParams.set('fields', 'files(id,name,modifiedTime,webViewLink)');
   const listResponse = await options.fetch(listUrl, { headers: authorization });
-  const fileList = (await listResponse.json()) as DriveFileListResponse;
+  return (await listResponse.json()) as DriveFileListResponse;
+}
+
+async function exportPlainText(
+  options: AccountRequestOptions,
+  authorization: Record<string, string>,
+  fileId: string,
+): Promise<string> {
+  const exportUrl = new URL(`${driveApi}/files/${encodeURIComponent(fileId)}/export`);
+  exportUrl.searchParams.set('mimeType', 'text/plain');
+  const exportResponse = await options.fetch(exportUrl, { headers: authorization });
+  return exportResponse.text();
+}
+
+export async function pollNotesOnce(options: AccountRequestOptions): Promise<void> {
+  const authorization = { Authorization: `Bearer ${options.accessToken}` };
+  const fileList = await listNotesFiles(options, authorization);
   const docs = [];
   for (const file of fileList.files) {
-    const exportUrl = new URL(`${driveApi}/files/${encodeURIComponent(file.id)}/export`);
-    exportUrl.searchParams.set('mimeType', 'text/plain');
-    const exportResponse = await options.fetch(exportUrl, { headers: authorization });
     docs.push({
       id: file.id,
       title: file.name,
       modifiedTime: file.modifiedTime,
       webLink: file.webViewLink,
-      text: await exportResponse.text(),
+      text: await exportPlainText(options, authorization, file.id),
     });
   }
   await options.fetch(`${options.backendUrl}/notes-report`, {
