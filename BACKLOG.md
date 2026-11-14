@@ -27,6 +27,17 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/backend/src/app.ts:231] `attachmentFileIds` is read through a cast, apart from the contract and the extension** (added: 2026-11-14)
+  `calendar-events-snapshot.ts` in the extension adds `attachmentFileIds` to each snapshot event, while `calendarSnapshot` in
+  `packages/contracts` does not declare it and `POST /notes-report` reads it through `CalendarEventWithAttachments`; a
+  renamed field compiles on both sides and every notes item silently loses its event. Deferred because declaring the field in
+  the zod schema makes `POST /calendar-snapshot` reject a snapshot whose `attachmentFileIds` is malformed, a behavior change
+  delivered test-first.
+- **[apps/backend/src/app.ts:251] The backend's 15-minute notes staleness interval is coupled to the extension's notes poll** (added: 2026-11-14)
+  `pollingIntervalsInMilliseconds.notes` judges a notes source stale after twice 15 minutes, while
+  `notesPollIntervalMilliseconds` in `apps/extension/src/extension-start.ts` sets how often the extension really polls;
+  changing one marks a healthy source stale or hides a dead one, and nothing ties the two. Deferred for the same reason as
+  the Gmail interval entry below: no shared package holds plain constants.
 - **[apps/dashboard/src/app-shell.tsx:28] The `GET /now` WhatsApp status shape is declared apart from the route that builds it** (added: 2026-11-11)
   `ShellStatus.whatsapp` here and `WhatsappStatus` / `describeWhatsappFreshness` in `apps/backend/src/app.ts` must change
   together, and nothing ties them: a renamed field compiles and the chip shows the wrong state. Deferred for the same reason
