@@ -1001,11 +1001,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     const isForUser = (item: { assignee?: string }) =>
       options.userNames === undefined || item.assignee === undefined || options.userNames.includes(item.assignee);
+    const notesItemKey = (docLink: string, text: string) => JSON.stringify([docLink, text]);
     const reportedNotesItemKeys = new Set(
-      notesItemStore.loadAll().map(({ docLink, text }) => JSON.stringify([docLink, text])),
+      notesItemStore.loadAll().map(({ docLink, text }) => notesItemKey(docLink, text)),
     );
     const markSeenAndReportIfNew = (docLink: string, item: { text: string }) => {
-      const key = JSON.stringify([docLink, item.text]);
+      const key = notesItemKey(docLink, item.text);
       if (reportedNotesItemKeys.has(key)) {
         return false;
       }
