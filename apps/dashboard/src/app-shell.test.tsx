@@ -53,6 +53,32 @@ describe('AppShell', () => {
     expect(chips[2]).toHaveAttribute('title', 'new@example.com · calendar 09:00 · mail never');
   });
 
+  it("lists each account's notes report in its chip tooltip and marks a stale notes source on the chip", async () => {
+    answerGetNowWith({
+      ...nowWithNoAccountsAndNothingToTriage,
+      accounts: [
+        { email: 'work@example.com', lastReportedAt: '2026-11-07T15:00:00.000Z', stale: false },
+        { email: 'personal@example.com', lastReportedAt: '2026-11-07T15:00:00.000Z', stale: false },
+      ],
+      sources: [
+        { email: 'work@example.com', source: 'mail', lastReportedAt: '2026-11-07T15:01:00.000Z', stale: false },
+        { email: 'work@example.com', source: 'notes', lastReportedAt: '2026-11-07T15:02:00.000Z', stale: false },
+        { email: 'personal@example.com', source: 'mail', lastReportedAt: '2026-11-07T15:01:00.000Z', stale: false },
+        { email: 'personal@example.com', source: 'notes', lastReportedAt: '2026-11-07T13:00:00.000Z', stale: true },
+      ],
+    });
+
+    render(<AppShell route="#/">{null}</AppShell>);
+
+    const status = await screen.findByRole('list', { name: 'Sources' });
+    const chips = await within(status).findAllByRole('listitem');
+    expect(chips).toHaveLength(2);
+    expect(chips[0]).toHaveAttribute('title', 'work@example.com · calendar 09:00 · mail 09:01 · notes 09:02');
+    expect(chips[0]).not.toHaveTextContent(/stale/i);
+    expect(chips[1]).toHaveTextContent(/notes stale/);
+    expect(chips[1]).toHaveAttribute('title', 'personal@example.com · calendar 09:00 · mail 09:01 · notes 07:00');
+  });
+
   it('marks the current page in the tabs and shows how many items need the user on the triage tab', async () => {
     answerGetNowWith({ current: [], next: [], laterToday: [], accounts: [], badgeCount: 3, sources: [] });
 

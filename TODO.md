@@ -46,7 +46,7 @@
 - [x] The triage page shows the _Meeting notes_ section with each item's text, meeting, doc link and account, and the linked event when there is one
 - [x] Pressing `t` on a selected notes item posts a task verdict for it
 - [x] Pressing `i` on a selected notes item posts an ignore verdict for it
-- [ ] The header chip lists the `notes` detail of each account and marks a stale one
+- [x] The header chip lists the `notes` detail of each account and marks a stale one
 - [ ] The shipped backend (`main.ts`) accepts `POST /notes-report`, reads `MY_LIFE_USER_NAMES` and serves the proposed items in the triage queue
 - [ ] The shipped extension background starts the notes poll in every profile
 - [ ] `scripts/demo.sh` posts one notes report with two items, one assigned to someone else, and only the user's item shows in the triage queue

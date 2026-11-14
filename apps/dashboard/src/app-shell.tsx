@@ -4,7 +4,7 @@ import { accountName } from './account-name';
 
 interface SourceStatus {
   email: string;
-  source: 'mail' | 'calendar';
+  source: 'mail' | 'calendar' | 'notes';
   lastReportedAt: string;
   stale: boolean;
 }
@@ -42,6 +42,7 @@ interface AccountStatus {
   email: string;
   mail?: SourceStatus;
   calendar?: SourceStatus;
+  notes?: SourceStatus;
 }
 
 const statusRefreshIntervalMilliseconds = 60_000;
@@ -94,9 +95,9 @@ function sourceChipClassName(stale: boolean): string {
 // Compact on purpose: the dot carries the state, the tooltip the times. A stale source is named so the chip says
 // what is wrong without opening the Now page.
 function AccountChip({ account }: { account: AccountStatus }) {
-  const staleSources = (['calendar', 'mail'] as const).filter((source) => account[source]?.stale === true);
+  const staleSources = (['calendar', 'mail', 'notes'] as const).filter((source) => account[source]?.stale === true);
   const stale = staleSources.length > 0;
-  const title = `${account.email} · ${describeSource(account.calendar, 'calendar')} · ${describeSource(account.mail, 'mail')}`;
+  const title = `${account.email} · ${describeSource(account.calendar, 'calendar')} · ${describeSource(account.mail, 'mail')}${account.notes ? ` · ${describeSource(account.notes, 'notes')}` : ''}`;
   return (
     <li className={sourceChipClassName(stale)} title={title}>
       <span className="dot" aria-hidden="true" />
