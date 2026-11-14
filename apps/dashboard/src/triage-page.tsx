@@ -987,6 +987,15 @@ function NotesCard({ item, onAccepted }: { item: NotesTriageItem; onAccepted: ()
         <span className="spacer" />
         <button
           type="button"
+          className="button button-quiet"
+          onClick={() => {
+            act('i');
+          }}
+        >
+          Ignore <Key>i</Key>
+        </button>
+        <button
+          type="button"
           className="button"
           onClick={() => {
             act('t');

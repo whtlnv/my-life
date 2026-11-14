@@ -2211,6 +2211,34 @@ describe('TriagePage', () => {
     ]);
   });
 
+  it('posts an ignore verdict for a notes item when its Ignore button is clicked', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      notesItems: [
+        {
+          id: 'notes-item-12',
+          text: 'Book the offsite venue',
+          meeting: 'Team planning',
+          docLink: 'https://docs.google.com/document/d/notes-2',
+          accountEmail: 'franciscoc@psmutuus.com',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    const card = await findCardContaining('Book the offsite venue');
+    await user.click(within(card).getByRole('button', { name: /Ignore/ }));
+
+    expect(requestsPostedTo('/notes-verdicts')).toEqual([
+      { method: 'POST', body: { id: 'notes-item-12', decision: 'ignore' } },
+    ]);
+  });
+
   it('shows a Telegram triage card with its chat title, sender, time and a Telegram channel pill', async () => {
     answerGetTriageQueueWith({
       action: [],
