@@ -26,7 +26,5 @@ export const notesActionItems = (document: string): NotesActionItem[] => {
   if (headingIndex === -1) return [];
   const sectionLines = lines.slice(headingIndex + 1);
   const sectionEnd = sectionLines.findIndex((line) => line.trim() === '' || followingHeadings.includes(line));
-  return sectionLines
-    .slice(0, sectionEnd === -1 ? undefined : sectionEnd)
-    .map(actionItem);
+  return sectionLines.slice(0, sectionEnd === -1 ? undefined : sectionEnd).map(actionItem);
 };
