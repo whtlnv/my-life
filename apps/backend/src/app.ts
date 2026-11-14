@@ -991,7 +991,6 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ email });
   });
   const notesItemStore = openNotesItemStore(databasePath);
-  const reportedNotesItemKeys = new Set<string>();
   app.post('/notes-report', async (context) => {
     const report = await context.req.json<{
       accountEmail: string;
@@ -1002,8 +1001,11 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     const isForUser = (item: { assignee?: string }) =>
       options.userNames === undefined || item.assignee === undefined || options.userNames.includes(item.assignee);
-    const markSeenAndReportIfNew = (docId: string, item: { text: string }) => {
-      const key = JSON.stringify([docId, item.text]);
+    const reportedNotesItemKeys = new Set(
+      notesItemStore.loadAll().map(({ docLink, text }) => JSON.stringify([docLink, text])),
+    );
+    const markSeenAndReportIfNew = (docLink: string, item: { text: string }) => {
+      const key = JSON.stringify([docLink, item.text]);
       if (reportedNotesItemKeys.has(key)) {
         return false;
       }
@@ -1011,10 +1013,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       return true;
     };
     report.docs
-      .flatMap(({ id, title, webLink, text }) =>
+      .flatMap(({ title, webLink, text }) =>
         notesActionItems(text)
           .filter(isForUser)
-          .filter((item) => markSeenAndReportIfNew(id, item))
+          .filter((item) => markSeenAndReportIfNew(webLink, item))
           .map((item) => ({
             text: item.text,
             meeting: title,

@@ -284,4 +284,19 @@ describe('createApp meeting notes', () => {
 
     expect(notesItems.map((item) => item.text)).toEqual(['Ask the vendor for the new pricing sheet.']);
   });
+  it('lists each notes item once at GET /triage-queue when the same doc is reported again, unchanged, after a backend restart on the same database file', async () => {
+    const databasePath = temporaryDatabasePath();
+    const report = budgetReviewNotesReport('ana@example.com', budgetReviewNotesText);
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(beforeRestart, '/notes-report', report);
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+
+    await postJson(afterRestart, '/notes-report', report);
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(afterRestart, '/triage-queue');
+
+    expect(notesItems.map((item) => item.text)).toEqual([
+      'Send the revised budget to the finance team by Friday.',
+      'Ask the vendor for the new pricing sheet.',
+    ]);
+  });
 });
