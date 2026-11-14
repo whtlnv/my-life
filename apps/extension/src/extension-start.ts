@@ -6,10 +6,12 @@ import { carryOutMessageCommands } from './gmail-archive';
 import { carryOutDraftCommands } from './gmail-draft';
 import { carryOutFilterCommands } from './gmail-filter';
 import { pollGmailOnce } from './gmail-poll';
+import { pollNotesOnce } from './notes-poll';
 import type { FetchFunction } from './fetch-function';
 
 const calendarPollIntervalMilliseconds = 5 * 60 * 1000;
 const gmailPollIntervalMilliseconds = 60 * 1000;
+const notesPollIntervalMilliseconds = 15 * 60 * 1000;
 const contactsImportIntervalMilliseconds = 24 * 60 * 60 * 1000;
 
 interface StartExtensionOptions {
@@ -68,10 +70,19 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     });
   };
   const importContactsAndLogFailure = logFailure('Contacts import failed', importContacts);
+  const pollNotes = async () => {
+    await pollNotesOnce({
+      fetch: options.fetch,
+      accessToken: await options.accessToken(),
+      accountEmail,
+      backendUrl: options.backendUrl,
+    });
+  };
   await pollCalendar();
   await pollGmailAndLogFailure();
   await importContactsAndLogFailure();
   options.every?.(gmailPollIntervalMilliseconds, pollGmailAndLogFailure);
+  options.every?.(notesPollIntervalMilliseconds, pollNotes);
   options.every?.(contactsImportIntervalMilliseconds, importContactsAndLogFailure);
   options.every?.(calendarPollIntervalMilliseconds, () => pollCalendar().catch(() => undefined));
 }
