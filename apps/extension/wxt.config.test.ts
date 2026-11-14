@@ -26,4 +26,10 @@ describe('extension manifest', () => {
     expect(manifest.oauth2?.scopes).toContain('https://www.googleapis.com/auth/contacts.readonly');
     expect(manifest.oauth2?.scopes).toContain('https://www.googleapis.com/auth/contacts.other.readonly');
   });
+
+  it('requests the drive.readonly scope so the Gemini meeting-notes docs can be read', async () => {
+    const manifest = await buildManifest();
+
+    expect(manifest.oauth2?.scopes).toContain('https://www.googleapis.com/auth/drive.readonly');
+  });
 });
