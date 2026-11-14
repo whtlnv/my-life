@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 20:51 · `apps/backend/src/app-notes.test.ts::proposes at GET /triage-queue, out of a report that also holds another person's item, the notes item assigned to one of the names in userNames`
+- Behavior: With `MY_LIFE_USER_NAMES` set, an item assigned to one of its names is proposed
+- Predicted: a report with only the user's item would pass, because every parsed item is already proposed (no filter exists)
+- Actual: passed, as predicted
+- Type: passed unexpectedly
+- Resolution: the positive case cannot fail until a filter exists, so the report now also carries an item assigned to someone else and the test pins that only the user's item is proposed; it fails with the extra item in the queue.
+
 ## 2026-11-13 20:12 · `apps/extension/src/notes-poll.test.ts::still posts an empty notes report when the poll finds no docs modified since the last successful poll`
 - Behavior: A notes poll that finds no new docs still posts an empty report
 - Predicted: passes on first run — `pollNotesOnce` already calls `postNotesReport` unconditionally (no right-reason failure available)

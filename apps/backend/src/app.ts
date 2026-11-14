@@ -161,6 +161,7 @@ export interface AppOptions {
   whatsappReportIntervalInMilliseconds?: number;
   // How many days a first Slack poll reads back for a conversation with nothing stored (default 7).
   slackFirstPollLookbackDays?: number;
+  userNames?: string[];
   urgency?: {
     timeZone?: string;
     unansweredAskBusinessDays: number;
@@ -999,12 +1000,14 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     notesItems.push(
       ...report.docs.flatMap(({ title, webLink, text }) =>
-        notesActionItems(text).map((item) => ({
-          text: item.text,
-          meeting: title,
-          docLink: webLink,
-          accountEmail: report.accountEmail,
-        })),
+        notesActionItems(text)
+          .filter((item) => options.userNames === undefined || options.userNames.includes(item.assignee ?? ''))
+          .map((item) => ({
+            text: item.text,
+            meeting: title,
+            docLink: webLink,
+            accountEmail: report.accountEmail,
+          })),
       ),
     );
     return context.body(null, 200);

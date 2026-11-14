@@ -22,7 +22,7 @@
 - [x] The extension manifest asks for the `drive.readonly` scope
 - [x] A notes report from an allow-listed account puts each parsed item in a _Meeting notes_ section of `GET /triage-queue` with its text, the doc title as the meeting, the doc link and the account
 - [x] A notes report from an account not on the allow-list is rejected and proposes nothing
-- [ ] With `MY_LIFE_USER_NAMES` set, an item assigned to one of its names is proposed
+- [x] With `MY_LIFE_USER_NAMES` set, an item assigned to one of its names is proposed
 - [ ] With `MY_LIFE_USER_NAMES` set, an item assigned to someone else is not proposed
 - [ ] With `MY_LIFE_USER_NAMES` set to several comma-separated names, an item assigned to the second name is proposed
 - [ ] With `MY_LIFE_USER_NAMES` set, an item that names no assignee is proposed

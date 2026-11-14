@@ -69,4 +69,32 @@ describe('createApp meeting notes', () => {
 
     expect({ status: reportResponse.status, notesItems }).toEqual({ status: 403, notesItems: [] });
   });
+
+  it("proposes at GET /triage-queue, out of a report that also holds another person's item, the notes item assigned to one of the names in userNames", async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      databasePath: temporaryDatabasePath(),
+      userNames: ['Ana Ruiz'],
+    });
+
+    await postJson(app, '/notes-report', {
+      accountEmail: 'ana@example.com',
+      docs: [
+        {
+          id: 'doc-1',
+          title: 'Quarterly budget review - Notes by Gemini',
+          modifiedTime: '2026-11-12T18:00:00.000Z',
+          webLink: 'https://docs.google.com/document/d/doc-1/edit',
+          text: [
+            'Suggested next steps',
+            '[Ana Ruiz] Send the revised budget to the finance team.',
+            '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
+          ].join('\n'),
+        },
+      ],
+    });
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+
+    expect(notesItems.map((item) => item.text)).toEqual(['Send the revised budget to the finance team.']);
+  });
 });
