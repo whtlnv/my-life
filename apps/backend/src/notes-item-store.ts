@@ -2,6 +2,8 @@ import { openDatabase } from './open-database';
 
 export type NotesItem = { text: string; meeting: string; docLink: string; accountEmail: string };
 
+export type StoredNotesItem = NotesItem & { id: string };
+
 export function openNotesItemStore(databasePath: string) {
   const database = openDatabase(databasePath);
   database.exec('CREATE TABLE IF NOT EXISTS notes_items (item TEXT NOT NULL)');
@@ -13,7 +15,7 @@ export function openNotesItemStore(databasePath: string) {
     save(item: NotesItem): void {
       saveItem.run(JSON.stringify(item));
     },
-    loadAll(): (NotesItem & { id: string })[] {
+    loadAll(): StoredNotesItem[] {
       return loadItems.all().map((row) => ({ id: String(row.rowid), ...(JSON.parse(row.item) as NotesItem) }));
     },
   };
