@@ -1471,12 +1471,13 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   app.get('/triage-queue', (context) => {
     const verdicts = verdictStore.loadAll();
     const undoneMessageIds = undoAutomaticStore.loadAll();
+    const decidedNotesItemIds = notesItemStore.decidedIds();
     return context.json({
       ...splitActionFromGroups(proposals, verdicts),
       digests: [...recordAndDescribeListedDigests(verdicts), ...describeBotChatDigests()],
       slackItems: describeSlackItems(),
       chatItems: describeChatItems(),
-      notesItems: notesItemStore.loadAll().filter(({ id }) => !notesItemStore.decidedIds().has(id)),
+      notesItems: notesItemStore.loadAll().filter(({ id }) => !decidedNotesItemIds.has(id)),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
