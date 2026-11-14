@@ -20,7 +20,7 @@
 - [x] A notes poll that finds no new docs still posts an empty report
 - [x] The extension's start-up runs the notes poll every 15 minutes alongside the Gmail and Calendar polls
 - [x] The extension manifest asks for the `drive.readonly` scope
-- [ ] A notes report from an allow-listed account puts each parsed item in a _Meeting notes_ section of `GET /triage-queue` with its text, the doc title as the meeting, the doc link and the account
+- [x] A notes report from an allow-listed account puts each parsed item in a _Meeting notes_ section of `GET /triage-queue` with its text, the doc title as the meeting, the doc link and the account
 - [ ] A notes report from an account not on the allow-list is rejected and proposes nothing
 - [ ] With `MY_LIFE_USER_NAMES` set, an item assigned to one of its names is proposed
 - [ ] With `MY_LIFE_USER_NAMES` set, an item assigned to someone else is not proposed

@@ -33,6 +33,7 @@ import {
   isTriagePaused,
   localCalendarDate,
   mergeCalendarSnapshots,
+  notesActionItems,
   triageEffects,
   taskProposals,
   openTasks,
@@ -987,6 +988,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.json({ email });
   });
+  const notesItems: { text: string; meeting: string; docLink: string; accountEmail: string }[] = [];
+  app.post('/notes-report', async (context) => {
+    const report = await context.req.json<{
+      accountEmail: string;
+      docs: { title: string; webLink: string; text: string }[];
+    }>();
+    report.docs.forEach(({ title, webLink, text }) => {
+      notesActionItems(text).forEach((item) => {
+        notesItems.push({ text: item.text, meeting: title, docLink: webLink, accountEmail: report.accountEmail });
+      });
+    });
+    return context.body(null, 200);
+  });
   app.post('/calendar-snapshot', async (context) => {
     const snapshot = await context.req.json<CalendarSnapshot>();
     const refusal = refusalStatus(snapshot.accountEmail, () => calendarSnapshot.safeParse(snapshot).success);
@@ -1423,6 +1437,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       digests: [...recordAndDescribeListedDigests(verdicts), ...describeBotChatDigests()],
       slackItems: describeSlackItems(),
       chatItems: describeChatItems(),
+      notesItems,
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
