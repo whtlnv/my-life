@@ -255,4 +255,18 @@ describe('createApp meeting notes', () => {
       remainingItems: ['Ask the vendor for the new pricing sheet.'],
     });
   });
+  it('lists no task at GET /tasks and drops the item from GET /triage-queue once the user picks ignore on a notes item at POST /notes-verdicts', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+    const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
+
+    await postJson(app, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'ignore' });
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+
+    expect({ tasks, remainingItems: notesItems.map((item) => item.text) }).toEqual({
+      tasks: [],
+      remainingItems: ['Ask the vendor for the new pricing sheet.'],
+    });
+  });
 });

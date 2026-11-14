@@ -1027,9 +1027,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   });
   const decidedNotesItemIds = new Set<string>();
   app.post('/notes-verdicts', async (context) => {
-    const verdict = await context.req.json<{ id: string; decision: 'task' }>();
+    const verdict = await context.req.json<{ id: string; decision: 'task' | 'ignore' }>();
     const item = notesItemStore.loadAll().find(({ id }) => id === verdict.id);
     decidedNotesItemIds.add(verdict.id);
+    if (verdict.decision === 'ignore') {
+      return context.body(null, 200);
+    }
     taskEventStore.save({
       type: 'proposal-confirmed',
       taskId: `notes-${verdict.id}`,

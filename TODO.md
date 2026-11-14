@@ -31,7 +31,7 @@
 - [x] A doc reported again with a newer modified time proposes only the items not seen before
 - [x] A proposed notes item is still in the triage queue after a backend restart
 - [x] A task verdict on a notes item creates a task titled with the item's text, linked to the doc, on the doc's account, and the item leaves the queue
-- [ ] An ignore verdict on a notes item removes it from the queue and creates no task
+- [x] An ignore verdict on a notes item removes it from the queue and creates no task
 - [ ] An ignored notes item stays out of the queue after a backend restart
 - [ ] A notes doc reported again after a backend restart, unchanged since its last report, proposes no item a second time
 - [ ] A task made from a notes item is still listed by `GET /tasks` after a backend restart
