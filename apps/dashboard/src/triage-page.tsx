@@ -956,13 +956,18 @@ function ChatSection({
 const notesDecisionByKey: Partial<Record<string, 'task' | 'ignore'>> = { t: 'task', i: 'ignore' };
 
 function NotesCard({ item, onAccepted }: { item: NotesTriageItem; onAccepted: () => void }) {
+  function act(key: string) {
+    const decision = notesDecisionByKey[key];
+    if (decision !== undefined) whenAccepted(postJson('/notes-verdicts', { id: item.id, decision }), onAccepted);
+  }
+
   return (
     <article
       className="card"
       tabIndex={0}
       onKeyDown={(event) => {
-        const decision = notesDecisionByKey[event.key];
-        if (decision !== undefined) whenAccepted(postJson('/notes-verdicts', { id: item.id, decision }), onAccepted);
+        if (event.target !== event.currentTarget) return;
+        act(event.key);
       }}
     >
       <div className="card-head">
@@ -979,6 +984,16 @@ function NotesCard({ item, onAccepted }: { item: NotesTriageItem; onAccepted: ()
         <a href={item.docLink} target="_blank" rel="noreferrer">
           Open notes ↗
         </a>
+        <span className="spacer" />
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            act('t');
+          }}
+        >
+          Task <Key>t</Key>
+        </button>
       </div>
     </article>
   );
