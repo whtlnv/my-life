@@ -191,4 +191,24 @@ describe('createApp meeting notes', () => {
       'Ask the vendor for the new pricing sheet.',
     ]);
   });
+
+  it('lists only the items not seen before at GET /triage-queue when the same doc is reported again with a newer modified time', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    const firstReport = budgetReviewNotesReport('ana@example.com', budgetReviewNotesText);
+    const editedReport = budgetReviewNotesReport(
+      'ana@example.com',
+      [budgetReviewNotesText, 'Book the room for the next review.'].join('\n'),
+    );
+    const editedDoc = { ...editedReport.docs[0]!, modifiedTime: '2026-11-13T09:00:00.000Z' };
+
+    await postJson(app, '/notes-report', firstReport);
+    await postJson(app, '/notes-report', { ...editedReport, docs: [editedDoc] });
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+
+    expect(notesItems.map((item) => item.text)).toEqual([
+      'Send the revised budget to the finance team by Friday.',
+      'Ask the vendor for the new pricing sheet.',
+      'Book the room for the next review.',
+    ]);
+  });
 });

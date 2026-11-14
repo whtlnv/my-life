@@ -990,7 +990,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ email });
   });
   const notesItems: { text: string; meeting: string; docLink: string; accountEmail: string }[] = [];
-  const reportedNotesDocIds = new Set<string>();
+  const reportedNotesItemKeys = new Set<string>();
   app.post('/notes-report', async (context) => {
     const report = await context.req.json<{
       accountEmail: string;
@@ -1001,12 +1001,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     const isForUser = (item: { assignee?: string }) =>
       options.userNames === undefined || item.assignee === undefined || options.userNames.includes(item.assignee);
-    const newDocs = report.docs.filter(({ id }) => !reportedNotesDocIds.has(id));
-    newDocs.forEach(({ id }) => reportedNotesDocIds.add(id));
+    const isUnseen = (docId: string, item: { text: string }) => {
+      const key = JSON.stringify([docId, item.text]);
+      if (reportedNotesItemKeys.has(key)) {
+        return false;
+      }
+      reportedNotesItemKeys.add(key);
+      return true;
+    };
     notesItems.push(
-      ...newDocs.flatMap(({ title, webLink, text }) =>
+      ...report.docs.flatMap(({ id, title, webLink, text }) =>
         notesActionItems(text)
           .filter(isForUser)
+          .filter((item) => isUnseen(id, item))
           .map((item) => ({
             text: item.text,
             meeting: title,
