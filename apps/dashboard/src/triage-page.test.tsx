@@ -2077,10 +2077,10 @@ describe('TriagePage', () => {
     const notesSection = await screen.findByRole('region', { name: 'Meeting notes' });
     const card = within(notesSection).getByText('Send the revised budget to finance').closest('article');
     if (card === null) throw new Error('no notes card');
-    expect(within(card).getAllByText('Budget review').length).toBeGreaterThan(0);
+    expect(within(card).getByText('Budget review')).toBeInTheDocument();
     expect(within(card).getByText(accountName('franciscoc@psmutuus.com'))).toBeInTheDocument();
     expect(
-      within(card).getByText(timeInBusinessZone('2026-11-13T17:00:00.000Z'), { exact: false }),
+      within(card).getByText(`Budget review · ${timeInBusinessZone('2026-11-13T17:00:00.000Z')}`),
     ).toBeInTheDocument();
     expect(within(card).getByRole('link', { name: /Open notes/ })).toHaveAttribute(
       'href',
