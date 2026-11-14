@@ -182,4 +182,50 @@ describe('pollNotesOnce', () => {
     const report = backendPosts[0]?.body as { docs: { id: string }[] };
     expect(report.docs.map((doc) => doc.id)).toEqual(['doc-client-kickoff']);
   });
+
+  it('keeps the since time when the backend refuses the notes report, so the next poll reports the docs the failed one carried', async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+      {
+        id: 'doc-client-kickoff',
+        name: 'Client kickoff - 2026/11/13 09:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-13T16:20:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-client-kickoff/edit',
+        text: 'Action items\nAna will share the contract\n',
+      },
+    ];
+    const drive = driveFake(files, backendPosts);
+    let reportsRefused = 0;
+    const backendRefusingFirstReport = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      if (init?.method === 'POST' && reportsRefused === 0) {
+        reportsRefused += 1;
+        return Promise.resolve(new Response('backend unavailable', { status: 500 }));
+      }
+      return drive(input, init);
+    };
+    const pollOptions = {
+      fetch: backendRefusingFirstReport,
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+    };
+
+    const sinceAfterFailedPoll = await pollNotesOnce({
+      ...pollOptions,
+      lastSuccessfulPollTime: '2026-11-13T08:00:00.000Z',
+    });
+    await pollNotesOnce({ ...pollOptions, lastSuccessfulPollTime: sinceAfterFailedPoll });
+
+    const report = backendPosts[0]?.body as { docs: { id: string }[] };
+    expect(report.docs.map((doc) => doc.id)).toEqual(['doc-client-kickoff']);
+  });
 });
