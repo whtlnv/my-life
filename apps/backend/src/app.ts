@@ -248,6 +248,7 @@ const systemClock: Clock = { now: () => new Date() };
 const pollingIntervalsInMilliseconds = {
   mail: defaultGmailPollingIntervalInMilliseconds,
   calendar: 5 * 60 * 1000,
+  notes: 15 * 60 * 1000,
 };
 
 // The label an automatic archive puts on a message and its undo takes off again.
@@ -516,6 +517,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const snapshotStore = openCalendarSnapshotStore(databasePath);
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
+  const notesLastReportedAt = new Map<string, string>();
   const proposalStore = openProposalStore(databasePath);
   const spendStore = openSpendStore(databasePath);
   const verdictStore = openVerdictStore(databasePath);
@@ -1000,6 +1002,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (!isAllowed(report.accountEmail)) {
       return context.body(null, 403);
     }
+    notesLastReportedAt.set(report.accountEmail, clock.now().toISOString());
     const isForUser = (item: { assignee?: string }) =>
       options.userNames === undefined || item.assignee === undefined || options.userNames.includes(item.assignee);
     const notesItemKey = (docLink: string, text: string) => JSON.stringify([docLink, text]);
@@ -2653,7 +2656,18 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         badgeCount(events, clock, awaitingTheUser(proposals), verdictStore.loadAll()) +
         needsInputQuestions().length +
         overdueOpenTasks().length,
-      sources: describeSourceFreshness(mailSourceStore.loadAll(), configuredPollingIntervalsInMilliseconds, clock),
+      sources: describeSourceFreshness(
+        [
+          ...mailSourceStore.loadAll(),
+          ...[...notesLastReportedAt].map(([email, lastReportedAt]) => ({
+            email,
+            source: 'notes' as const,
+            lastReportedAt,
+          })),
+        ],
+        configuredPollingIntervalsInMilliseconds,
+        clock,
+      ),
       slackWorkspaces: slackWorkspacePolls?.map(describeSlackWorkspaceFreshness),
       telegram: describeTelegramConnection(),
       whatsapp: describeWhatsappFreshness(),

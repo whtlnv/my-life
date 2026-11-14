@@ -407,4 +407,33 @@ describe('createApp meeting notes', () => {
       }),
     ]);
   });
+
+  it('gives at GET /now one notes source per account, with the time its last notes report was received', async () => {
+    let currentTime = new Date('2026-11-12T18:05:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com', 'ana@work.example.com'],
+      clock: { now: () => currentTime },
+      databasePath: temporaryDatabasePath(),
+    });
+
+    await postJson(app, '/notes-report', { accountEmail: 'ana@example.com', docs: [] });
+    currentTime = new Date('2026-11-12T18:07:00.000Z');
+    await postJson(app, '/notes-report', { accountEmail: 'ana@work.example.com', docs: [] });
+    currentTime = new Date('2026-11-12T18:09:00.000Z');
+    await postJson(app, '/notes-report', { accountEmail: 'ana@work.example.com', docs: [] });
+    const { sources } = await getJson<{ sources: { source: string }[] }>(app, '/now');
+
+    expect(sources.filter(({ source }) => source === 'notes')).toEqual([
+      expect.objectContaining({
+        email: 'ana@example.com',
+        source: 'notes',
+        lastReportedAt: '2026-11-12T18:05:00.000Z',
+      }),
+      expect.objectContaining({
+        email: 'ana@work.example.com',
+        source: 'notes',
+        lastReportedAt: '2026-11-12T18:09:00.000Z',
+      }),
+    ]);
+  });
 });

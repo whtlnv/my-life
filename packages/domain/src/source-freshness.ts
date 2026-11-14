@@ -3,13 +3,13 @@ import type { Clock } from './clock';
 
 export interface SourceReport {
   email: string;
-  source: 'mail' | 'calendar';
+  source: 'mail' | 'calendar' | 'notes';
   lastReportedAt: string;
 }
 
-export function describeSourceFreshness(
-  sources: readonly SourceReport[],
-  pollingIntervalsInMilliseconds: Record<SourceReport['source'], number>,
+export function describeSourceFreshness<Source extends SourceReport['source']>(
+  sources: readonly (SourceReport & { source: Source })[],
+  pollingIntervalsInMilliseconds: Record<Source, number>,
   clock: Clock,
 ) {
   return sources.map((report) => ({
