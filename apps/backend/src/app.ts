@@ -518,6 +518,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
   const reportedMessageStore = openReportedMessageStore(databasePath);
   const mailSourceStore = openMailSourceStore(databasePath);
   const notesLastReportedAt = new Map<string, string>();
+  const notesSourceReports = () =>
+    [...notesLastReportedAt].map(([email, lastReportedAt]) => ({ email, source: 'notes' as const, lastReportedAt }));
   const proposalStore = openProposalStore(databasePath);
   const spendStore = openSpendStore(databasePath);
   const verdictStore = openVerdictStore(databasePath);
@@ -2657,14 +2659,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
         needsInputQuestions().length +
         overdueOpenTasks().length,
       sources: describeSourceFreshness(
-        [
-          ...mailSourceStore.loadAll(),
-          ...[...notesLastReportedAt].map(([email, lastReportedAt]) => ({
-            email,
-            source: 'notes' as const,
-            lastReportedAt,
-          })),
-        ],
+        [...mailSourceStore.loadAll(), ...notesSourceReports()],
         configuredPollingIntervalsInMilliseconds,
         clock,
       ),
