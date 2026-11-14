@@ -61,8 +61,12 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     await importContactsOnce(await freshAccountRequestOptions());
   };
   const importContactsAndLogFailure = logFailure('Contacts import failed', importContacts);
+  let notesPollSince: string | undefined;
   const pollNotes = async () => {
-    await pollNotesOnce(await freshAccountRequestOptions());
+    notesPollSince = await pollNotesOnce({
+      ...(await freshAccountRequestOptions()),
+      lastSuccessfulPollTime: notesPollSince,
+    });
   };
   const pollNotesAndLogFailure = logFailure('Notes poll failed', pollNotes);
   await pollCalendar();

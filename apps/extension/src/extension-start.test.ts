@@ -535,6 +535,36 @@ describe('startExtension', () => {
     }
   });
 
+  it('lists only the Drive notes docs modified after the newest one the start-up notes poll reported, on the next scheduled notes poll', async () => {
+    const notesListQueries: (string | null)[] = [];
+    const fakeFetch = routedFetch((url, init) => {
+      if (url.href.startsWith(`${driveApi}/files?`)) {
+        notesListQueries.push(url.searchParams.get('q'));
+        return jsonResponse({
+          kind: 'drive#fileList',
+          files: [
+            {
+              id: 'notes-doc-1',
+              name: 'Weekly sync - Notes by Gemini',
+              modifiedTime: '2026-11-02T15:30:00.000Z',
+              webViewLink: 'https://docs.google.com/document/d/notes-doc-1/edit',
+            },
+          ],
+        });
+      }
+      if (url.href.startsWith(`${driveApi}/files/notes-doc-1/export?`)) {
+        return Promise.resolve(new Response('Action items'));
+      }
+      return defaultRoute(url, init);
+    });
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
+    notesListQueries.length = 0;
+    await scheduledPolls.get(15 * oneMinute)?.();
+
+    expect(notesListQueries).toHaveLength(1);
+    expect(notesListQueries[0]).toContain("modifiedTime > '2026-11-02T15:30:00.000Z'");
+  });
+
   it('after the first Gmail poll, reads in full each message the backend lists as missing a body for the profile account and reports the bodies', async () => {
     const bodiesReports: unknown[] = [];
     const fakeFetch = routedFetch((url, init) => {
