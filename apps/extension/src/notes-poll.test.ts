@@ -311,4 +311,32 @@ describe('pollNotesOnce', () => {
       consoleError.mockRestore();
     }
   });
+  it('still posts an empty notes report when the poll finds no docs modified since the last successful poll', async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+    ];
+
+    await pollNotesOnce({
+      fetch: driveFake(files, backendPosts),
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      lastSuccessfulPollTime: '2026-11-13T08:00:00.000Z',
+    });
+
+    expect(backendPosts).toEqual([
+      {
+        url: 'http://127.0.0.1:7777/notes-report',
+        body: { accountEmail: 'francisco@example.com', docs: [] },
+      },
+    ]);
+  });
 });

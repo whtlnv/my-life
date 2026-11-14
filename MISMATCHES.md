@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 20:12 · `apps/extension/src/notes-poll.test.ts::still posts an empty notes report when the poll finds no docs modified since the last successful poll`
+- Behavior: A notes poll that finds no new docs still posts an empty report
+- Predicted: passes on first run — `pollNotesOnce` already calls `postNotesReport` unconditionally (no right-reason failure available)
+- Actual: passed (1 passed, 6 skipped)
+- Type: passed unexpectedly
+- Resolution: The behavior was delivered by the earlier items (`postNotesReport` runs whatever `docs` holds); no rewrite can fail without inventing a different behavior, so the test stays as a pin and `/green` has nothing to implement.
+
 ## 2026-11-13 10:58 · `apps/dashboard/src/dashboard-router.test.tsx::opens a Telegram person's timeline on the People tab when the user follows their link in Waiting on you`
 - Behavior: A Telegram person's waiting-on link opens that contact on the People tab
 - Predicted: TestingLibraryElementError — no list "Timeline of Valeria Núñez", because the link's contact key falls back to `person.email` (undefined for a Telegram row)

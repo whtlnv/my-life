@@ -17,7 +17,7 @@
 - [x] A notes poll whose report fails does not move the since time: the next poll reports the docs the failed one carried
 - [x] A doc whose export fails is left out of the report and logged, and the other docs of the same poll are still reported
 - [x] A notes report the backend rejects is logged
-- [ ] A notes poll that finds no new docs still posts an empty report
+- [x] A notes poll that finds no new docs still posts an empty report
 - [ ] The extension's start-up runs the notes poll every 15 minutes alongside the Gmail and Calendar polls
 - [ ] The extension manifest asks for the `drive.readonly` scope
 - [ ] A notes report from an allow-listed account puts each parsed item in a _Meeting notes_ section of `GET /triage-queue` with its text, the doc title as the meeting, the doc link and the account
