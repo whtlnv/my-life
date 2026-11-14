@@ -953,14 +953,16 @@ function ChatSection({
   );
 }
 
+const notesDecisionByKey: Partial<Record<string, 'task' | 'ignore'>> = { t: 'task', i: 'ignore' };
+
 function NotesCard({ item }: { item: NotesTriageItem }) {
   return (
     <article
       className="card"
       tabIndex={0}
       onKeyDown={(event) => {
-        if (event.key === 't') void postJson('/notes-verdicts', { id: item.id, decision: 'task' });
-        if (event.key === 'i') void postJson('/notes-verdicts', { id: item.id, decision: 'ignore' });
+        const decision = notesDecisionByKey[event.key];
+        if (decision !== undefined) void postJson('/notes-verdicts', { id: item.id, decision });
       }}
     >
       <div className="card-head">
