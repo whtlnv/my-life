@@ -998,10 +998,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     if (!isAllowed(report.accountEmail)) {
       return context.body(null, 403);
     }
+    const isForUser = (item: { assignee?: string }) =>
+      options.userNames === undefined || options.userNames.includes(item.assignee ?? '');
     notesItems.push(
       ...report.docs.flatMap(({ title, webLink, text }) =>
         notesActionItems(text)
-          .filter((item) => options.userNames === undefined || options.userNames.includes(item.assignee ?? ''))
+          .filter(isForUser)
           .map((item) => ({
             text: item.text,
             meeting: title,
