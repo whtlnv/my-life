@@ -52,5 +52,5 @@
 - [x] A notes poll that fails at extension start-up is logged and the rest of start-up continues
 - [x] The shipped extension background starts the notes poll in every profile
 - [x] `scripts/demo.sh` posts one notes report with two items, one assigned to someone else, and only the user's item shows in the triage queue
-- [ ] (hand-written) A decision record in `docs/decisions/` states that the notes fixture is written from Gemini's documented layout with made-up names, and the fidelity gap until a real doc is checked
+- [x] (hand-written) A decision record in `docs/decisions/` states that the notes fixture is written from Gemini's documented layout with made-up names, and the fidelity gap until a real doc is checked
 - [ ] Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes
