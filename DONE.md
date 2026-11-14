@@ -1,3 +1,59 @@
+- [x] 2026-11-14 · The notes parser returns each item under a `Suggested next steps` heading of a fixture notes doc's text, with the item's text
+- [x] 2026-11-14 · The notes parser returns the items under an `Action items` heading the same way
+- [x] 2026-11-14 · The notes parser stops at the heading that follows the next-steps section: lines under a later heading are not items
+- [x] 2026-11-14 · A notes doc with no next-steps heading yields no items
+- [x] 2026-11-14 · Empty text, or a next-steps heading with nothing under it, yields no items and does not throw
+- [x] 2026-11-14 · An item written `[Name] does the thing` carries the assignee `Name` and the text `does the thing`
+- [x] 2026-11-14 · An item written `Name will do the thing` carries the assignee `Name`
+- [x] 2026-11-14 · An item that names no one carries no assignee
+- [x] 2026-11-14 · A notes poll lists the profile's Drive Docs whose name contains `Notes by Gemini` from the Drive fake and posts one report to `POST /notes-report` with each doc's account, id, title, modified time, web link and plain-text export
+- [x] 2026-11-14 · A Doc whose name does not contain `Notes by Gemini` is not in the report
+- [x] 2026-11-14 · A notes poll reports only docs modified since the profile's last successful notes poll
+- [x] 2026-11-14 · A notes poll whose report fails does not move the since time: the next poll reports the docs the failed one carried
+- [x] 2026-11-14 · A doc whose export fails is left out of the report and logged, and the other docs of the same poll are still reported
+- [x] 2026-11-14 · A notes report the backend rejects is logged
+- [x] 2026-11-14 · A notes poll that finds no new docs still posts an empty report
+- [x] 2026-11-14 · The extension's start-up runs the notes poll every 15 minutes alongside the Gmail and Calendar polls
+- [x] 2026-11-14 · The extension manifest asks for the `drive.readonly` scope
+- [x] 2026-11-14 · A notes report from an allow-listed account puts each parsed item in a _Meeting notes_ section of `GET /triage-queue` with its text, the doc title as the meeting, the doc link and the account
+- [x] 2026-11-14 · A notes report from an account not on the allow-list is rejected and proposes nothing
+- [x] 2026-11-14 · With `MY_LIFE_USER_NAMES` set, an item assigned to one of its names is proposed
+- [x] 2026-11-14 · With `MY_LIFE_USER_NAMES` set, an item assigned to someone else is not proposed
+- [x] 2026-11-14 · With `MY_LIFE_USER_NAMES` set to several comma-separated names, an item assigned to the second name is proposed
+- [x] 2026-11-14 · With `MY_LIFE_USER_NAMES` set, an item that names no assignee is proposed
+- [x] 2026-11-14 · With `MY_LIFE_USER_NAMES` unset, an item assigned to someone else is proposed
+- [x] 2026-11-14 · A doc reported again with the same modified time proposes nothing new
+- [x] 2026-11-14 · A doc reported again with a newer modified time proposes only the items not seen before
+- [x] 2026-11-14 · A proposed notes item is still in the triage queue after a backend restart
+- [x] 2026-11-14 · A task verdict on a notes item creates a task titled with the item's text, linked to the doc, on the doc's account, and the item leaves the queue
+- [x] 2026-11-14 · An ignore verdict on a notes item removes it from the queue and creates no task
+- [x] 2026-11-14 · An ignored notes item stays out of the queue after a backend restart
+- [x] 2026-11-14 · A notes doc reported again after a backend restart, unchanged since its last report, proposes no item a second time
+- [x] 2026-11-14 · A task made from a notes item is still listed by `GET /tasks` after a backend restart
+- [x] 2026-11-14 · A task made from a notes item marked done leaves the open tasks, like any other task
+- [x] 2026-11-14 · The extension's calendar snapshot carries each event's attachment file ids (an optional field like `meetLink`: an event with no attachments has none)
+- [x] 2026-11-14 · A notes item whose doc is attached to an event in that account's stored calendar snapshot shows the event's title and start time in the triage queue
+- [x] 2026-11-14 · A notes item whose doc is attached to no event in that account's snapshot shows no event, even when another account's event has the doc attached
+- [x] 2026-11-14 · A task made from a notes item linked to an event names the event's title and start time
+- [x] 2026-11-14 · `GET /now` gives one `notes` detail per account with the time of its last notes report
+- [x] 2026-11-14 · A `notes` detail whose last report is within 30 minutes is not stale
+- [x] 2026-11-14 · A `notes` detail whose last report is older than 30 minutes is stale
+- [x] 2026-11-14 · The triage page shows the _Meeting notes_ section with each item's text, meeting, doc link and account, and the linked event when there is one
+- [x] 2026-11-14 · Pressing `t` on a selected notes item posts a task verdict for it
+- [x] 2026-11-14 · Pressing `i` on a selected notes item posts an ignore verdict for it
+- [x] 2026-11-14 · The header chip lists the `notes` detail of each account and marks a stale one
+- [x] 2026-11-14 · The shipped backend (`main.ts`) accepts `POST /notes-report`, reads `MY_LIFE_USER_NAMES` and serves the proposed items in the triage queue
+- [x] 2026-11-14 · (keystone) The existing extension start-up tests' fake network answers Drive `files.list` with an empty file list
+- [x] 2026-11-14 · A notes poll that fails at extension start-up is logged and the rest of start-up continues
+- [x] 2026-11-14 · The shipped extension background starts the notes poll in every profile
+- [x] 2026-11-14 · `scripts/demo.sh` posts one notes report with two items, one assigned to someone else, and only the user's item shows in the triage queue
+- [x] 2026-11-14 · (hand-written) A decision record in `docs/decisions/` states that the notes fixture is written from Gemini's documented layout with made-up names, and the fidelity gap until a real doc is checked
+- [x] 2026-11-14 · A notes card leaves the triage page once the backend accepts its verdict (found in the screenshot review)
+- [x] 2026-11-14 · A notes card has Ignore and Task buttons that post the same verdicts as `i` and `t` (found in the screenshot review)
+- [x] 2026-11-14 · Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes
+- [x] 2026-11-14 · After a notes report the backend accepts, the notes poll returns the newest modified time among the docs it listed, and returns the time it was given when the report fails or no doc was listed
+- [x] 2026-11-14 · Each later notes poll in the extension lists only docs modified after the time the previous poll returned
+- [x] 2026-11-14 · A notes poll keeps the time it was given when a doc export fails, so the next poll lists that doc again (found reviewing the since-time items)
 - [x] 2026-11-13 · A mail report holding a message with no subject is accepted, and the message reaches the triage queue
 - [x] 2026-11-13 · A mail report holding a message with no To header is accepted, and the message is stored
 - [x] 2026-11-13 · A mail report holding a message with no Date header is accepted, and the message is stored
