@@ -234,4 +234,25 @@ describe('createApp meeting notes', () => {
       }),
     ]);
   });
+  it('lists at GET /tasks a task titled with the notes item text, linked to the doc, on the doc account, and drops the item from GET /triage-queue once the user picks task on it at POST /notes-verdicts', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+    const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
+
+    await postJson(app, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'task' });
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+
+    expect({ tasks, remainingItems: notesItems.map((item) => item.text) }).toEqual({
+      tasks: [
+        expect.objectContaining({
+          status: 'open',
+          title: 'Send the revised budget to the finance team by Friday.',
+          link: 'https://docs.google.com/document/d/doc-1/edit',
+          accountEmail: 'ana@example.com',
+        }),
+      ],
+      remainingItems: ['Ask the vendor for the new pricing sheet.'],
+    });
+  });
 });

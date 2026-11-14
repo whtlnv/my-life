@@ -1025,6 +1025,19 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .forEach((item) => notesItemStore.save(item));
     return context.body(null, 200);
   });
+  const decidedNotesItemIds = new Set<string>();
+  app.post('/notes-verdicts', async (context) => {
+    const verdict = await context.req.json<{ id: string; decision: 'task' }>();
+    const item = notesItemStore.loadAll().find(({ id }) => id === verdict.id);
+    decidedNotesItemIds.add(verdict.id);
+    taskEventStore.save({
+      type: 'proposal-confirmed',
+      taskId: `notes-${verdict.id}`,
+      at: clock.now().toISOString(),
+      proposal: { title: String(item?.text), accountEmail: String(item?.accountEmail), link: String(item?.docLink) },
+    });
+    return context.body(null, 200);
+  });
   app.post('/calendar-snapshot', async (context) => {
     const snapshot = await context.req.json<CalendarSnapshot>();
     const refusal = refusalStatus(snapshot.accountEmail, () => calendarSnapshot.safeParse(snapshot).success);
@@ -1461,7 +1474,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       digests: [...recordAndDescribeListedDigests(verdicts), ...describeBotChatDigests()],
       slackItems: describeSlackItems(),
       chatItems: describeChatItems(),
-      notesItems: notesItemStore.loadAll(),
+      notesItems: notesItemStore.loadAll().filter(({ id }) => !decidedNotesItemIds.has(id)),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),
