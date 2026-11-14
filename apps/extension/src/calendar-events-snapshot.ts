@@ -38,15 +38,20 @@ function snapshotAttendeesOf(event: GoogleCalendarEvent) {
   }));
 }
 
+function attachmentFileIdsFieldOf(event: GoogleCalendarEvent) {
+  if (event.attachments === undefined) {
+    return {};
+  }
+  return { attachmentFileIds: event.attachments.map((attachment) => attachment.fileId) };
+}
+
 function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
   const commonFields = {
     id: event.id,
     iCalUID: event.iCalUID,
     title: event.summary ?? untitledEventTitle,
     ...(event.hangoutLink === undefined ? {} : { meetLink: event.hangoutLink }),
-    ...(event.attachments === undefined
-      ? {}
-      : { attachmentFileIds: event.attachments.map((attachment) => attachment.fileId) }),
+    ...attachmentFileIdsFieldOf(event),
     attendees: snapshotAttendeesOf(event),
   };
   if (isAllDay(event)) {
