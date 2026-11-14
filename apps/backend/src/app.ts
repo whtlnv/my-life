@@ -990,9 +990,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.json({ email });
   });
-  const notesItemStore = openNotesItemStore<{ text: string; meeting: string; docLink: string; accountEmail: string }>(
-    databasePath,
-  );
+  const notesItemStore = openNotesItemStore(databasePath);
   const reportedNotesItemKeys = new Set<string>();
   app.post('/notes-report', async (context) => {
     const report = await context.req.json<{
