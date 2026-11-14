@@ -12,17 +12,18 @@ interface DriveFileListResponse {
   files: { id: string; name: string; modifiedTime: string; webViewLink: string }[];
 }
 
+function notesFilesQuery(lastSuccessfulPollTime: string | undefined): string {
+  const notesDocsQuery = `name contains '${notesTitleMarker}' and mimeType = '${googleDocMimeType}'`;
+  if (lastSuccessfulPollTime === undefined) return notesDocsQuery;
+  return `${notesDocsQuery} and modifiedTime > '${lastSuccessfulPollTime}'`;
+}
+
 async function listNotesFiles(
   options: NotesPollOptions,
   authorization: Record<string, string>,
 ): Promise<DriveFileListResponse> {
   const listUrl = new URL(`${driveApi}/files`);
-  const modifiedClause =
-    options.lastSuccessfulPollTime === undefined ? '' : ` and modifiedTime > '${options.lastSuccessfulPollTime}'`;
-  listUrl.searchParams.set(
-    'q',
-    `name contains '${notesTitleMarker}' and mimeType = '${googleDocMimeType}'${modifiedClause}`,
-  );
+  listUrl.searchParams.set('q', notesFilesQuery(options.lastSuccessfulPollTime));
   listUrl.searchParams.set('fields', 'files(id,name,modifiedTime,webViewLink)');
   const listResponse = await options.fetch(listUrl, { headers: authorization });
   return (await listResponse.json()) as DriveFileListResponse;
