@@ -2088,41 +2088,18 @@ describe('TriagePage', () => {
     );
   });
 
-  it('posts a task verdict for a notes item when it is selected and the task key `t` is pressed', async () => {
+  it.each([
+    { action: 'selected and the task key `t` is pressed', press: { key: 't' }, decision: 'task' },
+    { action: 'selected and the ignore key `i` is pressed', press: { key: 'i' }, decision: 'ignore' },
+    { action: 'its Task button is clicked', press: { button: /Task/ }, decision: 'task' },
+    { action: 'its Ignore button is clicked', press: { button: /Ignore/ }, decision: 'ignore' },
+  ])('posts a $decision verdict for a notes item when it is $action', async ({ press, decision }) => {
     answerGetTriageQueueWith({
       action: [],
       groups: [],
       notesItems: [
         {
           id: 'notes-item-7',
-          text: 'Send the revised budget to finance',
-          meeting: 'Budget review',
-          docLink: 'https://docs.google.com/document/d/notes-1',
-          accountEmail: 'franciscoc@psmutuus.com',
-        },
-      ],
-      remaining: 0,
-      paused: false,
-    });
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    await user.click(await findCardContaining('Send the revised budget to finance'));
-    await user.keyboard('t');
-
-    expect(requestsPostedTo('/notes-verdicts')).toEqual([
-      { method: 'POST', body: { id: 'notes-item-7', decision: 'task' } },
-    ]);
-  });
-
-  it('posts an ignore verdict for a notes item when it is selected and the ignore key `i` is pressed', async () => {
-    answerGetTriageQueueWith({
-      action: [],
-      groups: [],
-      notesItems: [
-        {
-          id: 'notes-item-8',
           text: 'Book the offsite venue',
           meeting: 'Team planning',
           docLink: 'https://docs.google.com/document/d/notes-2',
@@ -2136,12 +2113,15 @@ describe('TriagePage', () => {
 
     render(<TriagePage />);
 
-    await user.click(await findCardContaining('Book the offsite venue'));
-    await user.keyboard('i');
+    const card = await findCardContaining('Book the offsite venue');
+    if ('key' in press) {
+      await user.click(card);
+      await user.keyboard(press.key);
+    } else {
+      await user.click(within(card).getByRole('button', { name: press.button }));
+    }
 
-    expect(requestsPostedTo('/notes-verdicts')).toEqual([
-      { method: 'POST', body: { id: 'notes-item-8', decision: 'ignore' } },
-    ]);
+    expect(requestsPostedTo('/notes-verdicts')).toEqual([{ method: 'POST', body: { id: 'notes-item-7', decision } }]);
   });
 
   it('removes a notes card from the page once the backend accepts its verdict, and keeps the others', async () => {
@@ -2181,62 +2161,6 @@ describe('TriagePage', () => {
       expect(screen.queryByText('Book the offsite venue')).not.toBeInTheDocument();
     });
     expect(screen.getByText('Share the agenda with the team')).toBeInTheDocument();
-  });
-
-  it('posts a task verdict for a notes item when its Task button is clicked', async () => {
-    answerGetTriageQueueWith({
-      action: [],
-      groups: [],
-      notesItems: [
-        {
-          id: 'notes-item-11',
-          text: 'Book the offsite venue',
-          meeting: 'Team planning',
-          docLink: 'https://docs.google.com/document/d/notes-2',
-          accountEmail: 'franciscoc@psmutuus.com',
-        },
-      ],
-      remaining: 0,
-      paused: false,
-    });
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    const card = await findCardContaining('Book the offsite venue');
-    await user.click(within(card).getByRole('button', { name: /Task/ }));
-
-    expect(requestsPostedTo('/notes-verdicts')).toEqual([
-      { method: 'POST', body: { id: 'notes-item-11', decision: 'task' } },
-    ]);
-  });
-
-  it('posts an ignore verdict for a notes item when its Ignore button is clicked', async () => {
-    answerGetTriageQueueWith({
-      action: [],
-      groups: [],
-      notesItems: [
-        {
-          id: 'notes-item-12',
-          text: 'Book the offsite venue',
-          meeting: 'Team planning',
-          docLink: 'https://docs.google.com/document/d/notes-2',
-          accountEmail: 'franciscoc@psmutuus.com',
-        },
-      ],
-      remaining: 0,
-      paused: false,
-    });
-    const user = userEvent.setup();
-
-    render(<TriagePage />);
-
-    const card = await findCardContaining('Book the offsite venue');
-    await user.click(within(card).getByRole('button', { name: /Ignore/ }));
-
-    expect(requestsPostedTo('/notes-verdicts')).toEqual([
-      { method: 'POST', body: { id: 'notes-item-12', decision: 'ignore' } },
-    ]);
   });
 
   it('shows a Telegram triage card with its chat title, sender, time and a Telegram channel pill', async () => {
