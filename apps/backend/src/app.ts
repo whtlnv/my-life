@@ -994,11 +994,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       accountEmail: string;
       docs: { title: string; webLink: string; text: string }[];
     }>();
-    report.docs.forEach(({ title, webLink, text }) => {
-      notesActionItems(text).forEach((item) => {
-        notesItems.push({ text: item.text, meeting: title, docLink: webLink, accountEmail: report.accountEmail });
-      });
-    });
+    notesItems.push(
+      ...report.docs.flatMap(({ title, webLink, text }) =>
+        notesActionItems(text).map((item) => ({
+          text: item.text,
+          meeting: title,
+          docLink: webLink,
+          accountEmail: report.accountEmail,
+        })),
+      ),
+    );
     return context.body(null, 200);
   });
   app.post('/calendar-snapshot', async (context) => {
