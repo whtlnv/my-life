@@ -275,4 +275,40 @@ describe('pollNotesOnce', () => {
       consoleError.mockRestore();
     }
   });
+
+  it('logs a notes report the backend rejects, with its status', async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+    ];
+    const drive = driveFake(files, backendPosts);
+    const backendRejectingReport = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      if (init?.method === 'POST') {
+        return Promise.resolve(Response.json({ error: 'account not allowed' }, { status: 403 }));
+      }
+      return drive(input, init);
+    };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      await pollNotesOnce({
+        fetch: backendRejectingReport,
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+      });
+
+      const logged = consoleError.mock.calls.map((call) => call.map(String).join(' '));
+      expect(logged).toEqual([expect.stringMatching(/francisco@example\.com.*403/)]);
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
 });

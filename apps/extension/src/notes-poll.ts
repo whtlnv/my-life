@@ -59,9 +59,12 @@ export async function pollNotesOnce(options: NotesPollOptions): Promise<string |
       text,
     });
   }
-  await options.fetch(`${options.backendUrl}/notes-report`, {
+  const reportResponse = await options.fetch(`${options.backendUrl}/notes-report`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, docs }),
   });
+  if (!reportResponse.ok) {
+    console.error(`notes poll: report for ${options.accountEmail} failed with ${String(reportResponse.status)}`);
+  }
   return options.lastSuccessfulPollTime;
 }
