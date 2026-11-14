@@ -228,6 +228,7 @@ function countMatchingWords(text: string | undefined, query: string): number {
 type FilterCandidate = ReturnType<typeof filterCandidates>[number];
 type DecidedProposal = Parameters<typeof filterCandidates>[0][number];
 type SlackMessageReference = Pick<SlackMessage, 'workspaceTeamId' | 'conversationId' | 'timestamp'>;
+type CalendarEventWithAttachments = CalendarSnapshot['events'][number] & { attachmentFileIds?: string[] };
 
 function categoryQuestionChoices(
   category: Proposal['category'],
@@ -1016,7 +1017,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const accountEvents = snapshotStore
       .loadAll()
       .filter(({ accountEmail }) => accountEmail === report.accountEmail)
-      .flatMap(({ snapshot }) => snapshot.events as (CalendarSnapshot['events'][number] & { attachmentFileIds?: string[] })[]);
+      .flatMap(({ snapshot }) => snapshot.events as CalendarEventWithAttachments[]);
     const eventWithAttachedDoc = (docId: string) => {
       const event = accountEvents.find(({ attachmentFileIds }) => attachmentFileIds?.includes(docId));
       return event && { title: event.title, start: event.start };
