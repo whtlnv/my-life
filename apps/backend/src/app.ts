@@ -67,6 +67,7 @@ import { openProposalStore } from './proposal-store';
 import { openReportedMessageStore, type ReportedMessageHeaders } from './reported-message-store';
 import { openSlackMessageStore, type SlackMessage, type SlackVerdict } from './slack-message-store';
 import { pollSlackWorkspaces } from './slack-poll';
+import { openNotesItemStore } from './notes-item-store';
 import { openSlackSendStore } from './slack-send-store';
 import { openSlackWorkspacePollStore } from './slack-workspace-poll-store';
 import { openSpendStore } from './spend-store';
@@ -989,7 +990,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     return context.json({ email });
   });
-  const notesItems: { text: string; meeting: string; docLink: string; accountEmail: string }[] = [];
+  const notesItemStore = openNotesItemStore<{ text: string; meeting: string; docLink: string; accountEmail: string }>(
+    databasePath,
+  );
   const reportedNotesItemKeys = new Set<string>();
   app.post('/notes-report', async (context) => {
     const report = await context.req.json<{
@@ -1009,8 +1012,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       reportedNotesItemKeys.add(key);
       return true;
     };
-    notesItems.push(
-      ...report.docs.flatMap(({ id, title, webLink, text }) =>
+    report.docs
+      .flatMap(({ id, title, webLink, text }) =>
         notesActionItems(text)
           .filter(isForUser)
           .filter((item) => markSeenAndReportIfNew(id, item))
@@ -1020,8 +1023,8 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
             docLink: webLink,
             accountEmail: report.accountEmail,
           })),
-      ),
-    );
+      )
+      .forEach((item) => notesItemStore.save(item));
     return context.body(null, 200);
   });
   app.post('/calendar-snapshot', async (context) => {
@@ -1460,7 +1463,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       digests: [...recordAndDescribeListedDigests(verdicts), ...describeBotChatDigests()],
       slackItems: describeSlackItems(),
       chatItems: describeChatItems(),
-      notesItems,
+      notesItems: notesItemStore.loadAll(),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),

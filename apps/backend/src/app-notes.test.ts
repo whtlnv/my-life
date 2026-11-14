@@ -211,4 +211,27 @@ describe('createApp meeting notes', () => {
       'Book the room for the next review.',
     ]);
   });
+  it('still lists at GET /triage-queue a proposed notes item after a backend restart on the same database file', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(beforeRestart, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+
+    const { notesItems } = await getJson<{ notesItems: unknown[] }>(afterRestart, '/triage-queue');
+
+    expect(notesItems).toEqual([
+      expect.objectContaining({
+        text: 'Send the revised budget to the finance team by Friday.',
+        meeting: 'Quarterly budget review - Notes by Gemini',
+        docLink: 'https://docs.google.com/document/d/doc-1/edit',
+        accountEmail: 'ana@example.com',
+      }),
+      expect.objectContaining({
+        text: 'Ask the vendor for the new pricing sheet.',
+        meeting: 'Quarterly budget review - Notes by Gemini',
+        docLink: 'https://docs.google.com/document/d/doc-1/edit',
+        accountEmail: 'ana@example.com',
+      }),
+    ]);
+  });
 });
