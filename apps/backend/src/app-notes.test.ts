@@ -15,22 +15,30 @@ const budgetReviewNotesText = [
   'Ask the vendor for the new pricing sheet.',
 ].join('\n');
 
+function budgetReviewNotesReport(accountEmail: string, text: string) {
+  return {
+    accountEmail,
+    docs: [
+      {
+        id: 'doc-1',
+        title: 'Quarterly budget review - Notes by Gemini',
+        modifiedTime: '2026-11-12T18:00:00.000Z',
+        webLink: 'https://docs.google.com/document/d/doc-1/edit',
+        text,
+      },
+    ],
+  };
+}
+
 describe('createApp meeting notes', () => {
   it('lists at GET /triage-queue, in the meeting notes section, each item parsed from a notes report of an allow-listed account with its text, the doc title as the meeting, the doc link and the account', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
 
-    const reportResponse = await postJson(app, '/notes-report', {
-      accountEmail: 'ana@example.com',
-      docs: [
-        {
-          id: 'doc-1',
-          title: 'Quarterly budget review - Notes by Gemini',
-          modifiedTime: '2026-11-12T18:00:00.000Z',
-          webLink: 'https://docs.google.com/document/d/doc-1/edit',
-          text: budgetReviewNotesText,
-        },
-      ],
-    });
+    const reportResponse = await postJson(
+      app,
+      '/notes-report',
+      budgetReviewNotesReport('ana@example.com', budgetReviewNotesText),
+    );
     const { notesItems } = await getJson<{ notesItems: unknown[] }>(app, '/triage-queue');
 
     expect(reportResponse.status).toBe(200);
@@ -53,18 +61,11 @@ describe('createApp meeting notes', () => {
   it('rejects with 403 a notes report from an account not on the allow-list and lists nothing from it at GET /triage-queue', async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
 
-    const reportResponse = await postJson(app, '/notes-report', {
-      accountEmail: 'stranger@example.com',
-      docs: [
-        {
-          id: 'doc-1',
-          title: 'Quarterly budget review - Notes by Gemini',
-          modifiedTime: '2026-11-12T18:00:00.000Z',
-          webLink: 'https://docs.google.com/document/d/doc-1/edit',
-          text: budgetReviewNotesText,
-        },
-      ],
-    });
+    const reportResponse = await postJson(
+      app,
+      '/notes-report',
+      budgetReviewNotesReport('stranger@example.com', budgetReviewNotesText),
+    );
     const { notesItems } = await getJson<{ notesItems: unknown[] }>(app, '/triage-queue');
 
     expect({ status: reportResponse.status, notesItems }).toEqual({ status: 403, notesItems: [] });
@@ -77,22 +78,18 @@ describe('createApp meeting notes', () => {
       userNames: ['Ana Ruiz'],
     });
 
-    await postJson(app, '/notes-report', {
-      accountEmail: 'ana@example.com',
-      docs: [
-        {
-          id: 'doc-1',
-          title: 'Quarterly budget review - Notes by Gemini',
-          modifiedTime: '2026-11-12T18:00:00.000Z',
-          webLink: 'https://docs.google.com/document/d/doc-1/edit',
-          text: [
-            'Suggested next steps',
-            '[Ana Ruiz] Send the revised budget to the finance team.',
-            '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
-          ].join('\n'),
-        },
-      ],
-    });
+    await postJson(
+      app,
+      '/notes-report',
+      budgetReviewNotesReport(
+        'ana@example.com',
+        [
+          'Suggested next steps',
+          '[Ana Ruiz] Send the revised budget to the finance team.',
+          '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
+        ].join('\n'),
+      ),
+    );
     const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
 
     expect(notesItems.map((item) => item.text)).toEqual(['Send the revised budget to the finance team.']);
@@ -105,18 +102,14 @@ describe('createApp meeting notes', () => {
       userNames: ['Ana Ruiz'],
     });
 
-    await postJson(app, '/notes-report', {
-      accountEmail: 'ana@example.com',
-      docs: [
-        {
-          id: 'doc-1',
-          title: 'Quarterly budget review - Notes by Gemini',
-          modifiedTime: '2026-11-12T18:00:00.000Z',
-          webLink: 'https://docs.google.com/document/d/doc-1/edit',
-          text: ['Suggested next steps', '[Tomás Ibarra] Ask the vendor for the new pricing sheet.'].join('\n'),
-        },
-      ],
-    });
+    await postJson(
+      app,
+      '/notes-report',
+      budgetReviewNotesReport(
+        'ana@example.com',
+        ['Suggested next steps', '[Tomás Ibarra] Ask the vendor for the new pricing sheet.'].join('\n'),
+      ),
+    );
     const { notesItems } = await getJson<{ notesItems: unknown[] }>(app, '/triage-queue');
 
     expect(notesItems).toEqual([]);
