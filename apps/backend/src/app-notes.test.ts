@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
-import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
+import { getJson, postCalendarSnapshot, postJson, temporaryDatabasePath } from './app.test-support';
 import { readStartupSettings } from './startup-settings';
 
 const budgetReviewNotesText = [
@@ -333,5 +333,28 @@ describe('createApp meeting notes', () => {
     const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     expect(response.status).toBe(200);
     expect(tasks).toEqual([]);
+  });
+  it("shows at GET /triage-queue, on a notes item, the title and start time of the event in that account's stored calendar snapshot that has the notes doc attached", async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postCalendarSnapshot(app, 'ana@example.com', [
+      {
+        id: 'event-1',
+        iCalUID: 'event-1@google.com',
+        title: 'Quarterly budget review',
+        start: '2026-11-12T17:00:00.000Z',
+        end: '2026-11-12T17:45:00.000Z',
+        attendees: [],
+        attachmentFileIds: ['doc-1'],
+      },
+    ]);
+
+    await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+
+    const { notesItems } = await getJson<{ notesItems: unknown[] }>(app, '/triage-queue');
+    expect(notesItems[0]).toEqual(
+      expect.objectContaining({
+        event: { title: 'Quarterly budget review', start: '2026-11-12T17:00:00.000Z' },
+      }),
+    );
   });
 });

@@ -1,6 +1,12 @@
 import { openDatabase } from './open-database';
 
-export type NotesItem = { text: string; meeting: string; docLink: string; accountEmail: string };
+export type NotesItem = {
+  text: string;
+  meeting: string;
+  docLink: string;
+  accountEmail: string;
+  event?: { title: string; start: string } | undefined;
+};
 
 export type StoredNotesItem = NotesItem & { id: string };
 

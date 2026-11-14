@@ -1013,8 +1013,16 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       reportedNotesItemKeys.add(key);
       return true;
     };
+    const accountEvents = snapshotStore
+      .loadAll()
+      .filter(({ accountEmail }) => accountEmail === report.accountEmail)
+      .flatMap(({ snapshot }) => snapshot.events as (CalendarSnapshot['events'][number] & { attachmentFileIds?: string[] })[]);
+    const eventWithAttachedDoc = (docId: string) => {
+      const event = accountEvents.find(({ attachmentFileIds }) => attachmentFileIds?.includes(docId));
+      return event && { title: event.title, start: event.start };
+    };
     report.docs
-      .flatMap(({ title, webLink, text }) =>
+      .flatMap(({ id, title, webLink, text }) =>
         notesActionItems(text)
           .filter(isForUser)
           .filter((item) => markSeenAndReportIfNew(webLink, item))
@@ -1023,6 +1031,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
             meeting: title,
             docLink: webLink,
             accountEmail: report.accountEmail,
+            event: eventWithAttachedDoc(id),
           })),
       )
       .forEach((item) => notesItemStore.save(item));
