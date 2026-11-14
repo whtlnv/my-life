@@ -2088,6 +2088,34 @@ describe('TriagePage', () => {
     );
   });
 
+  it('posts a task verdict for a notes item when it is selected and the task key `t` is pressed', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      notesItems: [
+        {
+          id: 'notes-item-7',
+          text: 'Send the revised budget to finance',
+          meeting: 'Budget review',
+          docLink: 'https://docs.google.com/document/d/notes-1',
+          accountEmail: 'franciscoc@psmutuus.com',
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    await user.click(await findCardContaining('Send the revised budget to finance'));
+    await user.keyboard('t');
+
+    expect(requestsPostedTo('/notes-verdicts')).toEqual([
+      { method: 'POST', body: { id: 'notes-item-7', decision: 'task' } },
+    ]);
+  });
+
   it('shows a Telegram triage card with its chat title, sender, time and a Telegram channel pill', async () => {
     answerGetTriageQueueWith({
       action: [],

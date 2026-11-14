@@ -44,7 +44,7 @@
 - [x] A `notes` detail whose last report is within 30 minutes is not stale
 - [x] A `notes` detail whose last report is older than 30 minutes is stale
 - [x] The triage page shows the _Meeting notes_ section with each item's text, meeting, doc link and account, and the linked event when there is one
-- [ ] Pressing `t` on a selected notes item posts a task verdict for it
+- [x] Pressing `t` on a selected notes item posts a task verdict for it
 - [ ] Pressing `i` on a selected notes item posts an ignore verdict for it
 - [ ] The header chip lists the `notes` detail of each account and marks a stale one
 - [ ] The shipped backend (`main.ts`) accepts `POST /notes-report`, reads `MY_LIFE_USER_NAMES` and serves the proposed items in the triage queue

@@ -955,7 +955,13 @@ function ChatSection({
 
 function NotesCard({ item }: { item: NotesTriageItem }) {
   return (
-    <article className="card" tabIndex={0}>
+    <article
+      className="card"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 't') void postJson('/notes-verdicts', { id: item.id, decision: 'task' });
+      }}
+    >
       <div className="card-head">
         <span className="card-who">{item.meeting}</span>
         {item.event !== undefined && (
