@@ -2,6 +2,7 @@ import type { AccountRequestOptions } from './fetch-function';
 
 const driveApi = 'https://www.googleapis.com/drive/v3';
 const googleDocMimeType = 'application/vnd.google-apps.document';
+const notesTitleMarker = 'Notes by Gemini';
 
 interface DriveFileListResponse {
   files: { id: string; name: string; modifiedTime: string; webViewLink: string }[];
@@ -12,7 +13,7 @@ async function listNotesFiles(
   authorization: Record<string, string>,
 ): Promise<DriveFileListResponse> {
   const listUrl = new URL(`${driveApi}/files`);
-  listUrl.searchParams.set('q', `name contains 'Notes by Gemini' and mimeType = '${googleDocMimeType}'`);
+  listUrl.searchParams.set('q', `name contains '${notesTitleMarker}' and mimeType = '${googleDocMimeType}'`);
   listUrl.searchParams.set('fields', 'files(id,name,modifiedTime,webViewLink)');
   const listResponse = await options.fetch(listUrl, { headers: authorization });
   return (await listResponse.json()) as DriveFileListResponse;
@@ -33,7 +34,7 @@ export async function pollNotesOnce(options: AccountRequestOptions): Promise<voi
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const fileList = await listNotesFiles(options, authorization);
   const docs = [];
-  for (const file of fileList.files.filter((listed) => listed.name.includes('Notes by Gemini'))) {
+  for (const file of fileList.files.filter((listed) => listed.name.includes(notesTitleMarker))) {
     docs.push({
       id: file.id,
       title: file.name,
