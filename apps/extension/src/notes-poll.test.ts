@@ -1,0 +1,117 @@
+import { describe, expect, it } from 'vitest';
+
+import { pollNotesOnce } from './notes-poll';
+
+const driveApi = 'https://www.googleapis.com/drive/v3';
+const googleDocMimeType = 'application/vnd.google-apps.document';
+
+interface DriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  modifiedTime: string;
+  webViewLink: string;
+  text: string;
+}
+
+// A Drive fake that refuses what the real API refuses: `files.list` answers only a query by name, and
+// `files.export` only a supported export type.
+function driveFake(files: DriveFile[], backendPosts: { url: string; body: unknown }[]) {
+  return (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const url = new URL(input instanceof Request ? input.url : input.toString());
+    if (url.href.startsWith(`${driveApi}/files?`)) {
+      const query = url.searchParams.get('q') ?? '';
+      const nameContains = /name contains '([^']+)'/.exec(query)?.[1];
+      if (nameContains === undefined) {
+        return Promise.resolve(new Response('invalid query', { status: 400 }));
+      }
+      const matching = files.filter(
+        (file) =>
+          file.name.includes(nameContains) &&
+          (!query.includes(`mimeType = '${googleDocMimeType}'`) || file.mimeType === googleDocMimeType),
+      );
+      return Promise.resolve(
+        Response.json({
+          kind: 'drive#fileList',
+          files: matching.map(({ id, name, mimeType, modifiedTime, webViewLink }) => ({
+            kind: 'drive#file',
+            id,
+            name,
+            mimeType,
+            modifiedTime,
+            webViewLink,
+          })),
+        }),
+      );
+    }
+    const exportPath = /^\/drive\/v3\/files\/([^/]+)\/export$/.exec(url.pathname);
+    if (url.origin === 'https://www.googleapis.com' && exportPath !== null) {
+      const file = files.find((candidate) => candidate.id === decodeURIComponent(exportPath[1] ?? ''));
+      if (file === undefined || url.searchParams.get('mimeType') !== 'text/plain') {
+        return Promise.resolve(new Response('not found', { status: 404 }));
+      }
+      return Promise.resolve(new Response(file.text, { headers: { 'Content-Type': 'text/plain' } }));
+    }
+    if (url.origin === 'http://127.0.0.1:7777' && init?.method === 'POST') {
+      backendPosts.push({ url: url.href, body: JSON.parse(init.body as string) });
+      return Promise.resolve(Response.json({ ok: true }));
+    }
+    return Promise.resolve(new Response('unexpected request', { status: 404 }));
+  };
+}
+
+describe('pollNotesOnce', () => {
+  it("lists the profile's Notes by Gemini docs and posts one notes report with each doc's account, id, title, modified time, web link and plain-text export", async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+      {
+        id: 'doc-client-kickoff',
+        name: 'Client kickoff - 2026/11/13 09:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-13T16:20:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-client-kickoff/edit',
+        text: 'Action items\nAna will share the contract\n',
+      },
+    ];
+
+    await pollNotesOnce({
+      fetch: driveFake(files, backendPosts),
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+    });
+
+    expect(backendPosts).toEqual([
+      {
+        url: 'http://127.0.0.1:7777/notes-report',
+        body: {
+          accountEmail: 'francisco@example.com',
+          docs: [
+            {
+              id: 'doc-weekly-sync',
+              title: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+              modifiedTime: '2026-11-12T17:05:00.000Z',
+              webLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+              text: 'Suggested next steps\n[Francisco] Send the budget\n',
+            },
+            {
+              id: 'doc-client-kickoff',
+              title: 'Client kickoff - 2026/11/13 09:00 CST - Notes by Gemini',
+              modifiedTime: '2026-11-13T16:20:00.000Z',
+              webLink: 'https://docs.google.com/document/d/doc-client-kickoff/edit',
+              text: 'Action items\nAna will share the contract\n',
+            },
+          ],
+        },
+      },
+    ]);
+  });
+});
