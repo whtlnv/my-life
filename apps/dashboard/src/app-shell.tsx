@@ -97,7 +97,8 @@ function sourceChipClassName(stale: boolean): string {
 function AccountChip({ account }: { account: AccountStatus }) {
   const staleSources = (['calendar', 'mail', 'notes'] as const).filter((source) => account[source]?.stale === true);
   const stale = staleSources.length > 0;
-  const title = `${account.email} · ${describeSource(account.calendar, 'calendar')} · ${describeSource(account.mail, 'mail')}${account.notes ? ` · ${describeSource(account.notes, 'notes')}` : ''}`;
+  const notesDetail = account.notes ? ` · ${describeSource(account.notes, 'notes')}` : '';
+  const title = `${account.email} · ${describeSource(account.calendar, 'calendar')} · ${describeSource(account.mail, 'mail')}${notesDetail}`;
   return (
     <li className={sourceChipClassName(stale)} title={title}>
       <span className="dot" aria-hidden="true" />
