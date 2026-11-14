@@ -436,4 +436,21 @@ describe('createApp meeting notes', () => {
       }),
     ]);
   });
+
+  it('marks at GET /now a notes source whose last report was received 30 minutes ago as not stale', async () => {
+    let currentTime = new Date('2026-11-12T18:00:00.000Z');
+    const app = createApp({
+      allowedEmails: ['ana@example.com'],
+      clock: { now: () => currentTime },
+      databasePath: temporaryDatabasePath(),
+    });
+
+    await postJson(app, '/notes-report', { accountEmail: 'ana@example.com', docs: [] });
+    currentTime = new Date('2026-11-12T18:30:00.000Z');
+    const { sources } = await getJson<{ sources: { source: string }[] }>(app, '/now');
+
+    expect(sources.filter(({ source }) => source === 'notes')).toEqual([
+      expect.objectContaining({ email: 'ana@example.com', source: 'notes', stale: false }),
+    ]);
+  });
 });

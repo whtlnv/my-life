@@ -41,7 +41,7 @@
 - [x] A notes item whose doc is attached to no event in that account's snapshot shows no event, even when another account's event has the doc attached
 - [x] A task made from a notes item linked to an event names the event's title and start time
 - [x] `GET /now` gives one `notes` detail per account with the time of its last notes report
-- [ ] A `notes` detail whose last report is within 30 minutes is not stale
+- [x] A `notes` detail whose last report is within 30 minutes is not stale
 - [ ] A `notes` detail whose last report is older than 30 minutes is stale
 - [ ] The triage page shows the _Meeting notes_ section with each item's text, meeting, doc link and account, and the linked event when there is one
 - [ ] Pressing `t` on a selected notes item posts a task verdict for it

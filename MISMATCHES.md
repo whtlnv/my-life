@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-14 03:11 · `apps/backend/src/app-notes.test.ts::marks at GET /now a notes source whose last report was received 30 minutes ago as not stale`
+- Behavior: A `notes` detail whose last report is within 30 minutes is not stale
+- Predicted: pass (read the code first: ae0e247 already gave `notes` a 15-minute interval in `describeSourceFreshness`, and `isAccountFresh` is stale only past 2× the interval, inclusive)
+- Actual: pass
+- Type: passed unexpectedly (relative to the TODO, which assumed a red step)
+- Resolution: The previous cycle delivered this behavior early, so no honest rewrite can make it fail; kept the test at the exact 30-minute boundary as a pin, and the TODO item is a no-op green.
+
 ## 2026-11-14 02:54 · `apps/backend/src/app-notes.test.ts::shows at GET /triage-queue no event on a notes item whose doc is attached to no event in that account's stored calendar snapshot, even when another account's event has the doc attached`
 - Behavior: a notes item gets no event from another account's calendar snapshot, even when that event has the doc attached
 - Predicted: pass. The /notes-report handler already keeps only events with `accountEmail === report.accountEmail`, which the previous green (521bfe1) added
