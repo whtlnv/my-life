@@ -15,7 +15,8 @@ interface DriveFile {
 }
 
 // A Drive fake that refuses what the real API refuses: `files.list` answers only a query by name, and
-// `files.export` only a supported export type. Like Drive, `name contains` ignores case.
+// `files.export` only a supported export type. Like Drive, `name contains` ignores case, and a
+// `modifiedTime > '<RFC 3339 time>'` clause keeps only the files modified after that time.
 function driveFake(files: DriveFile[], backendPosts: { url: string; body: unknown }[]) {
   return (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -25,9 +26,11 @@ function driveFake(files: DriveFile[], backendPosts: { url: string; body: unknow
       if (nameContains === undefined) {
         return Promise.resolve(new Response('invalid query', { status: 400 }));
       }
+      const modifiedAfter = /modifiedTime > '([^']+)'/.exec(query)?.[1];
       const matching = files.filter(
         (file) =>
           file.name.toLowerCase().includes(nameContains.toLowerCase()) &&
+          (modifiedAfter === undefined || Date.parse(file.modifiedTime) > Date.parse(modifiedAfter)) &&
           (!query.includes(`mimeType = '${googleDocMimeType}'`) || file.mimeType === googleDocMimeType),
       );
       return Promise.resolve(
@@ -145,5 +148,38 @@ describe('pollNotesOnce', () => {
 
     const report = backendPosts[0]?.body as { docs: { id: string }[] };
     expect(report.docs.map((doc) => doc.id)).toEqual(['doc-weekly-sync']);
+  });
+
+  it("reports only the docs modified since the profile's last successful notes poll", async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+      {
+        id: 'doc-client-kickoff',
+        name: 'Client kickoff - 2026/11/13 09:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-13T16:20:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-client-kickoff/edit',
+        text: 'Action items\nAna will share the contract\n',
+      },
+    ];
+
+    await pollNotesOnce({
+      fetch: driveFake(files, backendPosts),
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+      lastSuccessfulPollTime: '2026-11-13T08:00:00.000Z',
+    });
+
+    const report = backendPosts[0]?.body as { docs: { id: string }[] };
+    expect(report.docs.map((doc) => doc.id)).toEqual(['doc-client-kickoff']);
   });
 });

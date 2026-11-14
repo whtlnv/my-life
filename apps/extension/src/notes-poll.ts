@@ -4,16 +4,25 @@ const driveApi = 'https://www.googleapis.com/drive/v3';
 const googleDocMimeType = 'application/vnd.google-apps.document';
 const notesTitleMarker = 'Notes by Gemini';
 
+interface NotesPollOptions extends AccountRequestOptions {
+  lastSuccessfulPollTime?: string;
+}
+
 interface DriveFileListResponse {
   files: { id: string; name: string; modifiedTime: string; webViewLink: string }[];
 }
 
 async function listNotesFiles(
-  options: AccountRequestOptions,
+  options: NotesPollOptions,
   authorization: Record<string, string>,
 ): Promise<DriveFileListResponse> {
   const listUrl = new URL(`${driveApi}/files`);
-  listUrl.searchParams.set('q', `name contains '${notesTitleMarker}' and mimeType = '${googleDocMimeType}'`);
+  const modifiedClause =
+    options.lastSuccessfulPollTime === undefined ? '' : ` and modifiedTime > '${options.lastSuccessfulPollTime}'`;
+  listUrl.searchParams.set(
+    'q',
+    `name contains '${notesTitleMarker}' and mimeType = '${googleDocMimeType}'${modifiedClause}`,
+  );
   listUrl.searchParams.set('fields', 'files(id,name,modifiedTime,webViewLink)');
   const listResponse = await options.fetch(listUrl, { headers: authorization });
   return (await listResponse.json()) as DriveFileListResponse;
@@ -30,7 +39,7 @@ async function exportPlainText(
   return exportResponse.text();
 }
 
-export async function pollNotesOnce(options: AccountRequestOptions): Promise<void> {
+export async function pollNotesOnce(options: NotesPollOptions): Promise<void> {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const fileList = await listNotesFiles(options, authorization);
   const docs = [];

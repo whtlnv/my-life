@@ -13,7 +13,7 @@
 - [x] An item that names no one carries no assignee
 - [x] A notes poll lists the profile's Drive Docs whose name contains `Notes by Gemini` from the Drive fake and posts one report to `POST /notes-report` with each doc's account, id, title, modified time, web link and plain-text export
 - [x] A Doc whose name does not contain `Notes by Gemini` is not in the report
-- [ ] A notes poll reports only docs modified since the profile's last successful notes poll
+- [x] A notes poll reports only docs modified since the profile's last successful notes poll
 - [ ] A notes poll whose report fails does not move the since time: the next poll reports the docs the failed one carried
 - [ ] A doc whose export fails is left out of the report and logged, and the other docs of the same poll are still reported
 - [ ] A notes report the backend rejects is logged
