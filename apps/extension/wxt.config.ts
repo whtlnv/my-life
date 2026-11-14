@@ -8,6 +8,13 @@ const key =
 
 export default defineConfig({
   srcDir: 'src',
+  hooks: {
+    // Tests sit beside their source, entrypoints included; they are never entrypoints themselves.
+    'entrypoints:found': (_wxt, infos) => {
+      const tests = infos.filter((info) => /\.test\.tsx?$/.test(info.inputPath));
+      for (const test of tests) infos.splice(infos.indexOf(test), 1);
+    },
+  },
   // A function, not an object: WXT loads `.env` after this file is evaluated, so a top-level `process.env` read
   // would see an empty client id. WXT calls the function after the env files are loaded.
   manifest: () => ({

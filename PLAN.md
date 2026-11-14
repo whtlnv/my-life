@@ -37,6 +37,7 @@ What the supervision showed in Phases 3 to 7 — check these every cycle:
 
 - **A poll that never advances its since time passes every test** (7): the notes poll took a since time but nothing fed the next poll the time it returned, so every poll would list and export every notes doc; docs-sync found it, not a cycle. And a since time must not move past a doc whose export failed. Read what the shipped start-up passes between polls.
 - **A screenshot finds missing affordances** (7): the notes card had keys but no buttons, and stayed on the page after its verdict until the next refresh.
+- **A test beside an extension entrypoint breaks the build, not the suite** (7): WXT read `entrypoints/background.test.ts` as a second `background` entrypoint; CI never builds the extension, so only the wind-up rebuild caught it. `wxt.config.ts` now drops test files from the entrypoints.
 - **An uncommitted edit to `TODO.md` stops the driver** (7): the cycle's baseline refuses a dirty tree; commit TODO changes before the next cycle.
 
 - **An outside read finds what green cycles do not** (6c): three read-only Codex audits over a clean export found 37 defects behind a green suite (restart retriage, group confirms overwriting verdicts, Slack pagination, unwaited rate limits). Re-run them after a large phase.
