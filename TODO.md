@@ -26,7 +26,7 @@
 - [x] With `MY_LIFE_USER_NAMES` set, an item assigned to someone else is not proposed
 - [x] With `MY_LIFE_USER_NAMES` set to several comma-separated names, an item assigned to the second name is proposed
 - [x] With `MY_LIFE_USER_NAMES` set, an item that names no assignee is proposed
-- [ ] With `MY_LIFE_USER_NAMES` unset, an item assigned to someone else is proposed
+- [x] With `MY_LIFE_USER_NAMES` unset, an item assigned to someone else is proposed
 - [ ] A doc reported again with the same modified time proposes nothing new
 - [ ] A doc reported again with a newer modified time proposes only the items not seen before
 - [ ] A proposed notes item is still in the triage queue after a backend restart
