@@ -58,3 +58,4 @@
 - [x] Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes
 - [x] After a notes report the backend accepts, the notes poll returns the newest modified time among the docs it listed, and returns the time it was given when the report fails or no doc was listed
 - [x] Each later notes poll in the extension lists only docs modified after the time the previous poll returned
+- [x] A notes poll keeps the time it was given when a doc export fails, so the next poll lists that doc again (found reviewing the since-time items)

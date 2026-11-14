@@ -276,6 +276,51 @@ describe('pollNotesOnce', () => {
     }
   });
 
+  it('keeps the since time when a doc export fails, so the next poll lists that doc again', async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+      {
+        id: 'doc-client-kickoff',
+        name: 'Client kickoff - 2026/11/13 09:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-13T16:20:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-client-kickoff/edit',
+        text: 'Action items\nAna will share the contract\n',
+      },
+    ];
+    const drive = driveFake(files, backendPosts);
+    const driveFailingOneExport = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.pathname === '/drive/v3/files/doc-weekly-sync/export') {
+        return Promise.resolve(new Response('backend error', { status: 500 }));
+      }
+      return drive(input, init);
+    };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      const since = await pollNotesOnce({
+        fetch: driveFailingOneExport,
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+        lastSuccessfulPollTime: '2026-11-12T08:00:00.000Z',
+      });
+
+      expect(since).toBe('2026-11-12T08:00:00.000Z');
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
   it('logs a notes report the backend rejects, with its status', async () => {
     const backendPosts: { url: string; body: unknown }[] = [];
     const files: DriveFile[] = [

@@ -96,6 +96,7 @@ export async function pollNotesOnce(options: NotesPollOptions): Promise<string |
   const notesFiles = fileList.files.filter((listed) => listed.name.includes(notesTitleMarker));
   const docs = await exportNotesDocs(options, authorization, notesFiles);
   const reportAccepted = await postNotesReport(options, docs);
-  if (!reportAccepted) return options.lastSuccessfulPollTime;
+  const everyDocExported = docs.length === notesFiles.length;
+  if (!reportAccepted || !everyDocExported) return options.lastSuccessfulPollTime;
   return newestModifiedTime(notesFiles, options.lastSuccessfulPollTime);
 }
