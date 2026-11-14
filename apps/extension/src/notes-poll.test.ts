@@ -15,7 +15,7 @@ interface DriveFile {
 }
 
 // A Drive fake that refuses what the real API refuses: `files.list` answers only a query by name, and
-// `files.export` only a supported export type.
+// `files.export` only a supported export type. Like Drive, `name contains` ignores case.
 function driveFake(files: DriveFile[], backendPosts: { url: string; body: unknown }[]) {
   return (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -27,7 +27,7 @@ function driveFake(files: DriveFile[], backendPosts: { url: string; body: unknow
       }
       const matching = files.filter(
         (file) =>
-          file.name.includes(nameContains) &&
+          file.name.toLowerCase().includes(nameContains.toLowerCase()) &&
           (!query.includes(`mimeType = '${googleDocMimeType}'`) || file.mimeType === googleDocMimeType),
       );
       return Promise.resolve(
@@ -113,5 +113,37 @@ describe('pollNotesOnce', () => {
         },
       },
     ]);
+  });
+
+  it('leaves out a Doc whose name does not contain `Notes by Gemini`, even when Drive matches it ignoring case', async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+      {
+        id: 'doc-my-own-draft',
+        name: 'Ideas for team notes by gemini rollout',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-13T16:20:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-my-own-draft/edit',
+        text: 'Draft ideas\n',
+      },
+    ];
+
+    await pollNotesOnce({
+      fetch: driveFake(files, backendPosts),
+      accessToken: 'token-for-francisco',
+      accountEmail: 'francisco@example.com',
+      backendUrl: 'http://127.0.0.1:7777',
+    });
+
+    const report = backendPosts[0]?.body as { docs: { id: string }[] };
+    expect(report.docs.map((doc) => doc.id)).toEqual(['doc-weekly-sync']);
   });
 });

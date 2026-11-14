@@ -33,7 +33,7 @@ export async function pollNotesOnce(options: AccountRequestOptions): Promise<voi
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const fileList = await listNotesFiles(options, authorization);
   const docs = [];
-  for (const file of fileList.files) {
+  for (const file of fileList.files.filter((listed) => listed.name.includes('Notes by Gemini'))) {
     docs.push({
       id: file.id,
       title: file.name,
