@@ -162,6 +162,7 @@ const app = createApp({
   gmailPollingIntervalInMilliseconds: settings.gmailPollingIntervalInMilliseconds,
   dailySpendCeilingInUsd: settings.dailySpendCeilingInUsd,
   urgency: settings.urgency,
+  userNames: settings.userNames,
   profileDirectory,
   slackApiUrl: settings.slackApiUrl,
   slackWorkspaces: settings.slackWorkspaces.map(({ teamId, userToken }) => ({

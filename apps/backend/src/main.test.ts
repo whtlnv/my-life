@@ -362,6 +362,38 @@ describe('the shipped backend (main.ts)', () => {
     ]);
   }, 30_000);
 
+  it("accepts a notes report at POST /notes-report and proposes in the triage queue only the item assigned to a name in MY_LIFE_USER_NAMES, not another person's item", async () => {
+    fakeAnthropic = await startFakeAnthropic([]);
+    const baseUrl = await startShippedBackend(fakeAnthropic, { MY_LIFE_USER_NAMES: 'Ana Ruiz' });
+
+    const reportResponse = await fetch(`${baseUrl}/notes-report`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        accountEmail: 'ana@example.com',
+        docs: [
+          {
+            id: 'doc-1',
+            title: 'Quarterly budget review - Notes by Gemini',
+            modifiedTime: '2026-11-12T18:00:00.000Z',
+            webLink: 'https://docs.google.com/document/d/doc-1/edit',
+            text: [
+              'Suggested next steps',
+              '[Ana Ruiz] Send the revised budget to the finance team.',
+              '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
+            ].join('\n'),
+          },
+        ],
+      }),
+    });
+
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(`${baseUrl}/triage-queue`);
+    expect({ status: reportResponse.status, texts: notesItems.map((item) => item.text) }).toEqual({
+      status: 200,
+      texts: ['Send the revised budget to the finance team.'],
+    });
+  }, 30_000);
+
   it('starts without Telegram and reports it not logged in at GET /now when the API id and hash are set but no session file exists', async () => {
     fakeAnthropic = await startFakeAnthropic([]);
     const baseUrl = await startShippedBackend(fakeAnthropic, {
