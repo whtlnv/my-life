@@ -63,8 +63,10 @@ describe('the demo backend (demo.ts)', () => {
   it("lists at GET /triage-queue one meeting notes item: the user's, out of a notes report that also holds someone else's", async () => {
     const baseUrl = await startDemo();
 
-    const { notesItems } = (await (await fetch(`${baseUrl}/triage-queue`)).json()) as { notesItems: unknown[] };
+    const { notesItems } = (await (await fetch(`${baseUrl}/triage-queue`)).json()) as {
+      notesItems: { text: string }[];
+    };
 
-    expect(notesItems).toHaveLength(1);
+    expect(notesItems.map((item) => item.text)).toEqual(['Send Luis the headcount numbers for the board deck.']);
   }, 30_000);
 });
