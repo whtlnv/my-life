@@ -116,7 +116,7 @@ describe('snapshotFromCalendarEvents', () => {
     expect(snapshot.events.map((event) => Object.keys(event))).toEqual([expect.not.arrayContaining(['meetLink'])]);
   });
 
-  it('carries the file ids of a Calendar event\'s attachments', () => {
+  it("carries the file ids of a Calendar event's attachments", () => {
     const eventsResponse = {
       kind: 'calendar#events',
       items: [
