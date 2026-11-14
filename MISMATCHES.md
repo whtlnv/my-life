@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-14 03:16 · `apps/backend/src/app-notes.test.ts::marks at GET /now a notes source whose last report was received more than 30 minutes ago as stale`
+- Behavior: A `notes` detail whose last report is older than 30 minutes is stale
+- Predicted: pass (I read the code first: ae0e247 gave `notes` a 15-minute interval in `describeSourceFreshness`, and `isAccountFresh` marks a source stale only after 2x the interval)
+- Actual: pass
+- Type: passed unexpectedly (relative to the TODO, which assumed a red step)
+- Resolution: ae0e247 already delivered this behavior and no honest rewrite can make it fail. I kept the test 1 ms past the 30-minute line, the other side of the not-stale pin at exactly 30 minutes, and the TODO item becomes a no-op green.
+
 ## 2026-11-14 03:11 · `apps/backend/src/app-notes.test.ts::marks at GET /now a notes source whose last report was received 30 minutes ago as not stale`
 - Behavior: A `notes` detail whose last report is within 30 minutes is not stale
 - Predicted: pass (read the code first: ae0e247 already gave `notes` a 15-minute interval in `describeSourceFreshness`, and `isAccountFresh` is stale only past 2× the interval, inclusive)
