@@ -58,3 +58,10 @@ What the user owes the project: accounts, approvals, credentials and decisions o
 - [x] **Date order check:** done 2026-11-11: your page writes month/day/year (11/3/2026 is November 3); the parser reads it that way.
 - [x] **After Phase 6b is delivered:** extension reloaded and the first real reports checked with Claude (2026-11-11).
 - [ ] **First WhatsApp send:** paused with WhatsApp (2026-11-13); nothing to do until you reopen it.
+
+## 11. Gemini meeting notes (Phase 7, delivered 2026-11-14)
+
+- [ ] **Drive scope on the consent screen:** add `https://www.googleapis.com/auth/drive.readonly` to the OAuth consent screen's scopes (enable the **Google Drive API** in the Cloud project if it is not on).
+- [ ] **Re-consent in every profile:** reload the my-life extension card in each Chrome profile (`chrome://extensions`) and accept the new Drive read-only permission. If no prompt appears, revoke the cached token in `chrome://identity-internals` and reload again. Until then that profile's notes poll fails and logs `Notes poll failed`.
+- [ ] **Your names:** set `MY_LIFE_USER_NAMES` in `.env` to the names Gemini uses for you, comma-separated (for example `Francisco, Francisco Catalá`), then tell Claude to restart the backend. Unset, every action item of every meeting is proposed.
+- [ ] **First real notes doc:** after your next Meet call with Gemini notes, tell Claude. Claude compares it with the hand-written fixtures (`docs/decisions/2026-11-14-gemini-notes-fixture.md`): bullets, heading wording, the doc's name and blank lines are the likely differences.

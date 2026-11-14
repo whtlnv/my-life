@@ -14,7 +14,7 @@ Phases (locked decision 17):
 - **Phase 4:** the in-app agent (the Agent tab): chat over mail, contacts, calendar and tasks on `MY_LIFE_AGENT_MODEL` (default Opus 5.5) under `apps/backend/prompts/agent-v1.md`, cited sources, eight actions through the domain guardrail (`decideAgentAction`; send and delete refused and recorded), a stored action log with undo by action id, the extension's create-draft command — code delivered 2026-11-09 (`DONE.md`); `scripts/demo.sh` seeds it. Not built: FTS5 search and local embeddings (keyword scan still enough); the gaps in `BACKLOG.md` dated 2026-11-09.
 - **Phase 5:** Slack in both workspaces (PS Mutuus, Erlia), one app per workspace with the user token in `.env`: the backend polls DMs, group DMs, mentions and threads the user wrote in every 60 s; Slack items in triage (ignore, task, reply), Slack contacts and timelines on the People tab, Slack in waiting-on; replies through `chat.postMessage` only from the dashboard composer — code delivered 2026-11-09 against the Slack fake (`DONE.md`, `docs/screenshots/2026-11-09-phase-5-*.jpg`); `scripts/demo.sh` polls a scripted Slack. The walk-through against the real workspaces is not done. Not built: Slack contacts merged with email contacts (the scopes have no `users:read.email`); the gaps in `BACKLOG.md` dated 2026-11-09.
 - **Phase 6:** WhatsApp and Telegram, read and reply, as channels in the People view: **6a Telegram** — code delivered 2026-11-10 against a scripted client (`DONE.md`, `docs/screenshots/2026-11-10-phase-6a-*.jpg`): gramjs behind `apps/backend/src/gramjs-telegram-client.ts`, the chat store `chat-message-store.ts` shared with 6b, `scripts/telegram-login.sh`; the walk-through on the real account is `docs/phase-6a-walkthrough.md` and waits on the one-time login (`PENDING_TASKS.md` § 6). **6a.1** — fixes from the real-account trial, delivered 2026-11-10 and live (`DONE.md`, `docs/screenshots/2026-11-10-phase-6a1-*.jpg`): Slack DMs found through `is:dm` search with a first-poll lookback, one card per conversation, failure logs and chip reasons; Telegram bot digests and media placeholders. **6b WhatsApp** — code delivered 2026-11-11 (`DONE.md`, `docs/screenshots/2026-11-11-phase-6b-*.jpg`, `docs/decisions/2026-11-11-whatsapp-web-structure.md`): the content script `apps/extension/src/entrypoints/whatsapp.content.ts` in the `catala.francisco@gmail.com` profile parses the chat list (with each unread chat's preview) and the open chat, reports through the background's `backend-fetch` relay, and sends dashboard replies by typing into the composer; WhatsApp in triage, waiting-on, People (VIP, timelines) and the header chip. Reading checked on the real page 2026-11-11. **Paused by the user 2026-11-13** (not happy with the direction): the send fills the composer but does not press send, and acknowledges anyway; nothing more is built on WhatsApp until the user reopens it.
-- **Phase 7:** Gemini meeting notes from Drive.
+- **Phase 7:** Gemini meeting notes — code delivered 2026-11-14 against a Drive fake (`DONE.md`, `docs/screenshots/2026-11-14-phase-7-*.jpg`, `docs/decisions/2026-11-14-gemini-notes-fixture.md`): each profile's extension lists `Notes by Gemini` docs modified since its last poll every 15 min and posts their text to `POST /notes-report`; the domain parser reads the next-steps items; items for `MY_LIFE_USER_NAMES` (or unassigned) appear under _Meeting notes_ in triage with task and ignore, linked to the calendar event that carries the doc; a `notes` chip detail per account. Not checked against a real notes doc yet (`PENDING_TASKS.md`).
 - **Phase 8:** cloud.
 
 Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAuth client). Phase 1's inputs arrived 2026-11-06 (key in `.env`, `profile/psmutuus.md`). Before the Phase 2b walk-through: § 9 (the contacts scopes; the People API is enabled). Before Phase 6: § 6 (Telegram credentials).
@@ -25,7 +25,7 @@ Before Phase 0 can finish: `PENDING_TASKS.md` § 1 (Google Cloud project and OAu
 
 Read `CLAUDE.md` first. **Phases 2b through 6a are delivered** (`DONE.md`). Phase 6a added Telegram: `chat-message-store.ts` (one store for every chat channel, keyed by channel, chat id and message id; verdicts append-only), `telegram-message-mapping.ts` (gramjs messages to chat messages; chat ids are marked peer ids), `gramjs-telegram-client.ts` (the port over gramjs, whose real `TelegramClient` type-checks against it in `telegram-connection.ts`), `start-telegram.ts` (unread dialogs, then live messages, started by `createApp` when given a client), `/chat-messages`, `/chat-verdicts`, `/chat-sends`, Telegram in `/now`, `/people`, `/waiting-on` and the triage queue, and the scripted client in `scripted-telegram-client.ts` that tests and `scripts/demo.sh` use.
 
-**Next:** Phase 7. Phase 6c (stabilization: the 2026-11-13 Codex audits of domain, contracts and pollers, 89 items) is delivered 2026-11-13. WhatsApp is paused (user, 2026-11-13).
+**Next:** Phase 8 (cloud). Phase 7 (Gemini notes) is delivered 2026-11-14. Phase 6c (stabilization: the 2026-11-13 Codex audits of domain, contracts and pollers, 89 items) is delivered 2026-11-13. WhatsApp is paused (user, 2026-11-13).
 
 **Waiting on the user**, not built:
 
@@ -33,7 +33,11 @@ Read `CLAUDE.md` first. **Phases 2b through 6a are delivered** (`DONE.md`). Phas
 - When to propose "same person?" merges, and from what (locked decision 22 says the model proposes them).
 - The todo-list import: `PENDING_TASKS.md` § 4 (the path).
 
-What the supervision showed in Phases 3 to 6c — check these every cycle:
+What the supervision showed in Phases 3 to 7 — check these every cycle:
+
+- **A poll that never advances its since time passes every test** (7): the notes poll took a since time but nothing fed the next poll the time it returned, so every poll would list and export every notes doc; docs-sync found it, not a cycle. And a since time must not move past a doc whose export failed. Read what the shipped start-up passes between polls.
+- **A screenshot finds missing affordances** (7): the notes card had keys but no buttons, and stayed on the page after its verdict until the next refresh.
+- **An uncommitted edit to `TODO.md` stops the driver** (7): the cycle's baseline refuses a dirty tree; commit TODO changes before the next cycle.
 
 - **An outside read finds what green cycles do not** (6c): three read-only Codex audits over a clean export found 37 defects behind a green suite (restart retriage, group confirms overwriting verdicts, Slack pagination, unwaited rate limits). Re-run them after a large phase.
 - **A test that compares a whole response blocks adding a field** (6c): migrate it to match on the fields it means (`objectContaining`) in its own commit, never delete it.
@@ -57,18 +61,6 @@ What the supervision showed in Phases 3 to 6c — check these every cycle:
 - **Restart items get greened on the narrowest case:** the task restart passed with one confirmed proposal while done, snooze and waiting-on were not stored.
 - **Lint-banned non-null assertions hid two crashes** (an unknown task proposal, a prioritization run with no API key); fix the cause, never the assertion.
 - **Tests must not leave temp folders** (`apps/backend/src/test-temp-folder.test-support.ts`); `scripts/clean.sh` removes leftovers.
-
-## Phase 7 — Gemini meeting notes
-
-Outcome: action items from Meet calls become task proposals.
-
-- **The extension reads new notes:** every 15 min (an alarm beside the Gmail and Calendar ones), each profile lists the Google Docs in its Drive whose name contains `Notes by Gemini` modified since its last successful poll (`files.list`, `drive.readonly`, added to the manifest scopes), exports each as plain text (`files.export`, `text/plain`) and posts them to `POST /notes-report` (account, doc id, title, modified time, web link, text). A rejected report is logged; a doc that fails to export is skipped and logged, never blocking the others. Built and tested against a Drive fake server in `apps/integration`, like Gmail and Calendar.
-- **Domain: a pure notes parser** (`packages/domain`, fixture-tested) reads the action items from a notes doc's text: the items under its next-steps heading (`Suggested next steps`, and the `Action items` variant), each with its assignee when the item names one (`[Name] …` or `Name will …`) and its text. A doc with no next-steps section yields no items; a parse never throws. The fixture is written from Gemini's documented layout with made-up names; a decision record in `docs/decisions/` states the fidelity gap until a real doc is checked.
-- **Only the user's items:** an item is proposed when its assignee is one of the names in `MY_LIFE_USER_NAMES` (comma-separated, config) or when it names no assignee; with the setting unset, every item is proposed. Each doc is parsed once per modified time; a doc reported again unchanged proposes nothing new, and a re-edited doc proposes only items not seen before.
-- **Notes items in triage:** a _Meeting notes_ section of the triage queue lists each proposed item with its meeting (the doc title), the doc link and the account; `t` makes a task (title from the item, linked to the doc, on that account) and `i` ignores it; both are stored append-only and survive a restart. A task made this way goes through the same task events as every other task (Done, ranking, snooze).
-- **Linked to the calendar event:** when an event in the stored calendar snapshot of that account has the doc among its attachments (the calendar snapshot gains each event's attachment file ids), the item and its task name the event's title and time.
-- **Header chip:** one `notes` detail per account with the last notes poll; stale after twice the 15 min interval.
-- **Demo:** `scripts/demo.sh` posts one notes report with two items, one assigned to someone else.
 
 ## Phase 8 — Cloud
 
