@@ -321,4 +321,17 @@ describe('createApp meeting notes', () => {
       }),
     ]);
   });
+  it('drops from GET /tasks a task made from a notes item once it is marked done at POST /tasks/:id/done', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+    const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
+    await postJson(app, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'task' });
+    const { tasks: openTasks } = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
+
+    const response = await postJson(app, `/tasks/${openTasks[0]!.id}/done`, {});
+
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(response.status).toBe(200);
+    expect(tasks).toEqual([]);
+  });
 });

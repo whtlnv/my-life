@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-14 02:35 · `apps/backend/src/app-notes.test.ts::drops from GET /tasks a task made from a notes item once it is marked done at POST /tasks/:id/done`
+- Behavior: A task made from a notes item marked done leaves the open tasks, like any other task
+- Predicted: passes on first run (`POST /tasks/:id/done` knows any task id with a stored task event, and the notes `task` verdict saves a `proposal-confirmed` event under that id)
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: The notes task verdict already goes through the shared task event store, so the done path covers it. The test fails if the done route rejects the id or leaves the task open, so it stays as a characterization pin, and the item needs no green step.
+
 ## 2026-11-14 02:30 · `apps/backend/src/app-notes.test.ts::still lists at GET /tasks a task made from a notes item at POST /notes-verdicts after a backend restart on the same database file`
 - Behavior: A task made from a notes item is still listed by `GET /tasks` after a backend restart
 - Predicted: passes on first run (`POST /notes-verdicts` with `task` saves a `proposal-confirmed` event to `taskEventStore`, which `openTaskEventStore(databasePath)` keeps in SQLite)
