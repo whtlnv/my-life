@@ -1040,7 +1040,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
             event: eventWithAttachedDoc(id),
           })),
       )
-      .forEach((item) => notesItemStore.save(item));
+      .forEach((item) => {
+        notesItemStore.save(item);
+      });
     return context.body(null, 200);
   });
   app.post('/notes-verdicts', async (context) => {
