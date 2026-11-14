@@ -897,6 +897,7 @@ const app = createApp({
   slackWorkspaces: demoSlackWorkspaces.map(({ teamId, userToken }) => ({ teamId, userToken })),
   slackPollingIntervalInMilliseconds: 60_000,
   telegramClient: demoTelegram,
+  userNames: ['Francisco Catalá'],
   triage: {
     propose: (message) =>
       Promise.resolve({
@@ -1038,6 +1039,23 @@ async function seed(): Promise<void> {
   await app.request('/slack-poll', { method: 'POST' });
   // Telegram: the scripted session's chats were stored at start; Valeria is a VIP.
   await app.request(`/telegram-contacts/${valeriaTelegramId}/marks/vip`, { method: 'PUT' });
+  // Gemini meeting notes: one doc with two next steps, only the first assigned to the user.
+  await postJson('/notes-report', {
+    accountEmail: accounts.psmutuus,
+    docs: [
+      {
+        id: 'demo-notes-doc',
+        title: 'Board deck review - Notes by Gemini',
+        modifiedTime: minutesAgoIso(30),
+        webLink: 'https://docs.google.com/document/d/demo-notes-doc/edit',
+        text: [
+          'Suggested next steps',
+          '[Francisco Catalá] Send Luis the headcount numbers for the board deck.',
+          '[Sofía Méndez] Update the forecast with the new hiring plan.',
+        ].join('\n'),
+      },
+    ],
+  });
 }
 
 // What the WhatsApp content script in the gmail.com profile reports: the chat list (Carmen's unread chat shows only

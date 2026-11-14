@@ -59,4 +59,12 @@ describe('the demo backend (demo.ts)', () => {
 
     expect(digests).toContainEqual(expect.objectContaining({ channel: 'telegram' }));
   }, 30_000);
+
+  it("lists at GET /triage-queue one meeting notes item: the user's, out of a notes report that also holds someone else's", async () => {
+    const baseUrl = await startDemo();
+
+    const { notesItems } = (await (await fetch(`${baseUrl}/triage-queue`)).json()) as { notesItems: unknown[] };
+
+    expect(notesItems).toHaveLength(1);
+  }, 30_000);
 });
