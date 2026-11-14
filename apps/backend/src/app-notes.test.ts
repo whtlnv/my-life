@@ -239,7 +239,7 @@ describe('createApp meeting notes', () => {
     await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
     const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
 
-    await postJson(app, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'task' });
+    await postJson(app, '/notes-verdicts', { id: proposedItems[0]?.id, decision: 'task' });
     const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
 
@@ -260,7 +260,7 @@ describe('createApp meeting notes', () => {
     await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
     const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
 
-    await postJson(app, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'ignore' });
+    await postJson(app, '/notes-verdicts', { id: proposedItems[0]?.id, decision: 'ignore' });
     const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
 
@@ -277,7 +277,7 @@ describe('createApp meeting notes', () => {
       beforeRestart,
       '/triage-queue',
     );
-    await postJson(beforeRestart, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'ignore' });
+    await postJson(beforeRestart, '/notes-verdicts', { id: proposedItems[0]?.id, decision: 'ignore' });
     const afterRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
 
     const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(afterRestart, '/triage-queue');
@@ -307,7 +307,7 @@ describe('createApp meeting notes', () => {
       beforeRestart,
       '/triage-queue',
     );
-    await postJson(beforeRestart, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'task' });
+    await postJson(beforeRestart, '/notes-verdicts', { id: proposedItems[0]?.id, decision: 'task' });
     const afterRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
 
     const { tasks } = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
@@ -325,10 +325,10 @@ describe('createApp meeting notes', () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
     await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
     const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
-    await postJson(app, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'task' });
+    await postJson(app, '/notes-verdicts', { id: proposedItems[0]?.id, decision: 'task' });
     const { tasks: openTasks } = await getJson<{ tasks: { id: string }[] }>(app, '/tasks');
 
-    const response = await postJson(app, `/tasks/${openTasks[0]!.id}/done`, {});
+    const response = await postJson(app, `/tasks/${String(openTasks[0]?.id)}/done`, {});
 
     const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     expect(response.status).toBe(200);
@@ -379,7 +379,7 @@ describe('createApp meeting notes', () => {
 
     const { notesItems } = await getJson<{ notesItems: { event?: unknown }[] }>(app, '/triage-queue');
     expect(notesItems[0]).toEqual(expect.objectContaining({ accountEmail: 'ana@example.com' }));
-    expect(notesItems[0]!.event).toBeUndefined();
+    expect(notesItems[0]?.event).toBeUndefined();
   });
   it("lists at GET /tasks, on a task made from a notes item at POST /notes-verdicts, the title and start time of the event in that account's stored calendar snapshot that has the notes doc attached", async () => {
     const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
@@ -397,7 +397,7 @@ describe('createApp meeting notes', () => {
     await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
     const { notesItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
 
-    await postJson(app, '/notes-verdicts', { id: notesItems[0]!.id, decision: 'task' });
+    await postJson(app, '/notes-verdicts', { id: notesItems[0]?.id, decision: 'task' });
 
     const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
     expect(tasks).toEqual([
