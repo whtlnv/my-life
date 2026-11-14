@@ -31,12 +31,15 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
     method: 'POST',
     body: JSON.stringify({ email: accountEmail }),
   });
+  const freshAccountRequestOptions = async () => ({
+    fetch: options.fetch,
+    accessToken: await options.accessToken(),
+    accountEmail,
+    backendUrl: options.backendUrl,
+  });
   const pollCalendar = async () => {
     await pollCalendarOnce({
-      fetch: options.fetch,
-      accessToken: await options.accessToken(),
-      accountEmail,
-      backendUrl: options.backendUrl,
+      ...(await freshAccountRequestOptions()),
       now: options.clock(),
       timeZone: options.timeZone,
     });
@@ -46,15 +49,8 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
   };
   let storedHistoryId: string | undefined;
   const pollGmail = async () => {
-    const accessToken = await options.accessToken();
-    storedHistoryId = await pollGmailOnce({
-      fetch: options.fetch,
-      accessToken,
-      accountEmail,
-      backendUrl: options.backendUrl,
-      storedHistoryId,
-    });
-    const accountRequestOptions = { fetch: options.fetch, accessToken, accountEmail, backendUrl: options.backendUrl };
+    const accountRequestOptions = await freshAccountRequestOptions();
+    storedHistoryId = await pollGmailOnce({ ...accountRequestOptions, storedHistoryId });
     await carryOutMessageCommands(accountRequestOptions);
     await carryOutFilterCommands(accountRequestOptions);
     await carryOutDraftCommands(accountRequestOptions);
@@ -62,21 +58,11 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
   };
   const pollGmailAndLogFailure = logFailure('Gmail poll failed', pollGmail);
   const importContacts = async () => {
-    await importContactsOnce({
-      fetch: options.fetch,
-      accessToken: await options.accessToken(),
-      accountEmail,
-      backendUrl: options.backendUrl,
-    });
+    await importContactsOnce(await freshAccountRequestOptions());
   };
   const importContactsAndLogFailure = logFailure('Contacts import failed', importContacts);
   const pollNotes = async () => {
-    await pollNotesOnce({
-      fetch: options.fetch,
-      accessToken: await options.accessToken(),
-      accountEmail,
-      backendUrl: options.backendUrl,
-    });
+    await pollNotesOnce(await freshAccountRequestOptions());
   };
   await pollCalendar();
   await pollGmailAndLogFailure();
