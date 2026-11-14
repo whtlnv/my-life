@@ -299,4 +299,26 @@ describe('createApp meeting notes', () => {
       'Ask the vendor for the new pricing sheet.',
     ]);
   });
+  it('still lists at GET /tasks a task made from a notes item at POST /notes-verdicts after a backend restart on the same database file', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(beforeRestart, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+    const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(
+      beforeRestart,
+      '/triage-queue',
+    );
+    await postJson(beforeRestart, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'task' });
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+
+    const { tasks } = await getJson<{ tasks: unknown[] }>(afterRestart, '/tasks');
+
+    expect(tasks).toEqual([
+      expect.objectContaining({
+        status: 'open',
+        title: 'Send the revised budget to the finance team by Friday.',
+        link: 'https://docs.google.com/document/d/doc-1/edit',
+        accountEmail: 'ana@example.com',
+      }),
+    ]);
+  });
 });

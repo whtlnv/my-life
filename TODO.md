@@ -34,7 +34,7 @@
 - [x] An ignore verdict on a notes item removes it from the queue and creates no task
 - [x] An ignored notes item stays out of the queue after a backend restart
 - [x] A notes doc reported again after a backend restart, unchanged since its last report, proposes no item a second time
-- [ ] A task made from a notes item is still listed by `GET /tasks` after a backend restart
+- [x] A task made from a notes item is still listed by `GET /tasks` after a backend restart
 - [ ] A task made from a notes item marked done leaves the open tasks, like any other task
 - [ ] The extension's calendar snapshot carries each event's attachment file ids (an optional field like `meetLink`: an event with no attachments has none)
 - [ ] A notes item whose doc is attached to an event in that account's stored calendar snapshot shows the event's title and start time in the triage queue

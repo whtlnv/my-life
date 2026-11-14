@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-14 02:30 · `apps/backend/src/app-notes.test.ts::still lists at GET /tasks a task made from a notes item at POST /notes-verdicts after a backend restart on the same database file`
+- Behavior: A task made from a notes item is still listed by `GET /tasks` after a backend restart
+- Predicted: passes on first run (`POST /notes-verdicts` with `task` saves a `proposal-confirmed` event to `taskEventStore`, which `openTaskEventStore(databasePath)` keeps in SQLite)
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: The behavior came with the notes task verdict's green step, which wrote through the SQLite-backed task event store that `GET /tasks` already reads. The only rewrite that would fail is a contrived assertion, so the test stays as a characterization pin, and the item needs no green step.
+
 ## 2026-11-13 23:21 · `apps/backend/src/app-notes.test.ts::proposes at GET /triage-queue a notes item assigned to someone else when MY_LIFE_USER_NAMES is unset`
 - Behavior: With `MY_LIFE_USER_NAMES` unset, an item assigned to someone else is proposed
 - Predicted: passes on first run (`isForUser` in `app.ts` already short-circuits on `userNames === undefined`; `readUserNames` returns `{}` for an unset variable)
