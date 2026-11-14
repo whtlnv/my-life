@@ -499,12 +499,7 @@ describe('startExtension', () => {
 
   it('runs the notes poll every 15 minutes alongside the Gmail and Calendar polls, posting a notes report for the profile account', async () => {
     const notesReports: unknown[] = [];
-    const fakeFetch = routedFetch((url, init) => {
-      if (url.href.startsWith('https://www.googleapis.com/drive/v3/files?')) {
-        return jsonResponse({ kind: 'drive#fileList', files: [] });
-      }
-      return recordingPostsTo('/notes-report', notesReports)(url, init);
-    });
+    const fakeFetch = routedFetch(recordingPostsTo('/notes-report', notesReports));
     const scheduledPolls = await startWithScheduledPolls(fakeFetch);
     notesReports.length = 0;
     const notesPoll = scheduledPolls.get(15 * oneMinute);
