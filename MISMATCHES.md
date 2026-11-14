@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 20:57 · `apps/backend/src/app-notes.test.ts::proposes nothing at GET /triage-queue for a notes item assigned to a name not in userNames`
+- Behavior: With `MY_LIFE_USER_NAMES` set, an item assigned to someone else is not proposed
+- Predicted: passes on first run — the previous cycle's `isForUser` filter already drops items whose assignee is not in `userNames`
+- Actual: passed (1 passed, 3 skipped)
+- Type: passed unexpectedly
+- Resolution: the previous item's test had to include another person's item to fail, which delivered this behavior early; no rewrite can fail without a different behavior, so the test stays as a pin and `/green` has nothing to implement.
+
 ## 2026-11-13 20:51 · `apps/backend/src/app-notes.test.ts::proposes at GET /triage-queue, out of a report that also holds another person's item, the notes item assigned to one of the names in userNames`
 - Behavior: With `MY_LIFE_USER_NAMES` set, an item assigned to one of its names is proposed
 - Predicted: a report with only the user's item would pass, because every parsed item is already proposed (no filter exists)
