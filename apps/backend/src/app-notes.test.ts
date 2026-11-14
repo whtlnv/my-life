@@ -177,4 +177,18 @@ describe('createApp meeting notes', () => {
 
     expect(notesItems.map((item) => item.text)).toEqual(['Ask the vendor for the new pricing sheet.']);
   });
+
+  it('lists each notes item once at GET /triage-queue when the same doc is reported again with the same modified time', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    const report = budgetReviewNotesReport('ana@example.com', budgetReviewNotesText);
+
+    await postJson(app, '/notes-report', report);
+    await postJson(app, '/notes-report', report);
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+
+    expect(notesItems.map((item) => item.text)).toEqual([
+      'Send the revised budget to the finance team by Friday.',
+      'Ask the vendor for the new pricing sheet.',
+    ]);
+  });
 });

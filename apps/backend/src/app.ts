@@ -990,18 +990,21 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     return context.json({ email });
   });
   const notesItems: { text: string; meeting: string; docLink: string; accountEmail: string }[] = [];
+  const reportedNotesDocIds = new Set<string>();
   app.post('/notes-report', async (context) => {
     const report = await context.req.json<{
       accountEmail: string;
-      docs: { title: string; webLink: string; text: string }[];
+      docs: { id: string; title: string; webLink: string; text: string }[];
     }>();
     if (!isAllowed(report.accountEmail)) {
       return context.body(null, 403);
     }
     const isForUser = (item: { assignee?: string }) =>
       options.userNames === undefined || item.assignee === undefined || options.userNames.includes(item.assignee);
+    const newDocs = report.docs.filter(({ id }) => !reportedNotesDocIds.has(id));
+    newDocs.forEach(({ id }) => reportedNotesDocIds.add(id));
     notesItems.push(
-      ...report.docs.flatMap(({ title, webLink, text }) =>
+      ...newDocs.flatMap(({ title, webLink, text }) =>
         notesActionItems(text)
           .filter(isForUser)
           .map((item) => ({
