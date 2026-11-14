@@ -522,6 +522,30 @@ describe('startExtension', () => {
     expect(notesReports).toEqual([{ accountEmail: profileEmail, docs: [] }]);
   });
 
+  it('polls the notes at start, and a notes poll that fails there is reported to the console while the rest of start-up still runs', async () => {
+    const driveUnreachable = new TypeError('Drive unreachable');
+    const contactsImports: unknown[] = [];
+    const fakeFetch = routedFetch((url, init) => {
+      if (url.href.startsWith(`${driveApi}/files?`)) {
+        return Promise.reject(driveUnreachable);
+      }
+      return recordingPostsTo('/contacts-import', contactsImports)(url, init);
+    });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      const scheduledPolls = await startWithScheduledPolls(fakeFetch);
+
+      expect(consoleError).toHaveBeenCalledWith(expect.any(String), driveUnreachable);
+      expect(contactsImports).toHaveLength(1);
+      expect([...scheduledPolls.keys()]).toEqual(
+        expect.arrayContaining([oneMinute, fiveMinutes, 15 * oneMinute, oneDay]),
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+  });
+
   it('after the first Gmail poll, reads in full each message the backend lists as missing a body for the profile account and reports the bodies', async () => {
     const bodiesReports: unknown[] = [];
     const fakeFetch = routedFetch((url, init) => {

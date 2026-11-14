@@ -64,9 +64,11 @@ export async function startExtension(options: StartExtensionOptions): Promise<vo
   const pollNotes = async () => {
     await pollNotesOnce(await freshAccountRequestOptions());
   };
+  const pollNotesAndLogFailure = logFailure('Notes poll failed', pollNotes);
   await pollCalendar();
   await pollGmailAndLogFailure();
   await importContactsAndLogFailure();
+  await pollNotesAndLogFailure();
   options.every?.(gmailPollIntervalMilliseconds, pollGmailAndLogFailure);
   options.every?.(notesPollIntervalMilliseconds, pollNotes);
   options.every?.(contactsImportIntervalMilliseconds, importContactsAndLogFailure);

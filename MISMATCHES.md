@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-14 04:09 · `apps/extension/src/extension-start.test.ts::polls the notes at start, and a notes poll that fails there is reported to the console while the rest of start-up still runs`
+- Behavior: A notes poll that fails at extension start-up is logged and the rest of start-up continues
+- Predicted: AssertionError — console.error never called with the Drive error, since start-up does not run the notes poll
+- Actual: AssertionError as predicted, but console.error had one unrelated call: "Gmail poll failed" with a JSON SyntaxError
+- Type: right-reason mismatch
+- Resolution: the default fake network does not answer `GET /bodies-missing`, so every default start-up already logs a Gmail failure after the body backfill; it does not affect this assertion (no call carries the Drive error), so the test stands.
+
 ## 2026-11-14 03:16 · `apps/backend/src/app-notes.test.ts::marks at GET /now a notes source whose last report was received more than 30 minutes ago as stale`
 - Behavior: A `notes` detail whose last report is older than 30 minutes is stale
 - Predicted: pass (I read the code first: ae0e247 gave `notes` a 15-minute interval in `describeSourceFreshness`, and `isAccountFresh` marks a source stale only after 2x the interval)
