@@ -12,6 +12,14 @@ interface DriveFileListResponse {
   files: { id: string; name: string; modifiedTime: string; webViewLink: string }[];
 }
 
+interface NotesReportDoc {
+  id: string;
+  title: string;
+  modifiedTime: string;
+  webLink: string;
+  text: string;
+}
+
 function notesFilesQuery(lastSuccessfulPollTime: string | undefined): string {
   const notesDocsQuery = `name contains '${notesTitleMarker}' and mimeType = '${googleDocMimeType}'`;
   if (lastSuccessfulPollTime === undefined) return notesDocsQuery;
@@ -44,10 +52,20 @@ async function exportPlainText(
   return exportResponse.text();
 }
 
+async function postNotesReport(options: AccountRequestOptions, docs: NotesReportDoc[]): Promise<void> {
+  const reportResponse = await options.fetch(`${options.backendUrl}/notes-report`, {
+    method: 'POST',
+    body: JSON.stringify({ accountEmail: options.accountEmail, docs }),
+  });
+  if (!reportResponse.ok) {
+    console.error(`notes poll: report for ${options.accountEmail} failed with ${String(reportResponse.status)}`);
+  }
+}
+
 export async function pollNotesOnce(options: NotesPollOptions): Promise<string | undefined> {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const fileList = await listNotesFiles(options, authorization);
-  const docs = [];
+  const docs: NotesReportDoc[] = [];
   for (const file of fileList.files.filter((listed) => listed.name.includes(notesTitleMarker))) {
     const text = await exportPlainText(options, authorization, file.id);
     if (text === undefined) continue;
@@ -59,12 +77,6 @@ export async function pollNotesOnce(options: NotesPollOptions): Promise<string |
       text,
     });
   }
-  const reportResponse = await options.fetch(`${options.backendUrl}/notes-report`, {
-    method: 'POST',
-    body: JSON.stringify({ accountEmail: options.accountEmail, docs }),
-  });
-  if (!reportResponse.ok) {
-    console.error(`notes poll: report for ${options.accountEmail} failed with ${String(reportResponse.status)}`);
-  }
+  await postNotesReport(options, docs);
   return options.lastSuccessfulPollTime;
 }
