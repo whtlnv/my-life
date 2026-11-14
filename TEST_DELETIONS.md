@@ -1,5 +1,10 @@
 # Test Deletion Audit
 
+## 2026-11-14 · `apps/extension/src/extension-start.test.ts::the default fake network answers Drive files.list with an empty file list, so a notes poll posts an empty notes report`
+
+- reason: exact duplicate of `runs the notes poll every 15 minutes alongside the Gmail and Calendar polls, posting a notes report for the profile account` (same default fake network recording `/notes-report`, same start-up, same call of the 15-minute poll)
+- coverage kept by: `runs the notes poll every 15 minutes alongside the Gmail and Calendar polls, posting a notes report for the profile account` — `expect(notesReports).toEqual([{ accountEmail: profileEmail, docs: [] }]);`
+
 ## 2026-11-11 · `apps/backend/src/app-chat.test.ts::refuses at POST /chat-sends, with 400, a send to a channel that is not configured, and sends and stores nothing`
 
 - Asserted: a `POST /chat-sends` with channel `whatsapp` and text answers 400 and sends and stores nothing

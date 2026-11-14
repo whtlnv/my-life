@@ -511,17 +511,6 @@ describe('startExtension', () => {
     expect(notesReports).toEqual([{ accountEmail: profileEmail, docs: [] }]);
   });
 
-  it('the default fake network answers Drive files.list with an empty file list, so a notes poll posts an empty notes report', async () => {
-    const notesReports: unknown[] = [];
-    const fakeFetch = routedFetch(recordingPostsTo('/notes-report', notesReports));
-    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
-    notesReports.length = 0;
-
-    await scheduledPolls.get(15 * oneMinute)?.();
-
-    expect(notesReports).toEqual([{ accountEmail: profileEmail, docs: [] }]);
-  });
-
   it('polls the notes at start, and a notes poll that fails there is reported to the console while the rest of start-up still runs', async () => {
     const driveUnreachable = new TypeError('Drive unreachable');
     const contactsImports: unknown[] = [];
