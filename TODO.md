@@ -48,8 +48,8 @@
 - [x] Pressing `i` on a selected notes item posts an ignore verdict for it
 - [x] The header chip lists the `notes` detail of each account and marks a stale one
 - [x] The shipped backend (`main.ts`) accepts `POST /notes-report`, reads `MY_LIFE_USER_NAMES` and serves the proposed items in the triage queue
-- [ ] A notes poll that fails at extension start-up is logged and the rest of start-up continues
 - [ ] (keystone) The existing extension start-up tests' fake network answers Drive `files.list` with an empty file list
+- [ ] A notes poll that fails at extension start-up is logged and the rest of start-up continues
 - [ ] The shipped extension background starts the notes poll in every profile
 - [ ] `scripts/demo.sh` posts one notes report with two items, one assigned to someone else, and only the user's item shows in the triage queue
 - [ ] (hand-written) A decision record in `docs/decisions/` states that the notes fixture is written from Gemini's documented layout with made-up names, and the fidelity gap until a real doc is checked
