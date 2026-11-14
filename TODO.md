@@ -55,4 +55,4 @@
 - [x] (hand-written) A decision record in `docs/decisions/` states that the notes fixture is written from Gemini's documented layout with made-up names, and the fidelity gap until a real doc is checked
 - [x] A notes card leaves the triage page once the backend accepts its verdict (found in the screenshot review)
 - [x] A notes card has Ignore and Task buttons that post the same verdicts as `i` and `t` (found in the screenshot review)
-- [ ] Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes
+- [x] Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes
