@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createApp } from './app';
 import { getJson, postJson, temporaryDatabasePath } from './app.test-support';
+import { readStartupSettings } from './startup-settings';
 
 const budgetReviewNotesText = [
   'Quarterly budget review',
@@ -113,5 +114,26 @@ describe('createApp meeting notes', () => {
     const { notesItems } = await getJson<{ notesItems: unknown[] }>(app, '/triage-queue');
 
     expect(notesItems).toEqual([]);
+  });
+
+  it("proposes at GET /triage-queue the notes item assigned to the second of several comma-separated names in MY_LIFE_USER_NAMES, and not another person's item", async () => {
+    const { userNames } = readStartupSettings({ MY_LIFE_USER_NAMES: 'Ana Ruiz,Ana R.' }, '/Users/ana');
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath(), userNames });
+
+    await postJson(
+      app,
+      '/notes-report',
+      budgetReviewNotesReport(
+        'ana@example.com',
+        [
+          'Suggested next steps',
+          '[Ana R.] Send the revised budget to the finance team.',
+          '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
+        ].join('\n'),
+      ),
+    );
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+
+    expect(notesItems.map((item) => item.text)).toEqual(['Send the revised budget to the finance team.']);
   });
 });

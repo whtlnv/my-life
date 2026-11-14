@@ -161,7 +161,7 @@ export interface AppOptions {
   whatsappReportIntervalInMilliseconds?: number;
   // How many days a first Slack poll reads back for a conversation with nothing stored (default 7).
   slackFirstPollLookbackDays?: number;
-  userNames?: string[];
+  userNames?: string[] | undefined;
   urgency?: {
     timeZone?: string;
     unansweredAskBusinessDays: number;

@@ -28,6 +28,7 @@ export interface StartupSettings {
   slackFirstPollLookbackDays: number;
   slackApiUrl: string;
   telegram: TelegramSettings;
+  userNames?: string[];
 }
 
 export interface TelegramSettings {
@@ -103,6 +104,7 @@ export function readStartupSettings(
     ),
     slackApiUrl: environment.MY_LIFE_SLACK_API_URL ?? defaultSlackApiUrl,
     telegram: readTelegramSettings(environment, homeDirectory),
+    ...readUserNames(environment.MY_LIFE_USER_NAMES),
   };
 }
 
@@ -140,6 +142,10 @@ function readSlackWorkspace(
     teamId: environment[`MY_LIFE_SLACK_WORKSPACE_${String(workspaceNumber)}_TEAM_ID`],
     userToken: environment[`MY_LIFE_SLACK_WORKSPACE_${String(workspaceNumber)}_USER_TOKEN`],
   };
+}
+
+function readUserNames(commaSeparatedNames: string | undefined): { userNames?: string[] } {
+  return commaSeparatedNames === undefined ? {} : { userNames: commaSeparatedNames.split(',') };
 }
 
 function readTriageEscalationModel(configured: string | undefined): { triageEscalationModel?: string } {
