@@ -994,6 +994,9 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       accountEmail: string;
       docs: { title: string; webLink: string; text: string }[];
     }>();
+    if (!isAllowed(report.accountEmail)) {
+      return context.body(null, 403);
+    }
     notesItems.push(
       ...report.docs.flatMap(({ title, webLink, text }) =>
         notesActionItems(text).map((item) => ({

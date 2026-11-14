@@ -49,4 +49,24 @@ describe('createApp meeting notes', () => {
       }),
     ]);
   });
+
+  it('rejects with 403 a notes report from an account not on the allow-list and lists nothing from it at GET /triage-queue', async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+
+    const reportResponse = await postJson(app, '/notes-report', {
+      accountEmail: 'stranger@example.com',
+      docs: [
+        {
+          id: 'doc-1',
+          title: 'Quarterly budget review - Notes by Gemini',
+          modifiedTime: '2026-11-12T18:00:00.000Z',
+          webLink: 'https://docs.google.com/document/d/doc-1/edit',
+          text: budgetReviewNotesText,
+        },
+      ],
+    });
+    const { notesItems } = await getJson<{ notesItems: unknown[] }>(app, '/triage-queue');
+
+    expect({ status: reportResponse.status, notesItems }).toEqual({ status: 403, notesItems: [] });
+  });
 });
