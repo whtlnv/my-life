@@ -2144,6 +2144,45 @@ describe('TriagePage', () => {
     ]);
   });
 
+  it('removes a notes card from the page once the backend accepts its verdict, and keeps the others', async () => {
+    answerGetTriageQueueWith(
+      {
+        action: [],
+        groups: [],
+        notesItems: [
+          {
+            id: 'notes-item-9',
+            text: 'Book the offsite venue',
+            meeting: 'Team planning',
+            docLink: 'https://docs.google.com/document/d/notes-2',
+            accountEmail: 'franciscoc@psmutuus.com',
+          },
+          {
+            id: 'notes-item-10',
+            text: 'Share the agenda with the team',
+            meeting: 'Team planning',
+            docLink: 'https://docs.google.com/document/d/notes-2',
+            accountEmail: 'franciscoc@psmutuus.com',
+          },
+        ],
+        remaining: 0,
+        paused: false,
+      },
+      '/notes-verdicts',
+    );
+    const user = userEvent.setup();
+
+    render(<TriagePage />);
+
+    await user.click(await findCardContaining('Book the offsite venue'));
+    await user.keyboard('i');
+
+    await waitFor(() => {
+      expect(screen.queryByText('Book the offsite venue')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('Share the agenda with the team')).toBeInTheDocument();
+  });
+
   it('shows a Telegram triage card with its chat title, sender, time and a Telegram channel pill', async () => {
     answerGetTriageQueueWith({
       action: [],

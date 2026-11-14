@@ -955,14 +955,14 @@ function ChatSection({
 
 const notesDecisionByKey: Partial<Record<string, 'task' | 'ignore'>> = { t: 'task', i: 'ignore' };
 
-function NotesCard({ item }: { item: NotesTriageItem }) {
+function NotesCard({ item, onAccepted }: { item: NotesTriageItem; onAccepted: () => void }) {
   return (
     <article
       className="card"
       tabIndex={0}
       onKeyDown={(event) => {
         const decision = notesDecisionByKey[event.key];
-        if (decision !== undefined) void postJson('/notes-verdicts', { id: item.id, decision });
+        if (decision !== undefined) whenAccepted(postJson('/notes-verdicts', { id: item.id, decision }), onAccepted);
       }}
     >
       <div className="card-head">
@@ -984,12 +984,24 @@ function NotesCard({ item }: { item: NotesTriageItem }) {
   );
 }
 
-function NotesSection({ items }: { items: NotesTriageItem[] }) {
+function NotesSection({
+  items,
+  onAccepted,
+}: {
+  items: NotesTriageItem[];
+  onAccepted: (item: NotesTriageItem) => void;
+}) {
   return (
     <section aria-label={sectionTitles.meetingNotes} className="section">
       <h2 className="section-title">{sectionTitles.meetingNotes}</h2>
       {items.map((item) => (
-        <NotesCard key={item.id} item={item} />
+        <NotesCard
+          key={item.id}
+          item={item}
+          onAccepted={() => {
+            onAccepted(item);
+          }}
+        />
       ))}
     </section>
   );
@@ -1044,6 +1056,12 @@ export function TriagePage() {
   function removeSlackItem(item: SlackTriageItem) {
     setQueue(
       (current) => current && { ...current, slackItems: (current.slackItems ?? []).filter((other) => other !== item) },
+    );
+  }
+
+  function removeNotesItem(item: NotesTriageItem) {
+    setQueue(
+      (current) => current && { ...current, notesItems: (current.notesItems ?? []).filter((other) => other !== item) },
     );
   }
 
@@ -1104,7 +1122,9 @@ export function TriagePage() {
       {whatsappItems !== undefined && whatsappItems.length > 0 && (
         <ChatSection channel="whatsapp" items={whatsappItems} onAccepted={removeChatItem} />
       )}
-      {queue.notesItems !== undefined && queue.notesItems.length > 0 && <NotesSection items={queue.notesItems} />}
+      {queue.notesItems !== undefined && queue.notesItems.length > 0 && (
+        <NotesSection items={queue.notesItems} onAccepted={removeNotesItem} />
+      )}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
