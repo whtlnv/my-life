@@ -199,10 +199,10 @@ describe('createApp meeting notes', () => {
       'ana@example.com',
       [budgetReviewNotesText, 'Book the room for the next review.'].join('\n'),
     );
-    const editedDoc = { ...editedReport.docs[0]!, modifiedTime: '2026-11-13T09:00:00.000Z' };
+    const editedDocs = editedReport.docs.map((doc) => ({ ...doc, modifiedTime: '2026-11-13T09:00:00.000Z' }));
 
     await postJson(app, '/notes-report', firstReport);
-    await postJson(app, '/notes-report', { ...editedReport, docs: [editedDoc] });
+    await postJson(app, '/notes-report', { ...editedReport, docs: editedDocs });
     const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
 
     expect(notesItems.map((item) => item.text)).toEqual([
