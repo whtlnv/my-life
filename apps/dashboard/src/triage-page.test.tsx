@@ -2054,6 +2054,40 @@ describe('TriagePage', () => {
     expect(within(slackSection).getByText('Lunch is moved to Thursday')).toBeInTheDocument();
   });
 
+  it('shows a Meeting notes section with each item text, meeting, doc link, account and linked event', async () => {
+    answerGetTriageQueueWith({
+      action: [],
+      groups: [],
+      notesItems: [
+        {
+          id: '1',
+          text: 'Send the revised budget to finance',
+          meeting: 'Budget review',
+          docLink: 'https://docs.google.com/document/d/notes-1',
+          accountEmail: 'franciscoc@psmutuus.com',
+          event: { title: 'Budget review', start: '2026-11-13T17:00:00.000Z' },
+        },
+      ],
+      remaining: 0,
+      paused: false,
+    });
+
+    render(<TriagePage />);
+
+    const notesSection = await screen.findByRole('region', { name: 'Meeting notes' });
+    const card = within(notesSection).getByText('Send the revised budget to finance').closest('article');
+    if (card === null) throw new Error('no notes card');
+    expect(within(card).getAllByText('Budget review').length).toBeGreaterThan(0);
+    expect(within(card).getByText(accountName('franciscoc@psmutuus.com'))).toBeInTheDocument();
+    expect(
+      within(card).getByText(timeInBusinessZone('2026-11-13T17:00:00.000Z'), { exact: false }),
+    ).toBeInTheDocument();
+    expect(within(card).getByRole('link', { name: /Open notes/ })).toHaveAttribute(
+      'href',
+      'https://docs.google.com/document/d/notes-1',
+    );
+  });
+
   it('shows a Telegram triage card with its chat title, sender, time and a Telegram channel pill', async () => {
     answerGetTriageQueueWith({
       action: [],

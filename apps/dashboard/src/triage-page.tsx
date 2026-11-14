@@ -84,8 +84,18 @@ interface ChatTriageItem {
   link: string;
 }
 
+interface NotesTriageItem {
+  id: string;
+  text: string;
+  meeting: string;
+  docLink: string;
+  accountEmail: string;
+  event?: { title: string; start: string };
+}
+
 interface TriageQueueResponse {
   action: TriageItem[];
+  notesItems?: NotesTriageItem[];
   chatItems?: ChatTriageItem[];
   slackItems?: SlackTriageItem[];
   groups: TriageGroup[];
@@ -102,6 +112,7 @@ export const sectionTitles = {
   needsInput: 'Needs input',
   handledForYou: 'Handled for you',
   slack: 'Slack',
+  meetingNotes: 'Meeting notes',
 };
 export const channelLabels = { telegram: 'Telegram', whatsapp: 'WhatsApp' };
 export const noDueTimeText = 'No due time';
@@ -942,6 +953,39 @@ function ChatSection({
   );
 }
 
+function NotesCard({ item }: { item: NotesTriageItem }) {
+  return (
+    <article className="card" tabIndex={0}>
+      <div className="card-head">
+        <span className="card-who">{item.meeting}</span>
+        {item.event !== undefined && (
+          <span className="pill pill-muted">
+            {item.event.title} · {timeInBusinessZone(item.event.start)}
+          </span>
+        )}
+        <span className="pill">{accountName(item.accountEmail)}</span>
+      </div>
+      <p className="card-ask">{item.text}</p>
+      <div className="card-foot">
+        <a href={item.docLink} target="_blank" rel="noreferrer">
+          Open notes ↗
+        </a>
+      </div>
+    </article>
+  );
+}
+
+function NotesSection({ items }: { items: NotesTriageItem[] }) {
+  return (
+    <section aria-label={sectionTitles.meetingNotes} className="section">
+      <h2 className="section-title">{sectionTitles.meetingNotes}</h2>
+      {items.map((item) => (
+        <NotesCard key={item.id} item={item} />
+      ))}
+    </section>
+  );
+}
+
 export function TriagePage() {
   const [queue, setQueue] = useState<TriageQueueResponse | null>(null);
 
@@ -1051,6 +1095,7 @@ export function TriagePage() {
       {whatsappItems !== undefined && whatsappItems.length > 0 && (
         <ChatSection channel="whatsapp" items={whatsappItems} onAccepted={removeChatItem} />
       )}
+      {queue.notesItems !== undefined && queue.notesItems.length > 0 && <NotesSection items={queue.notesItems} />}
       <section aria-label={sectionTitles.digests} className="section">
         <h2 className="section-title">{sectionTitles.digests}</h2>
         {queue.digests?.map((digest) => (
