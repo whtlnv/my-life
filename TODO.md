@@ -56,3 +56,5 @@
 - [x] A notes card leaves the triage page once the backend accepts its verdict (found in the screenshot review)
 - [x] A notes card has Ignore and Task buttons that post the same verdicts as `i` and `t` (found in the screenshot review)
 - [x] Screenshots of the triage page's _Meeting notes_ section and the header chip over `scripts/demo.sh` go in `docs/screenshots/` and show them built from the existing tokens and component classes
+- [ ] After a notes report the backend accepts, the notes poll returns the newest modified time among the docs it listed, and returns the time it was given when the report fails or no doc was listed
+- [ ] Each later notes poll in the extension lists only docs modified after the time the previous poll returned
