@@ -160,4 +160,21 @@ describe('createApp meeting notes', () => {
 
     expect(notesItems.map((item) => item.text)).toEqual(['Ask the vendor for the new pricing sheet.']);
   });
+
+  it('proposes at GET /triage-queue a notes item assigned to someone else when MY_LIFE_USER_NAMES is unset', async () => {
+    const { userNames } = readStartupSettings({}, '/Users/ana');
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath(), userNames });
+
+    await postJson(
+      app,
+      '/notes-report',
+      budgetReviewNotesReport(
+        'ana@example.com',
+        ['Suggested next steps', '[Tomás Ibarra] Ask the vendor for the new pricing sheet.'].join('\n'),
+      ),
+    );
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+
+    expect(notesItems.map((item) => item.text)).toEqual(['Ask the vendor for the new pricing sheet.']);
+  });
 });

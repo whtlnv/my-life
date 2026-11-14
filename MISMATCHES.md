@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-13 23:21 · `apps/backend/src/app-notes.test.ts::proposes at GET /triage-queue a notes item assigned to someone else when MY_LIFE_USER_NAMES is unset`
+- Behavior: With `MY_LIFE_USER_NAMES` unset, an item assigned to someone else is proposed
+- Predicted: passes on first run (`isForUser` in `app.ts` already short-circuits on `userNames === undefined`; `readUserNames` returns `{}` for an unset variable)
+- Actual: passes on first run
+- Type: passed unexpectedly
+- Resolution: The behavior was delivered by the first `MY_LIFE_USER_NAMES` item's green step, which guarded the filter with `userNames === undefined`. No honest rewrite can fail without contriving the assertion, so the test stays as a characterization pin, and the item needs no green step.
+
 ## 2026-11-13 20:57 · `apps/backend/src/app-notes.test.ts::proposes nothing at GET /triage-queue for a notes item assigned to a name not in userNames`
 - Behavior: With `MY_LIFE_USER_NAMES` set, an item assigned to someone else is not proposed
 - Predicted: passes on first run — the previous cycle's `isForUser` filter already drops items whose assignee is not in `userNames`
