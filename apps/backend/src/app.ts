@@ -1011,7 +1011,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     const reportedNotesItemKeys = new Set(
       notesItemStore.loadAll().map(({ docLink, text }) => notesItemKey(docLink, text)),
     );
-    const markSeenAndReportIfNew = (docLink: string, item: { text: string }) => {
+    const markSeenReturningWhetherNew = (docLink: string, item: { text: string }) => {
       const key = notesItemKey(docLink, item.text);
       if (reportedNotesItemKeys.has(key)) {
         return false;
@@ -1031,7 +1031,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .flatMap(({ id, title, webLink, text }) =>
         notesActionItems(text)
           .filter(isForUser)
-          .filter((item) => markSeenAndReportIfNew(webLink, item))
+          .filter((item) => markSeenReturningWhetherNew(webLink, item))
           .map((item) => ({
             text: item.text,
             meeting: title,
