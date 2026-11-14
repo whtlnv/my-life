@@ -72,29 +72,49 @@ describe('createApp meeting notes', () => {
     expect({ status: reportResponse.status, notesItems }).toEqual({ status: 403, notesItems: [] });
   });
 
-  it("proposes at GET /triage-queue, out of a report that also holds another person's item, the notes item assigned to one of the names in userNames", async () => {
-    const app = createApp({
-      allowedEmails: ['ana@example.com'],
-      databasePath: temporaryDatabasePath(),
+  it.each([
+    {
+      behavior: 'the notes item assigned to one of the names in userNames',
       userNames: ['Ana Ruiz'],
-    });
+      lines: [
+        '[Ana Ruiz] Send the revised budget to the finance team.',
+        '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
+      ],
+      proposed: ['Send the revised budget to the finance team.'],
+    },
+    {
+      behavior: 'the notes item assigned to the second of several comma-separated names in MY_LIFE_USER_NAMES',
+      userNames: readStartupSettings({ MY_LIFE_USER_NAMES: 'Ana Ruiz,Ana R.' }, '/Users/ana').userNames,
+      lines: [
+        '[Ana R.] Send the revised budget to the finance team.',
+        '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
+      ],
+      proposed: ['Send the revised budget to the finance team.'],
+    },
+    {
+      behavior: 'a notes item that names no assignee when userNames is set',
+      userNames: ['Ana Ruiz'],
+      lines: [
+        '[Tomás Ibarra] Send the revised budget to the finance team.',
+        'Ask the vendor for the new pricing sheet.',
+      ],
+      proposed: ['Ask the vendor for the new pricing sheet.'],
+    },
+  ])(
+    "proposes at GET /triage-queue $behavior, out of a report that also holds another person's item",
+    async ({ userNames, lines, proposed }) => {
+      const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath(), userNames });
 
-    await postJson(
-      app,
-      '/notes-report',
-      budgetReviewNotesReport(
-        'ana@example.com',
-        [
-          'Suggested next steps',
-          '[Ana Ruiz] Send the revised budget to the finance team.',
-          '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
-        ].join('\n'),
-      ),
-    );
-    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
+      await postJson(
+        app,
+        '/notes-report',
+        budgetReviewNotesReport('ana@example.com', ['Suggested next steps', ...lines].join('\n')),
+      );
+      const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
 
-    expect(notesItems.map((item) => item.text)).toEqual(['Send the revised budget to the finance team.']);
-  });
+      expect(notesItems.map((item) => item.text)).toEqual(proposed);
+    },
+  );
 
   it('proposes nothing at GET /triage-queue for a notes item assigned to a name not in userNames', async () => {
     const app = createApp({
@@ -114,51 +134,6 @@ describe('createApp meeting notes', () => {
     const { notesItems } = await getJson<{ notesItems: unknown[] }>(app, '/triage-queue');
 
     expect(notesItems).toEqual([]);
-  });
-
-  it("proposes at GET /triage-queue the notes item assigned to the second of several comma-separated names in MY_LIFE_USER_NAMES, and not another person's item", async () => {
-    const { userNames } = readStartupSettings({ MY_LIFE_USER_NAMES: 'Ana Ruiz,Ana R.' }, '/Users/ana');
-    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath(), userNames });
-
-    await postJson(
-      app,
-      '/notes-report',
-      budgetReviewNotesReport(
-        'ana@example.com',
-        [
-          'Suggested next steps',
-          '[Ana R.] Send the revised budget to the finance team.',
-          '[Tomás Ibarra] Ask the vendor for the new pricing sheet.',
-        ].join('\n'),
-      ),
-    );
-    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
-
-    expect(notesItems.map((item) => item.text)).toEqual(['Send the revised budget to the finance team.']);
-  });
-
-  it("proposes at GET /triage-queue a notes item that names no assignee when userNames is set, and not another person's item", async () => {
-    const app = createApp({
-      allowedEmails: ['ana@example.com'],
-      databasePath: temporaryDatabasePath(),
-      userNames: ['Ana Ruiz'],
-    });
-
-    await postJson(
-      app,
-      '/notes-report',
-      budgetReviewNotesReport(
-        'ana@example.com',
-        [
-          'Suggested next steps',
-          '[Tomás Ibarra] Send the revised budget to the finance team.',
-          'Ask the vendor for the new pricing sheet.',
-        ].join('\n'),
-      ),
-    );
-    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(app, '/triage-queue');
-
-    expect(notesItems.map((item) => item.text)).toEqual(['Ask the vendor for the new pricing sheet.']);
   });
 
   it('proposes at GET /triage-queue a notes item assigned to someone else when MY_LIFE_USER_NAMES is unset', async () => {
