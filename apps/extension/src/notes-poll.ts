@@ -63,10 +63,18 @@ async function postNotesReport(options: AccountRequestOptions, docs: NotesReport
   return reportResponse.ok;
 }
 
-export async function pollNotesOnce(options: NotesPollOptions): Promise<string | undefined> {
-  const authorization = { Authorization: `Bearer ${options.accessToken}` };
-  const fileList = await listNotesFiles(options, authorization);
-  const notesFiles = fileList.files.filter((listed) => listed.name.includes(notesTitleMarker));
+function newestModifiedTime(files: { modifiedTime: string }[], since: string | undefined): string | undefined {
+  return files.reduce<string | undefined>(
+    (newest, file) => (newest === undefined || file.modifiedTime > newest ? file.modifiedTime : newest),
+    since,
+  );
+}
+
+async function exportNotesDocs(
+  options: AccountRequestOptions,
+  authorization: Record<string, string>,
+  notesFiles: DriveFileListResponse['files'],
+): Promise<NotesReportDoc[]> {
   const docs: NotesReportDoc[] = [];
   for (const file of notesFiles) {
     const text = await exportPlainText(options, authorization, file.id);
@@ -79,10 +87,15 @@ export async function pollNotesOnce(options: NotesPollOptions): Promise<string |
       text,
     });
   }
+  return docs;
+}
+
+export async function pollNotesOnce(options: NotesPollOptions): Promise<string | undefined> {
+  const authorization = { Authorization: `Bearer ${options.accessToken}` };
+  const fileList = await listNotesFiles(options, authorization);
+  const notesFiles = fileList.files.filter((listed) => listed.name.includes(notesTitleMarker));
+  const docs = await exportNotesDocs(options, authorization, notesFiles);
   const reportAccepted = await postNotesReport(options, docs);
   if (!reportAccepted) return options.lastSuccessfulPollTime;
-  return notesFiles.reduce<string | undefined>(
-    (newest, file) => (newest === undefined || file.modifiedTime > newest ? file.modifiedTime : newest),
-    options.lastSuccessfulPollTime,
-  );
+  return newestModifiedTime(notesFiles, options.lastSuccessfulPollTime);
 }
