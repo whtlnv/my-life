@@ -960,6 +960,7 @@ function NotesCard({ item }: { item: NotesTriageItem }) {
       tabIndex={0}
       onKeyDown={(event) => {
         if (event.key === 't') void postJson('/notes-verdicts', { id: item.id, decision: 'task' });
+        if (event.key === 'i') void postJson('/notes-verdicts', { id: item.id, decision: 'ignore' });
       }}
     >
       <div className="card-head">
