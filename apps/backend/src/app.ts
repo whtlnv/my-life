@@ -1025,11 +1025,10 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       .forEach((item) => notesItemStore.save(item));
     return context.body(null, 200);
   });
-  const decidedNotesItemIds = new Set<string>();
   app.post('/notes-verdicts', async (context) => {
     const verdict = await context.req.json<{ id: string; decision: 'task' | 'ignore' }>();
     const item = notesItemStore.loadAll().find(({ id }) => id === verdict.id);
-    decidedNotesItemIds.add(verdict.id);
+    notesItemStore.markDecided(verdict.id);
     if (verdict.decision === 'ignore') {
       return context.body(null, 200);
     }
@@ -1477,7 +1476,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       digests: [...recordAndDescribeListedDigests(verdicts), ...describeBotChatDigests()],
       slackItems: describeSlackItems(),
       chatItems: describeChatItems(),
-      notesItems: notesItemStore.loadAll().filter(({ id }) => !decidedNotesItemIds.has(id)),
+      notesItems: notesItemStore.loadAll().filter(({ id }) => !notesItemStore.decidedIds().has(id)),
       handledForYou: describeHandledForYou(proposals, clock).filter(
         ({ messageId }) => !undoneMessageIds.includes(messageId),
       ),

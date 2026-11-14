@@ -269,4 +269,19 @@ describe('createApp meeting notes', () => {
       remainingItems: ['Ask the vendor for the new pricing sheet.'],
     });
   });
+  it('still drops from GET /triage-queue a notes item the user ignored at POST /notes-verdicts after a backend restart on the same database file', async () => {
+    const databasePath = temporaryDatabasePath();
+    const beforeRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+    await postJson(beforeRestart, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+    const { notesItems: proposedItems } = await getJson<{ notesItems: { id: string }[] }>(
+      beforeRestart,
+      '/triage-queue',
+    );
+    await postJson(beforeRestart, '/notes-verdicts', { id: proposedItems[0]!.id, decision: 'ignore' });
+    const afterRestart = createApp({ allowedEmails: ['ana@example.com'], databasePath });
+
+    const { notesItems } = await getJson<{ notesItems: { text: string }[] }>(afterRestart, '/triage-queue');
+
+    expect(notesItems.map((item) => item.text)).toEqual(['Ask the vendor for the new pricing sheet.']);
+  });
 });
