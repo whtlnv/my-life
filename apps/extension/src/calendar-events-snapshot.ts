@@ -5,6 +5,7 @@ interface GoogleCalendarEventFields {
   iCalUID: string;
   summary?: string;
   hangoutLink?: string;
+  attachments?: { fileId: string }[];
   attendees?: { email: string; displayName?: string; self?: boolean; responseStatus?: string }[];
 }
 
@@ -43,6 +44,9 @@ function snapshotEventFromCalendarEvent(event: GoogleCalendarEvent) {
     iCalUID: event.iCalUID,
     title: event.summary ?? untitledEventTitle,
     ...(event.hangoutLink === undefined ? {} : { meetLink: event.hangoutLink }),
+    ...(event.attachments === undefined
+      ? {}
+      : { attachmentFileIds: event.attachments.map((attachment) => attachment.fileId) }),
     attendees: snapshotAttendeesOf(event),
   };
   if (isAllDay(event)) {

@@ -116,6 +116,43 @@ describe('snapshotFromCalendarEvents', () => {
     expect(snapshot.events.map((event) => Object.keys(event))).toEqual([expect.not.arrayContaining(['meetLink'])]);
   });
 
+  it('carries the file ids of a Calendar event\'s attachments', () => {
+    const eventsResponse = {
+      kind: 'calendar#events',
+      items: [
+        {
+          kind: 'calendar#event',
+          id: 'planning',
+          iCalUID: 'planning@google.com',
+          status: 'confirmed',
+          summary: 'Planning',
+          start: { dateTime: '2026-11-02T10:00:00-06:00', timeZone: 'America/Mexico_City' },
+          end: { dateTime: '2026-11-02T11:00:00-06:00', timeZone: 'America/Mexico_City' },
+          attachments: [
+            {
+              fileUrl: 'https://docs.google.com/document/d/notes-doc-1/edit',
+              title: 'Notes by Gemini',
+              mimeType: 'application/vnd.google-apps.document',
+              fileId: 'notes-doc-1',
+            },
+            {
+              fileUrl: 'https://docs.google.com/spreadsheets/d/budget-sheet-2/edit',
+              title: 'Budget',
+              mimeType: 'application/vnd.google-apps.spreadsheet',
+              fileId: 'budget-sheet-2',
+            },
+          ],
+        },
+      ],
+    };
+
+    const snapshot = snapshotFromCalendarEvents('francisco@example.com', eventsResponse);
+
+    expect(snapshot.events).toEqual([
+      expect.objectContaining({ id: 'planning', attachmentFileIds: ['notes-doc-1', 'budget-sheet-2'] }),
+    ]);
+  });
+
   it('converts a Calendar event with no attendees with an empty attendee list', () => {
     const eventsResponse = {
       kind: 'calendar#events',
