@@ -1001,7 +1001,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
     }
     const isForUser = (item: { assignee?: string }) =>
       options.userNames === undefined || item.assignee === undefined || options.userNames.includes(item.assignee);
-    const isUnseen = (docId: string, item: { text: string }) => {
+    const markSeenAndReportIfNew = (docId: string, item: { text: string }) => {
       const key = JSON.stringify([docId, item.text]);
       if (reportedNotesItemKeys.has(key)) {
         return false;
@@ -1013,7 +1013,7 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       ...report.docs.flatMap(({ id, title, webLink, text }) =>
         notesActionItems(text)
           .filter(isForUser)
-          .filter((item) => isUnseen(id, item))
+          .filter((item) => markSeenAndReportIfNew(id, item))
           .map((item) => ({
             text: item.text,
             meeting: title,
