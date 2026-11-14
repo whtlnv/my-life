@@ -52,7 +52,7 @@ async function exportPlainText(
   return exportResponse.text();
 }
 
-async function postNotesReport(options: AccountRequestOptions, docs: NotesReportDoc[]): Promise<void> {
+async function postNotesReport(options: AccountRequestOptions, docs: NotesReportDoc[]): Promise<boolean> {
   const reportResponse = await options.fetch(`${options.backendUrl}/notes-report`, {
     method: 'POST',
     body: JSON.stringify({ accountEmail: options.accountEmail, docs }),
@@ -60,13 +60,15 @@ async function postNotesReport(options: AccountRequestOptions, docs: NotesReport
   if (!reportResponse.ok) {
     console.error(`notes poll: report for ${options.accountEmail} failed with ${String(reportResponse.status)}`);
   }
+  return reportResponse.ok;
 }
 
 export async function pollNotesOnce(options: NotesPollOptions): Promise<string | undefined> {
   const authorization = { Authorization: `Bearer ${options.accessToken}` };
   const fileList = await listNotesFiles(options, authorization);
+  const notesFiles = fileList.files.filter((listed) => listed.name.includes(notesTitleMarker));
   const docs: NotesReportDoc[] = [];
-  for (const file of fileList.files.filter((listed) => listed.name.includes(notesTitleMarker))) {
+  for (const file of notesFiles) {
     const text = await exportPlainText(options, authorization, file.id);
     if (text === undefined) continue;
     docs.push({
@@ -77,6 +79,10 @@ export async function pollNotesOnce(options: NotesPollOptions): Promise<string |
       text,
     });
   }
-  await postNotesReport(options, docs);
-  return options.lastSuccessfulPollTime;
+  const reportAccepted = await postNotesReport(options, docs);
+  if (!reportAccepted) return options.lastSuccessfulPollTime;
+  return notesFiles.reduce<string | undefined>(
+    (newest, file) => (newest === undefined || file.modifiedTime > newest ? file.modifiedTime : newest),
+    options.lastSuccessfulPollTime,
+  );
 }
