@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { pollNotesOnce } from './notes-poll';
 
@@ -227,5 +227,52 @@ describe('pollNotesOnce', () => {
 
     const report = backendPosts[0]?.body as { docs: { id: string }[] };
     expect(report.docs.map((doc) => doc.id)).toEqual(['doc-client-kickoff']);
+  });
+
+  it('leaves a doc whose export fails out of the report and logs it, and still reports the other docs of the same poll', async () => {
+    const backendPosts: { url: string; body: unknown }[] = [];
+    const files: DriveFile[] = [
+      {
+        id: 'doc-weekly-sync',
+        name: 'Weekly sync - 2026/11/12 10:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-12T17:05:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-weekly-sync/edit',
+        text: 'Suggested next steps\n[Francisco] Send the budget\n',
+      },
+      {
+        id: 'doc-client-kickoff',
+        name: 'Client kickoff - 2026/11/13 09:00 CST - Notes by Gemini',
+        mimeType: googleDocMimeType,
+        modifiedTime: '2026-11-13T16:20:00.000Z',
+        webViewLink: 'https://docs.google.com/document/d/doc-client-kickoff/edit',
+        text: 'Action items\nAna will share the contract\n',
+      },
+    ];
+    const drive = driveFake(files, backendPosts);
+    const driveFailingOneExport = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      const url = new URL(input instanceof Request ? input.url : input.toString());
+      if (url.pathname === '/drive/v3/files/doc-weekly-sync/export') {
+        return Promise.resolve(new Response('export size limit exceeded', { status: 403 }));
+      }
+      return drive(input, init);
+    };
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    try {
+      await pollNotesOnce({
+        fetch: driveFailingOneExport,
+        accessToken: 'token-for-francisco',
+        accountEmail: 'francisco@example.com',
+        backendUrl: 'http://127.0.0.1:7777',
+      });
+
+      const report = backendPosts[0]?.body as { docs: { id: string }[] };
+      expect(report.docs.map((doc) => doc.id)).toEqual(['doc-client-kickoff']);
+      const logged = consoleError.mock.calls.map((call) => call.map(String).join(' '));
+      expect(logged).toEqual([expect.stringMatching(/doc-weekly-sync/)]);
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });

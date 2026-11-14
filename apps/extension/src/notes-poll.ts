@@ -33,10 +33,14 @@ async function exportPlainText(
   options: AccountRequestOptions,
   authorization: Record<string, string>,
   fileId: string,
-): Promise<string> {
+): Promise<string | undefined> {
   const exportUrl = new URL(`${driveApi}/files/${encodeURIComponent(fileId)}/export`);
   exportUrl.searchParams.set('mimeType', 'text/plain');
   const exportResponse = await options.fetch(exportUrl, { headers: authorization });
+  if (!exportResponse.ok) {
+    console.error(`notes poll: export of ${fileId} failed with ${String(exportResponse.status)}`);
+    return undefined;
+  }
   return exportResponse.text();
 }
 
@@ -45,12 +49,14 @@ export async function pollNotesOnce(options: NotesPollOptions): Promise<string |
   const fileList = await listNotesFiles(options, authorization);
   const docs = [];
   for (const file of fileList.files.filter((listed) => listed.name.includes(notesTitleMarker))) {
+    const text = await exportPlainText(options, authorization, file.id);
+    if (text === undefined) continue;
     docs.push({
       id: file.id,
       title: file.name,
       modifiedTime: file.modifiedTime,
       webLink: file.webViewLink,
-      text: await exportPlainText(options, authorization, file.id),
+      text,
     });
   }
   await options.fetch(`${options.backendUrl}/notes-report`, {
