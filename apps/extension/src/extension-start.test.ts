@@ -5,6 +5,7 @@ import { startExtension } from './extension-start';
 const calendarApi = 'https://www.googleapis.com/calendar/v3';
 const gmailApi = 'https://gmail.googleapis.com/gmail/v1';
 const peopleApi = 'https://people.googleapis.com/v1';
+const driveApi = 'https://www.googleapis.com/drive/v3';
 const backendApi = 'http://127.0.0.1:7777';
 const profileEmail = 'francisco@example.com';
 const calendarListUrl = `${calendarApi}/users/me/calendarList`;
@@ -93,6 +94,9 @@ const defaultRoute = (url: URL, init?: RequestInit): Promise<Response> => {
   }
   if (url.href.startsWith(`${peopleApi}/otherContacts`)) {
     return jsonResponse({ otherContacts: [] });
+  }
+  if (url.href.startsWith(`${driveApi}/files?`)) {
+    return jsonResponse({ kind: 'drive#fileList', files: [] });
   }
   if (isBackendPost(url, init)) {
     return acceptedRequest();
@@ -509,6 +513,17 @@ describe('startExtension', () => {
     await notesPoll?.();
     expect(scheduledPolls.get(oneMinute)).toBeDefined();
     expect(scheduledPolls.get(fiveMinutes)).toBeDefined();
+    expect(notesReports).toEqual([{ accountEmail: profileEmail, docs: [] }]);
+  });
+
+  it('the default fake network answers Drive files.list with an empty file list, so a notes poll posts an empty notes report', async () => {
+    const notesReports: unknown[] = [];
+    const fakeFetch = routedFetch(recordingPostsTo('/notes-report', notesReports));
+    const scheduledPolls = await startWithScheduledPolls(fakeFetch);
+    notesReports.length = 0;
+
+    await scheduledPolls.get(15 * oneMinute)?.();
+
     expect(notesReports).toEqual([{ accountEmail: profileEmail, docs: [] }]);
   });
 
