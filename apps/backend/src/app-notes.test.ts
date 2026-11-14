@@ -357,4 +357,28 @@ describe('createApp meeting notes', () => {
       }),
     );
   });
+  it("shows at GET /triage-queue no event on a notes item whose doc is attached to no event in that account's stored calendar snapshot, even when another account's event has the doc attached", async () => {
+    const app = createApp({
+      allowedEmails: ['ana@example.com', 'bruno@example.com'],
+      databasePath: temporaryDatabasePath(),
+    });
+    await postCalendarSnapshot(app, 'ana@example.com', []);
+    await postCalendarSnapshot(app, 'bruno@example.com', [
+      {
+        id: 'event-1',
+        iCalUID: 'event-1@google.com',
+        title: 'Quarterly budget review',
+        start: '2026-11-12T17:00:00.000Z',
+        end: '2026-11-12T17:45:00.000Z',
+        attendees: [],
+        attachmentFileIds: ['doc-1'],
+      },
+    ]);
+
+    await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+
+    const { notesItems } = await getJson<{ notesItems: { event?: unknown }[] }>(app, '/triage-queue');
+    expect(notesItems[0]).toEqual(expect.objectContaining({ accountEmail: 'ana@example.com' }));
+    expect(notesItems[0]!.event).toBeUndefined();
+  });
 });

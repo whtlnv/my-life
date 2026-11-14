@@ -2,6 +2,13 @@
 
 Append-only audit log of `/red` prediction mismatches and their resolutions. Newest first. Never edit or delete prior entries — that destroys the audit trail.
 
+## 2026-11-14 02:54 · `apps/backend/src/app-notes.test.ts::shows at GET /triage-queue no event on a notes item whose doc is attached to no event in that account's stored calendar snapshot, even when another account's event has the doc attached`
+- Behavior: a notes item gets no event from another account's calendar snapshot, even when that event has the doc attached
+- Predicted: pass. The /notes-report handler already keeps only events with `accountEmail === report.accountEmail`, which the previous green (521bfe1) added
+- Actual: passed
+- Type: passed unexpectedly
+- Resolution: the behavior was already delivered with the previous item. A mutation check (filter swapped for `() => true`) makes the test fail with `expected { …(2) } to be undefined`, so it isn't empty. It stays as the pin on the account scoping, unrewritten, because a failing rewrite would have to test some other behavior.
+
 ## 2026-11-14 02:35 · `apps/backend/src/app-notes.test.ts::drops from GET /tasks a task made from a notes item once it is marked done at POST /tasks/:id/done`
 - Behavior: A task made from a notes item marked done leaves the open tasks, like any other task
 - Predicted: passes on first run (`POST /tasks/:id/done` knows any task id with a stored task event, and the notes `task` verdict saves a `proposal-confirmed` event under that id)
