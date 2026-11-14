@@ -27,6 +27,11 @@ Deferred refactors and known gaps. Not a queue: `/plan` reads it when decomposin
 
 ## Out of Scope
 
+- **[apps/extension/src/notes-poll.ts:68] `pollNotesOnce` returns a since time it never advances** (added: 2026-11-14)
+  It returns `options.lastSuccessfulPollTime` unchanged and `startExtension` neither passes nor keeps it, so the
+  `Promise<string | undefined>` return and the `lastSuccessfulPollTime` option read as a since-time cursor that does not
+  exist: every poll lists every Notes by Gemini doc. Deferred because advancing the cursor after an accepted report (or
+  dropping the return) is a behavior change, and `notes-poll.test.ts` pins the pass-through in its refused-report test.
 - **[apps/backend/src/app.ts:231] `attachmentFileIds` is read through a cast, apart from the contract and the extension** (added: 2026-11-14)
   `calendar-events-snapshot.ts` in the extension adds `attachmentFileIds` to each snapshot event, while `calendarSnapshot` in
   `packages/contracts` does not declare it and `POST /notes-report` reads it through `CalendarEventWithAttachments`; a
