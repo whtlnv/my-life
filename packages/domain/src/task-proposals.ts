@@ -14,6 +14,7 @@ export interface TaskProposal {
   due?: string;
   link: string;
   accountEmail: string;
+  event?: { title: string; start: string } | undefined;
 }
 
 export const taskProposals = (message: MessageWithAsks): TaskProposal[] =>

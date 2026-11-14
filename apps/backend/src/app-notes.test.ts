@@ -381,4 +381,30 @@ describe('createApp meeting notes', () => {
     expect(notesItems[0]).toEqual(expect.objectContaining({ accountEmail: 'ana@example.com' }));
     expect(notesItems[0]!.event).toBeUndefined();
   });
+  it("lists at GET /tasks, on a task made from a notes item at POST /notes-verdicts, the title and start time of the event in that account's stored calendar snapshot that has the notes doc attached", async () => {
+    const app = createApp({ allowedEmails: ['ana@example.com'], databasePath: temporaryDatabasePath() });
+    await postCalendarSnapshot(app, 'ana@example.com', [
+      {
+        id: 'event-1',
+        iCalUID: 'event-1@google.com',
+        title: 'Quarterly budget review',
+        start: '2026-11-12T17:00:00.000Z',
+        end: '2026-11-12T17:45:00.000Z',
+        attendees: [],
+        attachmentFileIds: ['doc-1'],
+      },
+    ]);
+    await postJson(app, '/notes-report', budgetReviewNotesReport('ana@example.com', budgetReviewNotesText));
+    const { notesItems } = await getJson<{ notesItems: { id: string }[] }>(app, '/triage-queue');
+
+    await postJson(app, '/notes-verdicts', { id: notesItems[0]!.id, decision: 'task' });
+
+    const { tasks } = await getJson<{ tasks: unknown[] }>(app, '/tasks');
+    expect(tasks).toEqual([
+      expect.objectContaining({
+        title: 'Send the revised budget to the finance team by Friday.',
+        event: { title: 'Quarterly budget review', start: '2026-11-12T17:00:00.000Z' },
+      }),
+    ]);
+  });
 });

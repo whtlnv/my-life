@@ -39,7 +39,7 @@
 - [x] The extension's calendar snapshot carries each event's attachment file ids (an optional field like `meetLink`: an event with no attachments has none)
 - [x] A notes item whose doc is attached to an event in that account's stored calendar snapshot shows the event's title and start time in the triage queue
 - [x] A notes item whose doc is attached to no event in that account's snapshot shows no event, even when another account's event has the doc attached
-- [ ] A task made from a notes item linked to an event names the event's title and start time
+- [x] A task made from a notes item linked to an event names the event's title and start time
 - [ ] `GET /now` gives one `notes` detail per account with the time of its last notes report
 - [ ] A `notes` detail whose last report is within 30 minutes is not stale
 - [ ] A `notes` detail whose last report is older than 30 minutes is stale

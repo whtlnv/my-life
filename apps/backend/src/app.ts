@@ -1049,7 +1049,12 @@ export function createApp(options: AppOptions = { allowedEmails: [] }): Hono {
       type: 'proposal-confirmed',
       taskId: `notes-${verdict.id}`,
       at: clock.now().toISOString(),
-      proposal: { title: String(item?.text), accountEmail: String(item?.accountEmail), link: String(item?.docLink) },
+      proposal: {
+        title: String(item?.text),
+        accountEmail: String(item?.accountEmail),
+        link: String(item?.docLink),
+        event: item?.event,
+      },
     });
     return context.body(null, 200);
   });
