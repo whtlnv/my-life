@@ -1,7 +1,7 @@
 # Phase 0 walk-through (manual checklist)
 
 The glue the unit suite cannot reach, verified by hand once `PENDING_TASKS.md` § 1 (Google Cloud project, OAuth client
-for extension id `goknkpgifknnopfpldahflhndahempki`) is done. Tick each line; save the screenshot under
+for extension id `$MY_LIFE_EXTENSION_ID`) is done. Tick each line; save the screenshot under
 `docs/screenshots/` with the date in its name.
 
 ## Backend
@@ -15,7 +15,7 @@ for extension id `goknkpgifknnopfpldahflhndahempki`) is done. Tick each line; sa
 
 - [x] `apps/extension/.env` holds `WXT_GOOGLE_OAUTH_CLIENT_ID`; `pnpm --filter @my-life/extension build`. (2026-11-06; the built manifest carries the client id)
 - [x] (2026-11-06, four profiles) In **each** Chrome profile: `chrome://extensions` → Developer mode → Load unpacked → `apps/extension/.output/chrome-mv3`.
-      The id shown is `goknkpgifknnopfpldahflhndahempki` (if not, the manifest `key` did not apply).
+      The id shown is `$MY_LIFE_EXTENSION_ID` (if not, the manifest `key` did not apply).
 - [x] (2026-11-06) The first load asks for consent once per profile (Workspace and gmail.com alike). The service-worker console shows no
       `my-life extension failed to start` line.
 - [x] (2026-11-06 17:47 Mexico City, all four accounts fresh, each polling on its own 5-minute alarm) Every account appears on the dashboard's account list with a fresh _last reported_ time.
